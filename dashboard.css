@@ -1,0 +1,94 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #f2f4f8;
+}
+
+.app-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: #ffffffcc;
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.menu-icon {
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+  font-weight: 500;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #333;
+}
+
+.profile {
+  position: relative;
+  cursor: pointer;
+}
+
+.profile-box {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  padding: 1rem;
+  width: 220px;
+  display: none;
+}
+
+.profile-box.visible {
+  display: block;
+}
+
+.profile-box h3 {
+  margin: 0 0 0.3rem 0;
+  font-size: 1.1rem;
+}
+
+.profile-box p {
+  font-size: 0.9rem;
+  color: #555;
+  margin: 0;
+}
+
+.main-content {
+  padding: 2rem;
+}
+
+.hamburger-menu {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 220px;
+  background: #1f1f1f;
+  color: white;
+  padding: 2rem 1rem;
+  display: none;
+  flex-direction: column;
+  gap: 1.2rem;
+  z-index: 1000;
+}
+
+.hamburger-menu a {
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+.hamburger-menu.visible {
+  display: flex;
+}

@@ -1,0 +1,449 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen;
+  background: #f8f8f8;
+  color: black;
+  line-height: 1.6;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Typography */
+h1, h2, h3 {
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+/* Header */
+.glass-header {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 15px 40px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  border-bottom: 1px solid #ccc;
+  border-radius: 0 0 20px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; 
+  padding: 9px 15px;           
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+#loginTrigger {
+  font-size: 0.95rem; 
+  padding: 11px 18px;
+  align-self: center;
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen;
+
+}
+
+.glass-header .header-content nav ul li a{
+   font-size: 0.88rem;
+   padding: 11px 18px;
+}
+
+#loginTrigger:hover{
+  color:black;
+  background: white; 
+}
+
+.glass-header .header-content nav ul li a:hover {
+  color:white;
+  background-color: black;
+  border-radius: 70px; 
+}
+
+#searchBar {
+  font-size: 0.88rem;
+  padding: 10px 15px; 
+}
+
+
+/* Favorites */
+.fav-btn {
+  background: black;
+  border: 2px solid black;     /* black circle outline */
+  width: 32px;                  /* fixed size circle */
+  height: 32px;
+  border-radius: 50%;          /* turns square into circle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.fav-btn i {
+  font-size: 1rem;
+  color: white;                /* white heart initially */
+  transition: color 0.2s, transform 0.2s;
+}
+
+.fav-btn:hover {   
+  border-color: transparent;         
+  background-color: transparent;    
+}
+
+.fav-btn:hover i {
+  color: red;                  /* heart turns red */
+  transform: scale(1.);       /* slight pop */
+}
+
+.logo {
+  font-size: 1.35em;
+  font-weight: bold;
+  color: #000;
+}
+
+nav ul {
+ display: flex;
+ align-items: center;
+  gap: 15px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+nav ul li {
+  display: flex;
+  align-items: center;
+}
+
+nav ul li a {
+   text-decoration: none;
+  color: #1c1c1e;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 15px;
+  transition: background 0.2s;
+}
+
+nav ul li a:hover {
+   background-color: rgba(6, 6, 6, 0.05);
+}
+
+/* Smaller search button */
+#searchBtn {
+  font-size: 0.9rem;
+  padding: 15px 25px;
+  margin-left: 4px;
+}
+
+
+/* Hero Section */
+#hero {
+  padding: 80px 20px 40px;
+  background-image: url('Pictures/bg4.jpg');
+  background-size: cover;          
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.hero-container {
+  max-width: 1000px;
+  margin: auto;
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  color: white;
+}
+
+.hero-subtitle {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  color: #c5c4c4;
+}
+
+
+
+/* Search Box */
+.search-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.rounded-input {
+  padding: 12px 15px;
+  border-radius: 30px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  min-width: 150px;
+  background-color: #fff;
+  transition: border 0.3s;
+}
+
+.rounded-input:focus {
+  outline: none;
+  border: 1.5px solid black;
+}
+
+.btn, .rounded-btn {
+  padding: 12px 20px;
+  border-radius: 30px;
+  background-color: black;
+  color: white;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn:hover {
+  color: black;
+  background-color: white;
+}
+
+
+/* Section Styles */
+.section-container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 50px 20px;
+  text-align: center;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 30px;
+}
+
+/* Property Cards */
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+.property-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(6px);
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  overflow: hidden;
+  transition: transform 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.property-card:hover {
+  transform: translateY(-5px);
+}
+
+.property-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-bottom: 1px solid #eee;
+}
+
+.property-card h3 {
+  font-size: 1.2rem;
+  margin: 15px;
+}
+
+.property-card p {
+  margin: 0 15px 15px;
+  color: #444;
+}
+
+.property-price {
+  font-weight: 600;
+  color: #000;
+}
+
+
+/* Footer */
+.glass-footer {
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 20px;
+  text-align: center;
+  border-radius: 20px 20px 0 0;
+  margin-top: 40px;
+}
+
+.footer-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.footer-links a {
+  color: white;
+  margin: 0 10px;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.footer-links a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .header-content {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .search-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+
+
+/* Modal background and card */
+
+.auth-modal {
+  position: fixed; inset: 0;
+  z-index: 1000;
+  
+}
+
+.auth-modal.hidden { display: none; }
+
+.auth-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.3);
+}
+.auth-card {
+  position: relative;
+  max-width: 380px;
+  margin: 80px auto;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 30px 24px;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+
+
+/* Tab switcher */
+.switch {
+  display: flex;
+  margin-bottom: 24px;
+}
+.switch button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: none;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  color: #6e6e73;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.switch button.active {
+  color: black;
+  border-bottom: 2px solid black;
+}
+
+/* Forms & floating labels */
+.auth-form { display: none; }
+.auth-form.active { display: block; }
+.form-group { position: relative; margin-bottom: 20px; }
+.form-group input {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #d1d1d6;
+  border-radius: 10px;
+  background: white;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+.form-group input:focus {
+  border-color: black;
+  outline: none;
+}
+.form-group label {
+  position: absolute;
+  top: 14px; left: 16px;
+  background: transparent;
+  color: #8e8e93;
+  transition: transform 0.2s, font-size 0.2s;
+  pointer-events: none;
+}
+.form-group input:focus + label,
+.form-group input:not(:placeholder-shown) + label {
+  transform: translateY(-28px);
+  font-size: 12px;
+  color: black;
+}
+
+/* Submit button & link */
+.auth-button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 8px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4c4d4e, #020202);
+  color: white;
+  font-size: 17px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.auth-button:hover {
+  background: linear-gradient(135deg, #c4c5c6, #4c4d4e);
+}
+.auth-link {
+  display: block;
+  margin-top: 12px;
+  font-size: 14px;
+  color: black;
+  text-decoration: none;
+}
+.auth-link:hover {
+   text-decoration: underline; 
+}
+
+/* Compact input combo filters */
+.search-box input[list],
+.search-box input[list]::placeholder {
+  font-size: 0.9rem;
+  padding: 9px 8px; /* vertical | horizontal */
+  height: auto;
+  line-height: 1.2;
+  margin-right: 6px; /* small gap */
+}

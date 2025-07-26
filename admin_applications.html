@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Applications | BatEstateExplorer</title>
+  <link rel="stylesheet" href="admin_dashboard.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
+  <style>
+    .applications-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    .sort-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 30px;
+    }
+    .sort-by {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sort-by label {
+      font-weight: 500;
+      color: #555;
+    }
+    .sort-by select {
+      padding: 7px 15px;
+      border-radius: 20px;
+      border: 1px solid #dcdfe3;
+      font-size: 0.95rem;
+      background: #fff;
+      width: 160px;
+    }
+    .application-list {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+    .application-card {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      padding: 20px 30px;
+      gap: 25px;
+      border: 1px solid #e7e7e7;
+    }
+    .application-image {
+      width: 70px;
+      height: 55px;
+      border-radius: 8px;
+      background: #e0e7ef url('Pictures/bg4.jpg') center/cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+    }
+    .application-info {
+      flex: 1;
+    }
+    .application-info .application-name {
+      font-weight: 600;
+      font-size: 1.05rem;
+      margin-bottom: 2px;
+    }
+    .application-info .application-meta {
+      color: #888;
+      font-size: 0.97rem;
+      margin-bottom: 2px;
+    }
+    .application-info .application-meta span {
+      margin-right: 12px;
+    }
+    .application-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .application-actions button {
+      padding: 8px 18px;
+      border-radius: 20px;
+      border: none;
+      font-weight: 500;
+      font-size: 0.97rem;
+      cursor: pointer;
+      background: #f4f7fa;
+      color: #222;
+      transition: background 0.2s, color 0.2s;
+    }
+    .application-actions button:hover {
+      background: #000;
+      color: #fff;
+    }
+    .application-actions .accept-btn {
+      background: #e6fbe6;
+      color: #1a7f1a;
+      border: 1px solid #b6eab6;
+    }
+    .application-actions .accept-btn:hover {
+      background: #1a7f1a;
+      color: #fff;
+      border: 1px solid #1a7f1a;
+    }
+    .application-actions .reject-btn {
+      background: #fff0f0;
+      color: #c00;
+      border: 1px solid #f5c2c2;
+    }
+    .application-actions .reject-btn:hover {
+      background: #c00;
+      color: #fff;
+      border: 1px solid #c00;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">BatEstateExplorer</div>
+        <h3>Hi, Admin!</h3>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li><a href="admin_dashboard.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+          <li class="nav-dropdown">
+            <a href="#" class="dropdown-toggle"><i class="fa-solid fa-users"></i> Manage Accounts <i class="fa-solid fa-chevron-down dropdown-icon"></i></a>
+            <ul class="dropdown-menu">
+              <li><a href="admin_direct_agents.html">Direct Agents</a></li>
+              <li><a href="admin_associate_agents.html">Associate Agents</a></li>
+            </ul>
+          </li>
+
+          <li><a href="admin_property_listings.html"><i class="fa-solid fa-house-chimney"></i> Property Listings</a></li>
+          <li><a href="#" class="active"><i class="fa-solid fa-file-lines"></i> Applications</a></li>
+          <li><a href="admin_reports.html"><i class="fa-solid fa-flag"></i> Reports</a></li>
+          <li><a href="admin_performance.html"><i class="fa-solid fa-chart-bar"></i> Performance</a></li>
+        </ul>
+      </nav>
+    </aside>
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="main-header applications-header">
+        <h1>Applications</h1>
+        <div class="header-actions">
+          <button class="logout-btn">Log Out</button>
+          <div class="profile-btn">
+            <i class="fa-solid fa-user"></i>
+          </div>
+        </div>
+      </header>
+      <div class="sort-row">
+        <div class="sort-by">
+          <label for="sort">Sort By:</label>
+          <select id="sort">
+            <option value="name">Name</option>
+            <option value="type">Type</option>
+            <option value="experience">Experience</option>
+            <option value="date">Date Applied</option>
+          </select>
+        </div>
+      </div>
+      <div class="application-list" id="applicationList">
+        <div class="application-card" data-name="Maria Santos" data-type="Individual" data-experience="3" data-date="2024-05-01">
+          <div class="application-image"></div>
+          <div class="application-info">
+            <div class="application-name">Maria Santos</div>
+            <div class="application-meta">
+              <span>Type: Individual Seller</span>
+              <span>Experience: 3 years</span>
+              <span>Date: 2024-05-01</span>
+            </div>
+          </div>
+          <div class="application-actions">
+            <button onclick="viewApplicationForm(this)">View Application Form</button>
+            <button class="accept-btn" onclick="acceptApplication(this)">Accept</button>
+            <button class="reject-btn" onclick="rejectApplication(this)">Reject</button>
+          </div>
+        </div>
+        <div class="application-card" data-name="Pedro Garcia" data-type="Individual" data-experience="5" data-date="2024-04-15">
+          <div class="application-image"></div>
+          <div class="application-info">
+            <div class="application-name">Pedro Garcia</div>
+            <div class="application-meta">
+              <span>Type: Individual Seller</span>
+              <span>Experience: 5 years</span>
+              <span>Date: 2024-04-15</span>
+            </div>
+          </div>
+          <div class="application-actions">
+            <button onclick="viewApplicationForm(this)">View Application Form</button>
+            <button class="accept-btn" onclick="acceptApplication(this)">Accept</button>
+            <button class="reject-btn" onclick="rejectApplication(this)">Reject</button>
+          </div>
+        </div>
+        <div class="application-card" data-name="Ana Rodriguez" data-type="Individual" data-experience="2" data-date="2024-03-20">
+          <div class="application-image"></div>
+          <div class="application-info">
+            <div class="application-name">Ana Rodriguez</div>
+            <div class="application-meta">
+              <span>Type: Individual Seller</span>
+              <span>Experience: 2 years</span>
+              <span>Date: 2024-03-20</span>
+            </div>
+          </div>
+          <div class="application-actions">
+            <button onclick="viewApplicationForm(this)">View Application Form</button>
+            <button class="accept-btn" onclick="acceptApplication(this)">Accept</button>
+            <button class="reject-btn" onclick="rejectApplication(this)">Reject</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script>
+    // Sidebar navigation interactivity
+    document.querySelectorAll('.sidebar-nav a').forEach(link => {
+      link.addEventListener('click', function(e) {
+        if (!this.classList.contains('dropdown-toggle')) {
+          document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+          this.classList.add('active');
+        }
+      });
+    });
+    // Dropdown toggle
+    document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+      toggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        this.parentElement.classList.toggle('open');
+      });
+    });
+    // Sort By Dropdown interactivity
+    const sortSelect = document.getElementById('sort');
+    const applicationList = document.getElementById('applicationList');
+    function sortApplications(criteria) {
+      const cards = Array.from(applicationList.querySelectorAll('.application-card'));
+      let sorted;
+      if (criteria === 'name') {
+        sorted = cards.sort((a, b) => a.dataset.name.localeCompare(b.dataset.name));
+      } else if (criteria === 'type') {
+        sorted = cards.sort((a, b) => a.dataset.type.localeCompare(b.dataset.type));
+      } else if (criteria === 'experience') {
+        sorted = cards.sort((a, b) => a.dataset.experience - b.dataset.experience);
+      } else if (criteria === 'date') {
+        sorted = cards.sort((a, b) => new Date(b.dataset.date) - new Date(a.dataset.date));
+      }
+      sorted.forEach(card => applicationList.appendChild(card));
+    }
+    sortSelect.addEventListener('change', function() {
+      sortApplications(this.value);
+    });
+
+    // Application management functions
+    function viewApplicationForm(btn) {
+      const card = btn.closest('.application-card');
+      const appName = card.querySelector('.application-name').textContent;
+      const appType = card.querySelector('.application-meta span').textContent.replace('Type: ', '');
+      const appExperience = card.querySelector('.application-meta span:nth-child(2)').textContent.replace('Experience: ', '');
+      const appDate = card.querySelector('.application-meta span:nth-child(3)').textContent.replace('Date: ', '');
+      
+      // Create modal content
+      const modalContent = `
+        <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #222;">Direct Agent Application - ${appName}</h2>
+            <button onclick="closeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+          </div>
+          <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; margin-bottom: 10px;">Applicant Information</h3>
+            <p><strong>Full Name:</strong> ${appName}</p>
+            <p><strong>Email:</strong> ${appName.toLowerCase().replace(' ', '.')}@email.com</p>
+            <p><strong>Phone:</strong> +63 912 345 6789</p>
+            <p><strong>Address:</strong> Batangas, Philippines</p>
+            <p><strong>Seller Type:</strong> ${appType}</p>
+            <p><strong>Real Estate Experience:</strong> ${appExperience}</p>
+            <p><strong>Date Applied:</strong> ${appDate}</p>
+          </div>
+          <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; margin-bottom: 10px;">Required Documents</h3>
+            <ul style="margin: 0; padding-left: 20px;">
+              <li>✓ Valid Government ID (Passport/Driver's License)</li>
+              <li>✓ Real Estate Broker License (if applicable)</li>
+              <li>✓ Business Permit or Registration</li>
+              <li>✓ Bank Statement (last 3 months)</li>
+              <li>✓ Character Reference Letters (2)</li>
+              <li>✓ Property Portfolio (if any)</li>
+            </ul>
+          </div>
+          <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; margin-bottom: 10px;">Application Status</h3>
+            <p><strong>Status:</strong> <span style="color: #ff8c00; font-weight: 600;">Pending Review</span></p>
+            <p><strong>Reviewer:</strong> Admin Panel</p>
+          </div>
+          <div style="text-align: center; margin-top: 30px;">
+            <button onclick="acceptApplication(document.querySelector('.application-card'))" style="background: #1a7f1a; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin-right: 10px; cursor: pointer;">Accept Application</button>
+            <button onclick="rejectApplication(document.querySelector('.application-card'))" style="background: #c00; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Reject Application</button>
+          </div>
+        </div>
+      `;
+      
+      showModal(modalContent);
+    }
+
+    function acceptApplication(btn) {
+      const card = btn.closest('.application-card');
+      const appName = card.querySelector('.application-name').textContent;
+      
+      if (confirm(`Are you sure you want to accept the application for "${appName}"?`)) {
+        // Show loading state
+        btn.textContent = 'Processing...';
+        btn.disabled = true;
+        
+        // Simulate API call
+        setTimeout(() => {
+          // Remove the application card
+          card.style.opacity = '0.5';
+          card.style.background = '#e6fbe6';
+          card.style.border = '2px solid #1a7f1a';
+          
+          // Update button
+          btn.textContent = 'Accepted ✓';
+          btn.style.background = '#1a7f1a';
+          btn.style.color = 'white';
+          btn.disabled = true;
+          
+          // Disable other buttons
+          const otherBtns = card.querySelectorAll('button:not(.accept-btn)');
+          otherBtns.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+          });
+          
+          // Show success message
+          showNotification(`Application for "${appName}" has been accepted successfully!`, 'success');
+          
+          // Remove card after delay
+          setTimeout(() => {
+            card.remove();
+          }, 3000);
+          
+        }, 1000);
+      }
+    }
+
+    function rejectApplication(btn) {
+      const card = btn.closest('.application-card');
+      const appName = card.querySelector('.application-name').textContent;
+      
+      if (confirm(`Are you sure you want to reject the application for "${appName}"?`)) {
+        // Show loading state
+        btn.textContent = 'Processing...';
+        btn.disabled = true;
+        
+        // Simulate API call
+        setTimeout(() => {
+          // Remove the application card
+          card.style.opacity = '0.5';
+          card.style.background = '#fff0f0';
+          card.style.border = '2px solid #c00';
+          
+          // Update button
+          btn.textContent = 'Rejected ✗';
+          btn.style.background = '#c00';
+          btn.style.color = 'white';
+          btn.disabled = true;
+          
+          // Disable other buttons
+          const otherBtns = card.querySelectorAll('button:not(.reject-btn)');
+          otherBtns.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+          });
+          
+          // Show success message
+          showNotification(`Application for "${appName}" has been rejected.`, 'error');
+          
+          // Remove card after delay
+          setTimeout(() => {
+            card.remove();
+          }, 3000);
+          
+        }, 1000);
+      }
+    }
+
+    // Modal functions
+    function showModal(content) {
+      const modal = document.createElement('div');
+      modal.id = 'modal';
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      `;
+      modal.innerHTML = content;
+      document.body.appendChild(modal);
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('modal');
+      if (modal) {
+        modal.remove();
+      }
+    }
+
+    // Notification function
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 1001;
+        background: ${type === 'success' ? '#1a7f1a' : '#c00'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      `;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+  </script>
+</body>
+</html> 
