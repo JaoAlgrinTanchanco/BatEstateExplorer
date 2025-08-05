@@ -18,8 +18,24 @@ if (!$is_logged_in || !$is_associate_agent) {
     exit;
 }
 
+// Get agent's information including company details
+$agent_query = "SELECT a.*, c.name as company_name, c.description as company_description 
+                FROM agents a 
+                LEFT JOIN companies c ON a.company_id = c.id 
+                WHERE a.user_id = ?";
+$stmt = mysqli_prepare($conn, $agent_query);
+mysqli_stmt_bind_param($stmt, "i", $current_user['id']);
+mysqli_stmt_execute($stmt);
+$agent_result = mysqli_stmt_get_result($stmt);
+$agent = mysqli_fetch_assoc($agent_result);
+
+if (!$agent) {
+    header('Location: index.php');
+    exit;
+}
+
 // Get agent's properties count
-$agent_id = $current_user['id'];
+$agent_id = $agent['id'];
 $properties_query = "SELECT COUNT(*) as total FROM properties WHERE agent_id = ?";
 $stmt = mysqli_prepare($conn, $properties_query);
 mysqli_stmt_bind_param($stmt, "i", $agent_id);
@@ -476,13 +492,13 @@ $recent_properties = mysqli_stmt_get_result($stmt);
     <div class="profile-header">
       <div class="profile-info">
         <div class="profile-avatar">
-          <img src="Pictures/company_logo.png" alt="Company Logo" style="width:60px;height:60px;border-radius:50%;background:#fff;margin-right:10px;">
+          <i class="fa-solid fa-user"></i>
         </div>
         <div class="profile-details">
-          <span class="profile-name" id="agentName"></span>
-          <span class="profile-email" id="agentEmail"></span>
-          <span class="profile-location" id="agentLocation"></span>
-          <span class="profile-company" id="agentCompany" style="color:#0074d9;font-weight:600;"></span>
+          <span class="profile-name"><?php echo htmlspecialchars($current_user['first_name'] . ' ' . $current_user['last_name']); ?></span>
+          <span class="profile-email"><?php echo htmlspecialchars($current_user['email']); ?></span>
+          <span class="profile-location"><?php echo htmlspecialchars($agent['location'] ?? 'Location not specified'); ?></span>
+          <span class="profile-company"><?php echo htmlspecialchars($agent['company_name'] ?? 'Company not assigned'); ?></span>
         </div>
       </div>
       <div class="profile-actions">
@@ -532,7 +548,7 @@ $recent_properties = mysqli_stmt_get_result($stmt);
       </div>
     </div>
     <div class="profile-stats">
-      <div class="profile-stat">Listings<br><b id="statListings">0</b></div>
+      <div class="profile-stat">Listings<br><b id="statListings"><?php echo $properties_count; ?></b></div>
       <div class="profile-stat">Reviews<br><b>4.8 ★</b></div>
       <div class="profile-stat">Inquiries<br><b>12</b></div>
     </div>
@@ -547,14 +563,16 @@ $recent_properties = mysqli_stmt_get_result($stmt);
     </div>
     <!-- Section Content -->
     <div class="section-content" id="portfolioSection">
-      <div class="property-list" id="portfolioPropertyList"></div>
+      <div class="property-list" id="portfolioPropertyList">
+        <!-- Company properties will be loaded here dynamically -->
+      </div>
     </div>
     <div class="section-content" id="listingsSection" style="display:none;">
       <div class="glass-card" style="background:rgba(255,255,255,0.25); backdrop-filter:blur(12px); border-radius:18px; box-shadow:0 4px 16px rgba(0,0,0,0.07); padding:32px 24px;">
         <h2 style="font-size:1.2rem; color:#222; margin-bottom:18px;">Company Listings</h2>
         <table class="listings-table" style="width:100%; border-collapse:collapse; background:rgba(255,255,255,0.5); border-radius:14px; overflow:hidden;">
           <thead style="background:rgba(255,255,255,0.4);">
-            <tr><th>Property</th><th>Location</th><th>Price</th><th>Bedrooms</th><th>Bathrooms</th><th>Size (sqm)</th><th>Status</th><th>Sold By</th><th>Actions</th></tr>
+            <tr><th>Property</th><th>Location</th><th>Price</th><th>Bedrooms</th><th>Bathrooms</th><th>Size (sqm)</th><th>Status</th><th>Created By</th><th>Sold By</th><th>Actions</th></tr>
           </thead>
           <tbody id="companyListingsTableBody"></tbody>
         </table>
@@ -615,14 +633,13 @@ $recent_properties = mysqli_stmt_get_result($stmt);
           <div class="form-group">
             <select id="addType" class="glass-input" required>
               <option value="">Select Property Type</option>
-              <option value="Lot">Lot</option>
               <option value="Property">Property</option>
+              <option value="Lot">Lot</option>
             </select>
           </div>
           <div class="form-group">
             <select id="addBedrooms" class="glass-input" required>
               <option value="">Select Bedrooms</option>
-              <option value="0">0</option>
               <option value="1">1</option>
               <option value="2">2</option>
               <option value="3">3</option>
@@ -632,7 +649,6 @@ $recent_properties = mysqli_stmt_get_result($stmt);
           <div class="form-group">
             <select id="addBathrooms" class="glass-input" required>
               <option value="">Select Bathrooms</option>
-              <option value="0">0</option>
               <option value="1">1</option>
               <option value="2">2</option>
               <option value="3">3</option>
@@ -643,21 +659,8 @@ $recent_properties = mysqli_stmt_get_result($stmt);
             <textarea id="addDesc" placeholder="Enter property description" class="glass-input" rows="4" required></textarea>
           </div>
           <div class="form-group">
-            <div class="file-input-wrapper" required>
-              <input type="file" id="addPhoto" multiple accept="image/*">
-              <div class="file-input-display"  onclick="document.getElementById('addPhoto').click()">
-                <span class="file-name" id="photoFileName">Property Images (No file chosen)</span>
-                <span class="choose-btn">Choose Files</span>
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <div class="file-input-wrapper" required>
-              <input type="file" id="addDoc" multiple accept="application/pdf,image/*">
-              <div class="file-input-display" onclick="document.getElementById('addDoc').click()">
-                <span class="file-name" id="docFileName">Property Documents (No file chosen)</span>
-                <span class="choose-btn">Choose Files</span>
-              </div>
+            <div style="background: #f8f8f8; padding: 15px; border-radius: 8px; margin: 15px 0;">
+              <p style="margin: 0; color: #666; font-style: italic;">Images and documents can be added after creating the listing using the "Add More Images" feature in the property details.</p>
             </div>
           </div>
           <div class="form-actions" style="display:flex; gap:16px; justify-content:flex-end;">
@@ -729,89 +732,171 @@ $recent_properties = mysqli_stmt_get_result($stmt);
     </div>
   </div>
   <script>
-    // Sample data for companies, agents, and properties
-    const companies = [
-      { id: 1, name: 'Prime Realty', logo: 'Pictures/company_logo.png' },
-      { id: 2, name: 'Urban Estates', logo: 'Pictures/company_logo2.png' }
-    ];
-    const agents = [
-      { id: 1, name: 'Anna Associate', email: 'anna@prime.com', location: 'Batangas City', companyId: 1 },
-      { id: 2, name: 'Ben Associate', email: 'ben@prime.com', location: 'Lipa City', companyId: 1 },
-      { id: 3, name: 'Cara Associate', email: 'cara@urban.com', location: 'Tanauan', companyId: 2 }
-    ];
-    const properties = [
-      { id: 1, title: 'Modern Family Home', location: 'Batangas City', type: 'Property', price: '₱3,500,000', bedrooms: 3, bathrooms: 2, sqm: 180, image: 'Pictures/bg4.jpg', features: ['3 BR', '2 BA', '180 sqm'], companyId: 1, createdBy: 1, status: 'available', soldBy: null },
-      { id: 2, title: 'Luxury Condo Unit', location: 'Lipa City', type: 'Property', price: '₱2,800,000', bedrooms: 2, bathrooms: 2, sqm: 85, image: 'Pictures/bg4.jpg', features: ['2 BR', '2 BA', '85 sqm'], companyId: 1, createdBy: 2, status: 'sold', soldBy: 2 },
-      { id: 3, title: 'Premium Lot', location: 'Tanauan', type: 'Lot', price: '₱1,200,000', bedrooms: 0, bathrooms: 0, sqm: 300, image: 'Pictures/bg4.jpg', features: ['300 sqm', 'Residential', 'Ready for Construction'], companyId: 2, createdBy: 3, status: 'available', soldBy: null }
-    ];
-    // Simulate logged-in agent (Anna Associate)
-    const loggedInAgent = agents[0];
-    const company = companies.find(c => c.id === loggedInAgent.companyId);
-    document.getElementById('agentName').textContent = loggedInAgent.name;
-    document.getElementById('agentEmail').textContent = loggedInAgent.email;
-    document.getElementById('agentLocation').textContent = loggedInAgent.location;
-    document.getElementById('agentCompany').textContent = company.name;
-    // Portfolio: Show all company properties
+    console.log('=== ASSOCIATE AGENT DASHBOARD LOADED - VERSION WITH ENHANCED DEBUGGING ===');
+    console.log('=== VERSION 2.0 - CACHE BUSTER ===');
+    
+    // Global variables
+    let properties = [];
+    let company = {};
+    let loggedInAgent = { id: <?php echo $agent['id']; ?> };
+
+    // Load company listings data
+    async function loadCompanyListings() {
+      try {
+        const response = await fetch('get_company_listings.php');
+        const data = await response.json();
+        
+        if (data.success) {
+          properties = data.properties;
+          company = { name: data.company_name };
+          renderPortfolio();
+          renderListings();
+          renderMyListings();
+        } else {
+          console.error('Error loading company listings:', data.message);
+          alert('Error loading company listings: ' + data.message);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error loading company listings');
+      }
+    }
+
+    // Load data on page load
+    loadCompanyListings();
+
+    // Portfolio: Show available properties as cards
     function renderPortfolio() {
       const list = document.getElementById('portfolioPropertyList');
       list.innerHTML = '';
-      properties.filter(p => p.companyId === company.id).forEach(p => {
+      
+      const availableProperties = properties.filter(p => p.status === 'available');
+      
+      if (availableProperties.length === 0) {
+        list.innerHTML = '<p style="text-align:center; color:#666; padding:40px;">No available properties found.</p>';
+        return;
+      }
+      
+      availableProperties.forEach(p => {
         const card = document.createElement('div');
         card.className = 'property-card';
         card.innerHTML = `
-          <div class="property-image"></div>
+          <div class="property-image" style="background-image: url('${p.main_image || 'Pictures/bg4.jpg'}');">
+            <div class="property-badge">${p.property_type}</div>
+          </div>
           <div class="property-name">${p.title}</div>
           <div class="property-meta">${p.location}</div>
-          <div class="property-price">${p.price}</div>
-          <div style="font-size:0.95rem;color:#0074d9;font-weight:500;">${company.name}</div>
-          ${p.status === 'sold' ? `<div style='color:#c00;font-weight:600;'>Sold by ${agents.find(a=>a.id===p.soldBy).name} (${company.name})</div>` : ''}
-          <button class="details-btn">Details</button>
+          <div class="property-price">₱${parseInt(p.price).toLocaleString()}</div>
+          <div class="property-actions">
+            <button class="details-btn" onclick="viewPropertyDetails(${p.id}, 'portfolio')">Details</button>
+          </div>
         `;
         list.appendChild(card);
       });
     }
-    renderPortfolio();
+
     // Listings Table: Show all company properties
     function renderListings() {
       const tbody = document.getElementById('companyListingsTableBody');
       tbody.innerHTML = '';
       let available = 0, sold = 0;
-      properties.filter(p => p.companyId === company.id).forEach(p => {
+      
+      properties.forEach(p => {
         if (p.status === 'available') available++; else sold++;
         tbody.innerHTML += `
-          <tr>
-            <td>${p.title}</td><td>${p.location}</td><td>${p.price}</td><td>${p.bedrooms}</td><td>${p.bathrooms}</td><td>${p.sqm}</td>
+          <tr data-property-id="${p.id}">
+            <td>${p.title}</td>
+            <td>${p.location}</td>
+            <td>₱${parseInt(p.price).toLocaleString()}</td>
+            <td>${p.bedrooms}</td>
+            <td>${p.bathrooms}</td>
+            <td>${p.sqm}</td>
             <td style="color:${p.status==='sold'?'#c00':'#1a7f1a'}; font-weight:500;">${p.status.charAt(0).toUpperCase()+p.status.slice(1)}</td>
-            <td>${p.status==='sold'?agents.find(a=>a.id===p.soldBy).name+' ('+company.name+')':''}</td>
-            <td><button class="glass-btn">Edit</button> <button class="glass-btn danger">Delete</button></td>
+            <td>${p.created_by_name}</td>
+            <td>${p.sold_by_name || 'N/A'}</td>
+            <td style="display: flex; gap: 8px; align-items: center;">
+              <button class="glass-btn" onclick="viewPropertyDetails(${p.id}, 'company')">Details</button>
+            </td>
           </tr>
         `;
       });
+      
       document.getElementById('statListings').textContent = available+sold;
       document.getElementById('statAvailable').textContent = available+" Available";
       document.getElementById('statSold').textContent = sold+" Sold";
     }
-    renderListings();
-    // My Listings Table: Show all statuses for the logged-in agent
+
+    // My Listings: Show agent's own properties
     function renderMyListings() {
       const tbody = document.getElementById('myListingsTableBody');
       tbody.innerHTML = '';
-      let available = 0, sold = 0;
-      properties.filter(p => p.createdBy === loggedInAgent.id).forEach(p => {
-        if (p.status === 'available') available++; else sold++;
-        tbody.innerHTML += `
-          <tr>
-            <td>${p.title}</td><td>${p.location}</td><td>${p.price}</td><td>${p.bedrooms}</td><td>${p.bathrooms}</td><td>${p.sqm}</td>
-            <td style="color:${p.status==='sold'?'#c00':'#1a7f1a'}; font-weight:500;">${p.status.charAt(0).toUpperCase()+p.status.slice(1)}</td>
-            <td><button class="glass-btn">Edit</button> <button class="glass-btn danger">Delete</button></td>
+      
+      console.log('=== RENDER MY LISTINGS DEBUG ===');
+      console.log('loggedInAgent:', loggedInAgent);
+      console.log('loggedInAgent.id:', loggedInAgent.id);
+      console.log('All properties:', properties);
+      console.log('Properties count:', properties.length);
+      
+      // Get agent's own properties
+      const myProperties = properties.filter(p => {
+        console.log(`Checking property ${p.id}: agent_id = ${p.agent_id}, loggedInAgent.id = ${loggedInAgent.id}, match = ${p.agent_id === loggedInAgent.id}`);
+        return p.agent_id === loggedInAgent.id;
+      });
+      
+      console.log('My properties after filter:', myProperties);
+      console.log('My properties count:', myProperties.length);
+      
+      if (myProperties.length === 0) {
+        console.log('No properties found for this agent');
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #666;">No properties found. Click "Add Listing" to get started!</td></tr>';
+        return;
+      }
+      
+      myProperties.forEach(p => {
+        console.log(`Rendering property ${p.id}: ${p.title}`);
+        const status_color = p.status === 'sold' ? '#c00' : '#1a7f1a';
+        const rowHTML = `
+          <tr data-property-id="${p.id}">
+            <td>${p.title}</td>
+            <td>${p.location}</td>
+            <td>₱${parseInt(p.price).toLocaleString()}</td>
+            <td>${p.bedrooms}</td>
+            <td>${p.bathrooms}</td>
+            <td>${p.sqm}</td>
+            <td style="color:${status_color}; font-weight:500;">${p.status.charAt(0).toUpperCase()+p.status.slice(1)}</td>
+            <td style="display: flex; gap: 8px; align-items: center; min-width: 200px;">
+              <button class="glass-btn" data-action="details" data-property-id="${p.id}" data-section="my">Details</button>
+              <button class="glass-btn" data-action="edit" data-property-id="${p.id}">Edit</button>
+              <button class="glass-btn danger" data-action="delete" data-property-id="${p.id}">Delete</button>
+            </td>
           </tr>
         `;
+        console.log(`Generated HTML for property ${p.id}:`, rowHTML);
+        
+        // Add the row to the table
+        tbody.innerHTML += rowHTML;
       });
-      document.getElementById('statListings').textContent = available+sold;
-      document.getElementById('statAvailable').textContent = available+" Available";
-      document.getElementById('statSold').textContent = sold+" Sold";
+      
+      // Add a small delay to ensure DOM is ready, then verify buttons
+      setTimeout(() => {
+        console.log('=== VERIFYING BUTTONS AFTER RENDER ===');
+        const allRows = tbody.querySelectorAll('tr[data-property-id]');
+        allRows.forEach(row => {
+          const propertyId = row.getAttribute('data-property-id');
+          const buttons = row.querySelectorAll('button');
+          console.log(`Row ${propertyId} has ${buttons.length} buttons:`, buttons);
+          buttons.forEach((btn, index) => {
+            console.log(`Button ${index}:`, {
+              text: btn.textContent,
+              classes: btn.className,
+              onclick: btn.getAttribute('onclick')
+            });
+          });
+        });
+      }, 100);
+      
+      console.log('=== END RENDER MY LISTINGS DEBUG ===');
     }
-    renderMyListings();
     // Tab switching logic
     const tabIds = [
       'portfolioTab',
@@ -891,43 +976,57 @@ $recent_properties = mysqli_stmt_get_result($stmt);
       }
     }
 
-    // Add form submission handler
+    // Add Listing form submission
     document.querySelector('.add-listing-form').addEventListener('submit', async function(e) {
       e.preventDefault();
       
-      // Create FormData object for file uploads
-      const formData = new FormData();
+      // Get form data
+      const formData = {
+        title: document.getElementById('addName').value,
+        description: document.getElementById('addDesc').value,
+        location: document.getElementById('addLocation').value,
+        property_type: document.getElementById('addType').value,
+        price: document.getElementById('addPrice').value,
+        bedrooms: document.getElementById('addBedrooms').value,
+        bathrooms: document.getElementById('addBathrooms').value,
+        sqm: document.getElementById('addLotSize').value,
+        features: `${document.getElementById('addBedrooms').value} BR, ${document.getElementById('addBathrooms').value} BA, ${document.getElementById('addLotSize').value} sqm`
+      };
       
-      // Add text fields
-      formData.append('title', document.getElementById('addName').value);
-      formData.append('description', document.getElementById('addDesc').value);
-      formData.append('location', document.getElementById('addLocation').value);
-      formData.append('property_type', document.getElementById('addType').value);
-      formData.append('price', document.getElementById('addPrice').value);
-      formData.append('bedrooms', document.getElementById('addBedrooms').value);
-      formData.append('bathrooms', document.getElementById('addBathrooms').value);
-      formData.append('sqm', document.getElementById('addLotSize').value);
-      formData.append('features', `${document.getElementById('addBedrooms').value} BR, ${document.getElementById('addBathrooms').value} BA, ${document.getElementById('addLotSize').value} sqm`);
+      // Validate required fields
+      const requiredFields = ['title', 'description', 'location', 'property_type', 'price', 'bedrooms', 'bathrooms', 'sqm'];
+      const missingFields = requiredFields.filter(field => !formData[field]);
       
-      // Add files
-      const photoFiles = document.getElementById('addPhoto').files;
-      const docFiles = document.getElementById('addDoc').files;
-      
-      for (let i = 0; i < photoFiles.length; i++) {
-        formData.append('images', photoFiles[i]);
+      if (missingFields.length > 0) {
+        alert('Please fill in all required fields: ' + missingFields.join(', '));
+        return;
       }
       
-      for (let i = 0; i < docFiles.length; i++) {
-        formData.append('documents', docFiles[i]);
-      }
-
+      // Show loading state
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = 'Adding...';
+      submitBtn.disabled = true;
+      
       try {
-        const response = await fetch('http://127.0.0.1:3002/api/properties', {
+        // Create FormData object
+        const formDataObj = new FormData();
+        
+        // Add text fields
+        formDataObj.append('title', formData.title);
+        formDataObj.append('description', formData.description);
+        formDataObj.append('location', formData.location);
+        formDataObj.append('property_type', formData.property_type);
+        formDataObj.append('price', formData.price);
+        formDataObj.append('bedrooms', formData.bedrooms);
+        formDataObj.append('bathrooms', formData.bathrooms);
+        formDataObj.append('sqm', formData.sqm);
+        formDataObj.append('features', formData.features);
+        
+        // Send to backend API
+        const response = await fetch('add_property.php', {
           method: 'POST',
-          headers: {
-            'Authorization': 'Bearer ' + localStorage.getItem('agentToken')
-          },
-          body: formData
+          body: formDataObj
         });
         
         if (!response.ok) {
@@ -936,41 +1035,584 @@ $recent_properties = mysqli_stmt_get_result($stmt);
         
         const savedProperty = await response.json();
         
-        // Update local state
-        properties.push(savedProperty);
-        renderPortfolio();
-        renderListings();
-        renderMyListings();
+        if (savedProperty.success) {
+          // Show success message
+          submitBtn.textContent = 'Success!';
+          submitBtn.style.background = '#1a7f1a';
+          submitBtn.style.color = '#fff';
+          
+          // Reset form
+          e.target.reset();
+          
+          setTimeout(() => {
+            // Refresh the page to show the new property
+            location.reload();
+          }, 1500);
+        } else {
+          throw new Error(savedProperty.message || 'Failed to add property');
+        }
         
-        // Reset form
-        this.reset();
-        document.getElementById('photoFileName').textContent = 'Property Images (No file chosen)';
-        document.getElementById('docFileName').textContent = 'Property Documents (No file chosen)';
-        
-        alert('Listing added successfully!');
       } catch (err) {
-        console.error('Error submitting form:', err);
+        console.error('Error adding listing:', err);
         alert('Error adding listing: ' + err.message);
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
       }
     });
 
-    // File input handlers
-    document.getElementById('addPhoto').addEventListener('change', function() {
-      const fileName = this.files.length > 0 ? `${this.files.length} file(s) selected` : 'Property Images (No file chosen)';
-      document.getElementById('photoFileName').textContent = fileName;
+
+
+    // Enhanced Edit Listing Function
+    function editListing(propertyId) {
+      fetch(`get_property_details.php?id=${propertyId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const property = data.property;
+            const modalContent = `
+              <div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                  <h2 style="margin: 0; color: #222;">Edit Listing - ${property.title}</h2>
+                  <button onclick="closeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+                </div>
+                
+                <form id="editPropertyForm" style="display: flex; flex-direction: column; gap: 15px;">
+                  <input type="hidden" name="property_id" value="${property.id}">
+                  
+                  <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Property Name</label>
+                    <input type="text" name="title" value="${property.title}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                  </div>
+                  
+                  <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Property Type</label>
+                    <select name="property_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                      <option value="Property" ${property.property_type === 'Property' ? 'selected' : ''}>Property</option>
+                      <option value="Lot" ${property.property_type === 'Lot' ? 'selected' : ''}>Lot</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Location</label>
+                    <select name="location" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                      <option value="Agoncillo" ${property.location === 'Agoncillo' ? 'selected' : ''}>Agoncillo</option>
+                      <option value="Alitagtag" ${property.location === 'Alitagtag' ? 'selected' : ''}>Alitagtag</option>
+                      <option value="Balayan" ${property.location === 'Balayan' ? 'selected' : ''}>Balayan</option>
+                      <option value="Balete" ${property.location === 'Balete' ? 'selected' : ''}>Balete</option>
+                      <option value="Batangas City" ${property.location === 'Batangas City' ? 'selected' : ''}>Batangas City</option>
+                      <option value="Bauan" ${property.location === 'Bauan' ? 'selected' : ''}>Bauan</option>
+                      <option value="Calaca" ${property.location === 'Calaca' ? 'selected' : ''}>Calaca</option>
+                      <option value="Calatagan" ${property.location === 'Calatagan' ? 'selected' : ''}>Calatagan</option>
+                      <option value="Cuenca" ${property.location === 'Cuenca' ? 'selected' : ''}>Cuenca</option>
+                      <option value="Ibaan" ${property.location === 'Ibaan' ? 'selected' : ''}>Ibaan</option>
+                      <option value="Laurel" ${property.location === 'Laurel' ? 'selected' : ''}>Laurel</option>
+                      <option value="Lemery" ${property.location === 'Lemery' ? 'selected' : ''}>Lemery</option>
+                      <option value="Lian" ${property.location === 'Lian' ? 'selected' : ''}>Lian</option>
+                      <option value="Lipa City" ${property.location === 'Lipa City' ? 'selected' : ''}>Lipa City</option>
+                      <option value="Lobo" ${property.location === 'Lobo' ? 'selected' : ''}>Lobo</option>
+                      <option value="Mabini" ${property.location === 'Mabini' ? 'selected' : ''}>Mabini</option>
+                      <option value="Malvar" ${property.location === 'Malvar' ? 'selected' : ''}>Malvar</option>
+                      <option value="Mataasnakahoy" ${property.location === 'Mataasnakahoy' ? 'selected' : ''}>Mataasnakahoy</option>
+                      <option value="Nasugbu" ${property.location === 'Nasugbu' ? 'selected' : ''}>Nasugbu</option>
+                      <option value="Padre Garcia" ${property.location === 'Padre Garcia' ? 'selected' : ''}>Padre Garcia</option>
+                      <option value="Rosario" ${property.location === 'Rosario' ? 'selected' : ''}>Rosario</option>
+                      <option value="San Jose" ${property.location === 'San Jose' ? 'selected' : ''}>San Jose</option>
+                      <option value="San Juan" ${property.location === 'San Juan' ? 'selected' : ''}>San Juan</option>
+                      <option value="San Luis" ${property.location === 'San Luis' ? 'selected' : ''}>San Luis</option>
+                      <option value="San Nicolas" ${property.location === 'San Nicolas' ? 'selected' : ''}>San Nicolas</option>
+                      <option value="San Pascual" ${property.location === 'San Pascual' ? 'selected' : ''}>San Pascual</option>
+                      <option value="Santa Teresita" ${property.location === 'Santa Teresita' ? 'selected' : ''}>Santa Teresita</option>
+                      <option value="Santo Tomas" ${property.location === 'Santo Tomas' ? 'selected' : ''}>Santo Tomas</option>
+                      <option value="Taal" ${property.location === 'Taal' ? 'selected' : ''}>Taal</option>
+                      <option value="Talisay" ${property.location === 'Talisay' ? 'selected' : ''}>Talisay</option>
+                      <option value="Tanauan City" ${property.location === 'Tanauan City' ? 'selected' : ''}>Tanauan City</option>
+                      <option value="Taysan" ${property.location === 'Taysan' ? 'selected' : ''}>Taysan</option>
+                      <option value="Tingloy" ${property.location === 'Tingloy' ? 'selected' : ''}>Tingloy</option>
+                      <option value="Tuy" ${property.location === 'Tuy' ? 'selected' : ''}>Tuy</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Price</label>
+                    <input type="number" name="price" value="${property.price}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                  </div>
+                  
+                  <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Status</label>
+                    <select name="status" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                      <option value="available" ${property.status === 'available' ? 'selected' : ''}>Available</option>
+                      <option value="sold" ${property.status === 'sold' ? 'selected' : ''}>Sold</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Bedrooms</label>
+                    <select name="bedrooms" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                      <option value="1" ${property.bedrooms === '1' ? 'selected' : ''}>1</option>
+                      <option value="2" ${property.bedrooms === '2' ? 'selected' : ''}>2</option>
+                      <option value="3" ${property.bedrooms === '3' ? 'selected' : ''}>3</option>
+                      <option value="4+" ${property.bedrooms === '4+' ? 'selected' : ''}>4+</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Bathrooms</label>
+                    <select name="bathrooms" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                      <option value="1" ${property.bathrooms === '1' ? 'selected' : ''}>1</option>
+                      <option value="2" ${property.bathrooms === '2' ? 'selected' : ''}>2</option>
+                      <option value="3" ${property.bathrooms === '3' ? 'selected' : ''}>3</option>
+                      <option value="4+" ${property.bathrooms === '4+' ? 'selected' : ''}>4+</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Size (sqm)</label>
+                    <input type="number" name="sqm" value="${property.sqm}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                  </div>
+                  
+                  <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Description</label>
+                    <textarea name="description" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; min-height: 100px; resize: vertical;">${property.description}</textarea>
+                  </div>
+                  
+                  <div style="margin-top: 20px;">
+                    <h4 style="margin-bottom: 10px; color: #333;">Current Images (${property.images ? property.images.length : 0})</h4>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                      <p style="margin: 0; color: #666; font-style: italic;">Image and document editing has been simplified. Use 'Add More Images' from the property details to add new images.</p>
+                    </div>
+                  </div>
+                  
+                  <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" style="background: #1a7f1a; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; flex: 1;">Save Changes</button>
+                    <button type="button" onclick="closeModal()" style="background: #666; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; flex: 1;">Cancel</button>
+                  </div>
+                </form>
+              </div>
+            `;
+            showModal(modalContent);
+            
+            // Handle form submission
+            document.getElementById('editPropertyForm').addEventListener('submit', function(e) {
+              e.preventDefault();
+              
+              const formData = new FormData(e.target);
+              
+              // Show loading state
+              const submitBtn = e.target.querySelector('button[type="submit"]');
+              const originalText = submitBtn.textContent;
+              submitBtn.textContent = 'Saving...';
+              submitBtn.disabled = true;
+              
+              fetch('update_property_simple.php', {
+                method: 'POST',
+                body: formData
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                  closeModal();
+                  showNotification('Property updated successfully!', 'success');
+                  // Reload the page to refresh data
+                  setTimeout(() => {
+                    location.reload();
+                  }, 1000);
+                } else {
+                  throw new Error(data.message || 'Failed to update property');
+                }
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating property: ' + error.message);
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+              });
+            });
+          } else {
+            alert('Error loading property details: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error loading property details');
+        });
+    }
+
+    // Property Details Modal
+    function viewPropertyDetails(propertyId, section = 'default') {
+      fetch(`get_property_details.php?id=${propertyId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const property = data.property;
+            
+            // Determine if this is a view-only modal (Company Listings section)
+            const isViewOnly = section === 'company';
+            
+            const modalContent = `
+              <div style="background: white; padding: 30px; border-radius: 15px; max-width: 900px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                  <h2 style="margin: 0; color: #222;">Property Post - ${property.title}</h2>
+                  <button onclick="closeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                  <!-- Left Column: Property Details -->
+                  <div>
+                    <h3 style="color: #333; margin-bottom: 15px; font-size: 18px;">Property Details</h3>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                      <p style="margin: 8px 0;"><strong>Property Name:</strong> ${property.title}</p>
+                      <p style="margin: 8px 0;"><strong>Property Type:</strong> ${property.property_type}</p>
+                      <p style="margin: 8px 0;"><strong>Price:</strong> ₱${parseInt(property.price).toLocaleString()}</p>
+                      <p style="margin: 8px 0;"><strong>Date Posted:</strong> ${new Date(property.created_at).toLocaleDateString()}</p>
+                      <p style="margin: 8px 0;"><strong>Location:</strong> ${property.location}</p>
+                      <p style="margin: 8px 0;"><strong>Bedrooms:</strong> ${property.bedrooms}</p>
+                      <p style="margin: 8px 0;"><strong>Bathrooms:</strong> ${property.bathrooms}</p>
+                      <p style="margin: 8px 0;"><strong>Size:</strong> ${property.sqm} sqm</p>
+                      <p style="margin: 8px 0;"><strong>Status:</strong> <span style="color: ${property.status === 'sold' ? '#c00' : '#1a7f1a'}; font-weight: 500;">${property.status.toUpperCase()}</span></p>
+                      ${property.status === 'sold' && property.sold_by_name ? `<p style="margin: 8px 0;"><strong>Sold By:</strong> ${property.sold_by_name}</p>` : ''}
+                    </div>
+                  </div>
+                  
+                  <!-- Right Column: Property Images -->
+                  <div>
+                    <h3 style="color: #333; margin-bottom: 15px; font-size: 18px;">Property Images</h3>
+                    ${property.images && property.images.length > 0 ? `
+                      <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; min-height: 300px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+                          ${property.images.map(img => `
+                            <div style="position: relative;">
+                              <img src="${img.image_path}" alt="Property Image" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; cursor: pointer;" onclick="openImageModal('${img.image_path}')">
+                              ${!isViewOnly ? `<button onclick="deleteImageFromDetails(${img.id}, ${property.id})" style="position: absolute; top: 5px; right: 5px; background: #c00; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; z-index: 10;">×</button>` : ''}
+                            </div>
+                          `).join('')}
+                        </div>
+                        ${!isViewOnly ? `
+                          <div style="margin-top: 15px; text-align: center;">
+                            <button onclick="addMoreImages(${property.id})" class="glass-btn" style="background: #0074d9; color: white;">
+                              <i class="fa-solid fa-plus"></i> Add More Images
+                            </button>
+                          </div>
+                        ` : ''}
+                      </div>
+                    ` : `
+                      <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; min-height: 300px; display: flex; align-items: center; justify-content: center; color: #666;">
+                        <div style="text-align: center;">
+                          <i class="fa-solid fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 10px; color: #ffc107;"></i>
+                          <p><strong>Images Missing</strong></p>
+                          <p style="font-size: 0.9rem; margin-bottom: 15px;">This property was created without images.${!isViewOnly ? ' You can add images now.' : ''}</p>
+                          ${!isViewOnly ? `
+                            <button onclick="addMoreImages(${property.id})" class="glass-btn" style="background: #0074d9; color: white;">
+                              <i class="fa-solid fa-plus"></i> Add Images Now
+                            </button>
+                          ` : ''}
+                        </div>
+                      </div>
+                    `}
+                  </div>
+                </div>
+                
+                <!-- Property Description -->
+                <div style="margin-top: 30px;">
+                  <h3 style="color: #333; margin-bottom: 15px; font-size: 18px;">Property Description</h3>
+                  <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                    <p style="line-height: 1.6; margin: 0;">${property.description}</p>
+                  </div>
+                </div>
+                
+                ${property.documents && property.documents.length > 0 ? `
+                  <div style="margin-top: 20px;">
+                    <h3 style="color: #333; margin-bottom: 15px; font-size: 18px;">Property Documents (${property.documents.length})</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                      ${property.documents.map(doc => `
+                        <a href="${doc.document_path}" target="_blank" style="display: inline-block; padding: 8px 12px; background: #f0f0f0; border-radius: 6px; text-decoration: none; color: #333;">
+                          <i class="fa-solid fa-file"></i> View Document
+                        </a>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+                
+                <div style="text-align: center; margin-top: 30px;">
+                  ${!isViewOnly && property.status === 'available' ? 
+                    `<button onclick="markAsSold(${property.id})" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 8px; margin-right: 10px; cursor: pointer;">
+                       <i class="fa-solid fa-check"></i> Mark as Sold
+                     </button>` : ''
+                  }
+                  ${!isViewOnly && property.status === 'sold' ? 
+                    `<button onclick="markAsSold(${property.id})" style="background: #ffc107; color: white; border: none; padding: 12px 24px; border-radius: 8px; margin-right: 10px; cursor: pointer;">
+                       <i class="fa-solid fa-undo"></i> Revert to Available
+                     </button>` : ''
+                  }
+                  ${!isViewOnly ? 
+                    `<button onclick="editListing(${property.id})" class="glass-btn" style="margin-right: 10px;">Edit Property</button>` : ''
+                  }
+                  <button onclick="closeModal()" style="background: #666; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer;">Close</button>
+                </div>
+              </div>
+            `;
+            showModal(modalContent);
+          } else {
+            alert('Error loading property details: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error loading property details');
+        });
+    }
+
+    // Modal functions
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#1a7f1a' : type === 'error' ? '#c00' : '#0074d9'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        font-size: 14px;
+        max-width: 300px;
+        word-wrap: break-word;
+      `;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        notification.style.transition = 'all 0.3s ease';
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 300);
+      }, 3000);
+    }
+
+    function showModal(content) {
+      const modal = document.createElement('div');
+      modal.id = 'modal';
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 20px;
+        box-sizing: border-box;
+      `;
+      modal.innerHTML = content;
+      document.body.appendChild(modal);
+      
+      // Close modal when clicking outside
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('modal');
+      if (modal) {
+        modal.remove();
+      }
+    }
+
+    function openImageModal(imagePath) {
+      const modalContent = `
+        <div style="background: white; padding: 20px; border-radius: 15px; max-width: 80%; max-height: 80%; text-align: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #222;">Property Image</h3>
+            <button onclick="closeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+          </div>
+          <img src="${imagePath}" alt="Property Image" style="max-width: 100%; max-height: 60vh; object-fit: contain; border-radius: 8px;">
+        </div>
+      `;
+      showModal(modalContent);
+    }
+
+    // Mark property as sold
+    function markAsSold(propertyId) {
+      // First, get the current property status
+      fetch(`get_property_details.php?id=${propertyId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const property = data.property;
+            const isCurrentlySold = property.status === 'sold';
+            const action = isCurrentlySold ? 'revert to available' : 'mark as sold';
+            
+            if (confirm(`Are you sure you want to ${action} this property?`)) {
+              const formData = new FormData();
+              formData.append('property_id', propertyId);
+              formData.append('action', isCurrentlySold ? 'revert' : 'mark_sold');
+              
+              fetch('mark_property_sold.php', {
+                method: 'POST',
+                body: formData
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                  showNotification(data.message, 'success');
+                  // Reload the page to refresh data
+                  setTimeout(() => {
+                    location.reload();
+                  }, 1000);
+                } else {
+                  throw new Error(data.message || 'Failed to update property status');
+                }
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating property status: ' + error.message);
+              });
+            }
+          } else {
+            alert('Error loading property details: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error loading property details');
+        });
+    }
+
+    // Delete listing function - ROBUST VERSION
+    async function deleteListing(propertyId) {
+      console.log('=== DELETE LISTING CALLED ===');
+      console.log('Property ID:', propertyId);
+      
+      try {
+        const response = await fetch('delete_property.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ property_id: propertyId })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Reload the listings silently (no alert)
+          loadCompanyListings();
+        } else {
+          console.error('Error deleting listing:', result.message);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+    
+    // Add event delegation for delete buttons
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('=== SETTING UP EVENT DELEGATION ===');
+      
+      // Use event delegation for delete buttons
+      document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('danger') && e.target.textContent === 'Delete') {
+          e.preventDefault();
+          const row = e.target.closest('tr[data-property-id]');
+          if (row) {
+            const propertyId = row.getAttribute('data-property-id');
+            console.log('Delete button clicked via event delegation for property:', propertyId);
+            deleteListing(propertyId);
+          }
+        }
+      });
     });
 
-    document.getElementById('addDoc').addEventListener('change', function() {
-      const fileName = this.files.length > 0 ? `${this.files.length} file(s) selected` : 'Property Documents (No file chosen)';
-      document.getElementById('docFileName').textContent = fileName;
-    });
+    function deleteImageFromDetails(imageId, propertyId) {
+      const formData = new FormData();
+      formData.append('image_id', imageId);
+      formData.append('property_id', propertyId);
+      
+      fetch('delete_image.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Reload the page to refresh data silently
+          setTimeout(() => {
+            location.reload();
+          }, 1000);
+        } else {
+          throw new Error(data.message || 'Failed to delete image');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
 
-    // Cancel button handler
-    document.querySelector('.add-listing-form .glass-btn.danger').addEventListener('click', function() {
-      document.querySelector('.add-listing-form').reset();
-      document.getElementById('photoFileName').textContent = 'Property Images (No file chosen)';
-      document.getElementById('docFileName').textContent = 'Property Documents (No file chosen)';
-    });
+    function addMoreImages(propertyId) {
+      const modalContent = `
+        <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #222;">Add More Images</h2>
+            <button onclick="closeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+          </div>
+          <form id="addImagesForm" enctype="multipart/form-data">
+            <input type="hidden" name="property_id" value="${propertyId}">
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; margin-bottom: 10px; font-weight: 500;">Select Images</label>
+              <input type="file" name="new_images[]" multiple accept="image/*" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+              <button type="submit" style="background: #0074d9; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Upload Images</button>
+              <button type="button" onclick="closeModal()" style="background: #666; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Cancel</button>
+            </div>
+          </form>
+        </div>
+      `;
+      showModal(modalContent);
+      
+      // Handle form submission
+      document.getElementById('addImagesForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Uploading...';
+        submitBtn.disabled = true;
+        
+        fetch('add_images_to_property.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            closeModal();
+            showNotification('Images uploaded successfully!', 'success');
+            // Reload the page to refresh data
+            setTimeout(() => {
+              location.reload();
+            }, 1000);
+          } else {
+            throw new Error(data.message || 'Failed to upload images');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error uploading images: ' + error.message);
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+        });
+      });
+    }
   </script>
 </body>
 </html> 

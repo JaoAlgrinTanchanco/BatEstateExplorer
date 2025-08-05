@@ -4,17 +4,15 @@ require_once 'config/database.php';
 
 echo "<h2>Check Agent Properties</h2>";
 
-// Check if user is logged in and is a direct agent
+// Check if user is logged in and is a direct agent or associate agent
 $is_logged_in = is_logged_in();
 if (!$is_logged_in) {
-    echo "Not logged in";
-    exit;
+    throw new Exception('User not logged in');
 }
 
 $current_user = get_logged_in_user($conn);
-if (!$current_user || $current_user['user_type'] !== 'direct_agent') {
-    echo "Not a direct agent";
-    exit;
+if (!$current_user || ($current_user['user_type'] !== 'direct_agent' && $current_user['user_type'] !== 'associate_agent')) {
+    throw new Exception('Unauthorized access');
 }
 
 echo "<h3>User Info:</h3>";

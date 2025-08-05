@@ -8,29 +8,27 @@ header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Check if user is logged in and is a direct agent
+        // Check if user is logged in and is a direct agent or associate agent
         $is_logged_in = is_logged_in();
         if (!$is_logged_in) {
             throw new Exception('User not logged in');
         }
 
         $current_user = get_logged_in_user($conn);
-        if (!$current_user || $current_user['user_type'] !== 'direct_agent') {
+        if (!$current_user || ($current_user['user_type'] !== 'direct_agent' && $current_user['user_type'] !== 'associate_agent')) {
             throw new Exception('Unauthorized access');
         }
 
-        // Get JSON input
-        $input = json_decode(file_get_contents('php://input'), true);
+        // Get input parameters
+        $image_id = isset($_POST['image_id']) ? (int)$_POST['image_id'] : 0;
+        $property_id = isset($_POST['property_id']) ? (int)$_POST['property_id'] : 0;
         
-        if (!$input || !isset($input['image_id']) || !isset($input['property_id'])) {
+        if (!$image_id || !$property_id) {
             throw new Exception('Missing required parameters');
         }
 
-        $image_id = intval($input['image_id']);
-        $property_id = intval($input['property_id']);
-
-        // Verify the property belongs to this agent
-        $agent_query = "SELECT a.id FROM agents a WHERE a.user_id = ?";
+        // Verify the property belongs to this agent or their company
+        $agent_query = "SELECT a.id, a.company_id FROM agents a WHERE a.user_id = ?";
         $stmt = mysqli_prepare($conn, $agent_query);
         mysqli_stmt_bind_param($stmt, "i", $current_user['id']);
         mysqli_stmt_execute($stmt);
@@ -43,10 +41,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $agent_id = $agent['id'];
 
-        // Check if property belongs to this agent
-        $property_check = "SELECT id, title FROM properties WHERE id = ? AND agent_id = ?";
-        $stmt = mysqli_prepare($conn, $property_check);
-        mysqli_stmt_bind_param($stmt, "ii", $property_id, $agent_id);
+        // Check if property belongs to this agent or their company
+        if ($current_user['user_type'] === 'associate_agent') {
+            // Associate agents can delete images from properties in their company
+            $property_check = "SELECT p.id, p.title FROM properties p 
+                              LEFT JOIN agents a ON p.agent_id = a.id 
+                              WHERE p.id = ? AND a.company_id = ?";
+            $stmt = mysqli_prepare($conn, $property_check);
+            mysqli_stmt_bind_param($stmt, "ii", $property_id, $agent['company_id']);
+        } else {
+            // Direct agents can only delete images from their own properties
+            $property_check = "SELECT id, title FROM properties WHERE id = ? AND agent_id = ?";
+            $stmt = mysqli_prepare($conn, $property_check);
+            mysqli_stmt_bind_param($stmt, "ii", $property_id, $agent_id);
+        }
+        
         mysqli_stmt_execute($stmt);
         $property_result = mysqli_stmt_get_result($stmt);
 

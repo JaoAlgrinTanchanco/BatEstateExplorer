@@ -8,14 +8,14 @@ header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Check if user is logged in and is a direct agent
+        // Check if user is logged in and is a direct agent or associate agent
         $is_logged_in = is_logged_in();
         if (!$is_logged_in) {
             throw new Exception('User not logged in');
         }
 
         $current_user = get_logged_in_user($conn);
-        if (!$current_user || $current_user['user_type'] !== 'direct_agent') {
+        if (!$current_user || ($current_user['user_type'] !== 'direct_agent' && $current_user['user_type'] !== 'associate_agent')) {
             throw new Exception('Unauthorized access');
         }
 
@@ -25,8 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception('Property ID is required');
         }
         
-        // Verify the property belongs to this agent
-        $agent_query = "SELECT a.id FROM agents a WHERE a.user_id = ?";
+        // Verify the property belongs to this agent or their company
+        $agent_query = "SELECT a.id, a.company_id FROM agents a WHERE a.user_id = ?";
         $stmt = mysqli_prepare($conn, $agent_query);
         mysqli_stmt_bind_param($stmt, "i", $current_user['id']);
         mysqli_stmt_execute($stmt);
@@ -39,10 +39,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $agent_id = $agent['id'];
         
-        // Check if property belongs to this agent
-        $property_check = "SELECT id, title FROM properties WHERE id = ? AND agent_id = ?";
-        $stmt = mysqli_prepare($conn, $property_check);
-        mysqli_stmt_bind_param($stmt, "ii", $property_id, $agent_id);
+        // Check if property belongs to this agent or their company
+        if ($current_user['user_type'] === 'associate_agent') {
+            // Associate agents can edit properties from their company
+            $property_check = "SELECT p.id, p.title FROM properties p 
+                              LEFT JOIN agents a ON p.agent_id = a.id 
+                              WHERE p.id = ? AND a.company_id = ?";
+            $stmt = mysqli_prepare($conn, $property_check);
+            mysqli_stmt_bind_param($stmt, "ii", $property_id, $agent['company_id']);
+        } else {
+            // Direct agents can only edit their own properties
+            $property_check = "SELECT id, title FROM properties WHERE id = ? AND agent_id = ?";
+            $stmt = mysqli_prepare($conn, $property_check);
+            mysqli_stmt_bind_param($stmt, "ii", $property_id, $agent_id);
+        }
+        
         mysqli_stmt_execute($stmt);
         $property_result = mysqli_stmt_get_result($stmt);
         
@@ -86,18 +97,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = mysqli_real_escape_string($conn, $_POST['status']);
         
         // Use a simple approach with proper escaping to avoid parameter binding issues
-        $query = "UPDATE properties SET 
-                  title = '$title', 
-                  description = '$description', 
-                  property_type = '$property_type', 
-                  location = '$location', 
-                  price = $price, 
-                  bedrooms = $bedrooms, 
-                  bathrooms = $bathrooms, 
-                  sqm = $sqm, 
-                  status = '$status', 
-                  updated_at = NOW() 
-                  WHERE id = $property_id AND agent_id = $agent_id";
+        if ($current_user['user_type'] === 'associate_agent') {
+            // Associate agents can update properties from their company
+            $query = "UPDATE properties p 
+                      LEFT JOIN agents a ON p.agent_id = a.id 
+                      SET p.title = '$title', 
+                          p.description = '$description', 
+                          p.property_type = '$property_type', 
+                          p.location = '$location', 
+                          p.price = $price, 
+                          p.bedrooms = $bedrooms, 
+                          p.bathrooms = $bathrooms, 
+                          p.sqm = $sqm, 
+                          p.status = '$status', 
+                          p.updated_at = NOW() 
+                      WHERE p.id = $property_id AND a.company_id = " . $agent['company_id'];
+        } else {
+            // Direct agents can only update their own properties
+            $query = "UPDATE properties SET 
+                      title = '$title', 
+                      description = '$description', 
+                      property_type = '$property_type', 
+                      location = '$location', 
+                      price = $price, 
+                      bedrooms = $bedrooms, 
+                      bathrooms = $bathrooms, 
+                      sqm = $sqm, 
+                      status = '$status', 
+                      updated_at = NOW() 
+                      WHERE id = $property_id AND agent_id = $agent_id";
+        }
         
         if (!mysqli_query($conn, $query)) {
             throw new Exception('Failed to update property: ' . mysqli_error($conn));

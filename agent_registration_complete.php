@@ -252,10 +252,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Store all data in applications table (no user account created yet)
             $query = "INSERT INTO applications (user_id, first_name, last_name, email, password_hash, phone, address, education, school, course, graduation_year, certifications, additional_docs_path, agent_type, company_id, broker_id, license_number, experience_years, specialization, bio, status, admin_notes, training, broker_license_path, prc_license_path, resume_path, valid_id_path) 
-                     VALUES (NULL, '$first_name', '$last_name', '$email', '$password_hash', '$phone', '$address', '$education', '$school', '$course', '$graduation_year', '$certifications', '$additional_docs_path', '$user_type', $company_id, '$broker_id', '$prc_number', $experience_years, '$specializations', '$bio', 'pending', NULL, '$training', '$broker_license_path', '$prc_license_path', '$resume_path', '$valid_id_path')";
+                     VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NULL, ?, ?, ?, ?, ?)";
             
-            if (!mysqli_query($conn, $query)) {
-                throw new Exception('Failed to create application: ' . mysqli_error($conn));
+            $stmt = mysqli_prepare($conn, $query);
+            if (!$stmt) {
+                throw new Exception('Failed to prepare application insert: ' . mysqli_error($conn));
+            }
+            
+            mysqli_stmt_bind_param($stmt, "ssssssssssssssssssssssss", 
+                $first_name, $last_name, $email, $password_hash, $phone, $address, 
+                $education, $school, $course, $graduation_year, $certifications, 
+                $additional_docs_path, $user_type, $company_id, $broker_id, 
+                $prc_number, $experience_years, $specializations, $bio, 
+                $training, $broker_license_path, $prc_license_path, $resume_path, $valid_id_path
+            );
+            
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception('Failed to create application: ' . mysqli_stmt_error($stmt));
             }
             
             // Commit transaction

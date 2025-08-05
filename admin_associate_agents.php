@@ -227,10 +227,186 @@ while ($row = mysqli_fetch_assoc($result)) {
     </main>
   </div>
 
+  <!-- Agent Details Modal -->
+  <div id="agentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Associate Agent Details</h2>
+        <span class="close" onclick="closeModal()">&times;</span>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Content will be loaded here -->
+      </div>
+      <div class="modal-footer">
+        <button class="cancel-btn" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
+    // View agent details
     function viewAgent(agentId) {
-      alert('View details for agent ID: ' + agentId);
-      // TODO: Implement detailed view modal
+      // Fetch agent details via AJAX
+      fetch('get_agent_details.php?id=' + agentId)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const agent = data.agent;
+            const modalBody = document.getElementById('modalBody');
+            
+            modalBody.innerHTML = `
+              <div class="detail-section">
+                <h3>Personal Information</h3>
+                <div class="detail-row">
+                  <div class="detail-label">Full Name:</div>
+                  <div class="detail-value">${agent.first_name} ${agent.last_name}</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Email:</div>
+                  <div class="detail-value">${agent.email}</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Phone:</div>
+                  <div class="detail-value">${agent.phone || 'N/A'}</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Address:</div>
+                  <div class="detail-value">${agent.address || 'N/A'}</div>
+                </div>
+              </div>
+              
+              <div class="detail-section">
+                <h3>Agent Information</h3>
+                <div class="detail-row">
+                  <div class="detail-label">Agent Type:</div>
+                  <div class="detail-value">${(agent.user_type || 'associate_agent').replace('_', ' ').toUpperCase()}</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Broker ID:</div>
+                  <div class="detail-value">${agent.broker_id || 'N/A'}</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">License Number:</div>
+                  <div class="detail-value">${agent.license_number || 'N/A'}</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Experience:</div>
+                  <div class="detail-value">${agent.experience_years || 'N/A'} years</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Specialization:</div>
+                  <div class="detail-value">${agent.specialization || 'N/A'}</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Company:</div>
+                  <div class="detail-value">${agent.company_name || 'N/A'}</div>
+                </div>
+              </div>
+              
+              <div class="detail-section">
+                <h3>Education & Qualifications</h3>
+                <div class="detail-row">
+                  <div class="detail-label">Education:</div>
+                  <div class="detail-value">${agent.education || 'N/A'}</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">School:</div>
+                  <div class="detail-value">${agent.school || 'N/A'}</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Course:</div>
+                  <div class="detail-value">${agent.course || 'N/A'}</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Graduation Year:</div>
+                  <div class="detail-value">${agent.graduation_year || 'N/A'}</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Certifications:</div>
+                  <div class="detail-value">${agent.certifications || 'N/A'}</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Training:</div>
+                  <div class="detail-value">${agent.training || 'N/A'}</div>
+                </div>
+              </div>
+              
+              <div class="detail-section">
+                <h3>Uploaded Documents</h3>
+                ${agent.broker_license_path ? 
+                  `<div class="detail-row">
+                    <div class="detail-label">Broker License:</div>
+                    <div class="detail-value"><a href="${agent.broker_license_path}" target="_blank" class="document-link">View Document</a></div>
+                  </div>` : ''
+                }
+                ${agent.prc_license_path ? 
+                  `<div class="detail-row">
+                    <div class="detail-label">PRC License:</div>
+                    <div class="detail-value"><a href="${agent.prc_license_path}" target="_blank" class="document-link">View Document</a></div>
+                  </div>` : ''
+                }
+                ${agent.resume_path ? 
+                  `<div class="detail-row">
+                    <div class="detail-label">Resume/CV:</div>
+                    <div class="detail-value"><a href="${agent.resume_path}" target="_blank" class="document-link">View Document</a></div>
+                  </div>` : ''
+                }
+                ${agent.valid_id_path ? 
+                  `<div class="detail-row">
+                    <div class="detail-label">Valid ID:</div>
+                    <div class="detail-value"><a href="${agent.valid_id_path}" target="_blank" class="document-link">View Document</a></div>
+                  </div>` : ''
+                }
+                ${agent.additional_docs_path ? 
+                  `<div class="detail-row">
+                    <div class="detail-label">Additional Documents:</div>
+                    <div class="detail-value">
+                      ${agent.additional_docs_path.split(',').map(doc => 
+                        `<a href="${doc.trim()}" target="_blank" class="document-link">View Document</a>`
+                      ).join('<br>')}
+                    </div>
+                  </div>` : ''
+                }
+                ${!agent.broker_license_path && !agent.prc_license_path && !agent.resume_path && !agent.valid_id_path && !agent.additional_docs_path ? 
+                  '<div class="detail-row"><div class="detail-value">No documents uploaded</div></div>' : ''
+                }
+              </div>
+              
+              <div class="detail-section">
+                <h3>Account Information</h3>
+                <div class="detail-row">
+                  <div class="detail-label">Account Created:</div>
+                  <div class="detail-value">${new Date(agent.created_at).toLocaleDateString()}</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Status:</div>
+                  <div class="detail-value">${(agent.status || 'active').toUpperCase()}</div>
+                </div>
+              </div>
+            `;
+            
+            document.getElementById('agentModal').style.display = 'block';
+          } else {
+            alert('Error loading agent details');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error loading agent details');
+        });
+    }
+    
+    // Close modal
+    function closeModal() {
+      document.getElementById('agentModal').style.display = 'none';
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('agentModal');
+      if (event.target === modal) {
+        closeModal();
+      }
     }
 
     function removeAgent(agentId) {

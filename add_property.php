@@ -9,18 +9,18 @@ require_once 'config/database.php';
 // Set JSON content type header immediately
 header('Content-Type: application/json');
 
-// Check if user is logged in and is a direct agent
+// Check if user is logged in and is a direct agent or associate agent
 $is_logged_in = is_logged_in();
 $current_user = null;
-$is_direct_agent = false;
+$is_agent = false;
 
 if ($is_logged_in) {
     $current_user = get_logged_in_user($conn);
-    $is_direct_agent = ($current_user && $current_user['user_type'] === 'direct_agent');
+    $is_agent = ($current_user && ($current_user['user_type'] === 'direct_agent' || $current_user['user_type'] === 'associate_agent'));
 }
 
-// Redirect if not logged in or not a direct agent
-if (!$is_logged_in || !$is_direct_agent) {
+// Redirect if not logged in or not an agent
+if (!$is_logged_in || !$is_agent) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit;
 }
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $agent_id = $agent['id'];
         
         // Validate required fields
-        $required_fields = ['title', 'description', 'location', 'property_type', 'price', 'bedrooms', 'bathrooms', 'sqm'];
+        $required_fields = ['title', 'description', 'location', 'property_type', 'price', 'bedrooms', 'bathrooms'];
         
         // Validate property_type values
         $allowed_property_types = ['Property', 'Lot'];
@@ -64,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $price = (float)$_POST['price'];
         $bedrooms = (int)$_POST['bedrooms'];
         $bathrooms = (int)$_POST['bathrooms'];
-        $sqm = (float)$_POST['sqm'];
         $lot_size = isset($_POST['lot_size']) ? (float)$_POST['lot_size'] : 0;
+        $sqm = $lot_size; // Use lot_size as sqm for now
         $features = isset($_POST['features']) ? mysqli_real_escape_string($conn, $_POST['features']) : '';
         
         // Handle file uploads

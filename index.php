@@ -287,7 +287,7 @@
       <h2 style="text-align:center; margin-bottom: 18px;">Become an Associate Agent</h2>
       <div style="background:#e3f2fd; border:1px solid #2196f3; border-radius:8px; padding:12px; margin-bottom:20px;">
         <p style="color:#1976d2; font-size:13px; margin:0;">
-          <strong>Note:</strong> File uploads are currently optional. You can submit your application now and upload documents later if needed.
+          <strong>Note:</strong> Only image files (JPG, PNG, GIF) are accepted. Maximum file size is 5MB per image.
         </p>
       </div>
       <form id="associateAgentRegForm" class="auth-form active" enctype="multipart/form-data">

@@ -13,18 +13,18 @@ require_once 'config/database.php';
 // Set JSON content type header immediately
 header('Content-Type: application/json');
 
-// Check if user is logged in and is a direct agent
+// Check if user is logged in and is a direct agent or associate agent
 $is_logged_in = is_logged_in();
 $current_user = null;
-$is_direct_agent = false;
+$is_agent = false;
 
 if ($is_logged_in) {
     $current_user = get_logged_in_user($conn);
-    $is_direct_agent = ($current_user && $current_user['user_type'] === 'direct_agent');
+    $is_agent = ($current_user && ($current_user['user_type'] === 'direct_agent' || $current_user['user_type'] === 'associate_agent'));
 }
 
-// Redirect if not logged in or not a direct agent
-if (!$is_logged_in || !$is_direct_agent) {
+// Redirect if not logged in or not an agent
+if (!$is_logged_in || !$is_agent) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit;
 }
@@ -59,8 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $property_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
     
     if ($property_id) {
-        // Get agent ID
-        $agent_query = "SELECT id FROM agents WHERE user_id = ?";
+        // Get agent ID and company info
+        $agent_query = "SELECT a.id, a.company_id FROM agents a WHERE a.user_id = ?";
         $stmt = mysqli_prepare($conn, $agent_query);
         mysqli_stmt_bind_param($stmt, "i", $current_user['id']);
         mysqli_stmt_execute($stmt);
@@ -74,10 +74,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         
         $agent_id = $agent['id'];
         
-        // Get property details
-        $query = "SELECT * FROM properties WHERE id = ? AND agent_id = ?";
-        $stmt = mysqli_prepare($conn, $query);
-        mysqli_stmt_bind_param($stmt, "ii", $property_id, $agent_id);
+        // Get property details - for associate agents, allow access to company properties
+        if ($current_user['user_type'] === 'associate_agent') {
+            // Associate agents can view properties from their company
+            $query = "SELECT p.* FROM properties p 
+                      LEFT JOIN agents a ON p.agent_id = a.id 
+                      WHERE p.id = ? AND a.company_id = ?";
+            $stmt = mysqli_prepare($conn, $query);
+            mysqli_stmt_bind_param($stmt, "ii", $property_id, $agent['company_id']);
+        } else {
+            // Direct agents can only view their own properties
+            $query = "SELECT * FROM properties WHERE id = ? AND agent_id = ?";
+            $stmt = mysqli_prepare($conn, $query);
+            mysqli_stmt_bind_param($stmt, "ii", $property_id, $agent_id);
+        }
+        
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
         
