@@ -523,9 +523,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <i class="fa-solid fa-user"></i>
         </div>
         <div class="profile-details">
-          <span class="profile-name">Joiz Nikul Batumbakal</span>
-          <span class="profile-email">joiz@email.com</span>
-          <span class="profile-location">Batangas, Philippines</span>
+          <span class="profile-name"><?php echo htmlspecialchars($current_user['first_name'] . ' ' . $current_user['last_name']); ?></span>
+          <span class="profile-email"><?php echo htmlspecialchars($current_user['email']); ?></span>
+          <span class="profile-location"><?php echo htmlspecialchars($current_user['address'] ?: 'Location not set'); ?></span>
+          <?php if (isset($_GET['debug'])): ?>
+          <span style="font-size: 0.8rem; color: #999;">User ID: <?php echo $current_user['id']; ?></span>
+          <?php endif; ?>
         </div>
       </div>
       <div class="profile-actions">
@@ -549,7 +552,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
           <div class="menu-item">
             <i class="fa-solid fa-right-from-bracket" style="color:#000;"></i>
-            <span>Log Out</span>
+            <span onclick="logout()">Log Out</span>
           </div>
           
           <!-- Middle Section -->
@@ -700,6 +703,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
       sorted.forEach(card => savedPropertyList.appendChild(card));
     });
+
+    // Logout function
+    function logout() {
+      if (confirm('Are you sure you want to logout?')) {
+        window.location.href = 'logout.php';
+      }
+    }
   </script>
 </body>
 </html> 

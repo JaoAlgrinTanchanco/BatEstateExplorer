@@ -208,7 +208,7 @@ if (!$is_logged_in || !$is_direct_agent) {
     // Remove static sliderProperties and use API
     async function loadSliderProperties() {
       try {
-        const response = await fetch('http://127.0.0.1:3002/api/properties');
+        const response = await fetch('get_properties.php');
         const data = await response.json();
         const sliderProperties = [...data];
         function shuffleArray(arr) {
