@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -340,7 +340,7 @@
       <h2 class="hero-title">Find Your Dream Property in Batangas</h2>
       <p class="hero-subtitle">Modern lots and properties just for you</p>
   
-
+  
       
       <!-- Search Box -->
      <div class="search-box glass-panel">
@@ -849,12 +849,53 @@
       }
     };
 
-    // User Login: redirect to user_profile.html after successful login
-    document.getElementById('loginForm').onsubmit = function(e) {
+    // User Login: AJAX authentication with login.php
+    document.getElementById('loginForm').onsubmit = async function(e) {
       e.preventDefault();
-      // Here you would normally validate credentials via AJAX
-      // For demo, just redirect
-      window.location.href = 'user_profile.html';
+      
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      
+      // Validation
+      if (!email.trim() || !password.trim()) {
+        alert('Please enter both email and password.');
+        return;
+      }
+      
+      try {
+        const formData = new FormData();
+        formData.append('email', email.trim());
+        formData.append('password', password);
+        
+        const response = await fetch('login.php', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.redirected) {
+          // Handle redirect response
+          window.location.href = response.url;
+          return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          alert('Login successful! Redirecting...');
+          document.getElementById('authModal').classList.add('hidden');
+          
+          // Redirect based on user type (this will be handled by login.php)
+          setTimeout(() => {
+            window.location.href = 'user_index.php';
+          }, 1000);
+        } else {
+          alert('Login failed: ' + (data.message || 'Invalid credentials.'));
+        }
+        
+      } catch (err) {
+        console.error('Login error:', err);
+        alert('Login error: ' + err.message);
+      }
     };
 
 // Property slider logic

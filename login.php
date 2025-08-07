@@ -2,14 +2,14 @@
 session_start();
 require_once 'config/database.php';
 
-// Handle AJAX login requests (for agent login from index.php)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_type'])) {
+// Handle AJAX login requests (for agent login from index.php and Auth Modal)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     $response = ['success' => false, 'message' => ''];
     
     try {
         $email = sanitize_input($conn, $_POST['email']);
         $password = $_POST['password'];
-        $user_type = sanitize_input($conn, $_POST['user_type']);
+        $user_type = isset($_POST['user_type']) ? sanitize_input($conn, $_POST['user_type']) : null;
         
         if (empty($email) || empty($password)) {
             throw new Exception('Please enter both email and password.');
@@ -25,8 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_type'])) {
         if ($user = mysqli_fetch_assoc($result)) {
             // Verify password
             if (verify_password($password, $user['password_hash'])) {
-                // Check if user type matches
-                if ($user['user_type'] !== $user_type) {
+                // If user_type is specified, check if it matches
+                if ($user_type && $user['user_type'] !== $user_type) {
                     throw new Exception('Access denied. ' . ucfirst(str_replace('_', ' ', $user_type)) . ' privileges required.');
                 }
                 
@@ -43,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_type'])) {
                 
                 $response['success'] = true;
                 $response['message'] = 'Login successful!';
+                $response['user_type'] = $user['user_type'];
                 
             } else {
                 throw new Exception('Invalid email or password.');

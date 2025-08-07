@@ -307,6 +307,63 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Signup form validation and AJAX submission
+    if (signupForm) {
+        signupForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            // Validation
+            const name = document.getElementById('signupName');
+            const email = document.getElementById('signupEmail');
+            const password = document.getElementById('signupPassword');
+            let valid = true;
+            [name, email, password].forEach(field => {
+                if (!field.value.trim()) {
+                    field.style.borderColor = '#e74c3c';
+                    valid = false;
+                } else {
+                    field.style.borderColor = '#e1e8ed';
+                }
+            });
+            if (!valid) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            // Simple email format check
+            const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+            if (!emailPattern.test(email.value.trim())) {
+                email.style.borderColor = '#e74c3c';
+                alert('Please enter a valid email address.');
+                return;
+            }
+            if (password.value.length < 6) {
+                password.style.borderColor = '#e74c3c';
+                alert('Password must be at least 6 characters long.');
+                return;
+            }
+            // Prepare data
+            const formData = new FormData();
+            formData.append('name', name.value.trim());
+            formData.append('email', email.value.trim());
+            formData.append('password', password.value);
+            try {
+                const response = await fetch('signup_user.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Account created successfully! You may now log in.');
+                    signupForm.reset();
+                    authModal.classList.add('hidden');
+                } else {
+                    alert('Signup failed: ' + (data.message || 'Unknown error.'));
+                }
+            } catch (err) {
+                alert('Signup error: ' + err.message);
+            }
+        });
+    }
+
     // Smooth scrolling for navigation links
     const navLinks = document.querySelectorAll('nav a[href^="#"]');
     navLinks.forEach(link => {

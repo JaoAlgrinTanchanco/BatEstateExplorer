@@ -179,7 +179,7 @@ if (!$is_logged_in || !$is_associate_agent) {
     </div>
   </footer>
 
-  <script src="/homepage.js"></script>
+  <script src="homepage.js"></script>
   <script>
     document.getElementById('searchBtn').addEventListener('click', () => {
       const filters = {
@@ -207,7 +207,7 @@ if (!$is_logged_in || !$is_associate_agent) {
     // Replace static properties with API call
     async function loadSliderProperties() {
       try {
-        const response = await fetch('http://127.0.0.1:3002/api/properties');
+        const response = await fetch('get_properties.php');
         const data = await response.json();
         const sliderProperties = [...data];
         

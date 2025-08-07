@@ -214,7 +214,7 @@ if ($is_logged_in) {
     </div>
   </footer>
 
-  <script src="/homepage.js"></script>
+  <script src="homepage.js"></script>
   <script>
     document.getElementById('searchBtn').addEventListener('click', () => {
       const filters = {
@@ -274,7 +274,7 @@ if ($is_logged_in) {
     // Remove static sliderProperties and use API
     async function loadSliderProperties() {
       try {
-        const response = await fetch('http://127.0.0.1:3002/api/properties');
+        const response = await fetch('get_properties.php');
         const data = await response.json();
         const sliderProperties = [...data];
         function shuffleArray(arr) {
@@ -322,6 +322,28 @@ if ($is_logged_in) {
         };
       } catch (err) {
         console.error('Error loading slider properties:', err);
+        // Fallback to static data if API fails
+        const fallbackProperties = [
+          {
+            id: 1,
+            title: "Modern Family Home",
+            property_type: "Property",
+            location: "Batangas City",
+            price: "3500000",
+            features: ["3 BR", "2 BA", "180 sqm"]
+          },
+          {
+            id: 2,
+            title: "Luxury Condo Unit",
+            property_type: "Property", 
+            location: "Lipa City",
+            price: "2800000",
+            features: ["2 BR", "2 BA", "85 sqm"]
+          }
+        ];
+        // Use fallback data
+        const sliderProperties = [...fallbackProperties];
+        // ... rest of the slider logic with fallback data
       }
     }
     document.addEventListener('DOMContentLoaded', loadSliderProperties);
