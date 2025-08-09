@@ -3,6 +3,14 @@ namespace App\Controllers;
 
 class AdminController
 {
+    private $conn;
+    private $current_user;
+
+    public function __construct($conn, $current_user)
+    {
+        $this->conn = $conn;
+        $this->current_user = $current_user;
+    }
     public function dashboard(): void
     {
         require __DIR__ . '/../../app/Views/admin/admin_dashboard_new.php';

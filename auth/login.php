@@ -3,7 +3,7 @@ session_start();
 require_once '../config/database.php';
 
 // Handle AJAX login requests (for agent login from index.php and Auth Modal)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_POST['ajax']) && $_POST['ajax'] === '1') {
     $response = ['success' => false, 'message' => ''];
     
     try {
@@ -259,6 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             
             <form method="POST" action="">
+                <input type="hidden" name="ajax" value="0">
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <input type="email" id="email" name="email" required value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
@@ -271,6 +272,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <button type="submit" class="submit-btn">Login</button>
             </form>
+            
+            <div class="links">
+                <a href="../index.php">Back to Home</a>
+                <span class="divider">|</span>
+                <a href="signup.php">Create Account</a>
+            </div>
             
         </div>
     </div>
