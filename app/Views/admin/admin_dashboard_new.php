@@ -148,7 +148,7 @@ if ($result) {
                         <?php foreach ($recent_applications as $app): ?>
                             <div class="application-item">
                                 <div class="app-info">
-                                    <h4><?php echo htmlspecialchars($app['applicant_name']); ?></h4>
+                                    <h4><?php echo htmlspecialchars($app['applicant_name'] ?? 'Unknown Applicant'); ?></h4>
                                     <p><?php echo htmlspecialchars($app['company_name'] ?? 'No Company'); ?></p>
                                     <span class="status status-<?php echo $app['status']; ?>"><?php echo ucfirst($app['status']); ?></span>
                                 </div>
