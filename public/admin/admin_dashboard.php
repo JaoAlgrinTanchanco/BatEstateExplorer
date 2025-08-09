@@ -5,43 +5,42 @@ $conn = $GLOBALS['conn']; // Get the database connection from bootstrap
 require_admin($conn); // Ensure only admins can access
 
 $current_user = current_user($conn);
-
-$controller = new App\Controllers\AdminController($conn, $current_user);
 $view = $_GET['view'] ?? 'dashboard';
 
+// Simple direct redirects instead of complex controller logic
 switch ($view) {
     case 'dashboard':
-        $controller->dashboard();
+        require __DIR__ . '/../../app/Views/admin/admin_dashboard_new.php';
         break;
     case 'direct_agents':
-        $controller->directAgents();
+        require __DIR__ . '/../../app/Views/admin/admin_direct_agents.php';
         break;
     case 'associate_agents':
-        $controller->associateAgents();
+        require __DIR__ . '/../../app/Views/admin/admin_associate_agents.php';
         break;
     case 'properties':
-        $controller->properties();
+        require __DIR__ . '/../../app/Views/admin/admin_property_listings.php';
         break;
     case 'properties_agents':
-        $controller->propertiesAgents();
+        require __DIR__ . '/../../app/Views/admin/admin_property_listings_agents.php';
         break;
     case 'applications':
-        $controller->applications();
+        require __DIR__ . '/../../app/Views/admin/admin_applications.php';
         break;
     case 'reports':
-        $controller->reports();
+        require __DIR__ . '/../../app/Views/admin/admin_reports.php';
         break;
     case 'reports_agents':
-        $controller->reportsAgents();
+        require __DIR__ . '/../../app/Views/admin/admin_reports_agents.php';
         break;
     case 'reports_clients':
-        $controller->reportsClients();
+        require __DIR__ . '/../../app/Views/admin/admin_reports_clients.php';
         break;
     case 'performance':
-        $controller->performance();
+        require __DIR__ . '/../../app/Views/admin/admin_performance.php';
         break;
     default:
-        $controller->dashboard();
+        require __DIR__ . '/../../app/Views/admin/admin_dashboard_new.php';
 }
 
 

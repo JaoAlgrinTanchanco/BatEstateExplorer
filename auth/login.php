@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../app/redirects.php';
 
 // Handle AJAX login requests (for agent login from index.php and Auth Modal)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_POST['ajax']) && $_POST['ajax'] === '1') {
@@ -92,21 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['user_type'] = $user['user_type'];
                     
-                    // Redirect based on user type
-                    switch ($user['user_type']) {
-                        case 'admin':
-                            header('Location: ../public/admin/admin_dashboard.php');
-                            exit;
-                        case 'direct_agent':
-                            header('Location: ../public/agent/agent_dashboard.php');
-                            exit;
-                        case 'associate_agent':
-                            header('Location: ../public/agent/agent_dashboard.php');
-                            exit;
-                        default:
-                            header('Location: ../public/user/user_dashboard.php');
-                            exit;
-                    }
+                    // Use the redirect helper for clean, simple redirects
+                    redirect_by_user_type($user['user_type']);
                 }
             } else {
                 $error = "Invalid email or password.";

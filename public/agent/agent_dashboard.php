@@ -4,33 +4,31 @@ require_login();
 
 $user = current_user($conn);
 if (!$user || !in_array($user['user_type'], ['direct_agent','associate_agent'], true)) {
-    header('Location: login.php');
+    header('Location: ../auth/login.php');
     exit;
 }
 
-use App\Controllers\AgentController;
-
-$controller = new AgentController();
 $view = $_GET['view'] ?? 'dashboard';
 
+// Simple direct redirects instead of complex controller logic
 switch ($view) {
     case 'direct_dashboard':
-        $controller->directDashboard();
+        require __DIR__ . '/../../app/Views/agent/direct_agent_dashboard_full.php';
         break;
     case 'direct_search':
-        $controller->directSearch();
+        require __DIR__ . '/../../app/Views/agent/direct_agent_search.php';
         break;
     case 'associate_dashboard':
-        $controller->associateDashboard();
+        require __DIR__ . '/../../app/Views/agent/associate_agent_dashboard_full.php';
         break;
     case 'associate_search':
-        $controller->associateSearch();
+        require __DIR__ . '/../../app/Views/agent/associate_agent_search.php';
         break;
     default:
         if ($user['user_type'] === 'direct_agent') {
-            $controller->directDashboard();
+            require __DIR__ . '/../../app/Views/agent/direct_agent_dashboard_full.php';
         } else {
-            $controller->associateDashboard();
+            require __DIR__ . '/../../app/Views/agent/associate_agent_dashboard_full.php';
         }
 }
 

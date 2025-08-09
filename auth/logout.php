@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../app/redirects.php';
 
 // Clear all session data
 session_unset();
@@ -11,7 +12,6 @@ if (isset($_COOKIE[session_name()])) {
     setcookie(session_name(), '', time() - 3600, '/');
 }
 
-// Redirect to homepage
-header('Location: login.php');
-exit;
+// Use redirect helper for consistency
+redirect_to_login();
 ?>  
