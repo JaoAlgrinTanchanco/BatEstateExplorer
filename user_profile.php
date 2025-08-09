@@ -505,8 +505,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <h1 class="logo">BatEstateExplorer</h1>
       <nav>
         <ul>
-          <li><a href="user_index.html">Home</a></li>
-          <li><a href="user_search.html">Properties</a></li>
+          <li><a href="user_index.php">Home</a></li>
+          <li><a href="user_search.php">Properties</a></li>
           <li><a href="#sellers">Agents</a></li>
           <li><a href="#faqs">FAQs</a></li>
           <!--<li><input type="text" id="searchBar" placeholder="Search..." class="rounded-input" /></li>-->
