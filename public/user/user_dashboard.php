@@ -7,7 +7,7 @@ $view = $_GET['view'] ?? 'home';
 // Simple direct redirects instead of complex controller logic
 switch ($view) {
     case 'home':
-        require __DIR__ . '/../../public/user/user_dashboard.php';
+        require __DIR__ . '/../../app/Views/user/user_home.php';
         break;
     case 'profile':
         require __DIR__ . '/../../app/Views/user/user_profile.php';
@@ -16,7 +16,7 @@ switch ($view) {
         require __DIR__ . '/../../app/Views/user/user_search.php';
         break;
     default:
-        require __DIR__ . '/../../public/user/user_dashboard.php';
+        require __DIR__ . '/../../app/Views/user/user_home.php';
 }
 
 
