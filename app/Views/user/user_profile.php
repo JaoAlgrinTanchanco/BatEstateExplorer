@@ -14,7 +14,3 @@ ob_start();
     </div>
 </div>
 
-<?php
-$content = ob_get_clean();
-$title = 'User Profile | BatEstate';
-require __DIR__ . '/../layout/user_layout.php';

@@ -4,7 +4,6 @@
 // $title (string) - Page title
 // $current_user (array|null) - Logged-in user data
 // $content (string) - HTML content of the page
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -17,38 +16,43 @@
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
+        <nav class="topbar">
+            <div class="topbar-left">
                 <h2>🏠 BatEstate</h2>
                 <p>User Panel</p>
             </div>
 
-            <nav class="sidebar-nav">
-                <ul>
-                    <li><a href="user_dashboard.php?view=home" <?= ($title === 'User Dashboard | BatEstate' || $title === 'Home') ? 'class="active"' : '' ?>><i class="fa-solid fa-home"></i> Home</a></li>
-                    <li><a href="user_dashboard.php?view=profile" <?= ($title === 'User Profile | BatEstate' || $title === 'Profile') ? 'class="active"' : '' ?>><i class="fa-solid fa-user"></i> Profile</a></li>
-                    <li><a href="user_dashboard.php?view=search" <?= ($title === 'Search Properties | BatEstate' || $title === 'Search') ? 'class="active"' : '' ?>><i class="fa-solid fa-search"></i> Search Properties</a></li>
-                </ul>
-            </nav>
+            <ul class="topbar-nav">
+                <li>
+                    <a href="user_dashboard.php?view=home" <?= ($title === 'User Dashboard | BatEstate') ? 'class="active"' : '' ?>>
+                        <i class="fa-solid fa-home"></i> Home
+                    </a>
+                </li>
+                <li>
+                    <a href="user_dashboard.php?view=profile" <?= ($title === 'User Profile | BatEstate') ? 'class="active"' : '' ?>>
+                        <i class="fa-solid fa-user"></i> Profile
+                    </a>
+                </li>
+                <li>
+                    <a href="user_dashboard.php?view=search" <?= ($title === 'Search Properties | BatEstate') ? 'class="active"' : '' ?>>
+                        <i class="fa-solid fa-search"></i> Search Properties
+                    </a>
+                </li>
+            </ul>
 
-            <div class="sidebar-footer">
-                <a href="../../auth/logout.php"><i class="fa-solid fa-sign-out-alt"></i> Logout</a>
+            <div class="topbar-buttons">
+                <a href="user_dashboard.php?view=become_direct_agent">Become Direct Agent</a>
+                <a href="user_dashboard.php?view=become_associate_agent">Become Associate Agent</a>
             </div>
-        </div>
 
-        <!-- Main Content -->
+            <div class="user-info-logout">
+                <span>Hello, <?= htmlspecialchars($current_user['email'] ?? 'Guest') ?></span>
+                <a href="../../auth/logout.php" title="Logout"><i class="fa-solid fa-sign-out-alt"></i></a>
+            </div>
+        </nav>
+
         <div class="main-content">
-            <header class="content-header">
-                <h1><?= htmlspecialchars($title ?? 'BatEstate') ?></h1>
-                <div class="user-info">
-                    <span>Hello, <?= htmlspecialchars($current_user['email'] ?? 'Guest') ?></span>
-                </div>
-            </header>
-
-            <div class="content-body">
-                <?= $content ?>
-            </div>
+            <?= $content ?>
         </div>
     </div>
 </body>

@@ -4,6 +4,7 @@
 ob_start();
 ?>
 
+<!-- user_home.php -->
 <div class="welcome-card">
     <h2>Find Your Dream Property</h2>
     <p>Welcome to BatEstate! We're here to help you find the perfect property in Batangas.</p>
@@ -35,8 +36,4 @@ ob_start();
         </div>
     </div>
 </div>
-
-<?php
-$content = ob_get_clean();
-$title = 'User Dashboard | BatEstate';
 

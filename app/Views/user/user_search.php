@@ -48,7 +48,3 @@ ob_start();
     <p>Use the search form above to find properties.</p>
 </div>
 
-<?php
-$content = ob_get_clean();
-$title = 'Search Properties | BatEstate';
-require __DIR__ . '/../layout/user_layout.php';
