@@ -354,6 +354,8 @@ body, html {
     width: 100%;
 }
 
+
+//profile
 .profile-card {
   background-color: #fff;
   border-radius: 12px;
@@ -385,6 +387,7 @@ body, html {
   padding-bottom: 0;
 }
 
+//search
 .search-card {
   background-color: #fff;
   border-radius: 12px;
