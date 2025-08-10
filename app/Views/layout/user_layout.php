@@ -46,8 +46,20 @@
             </div>
 
             <div class="user-info-logout">
-                <span>Hello, <?= htmlspecialchars($current_user['email'] ?? 'Guest') ?></span>
-                <a href="../../auth/logout.php" title="Logout"><i class="fa-solid fa-sign-out-alt"></i></a>
+                <form action="../../auth/logout.php" method="POST" class="logout-form" style="display:inline;">
+                    <button type="submit" class="logout-button" title="Logout" style="
+                        background-color: #dc3545;
+                        border: none;
+                        color: white;
+                        padding: 0.4rem 0.8rem;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 1rem;
+                        font-family: inherit;
+                    ">
+                        Logout
+                    </button>
+                </form>
             </div>
         </nav>
 
