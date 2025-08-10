@@ -142,6 +142,7 @@ body, html {
   padding: 30px 35px;
   box-shadow: 0 8px 20px rgba(26, 188, 156, 0.3);
   text-align: center;
+  margin-top: 60px;
   margin-bottom: 40px;
 }
 
@@ -257,6 +258,8 @@ body, html {
     min-height: 100vh;
 }
 .topbar {
+    position: fixed;
+    width: 100%;
     background-color: #1e2a38;
     color: white;
     display: flex;
@@ -455,7 +458,37 @@ body, html {
   text-align: center;
 }
 
+/* Footer styling */
+.site-footer {
+  background-color: #000000ff;
+  color: #ecf0f1;
+  text-align: center;
+  padding: 20px 10px;
+  margin-top: 40px;
+}
 
+.footer-container {
+  max-width: 900px;
+  margin: auto;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.footer-links a {
+  color: #ecf0f1;
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  color: #f1c40f;
+}
 
 
 /* Responsive */
@@ -463,6 +496,11 @@ body, html {
 @media (max-width: 768px) {
   .dashboard-container {
     flex-direction: column;
+  }
+
+  .site-footer {
+    font-size: 0.85rem;
+    padding: 12px 0;
   }
 
   .sidebar {

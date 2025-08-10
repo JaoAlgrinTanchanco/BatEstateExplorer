@@ -54,6 +54,18 @@
         <div class="main-content">
             <?= $content ?>
         </div>
+
+         <!-- Footer -->
+        <footer class="site-footer">
+            <div class="footer-container">
+                <p>&copy; <?= date('Y') ?> BatEstate Explorer. All rights reserved.</p>
+                <ul class="footer-links">
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                </ul>
+            </div>
+        </footer>
     </div>
 </body>
 </html>
