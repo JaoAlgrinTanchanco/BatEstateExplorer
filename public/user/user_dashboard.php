@@ -4,19 +4,18 @@ require_login();
 
 $view = $_GET['view'] ?? 'home';
 
-// Simple direct redirects instead of complex controller logic
 switch ($view) {
     case 'home':
-        require __DIR__ . '/../../app/Views/user/user_home.php';
+        $contentView = __DIR__ . '/../../app/Views/user/user_home.php';
         break;
     case 'profile':
-        require __DIR__ . '/../../app/Views/user/user_profile.php';
+        $contentView = __DIR__ . '/../../app/Views/user/user_profile.php';
         break;
     case 'search':
-        require __DIR__ . '/../../app/Views/user/user_search.php';
+        $contentView = __DIR__ . '/../../app/Views/user/user_search.php';
         break;
     default:
-        require __DIR__ . '/../../app/Views/user/user_home.php';
+        $contentView = __DIR__ . '/../../app/Views/user/user_home.php';
 }
 
-
+require __DIR__ . '/../../app/Views/layout/user_layout.php';
