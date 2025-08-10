@@ -1,58 +1,85 @@
 <?php
-// Use this inside main-content only
+// admin_dashboard_new.php
+// Expects $conn and $current_user available
+
+// Get dashboard statistics
+$stats = [];
+$queries = [
+    'total_properties' => "SELECT COUNT(*) as count FROM properties WHERE status = 'active'",
+    'pending_applications' => "SELECT COUNT(*) as count FROM applications WHERE status = 'pending'",
+    'total_agents' => "SELECT COUNT(*) as count FROM users WHERE user_type IN ('direct_agent', 'associate_agent') AND status = 'active'",
+    'total_clients' => "SELECT COUNT(*) as count FROM users WHERE user_type = 'client' AND status = 'active'"
+];
+
+foreach ($queries as $key => $query) {
+    $result = mysqli_query($conn, $query);
+    if ($result) {
+        $row = mysqli_fetch_assoc($result);
+        $stats[$key] = $row['count'];
+    } else {
+        $stats[$key] = 0;
+    }
+}
+
+// Get recent applications
+$recent_applications = [];
+$query = "SELECT a.*, c.name as company_name, 
+          CONCAT(a.first_name, ' ', a.last_name) as applicant_name 
+          FROM applications a 
+          LEFT JOIN companies c ON a.company_id = c.id 
+          ORDER BY a.created_at DESC 
+          LIMIT 5";
+
+$result = mysqli_query($conn, $query);
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $recent_applications[] = $row;
+    }
+}
 ?>
 
-<header class="content-header">
+<!-- Dashboard content -->
+ <header class="content-header">
     <h1>Admin Dashboard</h1>
     <div class="user-info">
         <span>Welcome, <?php echo htmlspecialchars($current_user['email']); ?></span>
     </div>
 </header>
 
-<!-- Statistics Cards -->
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-icon">
-            <i class="fa-solid fa-house"></i>
-        </div>
+        <div class="stat-icon"><i class="fa-solid fa-house"></i></div>
         <div class="stat-content">
-            <h3><?php echo $stats['total_properties']; ?></h3>
+            <h3><?= $stats['total_properties'] ?></h3>
             <p>Active Properties</p>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon">
-            <i class="fa-solid fa-file-lines"></i>
-        </div>
+        <div class="stat-icon"><i class="fa-solid fa-file-lines"></i></div>
         <div class="stat-content">
-            <h3><?php echo $stats['pending_applications']; ?></h3>
+            <h3><?= $stats['pending_applications'] ?></h3>
             <p>Pending Applications</p>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon">
-            <i class="fa-solid fa-user-tie"></i>
-        </div>
+        <div class="stat-icon"><i class="fa-solid fa-user-tie"></i></div>
         <div class="stat-content">
-            <h3><?php echo $stats['total_agents']; ?></h3>
+            <h3><?= $stats['total_agents'] ?></h3>
             <p>Active Agents</p>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon">
-            <i class="fa-solid fa-users"></i>
-        </div>
+        <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
         <div class="stat-content">
-            <h3><?php echo $stats['total_clients']; ?></h3>
+            <h3><?= $stats['total_clients'] ?></h3>
             <p>Active Clients</p>
         </div>
     </div>
 </div>
 
-<!-- Recent Applications -->
 <div class="recent-section">
     <h2>Recent Applications</h2>
     <div class="applications-list">
@@ -62,12 +89,12 @@
             <?php foreach ($recent_applications as $app): ?>
                 <div class="application-item">
                     <div class="app-info">
-                        <h4><?php echo htmlspecialchars($app['applicant_name'] ?? 'Unknown Applicant'); ?></h4>
-                        <p><?php echo htmlspecialchars($app['company_name'] ?? 'No Company'); ?></p>
-                        <span class="status status-<?php echo $app['status']; ?>"><?php echo ucfirst($app['status']); ?></span>
+                        <h4><?= htmlspecialchars($app['applicant_name'] ?? 'Unknown Applicant') ?></h4>
+                        <p><?= htmlspecialchars($app['company_name'] ?? 'No Company') ?></p>
+                        <span class="status status-<?= $app['status'] ?>"><?= ucfirst($app['status']) ?></span>
                     </div>
                     <div class="app-date">
-                        <?php echo date('M j, Y', strtotime($app['created_at'])); ?>
+                        <?= date('M j, Y', strtotime($app['created_at'])) ?>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -75,7 +102,6 @@
     </div>
 </div>
 
-<!-- Quick Actions -->
 <div class="quick-actions">
     <h2>Quick Actions</h2>
     <div class="action-buttons">
