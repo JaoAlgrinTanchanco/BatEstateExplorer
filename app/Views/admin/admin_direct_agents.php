@@ -1,6 +1,21 @@
 <?php
-// Assuming $current_user and $direct_agents are already available in the main controller
+// MySQLi query to fetch direct agents from 'users' table
+$sql = "SELECT * FROM users WHERE user_type = 'direct_agent'";
 
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    die("Prepare failed: " . $conn->error);
+}
+
+$stmt->execute();
+$result = $stmt->get_result();
+
+$direct_agents = [];
+while ($row = $result->fetch_assoc()) {
+    $direct_agents[] = $row;
+}
+
+$stmt->close();
 ?>
 
 <header class="content-header">

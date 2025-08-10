@@ -485,6 +485,50 @@ body {
   text-align: center;
   font-size: 1rem;
 }
+.direct-agent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.direct-agent-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.direct-agent-avatar {
+  background: #f0f0f0;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.direct-agent-info {
+  flex: 1;
+}
+
+.direct-agent-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.direct-agent-actions .btn {
+  padding: 6px 10px;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+
 
 // admin performance styles
 /* Container & header */
@@ -751,3 +795,4 @@ body {
     background: #f1f1f1;
     text-align: left;
 }
+
