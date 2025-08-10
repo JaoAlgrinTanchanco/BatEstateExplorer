@@ -7,27 +7,86 @@ require_admin($conn); // Ensure only admins can access
 $current_user = current_user($conn);
 $view = $_GET['view'] ?? 'dashboard';
 
-// Map views to their modular content partials (inside main-content)
-$content_views = [
-    'dashboard'           => 'admin_dashboard_new.php',
-    'direct_agents'       => 'admin_direct_agents.php',
-    'associate_agents'    => 'admin_associate_agents.php',
-    'properties'          => 'admin_property_listings.php',
-    'properties_agents'   => 'admin_property_listings_agents.php',
-    'applications'        => 'admin_applications.php',
-    'reports'             => 'admin_reports.php',
-    'reports_agents'      => 'admin_reports_agents.php',
-    'reports_clients'     => 'admin_reports_clients.php',
-    'performance'         => 'admin_performance.php',
-];
+switch ($view) {
+    case 'dashboard':
+        // Fetch dashboard stats and recent applications here
+        $stats = [];
+        $queries = [
+            'total_properties' => "SELECT COUNT(*) as count FROM properties WHERE status = 'active'",
+            'pending_applications' => "SELECT COUNT(*) as count FROM applications WHERE status = 'pending'",
+            'total_agents' => "SELECT COUNT(*) as count FROM users WHERE user_type IN ('direct_agent', 'associate_agent') AND status = 'active'",
+            'total_clients' => "SELECT COUNT(*) as count FROM users WHERE user_type = 'client' AND status = 'active'",
+        ];
 
-// Default to dashboard if unknown view
-if (!array_key_exists($view, $content_views)) {
-    $view = 'dashboard';
+        foreach ($queries as $key => $query) {
+            $result = mysqli_query($conn, $query);
+            if ($result) {
+                $row = mysqli_fetch_assoc($result);
+                $stats[$key] = $row['count'];
+            } else {
+                $stats[$key] = 0;
+            }
+        }
+
+        // Get recent applications
+        $recent_applications = [];
+        $query = "SELECT a.*, c.name as company_name, CONCAT(a.first_name, ' ', a.last_name) as applicant_name 
+                  FROM applications a 
+                  LEFT JOIN companies c ON a.company_id = c.id 
+                  ORDER BY a.created_at DESC 
+                  LIMIT 5";
+
+        $result = mysqli_query($conn, $query);
+
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $recent_applications[] = $row;
+            }
+        }
+
+        $content_path = __DIR__ . '/../../app/Views/admin/admin_dashboard_new.php';
+        break;
+
+    case 'direct_agents':
+        $content_path = __DIR__ . '/../../app/Views/admin/admin_direct_agents.php';
+        break;
+
+    case 'associate_agents':
+        $content_path = __DIR__ . '/../../app/Views/admin/admin_associate_agents.php';
+        break;
+
+    case 'properties':
+        $content_path = __DIR__ . '/../../app/Views/admin/admin_property_listings.php';
+        break;
+
+    case 'properties_agents':
+        $content_path = __DIR__ . '/../../app/Views/admin/admin_property_listings_agents.php';
+        break;
+
+    case 'applications':
+        $content_path = __DIR__ . '/../../app/Views/admin/admin_applications.php';
+        break;
+
+    case 'reports':
+        $content_path = __DIR__ . '/../../app/Views/admin/admin_reports.php';
+        break;
+
+    case 'reports_agents':
+        $content_path = __DIR__ . '/../../app/Views/admin/admin_reports_agents.php';
+        break;
+
+    case 'reports_clients':
+        $content_path = __DIR__ . '/../../app/Views/admin/admin_reports_clients.php';
+        break;
+
+    case 'performance':
+        $content_path = __DIR__ . '/../../app/Views/admin/admin_performance.php';
+        break;
+
+    default:
+        $content_path = __DIR__ . '/../../app/Views/admin/admin_dashboard_new.php';
+        break;
 }
 
-// Define the path of the content partial for the current view
-$content_path = __DIR__ . '/../../app/Views/admin/' . $content_views[$view];
-
-// Load the main layout template which will include the partial content inside
-require __DIR__ . '/../../app/Views/admin/admin_layout.php';
+// Now include the main layout and pass variables
+require __DIR__ . '/../../app/Views/layout/admin_layout.php';
