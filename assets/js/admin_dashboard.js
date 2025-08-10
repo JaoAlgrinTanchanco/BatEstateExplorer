@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalCloseBtns = agentModal.querySelectorAll('.close, .cancel-btn');
   const sortSelect = document.getElementById('sort');
 
-  agentList.addEventListener('click', e => {
+  agentList.addEventListener('click', async (e) => {
     if (e.target.matches('.btn-view')) {
       const btn = e.target;
 
@@ -32,12 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return path ? `<div class="detail-row"><div class="detail-label">${label}:</div><div class="detail-value"><a href="${path}" target="_blank" class="document-link">View Document</a></div></div>` : '';
       }
 
-      // Additional documents may have multiple comma-separated links
       let additionalDocsHtml = '';
       if (btn.dataset.additionalDocsPath) {
         const docs = btn.dataset.additionalDocsPath.split(',').map(d => d.trim()).filter(d => d);
-        additionalDocsHtml = docs.map((doc, i) => 
-          `<div class="detail-row"><div class="detail-label">Additional Document ${i+1}:</div><div class="detail-value"><a href="${doc}" target="_blank" class="document-link">View Document</a></div></div>`
+        additionalDocsHtml = docs.map((doc, i) =>
+          `<div class="detail-row"><div class="detail-label">Additional Document ${i + 1}:</div><div class="detail-value"><a href="${doc}" target="_blank" class="document-link">View Document</a></div></div>`
         ).join('');
       }
 
@@ -77,8 +76,34 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
 
       agentModal.style.display = 'block';
+
     } else if (e.target.matches('.btn-remove')) {
-      alert('Remove agent functionality not implemented yet.');
+      const agentId = e.target.dataset.agentId;
+      if (!agentId) return;
+
+      if (!confirm('Are you sure you want to remove this agent account? This action cannot be undone.')) return;
+
+      try {
+        const response = await fetch('/BatEstateExplorer/database/remove_agent.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agentId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // Remove agent card from DOM
+          const card = e.target.closest('.direct-agent-card');
+          if (card) card.remove();
+
+          alert('Agent account removed successfully.');
+        } else {
+          alert('Failed to remove agent: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        alert('Error removing agent: ' + error.message);
+      }
     }
   });
 
@@ -112,6 +137,9 @@ document.addEventListener('DOMContentLoaded', () => {
     sorted.forEach(card => agentList.appendChild(card));
   });
 });
+
+
+
 
 //admin application functions
 document.addEventListener('DOMContentLoaded', () => {
