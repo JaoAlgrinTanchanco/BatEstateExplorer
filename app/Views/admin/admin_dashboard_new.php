@@ -37,11 +37,13 @@ foreach ($queries as $key => $query) {
 
 // Get recent applications
 $recent_applications = [];
-$query = "SELECT a.*, c.name as company_name 
+$query = "SELECT a.*, c.name as company_name, 
+          CONCAT(a.first_name, ' ', a.last_name) as applicant_name 
           FROM applications a 
           LEFT JOIN companies c ON a.company_id = c.id 
           ORDER BY a.created_at DESC 
           LIMIT 5";
+
 $result = mysqli_query($conn, $query);
 
 if ($result) {
