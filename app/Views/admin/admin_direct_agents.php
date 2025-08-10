@@ -57,7 +57,18 @@ $stmt->close();
             </div>
           </div>
           <div class="direct-agent-actions">
-            <button class="btn btn-view" data-agent-id="<?php echo $agent['id']; ?>">View Details</button>
+            <button class="btn btn-view"
+            data-agent-id="<?php echo $agent['id']; ?>"
+            data-first-name="<?php echo htmlspecialchars($agent['first_name']); ?>"
+            data-last-name="<?php echo htmlspecialchars($agent['last_name']); ?>"
+            data-email="<?php echo htmlspecialchars($agent['email']); ?>"
+            data-phone="<?php echo htmlspecialchars($agent['phone']); ?>"
+            data-address="<?php echo htmlspecialchars($agent['address']); ?>"
+            data-status="<?php echo htmlspecialchars($agent['status']); ?>"
+            data-created-at="<?php echo $agent['created_at']; ?>"
+            >View Details
+          </button>
+
             <button class="btn btn-remove" data-agent-id="<?php echo $agent['id']; ?>">Remove Account</button>
           </div>
         </div>
@@ -82,3 +93,4 @@ $stmt->close();
     </div>
   </div>
 </div>
+

@@ -1,5 +1,21 @@
 <?php
-// Assuming $current_user and $associate_agents are already available in your controller
+// Fetch associate agents from 'users' table
+$sql = "SELECT * FROM users WHERE user_type = 'associate_agent'";
+$stmt = $conn->prepare($sql);
+
+if (!$stmt) {
+    die("Prepare failed: " . $conn->error);
+}
+
+$stmt->execute();
+$result = $stmt->get_result();
+
+$associate_agents = [];
+while ($row = $result->fetch_assoc()) {
+    $associate_agents[] = $row;
+}
+
+$stmt->close();
 ?>
 
 <header class="content-header">
