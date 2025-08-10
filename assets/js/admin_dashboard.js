@@ -24,55 +24,79 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalCloseBtns = agentModal.querySelectorAll('.close, .cancel-btn');
   const sortSelect = document.getElementById('sort');
 
-  // View Details handler - uses data attributes instead of fetch
   agentList.addEventListener('click', e => {
     if (e.target.matches('.btn-view')) {
       const btn = e.target;
 
-      // Read data attributes from button
-      const firstName = btn.dataset.firstName || '';
-      const lastName = btn.dataset.lastName || '';
-      const email = btn.dataset.email || '';
-      const phone = btn.dataset.phone || 'N/A';
-      const address = btn.dataset.address || 'N/A';
-      const status = btn.dataset.status || 'N/A';
-      const createdAt = btn.dataset.createdAt || '';
+      function docLink(label, path) {
+        return path ? `<div class="detail-row"><div class="detail-label">${label}:</div><div class="detail-value"><a href="${path}" target="_blank" class="document-link">View Document</a></div></div>` : '';
+      }
+
+      // Additional documents may have multiple comma-separated links
+      let additionalDocsHtml = '';
+      if (btn.dataset.additionalDocsPath) {
+        const docs = btn.dataset.additionalDocsPath.split(',').map(d => d.trim()).filter(d => d);
+        additionalDocsHtml = docs.map((doc, i) => 
+          `<div class="detail-row"><div class="detail-label">Additional Document ${i+1}:</div><div class="detail-value"><a href="${doc}" target="_blank" class="document-link">View Document</a></div></div>`
+        ).join('');
+      }
 
       modalBody.innerHTML = `
-        <p><strong>Name:</strong> ${firstName} ${lastName}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Phone:</strong> ${phone}</p>
-        <p><strong>Address:</strong> ${address}</p>
-        <p><strong>Status:</strong> ${status}</p>
-        <p><strong>Joined:</strong> ${createdAt}</p>
+        <h3>Personal Information</h3>
+        <div class="detail-row"><div class="detail-label">Full Name:</div><div class="detail-value">${btn.dataset.firstName} ${btn.dataset.lastName}</div></div>
+        <div class="detail-row"><div class="detail-label">Email:</div><div class="detail-value">${btn.dataset.email}</div></div>
+        <div class="detail-row"><div class="detail-label">Phone:</div><div class="detail-value">${btn.dataset.phone || 'N/A'}</div></div>
+        <div class="detail-row"><div class="detail-label">Address:</div><div class="detail-value">${btn.dataset.address || 'N/A'}</div></div>
+
+        <h3>Agent Information</h3>
+        <div class="detail-row"><div class="detail-label">Agent Type:</div><div class="detail-value">${btn.dataset.userType || 'DIRECT AGENT'}</div></div>
+        <div class="detail-row"><div class="detail-label">Broker ID:</div><div class="detail-value">${btn.dataset.brokerId || 'N/A'}</div></div>
+        <div class="detail-row"><div class="detail-label">License Number:</div><div class="detail-value">${btn.dataset.licenseNumber || 'N/A'}</div></div>
+        <div class="detail-row"><div class="detail-label">Experience:</div><div class="detail-value">${btn.dataset.experienceYears || 'N/A'} years</div></div>
+        <div class="detail-row"><div class="detail-label">Specialization:</div><div class="detail-value">${btn.dataset.specialization || 'N/A'}</div></div>
+        <div class="detail-row"><div class="detail-label">Company:</div><div class="detail-value">${btn.dataset.companyName || 'N/A'}</div></div>
+
+        <h3>Education & Qualifications</h3>
+        <div class="detail-row"><div class="detail-label">Education:</div><div class="detail-value">${btn.dataset.education || 'N/A'}</div></div>
+        <div class="detail-row"><div class="detail-label">School:</div><div class="detail-value">${btn.dataset.school || 'N/A'}</div></div>
+        <div class="detail-row"><div class="detail-label">Course:</div><div class="detail-value">${btn.dataset.course || 'N/A'}</div></div>
+        <div class="detail-row"><div class="detail-label">Graduation Year:</div><div class="detail-value">${btn.dataset.graduationYear || 'N/A'}</div></div>
+        <div class="detail-row"><div class="detail-label">Certifications:</div><div class="detail-value">${btn.dataset.certifications || 'N/A'}</div></div>
+        <div class="detail-row"><div class="detail-label">Training:</div><div class="detail-value">${btn.dataset.training || 'N/A'}</div></div>
+
+        <h3>Uploaded Documents</h3>
+        ${docLink('Broker License', btn.dataset.brokerLicensePath)}
+        ${docLink('PRC License', btn.dataset.prcLicensePath)}
+        ${docLink('Resume/CV', btn.dataset.resumePath)}
+        ${docLink('Valid ID', btn.dataset.validIdPath)}
+        ${additionalDocsHtml || '<div class="detail-row"><div class="detail-value">No additional documents uploaded</div></div>'}
+
+        <h3>Account Information</h3>
+        <div class="detail-row"><div class="detail-label">Account Created:</div><div class="detail-value">${new Date(btn.dataset.accountCreated).toLocaleDateString()}</div></div>
+        <div class="detail-row"><div class="detail-label">Status:</div><div class="detail-value">${btn.dataset.status || 'N/A'}</div></div>
       `;
 
       agentModal.style.display = 'block';
     } else if (e.target.matches('.btn-remove')) {
-      // You can implement remove logic here or alert for now
       alert('Remove agent functionality not implemented yet.');
     }
   });
 
-  // Close modal handlers
   modalCloseBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       agentModal.style.display = 'none';
     });
   });
 
-  // Close modal on outside click
   window.addEventListener('click', e => {
     if (e.target === agentModal) {
       agentModal.style.display = 'none';
     }
   });
 
-  // Sort handler
   sortSelect.addEventListener('change', () => {
     const sortBy = sortSelect.value;
     const cards = Array.from(agentList.querySelectorAll('.direct-agent-card'));
-
     let sorted;
     switch (sortBy) {
       case 'date':
@@ -85,11 +109,9 @@ document.addEventListener('DOMContentLoaded', () => {
         sorted = cards.sort((a, b) => parseInt(b.dataset.experience) - parseInt(a.dataset.experience));
         break;
     }
-
     sorted.forEach(card => agentList.appendChild(card));
   });
 });
-
 
 //admin application functions
 document.addEventListener('DOMContentLoaded', () => {
