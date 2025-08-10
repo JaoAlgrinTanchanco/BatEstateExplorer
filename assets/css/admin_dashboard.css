@@ -721,3 +721,33 @@ body {
 .modal-body { padding: 1.25rem; max-height:60vh; overflow:auto; }
 .close { background:transparent; border:none; font-size:1.5rem; cursor:pointer; }
 .cancel-btn { padding: 8px 14px; border-radius:8px; background:#6c757d; color:#fff; border:none; cursor:pointer; }
+
+//admin property listing styles
+
+
+.user-info span {
+    font-size: 14px;
+    color: #666;
+}
+
+.content-body {
+    padding: 20px;
+}
+
+.applications-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.applications-table th, 
+.applications-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
+.applications-table th {
+    background: #f1f1f1;
+    text-align: left;
+}
