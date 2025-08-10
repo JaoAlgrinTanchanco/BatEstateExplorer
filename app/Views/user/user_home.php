@@ -1,13 +1,15 @@
 <?php
-// User home view - simple and clean
+// Make sure $current_user is defined, e.g. from session or passed data
+$current_user = $current_user ?? null;
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard | BatEstate</title>
-    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../../assets/css/user_dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
 </head>
 <body>
@@ -37,7 +39,7 @@
             <header class="content-header">
                 <h1>Welcome to BatEstate</h1>
                 <div class="user-info">
-                    <span>Hello, <?php echo htmlspecialchars($current_user['email']); ?></span>
+                    <span>Hello, <?= htmlspecialchars($current_user['email'] ?? 'Guest'); ?></span>
                 </div>
             </header>
 
