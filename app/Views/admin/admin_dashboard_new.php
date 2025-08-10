@@ -39,7 +39,7 @@ if ($result) {
 ?>
 
 <!-- Dashboard content -->
- <header class="content-header">
+<header class="content-header">
     <h1>Admin Dashboard</h1>
     <div class="user-info">
         <span>Welcome, <?php echo htmlspecialchars($current_user['email']); ?></span>
