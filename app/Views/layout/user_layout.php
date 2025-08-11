@@ -63,7 +63,7 @@
             </div>
         </nav>
 
-        <div class="main-content">
+        <div class="main-content" style="padding: 60px;">
             <?= $content ?>
         </div>
 

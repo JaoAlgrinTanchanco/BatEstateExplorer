@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<div class="profile-container">
+<div class="profile-container" style="margin-top: 80px;">
   
   <!-- Row 1: profile header (info + dots) -->
   <div class="profile-header" style="display: flex; justify-content: space-between; align-items: center;">
