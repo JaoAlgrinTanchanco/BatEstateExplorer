@@ -44,7 +44,7 @@ $result = $conn->query($sql);
                         <?php if ($property['image_path']): ?>
                             <img src="<?= htmlspecialchars($property['image_path']) ?>" alt="<?= htmlspecialchars($property['title']) ?>">
                         <?php else: ?>
-                            <img src="assets/images/default-property.jpg" alt="No image available">
+                            <img src="/BatEstateExplorer/assets/images/bg4.jpg" alt="Default Image">
                         <?php endif; ?>
                     </div>
                     <div class="property-content">

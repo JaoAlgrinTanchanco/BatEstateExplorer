@@ -130,10 +130,6 @@ $stmt->close();
 $conn->close();
 
 
-
-// -------------------------------
-// Normal page load: render full HTML (form + grid)
-// -------------------------------
 ?>
 
 <!-- Keep this part inside the same file for initial load -->
@@ -231,7 +227,7 @@ $conn->close();
                         <?php if (!empty($property['image_path'])): ?>
                             <img src="<?= htmlspecialchars($property['image_path']) ?>" alt="<?= htmlspecialchars($property['title']) ?>">
                         <?php else: ?>
-                            <img src="assets/images/default-property.jpg" alt="No image available">
+                            <img src="/BatEstateExplorer/assets/images/bg4.jpg" alt="Default Image">
                         <?php endif; ?>
                     </div>
                     <div class="property-content">
@@ -284,18 +280,40 @@ $conn->close();
 
   const query = new URLSearchParams(params).toString();
 
-  fetch('user_search.php?' + query)
-    .then(res => {
-      if (!res.ok) throw new Error('Network response was not OK');
-      return res.text();
-    })
-    .then(html => {
-      document.getElementById('propertiesGrid').innerHTML = html;
-    })
-    .catch(err => {
-      console.error('Fetch error:', err);
-      // Optionally display error message to user
-    });
+  fetch('/BatEstateExplorer/public/api/get_properties.php?' + query)
+  .then(res => {
+    if (!res.ok) throw new Error('Network response was not OK');
+    return res.json();
+  })
+  .then(data => {
+    const grid = document.getElementById('propertiesGrid');
+    if (!data.properties || data.properties.length === 0) {
+      grid.innerHTML = '<p>No properties available at the moment.</p>';
+      return;
+    }
+    grid.innerHTML = data.properties.map(property => `
+      <div class="property-card">
+        <div class="property-image">
+          <img src="${property.image_path ? property.image_path : '/BatEstateExplorer/assets/images/bg4.jpg'}" alt="${property.title}">
+        </div>
+        <div class="property-content">
+          <h3>${property.title}</h3>
+          <p class="property-location"><i class="fas fa-map-marker-alt"></i> ${property.location}</p>
+          <p class="property-price">₱${Number(property.price).toFixed(2)}</p>
+          <div class="property-features">
+            <span><i class="fas fa-bed"></i> ${property.bedrooms} Beds</span>
+            <span><i class="fas fa-bath"></i> ${property.bathrooms} Baths</span>
+          </div>
+          <a href="property_details.php?id=${property.id}" class="btn btn-outline">View Details</a>
+        </div>
+      </div>
+    `).join('');
+  })
+  .catch(err => {
+    console.error('Fetch error:', err);
+  });
+
+
 });
 
 

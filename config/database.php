@@ -16,6 +16,9 @@ if (!$conn) {
 // Set charset to utf8mb4
 mysqli_set_charset($conn, "utf8mb4");
 
+// Make connection global
+$GLOBALS['conn'] = $conn;
+
 // Function to sanitize input
 function sanitize_input($conn, $data) {
     $data = trim($data);
