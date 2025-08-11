@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-echo realpath(__DIR__ . '/../../../../config/database.php');
+// echo realpath(__DIR__ . '/../../../../config/database.php');
 
 
 
