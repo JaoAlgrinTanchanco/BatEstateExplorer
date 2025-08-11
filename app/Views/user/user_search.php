@@ -1,39 +1,81 @@
 <?php
 // user_search.php
-require_once __DIR__ . '/../../../config/database.php'; // ✅ Correct path
+require_once __DIR__ . '/../../../config/database.php';
 
-// Get filter values
+// Get filter values safely
 $location = $_GET['location'] ?? '';
 $property_type = $_GET['property_type'] ?? '';
 $price_range = $_GET['price_range'] ?? '';
+$bedrooms = $_GET['bedrooms'] ?? '';
+$bathrooms = $_GET['bathrooms'] ?? '';
+$size = $_GET['size'] ?? '';
 
-// Base query
-$sql = "SELECT * FROM properties WHERE 1=1";
+// Base query with join to get primary image
+$sql = "
+    SELECT p.*, pi.image_path
+    FROM properties p
+    LEFT JOIN property_images pi 
+        ON p.id = pi.property_id AND pi.is_primary = 1
+    WHERE 1=1
+";
 $params = [];
 $types = "";
 
-// Filters
+// Location
 if ($location !== '') {
-    $sql .= " AND location = ?";
+    $sql .= " AND p.location = ?";
     $params[] = $location;
     $types .= "s";
 }
+
+// Property type
 if ($property_type !== '') {
-    $sql .= " AND property_type = ?";
+    $sql .= " AND p.property_type = ?";
     $params[] = $property_type;
     $types .= "s";
 }
+
+// Price range
 if ($price_range !== '') {
     if ($price_range === '5000000+') {
-        $sql .= " AND price >= 5000000";
+        $sql .= " AND p.price >= 5000000";
     } else {
         [$min, $max] = explode('-', $price_range);
-        $sql .= " AND price BETWEEN ? AND ?";
-        $params[] = (int) $min;
-        $params[] = (int) $max;
+        $sql .= " AND p.price BETWEEN ? AND ?";
+        $params[] = (int)$min;
+        $params[] = (int)$max;
         $types .= "ii";
     }
 }
+
+// Bedrooms
+if ($bedrooms !== '') {
+    $sql .= " AND p.bedrooms >= ?";
+    $params[] = (int)$bedrooms;
+    $types .= "i";
+}
+
+// Bathrooms
+if ($bathrooms !== '') {
+    $sql .= " AND p.bathrooms >= ?";
+    $params[] = (int)$bathrooms;
+    $types .= "i";
+}
+
+// Size (sqm)
+if ($size !== '') {
+    if ($size === '200+') {
+        $sql .= " AND p.sqm >= 200";
+    } else {
+        [$min_sqm, $max_sqm] = explode('-', $size);
+        $sql .= " AND p.sqm BETWEEN ? AND ?";
+        $params[] = (float)$min_sqm;
+        $params[] = (float)$max_sqm;
+        $types .= "dd";
+    }
+}
+
+$sql .= " ORDER BY p.created_at DESC";
 
 // Prepare and execute
 $stmt = $conn->prepare($sql);
@@ -42,14 +84,11 @@ if (!empty($params)) {
 }
 $stmt->execute();
 $result = $stmt->get_result();
-
-// Fetch results into array
 $properties = $result->fetch_all(MYSQLI_ASSOC);
-
-// Close resources
 $stmt->close();
 $conn->close();
 ?>
+
 
 <div class="search-container">
     <div class="search">
@@ -67,14 +106,14 @@ $conn->close();
     </button>
 
     <!-- Property Type -->
-    <button type="button" class="search-field" data-field="property_type">
-        <span class="label">Property Type</span>
-        <span class="value">All Types</span>
-        <select name="property_type" id="property_type">
-            <option value="" selected>All Types</option>
-            <option value="house">House</option>
-            <option value="condo">Condominium</option>
-            <option value="land">Land</option>
+    <button type="button" class="search-field" data-field="location">
+        <span class="label">Location</span>
+        <span class="value" data-default="All Locations">All Locations</span>
+        <select name="location" id="location">
+            <option value="" selected>All Locations</option>
+            <option value="Batangas City">Batangas City</option>
+            <option value="Lipa City">Lipa City</option>
+            <option value="Tanauan City">Tanauan City</option>
         </select>
     </button>
 
@@ -187,3 +226,20 @@ $conn->close();
     align-items: center;
 }
 </style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.search-field select').forEach(function (selectEl) {
+        selectEl.addEventListener('change', function () {
+            // Find the .value span in the same .search-field button
+            const valueSpan = this.closest('.search-field').querySelector('.value');
+
+            // If no selection or empty, reset to default text
+            if (this.value === "") {
+                valueSpan.textContent = valueSpan.dataset.default || 'Any';
+            } else {
+                valueSpan.textContent = this.options[this.selectedIndex].text;
+            }
+        });
+    });
+});
+</script>
