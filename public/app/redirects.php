@@ -8,7 +8,7 @@
 function redirect_by_user_type($user_type) {
     switch ($user_type) {
         case 'admin':
-            header('Location: ../public/admin/admin_dashboard.php');
+            header('Location: ../public/controllers/admin_dashboard.php');
             break;
         case 'direct_agent':
         case 'associate_agent':
