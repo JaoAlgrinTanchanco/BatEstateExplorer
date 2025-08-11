@@ -33,8 +33,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <div class="profile-container">
-  <div class="profile-header">
-    <div class="profile-info">
+  
+  <!-- Row 1: profile header (info + dots) -->
+  <div class="profile-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="profile-info" style="display: flex; align-items: center; gap: 20px;">
       <div class="profile-avatar">
         <i class="fa-solid fa-user"></i>
       </div>
@@ -44,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <span class="profile-location"><?= htmlspecialchars($current_user['address'] ?: 'Location not set') ?></span>
       </div>
     </div>
+
     <div class="profile-actions">
       <button class="dots-btn" id="profileDotsBtn" title="Options">
         <i class="fa-solid fa-ellipsis"></i>
@@ -55,6 +58,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     </div>
   </div>
+
+  <!-- Row 2: Tabs container -->
+  <div class="tabs-container">
+    <div class="tabs-header">
+      <button class="tab-btn active" data-tab="saved-list">Saved List</button>
+      <button class="tab-btn" data-tab="reviews">Reviews</button>
+    </div>
+    <div class="tab-controls">
+      <label for="sortSelect">Sort by:</label>
+      <select id="sortSelect">
+        <option value="date">Date</option>
+        <option value="price">Price</option>
+      </select>
+    </div>
+    <div class="tabs-content">
+      <div class="tab-content active" id="saved-list">
+        <!-- TODO: Populate saved list here -->
+        <p>Your saved items will appear here.</p>
+      </div>
+      <div class="tab-content" id="reviews">
+        <!-- TODO: Populate reviews here -->
+        <p>Your reviews will appear here.</p>
+      </div>
+    </div>
+  </div>
+  
+</div>
+
 
   <?php if ($message): ?>
     <div class="message-success"><?= htmlspecialchars($message) ?></div>
@@ -94,6 +125,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   const editProfileBtn = document.getElementById('editProfileBtn');
   const profileModal = document.getElementById('profileModal');
   const modalCloseBtn = document.getElementById('modalCloseBtn');
+  // Tabs logic
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const sortSelect = document.getElementById('sortSelect');
+
+tabButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    // Switch active tab button
+    tabButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    // Switch tab content
+    const tab = btn.dataset.tab;
+    tabContents.forEach(tc => {
+      tc.classList.toggle('active', tc.id === tab);
+    });
+
+    // Reset sort dropdown to default when switching tabs
+    sortSelect.value = 'date';
+    
+    // TODO: Call sort function for the active tab here if needed
+  });
+});
+
+// Sorting change handler (you'll need to implement sorting logic)
+sortSelect.addEventListener('change', () => {
+  const currentTab = document.querySelector('.tab-content.active').id;
+  const sortBy = sortSelect.value;
+
+  // TODO: Implement sorting logic per tab here
+  console.log(`Sort ${currentTab} by ${sortBy}`);
+});
+
 
   profileDotsBtn.addEventListener('click', e => {
     e.stopPropagation();
