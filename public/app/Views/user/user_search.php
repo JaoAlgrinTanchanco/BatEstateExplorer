@@ -1,7 +1,6 @@
 <?php
 // user_search.php
-require_once __DIR__ . '/../../../config/database.php';
-
+require_once __DIR__ . '/../../../../config/database.php';
 // Decide whether this request is AJAX (fetch from JS) or normal page load
 $isAjax = (
     !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&

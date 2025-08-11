@@ -1,21 +1,21 @@
 <?php
-require_once __DIR__ . '/../../app/bootstrap.php';
+require_once __DIR__ . '/../app/bootstrap.php';
 require_login();
 
 $view = $_GET['view'] ?? 'home';
 
 switch ($view) {
     case 'home':
-        $contentView = __DIR__ . '/../../app/Views/user/user_home.php';
+        $contentView = __DIR__ . '/../app/Views/user/user_home.php';
         break;
     case 'profile':
-        $contentView = __DIR__ . '/../../app/Views/user/user_profile.php';
+        $contentView = __DIR__ . '/../app/Views/user/user_profile.php';
         break;
     case 'search':
-        $contentView = __DIR__ . '/../../app/Views/user/user_search.php';
+        $contentView = __DIR__ . '/../app/Views/user/user_search.php';
         break;
     default:
-        $contentView = __DIR__ . '/../../app/Views/user/user_home.php';
+        $contentView = __DIR__ . '/../app/Views/user/user_home.php';
 }
 
 // Make sure $current_user is set, e.g. from session
@@ -41,4 +41,4 @@ switch ($view) {
         $title = 'User Dashboard | BatEstate';
 }
 
-require __DIR__ . '/../../app/Views/layout/user_layout.php';
+require __DIR__ . '/../app/Views/layout/user_layout.php';

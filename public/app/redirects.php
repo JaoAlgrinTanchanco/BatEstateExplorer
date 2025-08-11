@@ -12,10 +12,10 @@ function redirect_by_user_type($user_type) {
             break;
         case 'direct_agent':
         case 'associate_agent':
-            header('Location: ../public/agent/agent_dashboard.php');
+            header('Location: ../public/controllers/agent_dashboard.php');
             break;
         default:
-            header('Location: ../public/user/user_dashboard.php');
+            header('Location: ../public/controllers/user_dashboard.php');
     }
     exit;
 }
