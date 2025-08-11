@@ -54,43 +54,87 @@ $conn->close();
 <div class="search-container">
     <div class="search">
         <form class="search-form" method="GET" action="user_dashboard.php?view=search_results">
-            <button type="button" class="search-field" data-field="location">
-                <span class="label">Location</span>
-                <span class="value">All Locations</span>
-                <select name="location" id="location">
-                    <option value="" selected>All Locations</option>
-                    <option value="Batangas City">Batangas City</option>
-                    <option value="Lipa City">Lipa City</option>
-                    <option value="Tanauan City">Tanauan City</option>
-                </select>
-            </button>
+    <!-- Location -->
+    <button type="button" class="search-field" data-field="location">
+        <span class="label">Location</span>
+        <span class="value">All Locations</span>
+        <select name="location" id="location">
+            <option value="" selected>All Locations</option>
+            <option value="Batangas City">Batangas City</option>
+            <option value="Lipa City">Lipa City</option>
+            <option value="Tanauan City">Tanauan City</option>
+        </select>
+    </button>
 
-            <button type="button" class="search-field" data-field="property_type">
-                <span class="label">Property Type</span>
-                <span class="value">All Types</span>
-                <select name="property_type" id="property_type">
-                    <option value="" selected>All Types</option>
-                    <option value="house">House</option>
-                    <option value="condo">Condominium</option>
-                    <option value="land">Land</option>
-                </select>
-            </button>
+    <!-- Property Type -->
+    <button type="button" class="search-field" data-field="property_type">
+        <span class="label">Property Type</span>
+        <span class="value">All Types</span>
+        <select name="property_type" id="property_type">
+            <option value="" selected>All Types</option>
+            <option value="house">House</option>
+            <option value="condo">Condominium</option>
+            <option value="land">Land</option>
+        </select>
+    </button>
 
-            <button type="button" class="search-field" data-field="price_range">
-                <span class="label">Price Range</span>
-                <span class="value">Any Price</span>
-                <select name="price_range" id="price_range">
-                    <option value="" selected>Any Price</option>
-                    <option value="0-1000000">Under ₱1M</option>
-                    <option value="1000000-5000000">₱1M - ₱5M</option>
-                    <option value="5000000+">₱5M+</option>
-                </select>
-            </button>
+    <!-- Price Range -->
+    <button type="button" class="search-field" data-field="price_range">
+        <span class="label">Price Range</span>
+        <span class="value">Any Price</span>
+        <select name="price_range" id="price_range">
+            <option value="" selected>Any Price</option>
+            <option value="0-1000000">Under ₱1M</option>
+            <option value="1000000-5000000">₱1M - ₱5M</option>
+            <option value="5000000+">₱5M+</option>
+        </select>
+    </button>
 
-            <button type="submit" class="search-submit" aria-label="Search">
-                <i class="fa-solid fa-magnifying-glass"></i>
-            </button>
-        </form>
+    <!-- Bedrooms -->
+    <button type="button" class="search-field" data-field="bedrooms">
+        <span class="label">Bedrooms</span>
+        <span class="value">Any</span>
+        <select name="bedrooms" id="bedrooms">
+            <option value="" selected>Any</option>
+            <option value="1">1+</option>
+            <option value="2">2+</option>
+            <option value="3">3+</option>
+            <option value="4">4+</option>
+        </select>
+    </button>
+
+    <!-- Bathrooms -->
+    <button type="button" class="search-field" data-field="bathrooms">
+        <span class="label">Bathrooms</span>
+        <span class="value">Any</span>
+        <select name="bathrooms" id="bathrooms">
+            <option value="" selected>Any</option>
+            <option value="1">1+</option>
+            <option value="2">2+</option>
+            <option value="3">3+</option>
+            <option value="4">4+</option>
+        </select>
+    </button>
+
+    <!-- Size -->
+    <button type="button" class="search-field" data-field="size">
+        <span class="label">Size (sqm)</span>
+        <span class="value">Any Size</span>
+        <select name="size" id="size">
+            <option value="" selected>Any Size</option>
+            <option value="0-50">Up to 50 sqm</option>
+            <option value="50-100">50 - 100 sqm</option>
+            <option value="100-200">100 - 200 sqm</option>
+            <option value="200+">200+ sqm</option>
+        </select>
+    </button>
+
+    <!-- Submit -->
+    <button type="submit" class="search-submit" aria-label="Search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+    </button>
+</form>
+
     </div>
 
     <div class="properties-grid">
