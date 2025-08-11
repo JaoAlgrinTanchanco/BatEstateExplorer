@@ -805,7 +805,7 @@ body, html {
 }
 
 /* The search submit button */
-.search-submit {
+.user-search-submit {
   background-color: #ff385c;
   border: none;
   border-radius: 50%;

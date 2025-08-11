@@ -2,15 +2,30 @@
 // user_search.php
 require_once __DIR__ . '/../../../config/database.php';
 
-// Get filter values safely
-$location = $_GET['location'] ?? '';
-$property_type = $_GET['property_type'] ?? '';
-$price_range = $_GET['price_range'] ?? '';
-$bedrooms = $_GET['bedrooms'] ?? '';
-$bathrooms = $_GET['bathrooms'] ?? '';
-$size = $_GET['size'] ?? '';
+// Decide whether this request is AJAX (fetch from JS) or normal page load
+$isAjax = (
+    !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
+) || (!empty($_POST['ajax']) && $_POST['ajax'] == '1');
 
-// Base query with join to get primary image
+// Accept incoming values (AJAX will send POST, normal page can use GET)
+if ($isAjax) {
+    $location = $_POST['location'] ?? '';
+    $property_type = $_POST['property_type'] ?? '';
+    $price_range = $_POST['price_range'] ?? '';
+    $bedrooms = $_POST['bedrooms'] ?? '';
+    $bathrooms = $_POST['bathrooms'] ?? '';
+    $size = $_POST['size'] ?? '';
+} else {
+    $location = $_GET['location'] ?? '';
+    $property_type = $_GET['property_type'] ?? '';
+    $price_range = $_GET['price_range'] ?? '';
+    $bedrooms = $_GET['bedrooms'] ?? '';
+    $bathrooms = $_GET['bathrooms'] ?? '';
+    $size = $_GET['size'] ?? '';
+}
+
+// Build query and params
 $sql = "
     SELECT p.*, pi.image_path
     FROM properties p
@@ -40,22 +55,27 @@ if ($price_range !== '') {
     if ($price_range === '5000000+') {
         $sql .= " AND p.price >= 5000000";
     } else {
-        [$min, $max] = explode('-', $price_range);
-        $sql .= " AND p.price BETWEEN ? AND ?";
-        $params[] = (int)$min;
-        $params[] = (int)$max;
-        $types .= "ii";
+        // safe explode
+        $parts = explode('-', $price_range);
+        if (count($parts) === 2) {
+            $min = (float) $parts[0];
+            $max = (float) $parts[1];
+            $sql .= " AND p.price BETWEEN ? AND ?";
+            $params[] = $min;
+            $params[] = $max;
+            $types .= "dd";
+        }
     }
 }
 
-// Bedrooms
+// Bedrooms (>=)
 if ($bedrooms !== '') {
     $sql .= " AND p.bedrooms >= ?";
     $params[] = (int)$bedrooms;
     $types .= "i";
 }
 
-// Bathrooms
+// Bathrooms (>=)
 if ($bathrooms !== '') {
     $sql .= " AND p.bathrooms >= ?";
     $params[] = (int)$bathrooms;
@@ -67,151 +87,174 @@ if ($size !== '') {
     if ($size === '200+') {
         $sql .= " AND p.sqm >= 200";
     } else {
-        [$min_sqm, $max_sqm] = explode('-', $size);
-        $sql .= " AND p.sqm BETWEEN ? AND ?";
-        $params[] = (float)$min_sqm;
-        $params[] = (float)$max_sqm;
-        $types .= "dd";
+        $parts = explode('-', $size);
+        if (count($parts) === 2) {
+            $min_sqm = (float) $parts[0];
+            $max_sqm = (float) $parts[1];
+            $sql .= " AND p.sqm BETWEEN ? AND ?";
+            $params[] = $min_sqm;
+            $params[] = $max_sqm;
+            $types .= "dd";
+        }
     }
 }
 
 $sql .= " ORDER BY p.created_at DESC";
 
-// Prepare and execute
+// Prepare and execute safely
 $stmt = $conn->prepare($sql);
-if (!empty($params)) {
-    $stmt->bind_param($types, ...$params);
+if ($stmt === false) {
+    // prepare failed — for debugging you might want to log $conn->error
+    if ($isAjax) {
+        echo "<p>Server error (prepare failed).</p>";
+        exit;
+    } else {
+        echo "<p>Server error.</p>";
+    }
 }
+
+if (!empty($params)) {
+    // mysqli bind_param needs references
+    $bind_names = [];
+    $bind_names[] = $types;
+    for ($i = 0; $i < count($params); $i++) {
+        // ensure values are variables (not expressions) and passed by reference
+        $bind_names[] = &$params[$i];
+    }
+    call_user_func_array([$stmt, 'bind_param'], $bind_names);
+}
+
 $stmt->execute();
 $result = $stmt->get_result();
-$properties = $result->fetch_all(MYSQLI_ASSOC);
+$properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 $stmt->close();
 $conn->close();
 
 
+
+// -------------------------------
+// Normal page load: render full HTML (form + grid)
+// -------------------------------
 ?>
 
-
+<!-- Keep this part inside the same file for initial load -->
 <div class="search-container">
     <div class="search">
-        <form class="search-form" id="searchForm" method="GET" action="user_dashboard.php?view=search_results">
+        <div class="search-form">
+            <!-- Location -->
+            <button type="button" class="search-field" data-field="location">
+                <span class="label">Location</span>
+                <span class="value" data-default="All Locations"><?= $location !== '' ? htmlspecialchars($location) : 'All Locations' ?></span>
+                <select name="location" id="location">
+                    <option value="" <?= $location === '' ? 'selected' : '' ?>>All Locations</option>
+                    <option value="Batangas City" <?= $location === 'Batangas City' ? 'selected' : '' ?>>Batangas City</option>
+                    <option value="Lipa City" <?= $location === 'Lipa City' ? 'selected' : '' ?>>Lipa City</option>
+                    <option value="Tanauan City" <?= $location === 'Tanauan City' ? 'selected' : '' ?>>Tanauan City</option>
+                </select>
+            </button>
 
-    <!-- Location -->    
-    <button type="button" class="search-field" data-field="location">
-        <span class="label">Location</span>
-        <span class="value" data-default="All Locations">All Locations</span>
-        <select name="location" id="location">
-            <option value="" selected>All Locations</option>
-            <option value="Batangas City">Batangas City</option>
-            <option value="Lipa City">Lipa City</option>
-            <option value="Tanauan City">Tanauan City</option>
-        </select>
-    </button>
+            <!-- Property Type -->
+            <button type="button" class="search-field" data-field="property_type">
+                <span class="label">Property Type</span>
+                <span class="value" data-default="All Types"><?= $property_type !== '' ? htmlspecialchars($property_type) : 'All Types' ?></span>
+                <select name="property_type" id="property_type">
+                    <option value="" <?= $property_type === '' ? 'selected' : '' ?>>All Types</option>
+                    <option value="house" <?= $property_type === 'house' ? 'selected' : '' ?>>House</option>
+                    <option value="condo" <?= $property_type === 'condo' ? 'selected' : '' ?>>Condominium</option>
+                    <option value="land" <?= $property_type === 'land' ? 'selected' : '' ?>>Land</option>
+                </select>
+            </button>
 
-    <!-- Property Type -->
-    <button type="button" class="search-field" data-field="property_type">
-        <span class="label">Property Type</span>
-        <span class="value" data-default="All Locations">All Types</span>
-        <select name="property_type" id="property_type">
-            <option value="" selected>All Types</option>
-            <option value="house">House</option>
-            <option value="condo">Condominium</option>
-            <option value="land">Land</option>
-        </select>
-    </button>
+            <!-- Price Range -->
+            <button type="button" class="search-field" data-field="price_range">
+                <span class="label">Price Range</span>
+                <span class="value" data-default="Any Price"><?= $price_range !== '' ? htmlspecialchars($price_range) : 'Any Price' ?></span>
+                <select name="price_range" id="price_range">
+                    <option value="" <?= $price_range === '' ? 'selected' : '' ?>>Any Price</option>
+                    <option value="0-1000000" <?= $price_range === '0-1000000' ? 'selected' : '' ?>>Under ₱1M</option>
+                    <option value="1000000-5000000" <?= $price_range === '1000000-5000000' ? 'selected' : '' ?>>₱1M - ₱5M</option>
+                    <option value="5000000+" <?= $price_range === '5000000+' ? 'selected' : '' ?>>₱5M+</option>
+                </select>
+            </button>
 
-    <!-- Price Range -->
-    <button type="button" class="search-field" data-field="price_range">
-        <span class="label">Price Range</span>
-        <span class="value">Any Price</span>
-        <select name="price_range" id="price_range">
-            <option value="" selected>Any Price</option>
-            <option value="0-1000000">Under ₱1M</option>
-            <option value="1000000-5000000">₱1M - ₱5M</option>
-            <option value="5000000+">₱5M+</option>
-        </select>
-    </button>
+            <!-- Bedrooms -->
+            <button type="button" class="search-field" data-field="bedrooms">
+                <span class="label">Bedrooms</span>
+                <span class="value" data-default="Any"><?= $bedrooms !== '' ? htmlspecialchars($bedrooms) . '+' : 'Any' ?></span>
+                <select name="bedrooms" id="bedrooms">
+                    <option value="" <?= $bedrooms === '' ? 'selected' : '' ?>>Any</option>
+                    <option value="1" <?= $bedrooms === '1' ? 'selected' : '' ?>>1+</option>
+                    <option value="2" <?= $bedrooms === '2' ? 'selected' : '' ?>>2+</option>
+                    <option value="3" <?= $bedrooms === '3' ? 'selected' : '' ?>>3+</option>
+                    <option value="4" <?= $bedrooms === '4' ? 'selected' : '' ?>>4+</option>
+                </select>
+            </button>
 
-    <!-- Bedrooms -->
-    <button type="button" class="search-field" data-field="bedrooms">
-        <span class="label">Bedrooms</span>
-        <span class="value">Any</span>
-        <select name="bedrooms" id="bedrooms">
-            <option value="" selected>Any</option>
-            <option value="1">1+</option>
-            <option value="2">2+</option>
-            <option value="3">3+</option>
-            <option value="4">4+</option>
-        </select>
-    </button>
+            <!-- Bathrooms -->
+            <button type="button" class="search-field" data-field="bathrooms">
+                <span class="label">Bathrooms</span>
+                <span class="value" data-default="Any"><?= $bathrooms !== '' ? htmlspecialchars($bathrooms) . '+' : 'Any' ?></span>
+                <select name="bathrooms" id="bathrooms">
+                    <option value="" <?= $bathrooms === '' ? 'selected' : '' ?>>Any</option>
+                    <option value="1" <?= $bathrooms === '1' ? 'selected' : '' ?>>1+</option>
+                    <option value="2" <?= $bathrooms === '2' ? 'selected' : '' ?>>2+</option>
+                    <option value="3" <?= $bathrooms === '3' ? 'selected' : '' ?>>3+</option>
+                    <option value="4" <?= $bathrooms === '4' ? 'selected' : '' ?>>4+</option>
+                </select>
+            </button>
 
-    <!-- Bathrooms -->
-    <button type="button" class="search-field" data-field="bathrooms">
-        <span class="label">Bathrooms</span>
-        <span class="value">Any</span>
-        <select name="bathrooms" id="bathrooms">
-            <option value="" selected>Any</option>
-            <option value="1">1+</option>
-            <option value="2">2+</option>
-            <option value="3">3+</option>
-            <option value="4">4+</option>
-        </select>
-    </button>
+            <!-- Size -->
+            <button type="button" class="search-field" data-field="size">
+                <span class="label">Size (sqm)</span>
+                <span class="value" data-default="Any Size"><?= $size !== '' ? htmlspecialchars($size) : 'Any Size' ?></span>
+                <select name="size" id="size">
+                    <option value="" <?= $size === '' ? 'selected' : '' ?>>Any Size</option>
+                    <option value="0-50" <?= $size === '0-50' ? 'selected' : '' ?>>Up to 50 sqm</option>
+                    <option value="50-100" <?= $size === '50-100' ? 'selected' : '' ?>>50 - 100 sqm</option>
+                    <option value="100-200" <?= $size === '100-200' ? 'selected' : '' ?>>100 - 200 sqm</option>
+                    <option value="200+" <?= $size === '200+' ? 'selected' : '' ?>>200+ sqm</option>
+                </select>
+            </button>
 
-    <!-- Size -->
-    <button type="button" class="search-field" data-field="size">
-        <span class="label">Size (sqm)</span>
-        <span class="value">Any Size</span>
-        <select name="size" id="size">
-            <option value="" selected>Any Size</option>
-            <option value="0-50">Up to 50 sqm</option>
-            <option value="50-100">50 - 100 sqm</option>
-            <option value="100-200">100 - 200 sqm</option>
-            <option value="200+">200+ sqm</option>
-        </select>
-    </button>
-
-    <!-- Submit -->
-    <button type="submit" class="search-submit" aria-label="Search">
-        <i class="fa-solid fa-magnifying-glass"></i>
-    </button>
-</form>
-
+            <!-- Submit -->
+            <button id="searchForm1" class="user-search-submit" aria-label="Search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </div>
     </div>
 
-    <div class="properties-grid" id="propertiesGrid">
-    <?php if (!empty($properties)): ?>
-        <?php foreach ($properties as $property): ?>
-            <div class="property-card">
-                <div class="property-image">
-                    <?php if (!empty($property['image_path'])): ?>
-                        <img src="<?= htmlspecialchars($property['image_path']) ?>" alt="<?= htmlspecialchars($property['title']) ?>">
-                    <?php else: ?>
-                        <img src="assets/images/default-property.jpg" alt="No image available">
-                    <?php endif; ?>
-                </div>
-                <div class="property-content">
-                    <h3><?= htmlspecialchars($property['title']) ?></h3>
-                    <p class="property-location">
-                        <i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($property['location']) ?>
-                    </p>
-                    <p class="property-price">₱<?= number_format($property['price'], 2) ?></p>
-                    <div class="property-features">
-                        <span><i class="fas fa-bed"></i> <?= (int) $property['bedrooms'] ?> Beds</span>
-                        <span><i class="fas fa-bath"></i> <?= (int) $property['bathrooms'] ?> Baths</span>
-                    </div>
-                    <a href="property_details.php?id=<?= (int) $property['id'] ?>" class="btn btn-outline">View Details</a>
-                </div>
-            </div>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <p>No properties available at the moment.</p>
-    <?php endif; ?>
-</div>
 
+    <div class="properties-grid" id="propertiesGrid">
+        <?php if (!empty($properties)): ?>
+            <?php foreach ($properties as $property): ?>
+                <div class="property-card">
+                    <div class="property-image">
+                        <?php if (!empty($property['image_path'])): ?>
+                            <img src="<?= htmlspecialchars($property['image_path']) ?>" alt="<?= htmlspecialchars($property['title']) ?>">
+                        <?php else: ?>
+                            <img src="assets/images/default-property.jpg" alt="No image available">
+                        <?php endif; ?>
+                    </div>
+                    <div class="property-content">
+                        <h3><?= htmlspecialchars($property['title']) ?></h3>
+                        <p class="property-location"><i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($property['location']) ?></p>
+                        <p class="property-price">₱<?= number_format($property['price'], 2) ?></p>
+                        <div class="property-features">
+                            <span><i class="fas fa-bed"></i> <?= (int)$property['bedrooms'] ?> Beds</span>
+                            <span><i class="fas fa-bath"></i> <?= (int)$property['bathrooms'] ?> Baths</span>
+                        </div>
+                        <a href="property_details.php?id=<?= (int)$property['id'] ?>" class="btn btn-outline">View Details</a>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <p>No properties available at the moment.</p>
+        <?php endif; ?>
+    </div>
 </div>
 
 <style>
+/* keep your styles */
 .search-container {
     position: relative;
     width: 100%;
@@ -230,32 +273,49 @@ $conn->close();
     align-items: center;
 }
 </style>
+
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Update selected value display
-    document.querySelectorAll('.search-field select').forEach(function (selectEl) {
-        selectEl.addEventListener('change', function () {
-            const valueSpan = this.closest('.search-field').querySelector('.value');
-            if (this.value === "") {
-                valueSpan.textContent = valueSpan.dataset.default;
-            } else {
-                valueSpan.textContent = this.options[this.selectedIndex].text;
-            }
-        });
+    document.getElementById('searchForm1').addEventListener('click', () => {
+  // Collect filter values
+  const params = ['location', 'property_type', 'price_range', 'bedrooms', 'bathrooms', 'size']
+    .reduce((obj, id) => {
+      obj[id] = document.getElementById(id).value;
+      return obj;
+    }, {});
+
+  const query = new URLSearchParams(params).toString();
+
+  fetch('user_search.php?' + query)
+    .then(res => {
+      if (!res.ok) throw new Error('Network response was not OK');
+      return res.text();
+    })
+    .then(html => {
+      document.getElementById('propertiesGrid').innerHTML = html;
+    })
+    .catch(err => {
+      console.error('Fetch error:', err);
+      // Optionally display error message to user
     });
+});
 
-    // Handle AJAX filtering
-    document.getElementById('searchForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        formData.append('ajax', '1');
 
-        fetch('<?= $_SERVER['PHP_SELF'] ?>?' + new URLSearchParams(formData), {
-            method: 'GET'
-        })
-        .then(res => res.text())
-        .then(html => {
-            document.getElementById('propertiesGrid').innerHTML = html;
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.search-field select').forEach(function (selectEl) {
+        const valueSpan = selectEl.closest('.search-field').querySelector('.value');
+
+        // Set initial display
+        valueSpan.textContent = selectEl.value === "" 
+            ? valueSpan.dataset.default 
+            : selectEl.options[selectEl.selectedIndex].text;
+
+        // Update on change
+        selectEl.addEventListener('change', function (e) {
+            e.stopPropagation(); // prevent button click events
+            const span = this.closest('.search-field').querySelector('.value');
+            span.textContent = this.value === "" 
+                ? span.dataset.default 
+                : this.options[this.selectedIndex].text;
         });
     });
 });
