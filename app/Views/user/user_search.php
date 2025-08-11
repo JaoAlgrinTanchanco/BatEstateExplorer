@@ -87,16 +87,19 @@ $result = $stmt->get_result();
 $properties = $result->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 $conn->close();
+
+
 ?>
 
 
 <div class="search-container">
     <div class="search">
-        <form class="search-form" method="GET" action="user_dashboard.php?view=search_results">
-    <!-- Location -->
+        <form class="search-form" id="searchForm" method="GET" action="user_dashboard.php?view=search_results">
+
+    <!-- Location -->    
     <button type="button" class="search-field" data-field="location">
         <span class="label">Location</span>
-        <span class="value">All Locations</span>
+        <span class="value" data-default="All Locations">All Locations</span>
         <select name="location" id="location">
             <option value="" selected>All Locations</option>
             <option value="Batangas City">Batangas City</option>
@@ -106,14 +109,14 @@ $conn->close();
     </button>
 
     <!-- Property Type -->
-    <button type="button" class="search-field" data-field="location">
-        <span class="label">Location</span>
-        <span class="value" data-default="All Locations">All Locations</span>
-        <select name="location" id="location">
-            <option value="" selected>All Locations</option>
-            <option value="Batangas City">Batangas City</option>
-            <option value="Lipa City">Lipa City</option>
-            <option value="Tanauan City">Tanauan City</option>
+    <button type="button" class="search-field" data-field="property_type">
+        <span class="label">Property Type</span>
+        <span class="value" data-default="All Locations">All Types</span>
+        <select name="property_type" id="property_type">
+            <option value="" selected>All Types</option>
+            <option value="house">House</option>
+            <option value="condo">Condominium</option>
+            <option value="land">Land</option>
         </select>
     </button>
 
@@ -176,35 +179,36 @@ $conn->close();
 
     </div>
 
-    <div class="properties-grid">
-        <?php if (!empty($properties)): ?>
-            <?php foreach ($properties as $property): ?>
-                <div class="property-card">
-                    <div class="property-image">
-                        <?php if (!empty($property['image_path'])): ?>
-                            <img src="<?= htmlspecialchars($property['image_path']) ?>" alt="<?= htmlspecialchars($property['title']) ?>">
-                        <?php else: ?>
-                            <img src="assets/images/default-property.jpg" alt="No image available">
-                        <?php endif; ?>
-                    </div>
-                    <div class="property-content">
-                        <h3><?= htmlspecialchars($property['title']) ?></h3>
-                        <p class="property-location">
-                            <i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($property['location']) ?>
-                        </p>
-                        <p class="property-price">₱<?= number_format($property['price'], 2) ?></p>
-                        <div class="property-features">
-                            <span><i class="fas fa-bed"></i> <?= (int) $property['bedrooms'] ?> Beds</span>
-                            <span><i class="fas fa-bath"></i> <?= (int) $property['bathrooms'] ?> Baths</span>
-                        </div>
-                        <a href="property_details.php?id=<?= (int) $property['id'] ?>" class="btn btn-outline">View Details</a>
-                    </div>
+    <div class="properties-grid" id="propertiesGrid">
+    <?php if (!empty($properties)): ?>
+        <?php foreach ($properties as $property): ?>
+            <div class="property-card">
+                <div class="property-image">
+                    <?php if (!empty($property['image_path'])): ?>
+                        <img src="<?= htmlspecialchars($property['image_path']) ?>" alt="<?= htmlspecialchars($property['title']) ?>">
+                    <?php else: ?>
+                        <img src="assets/images/default-property.jpg" alt="No image available">
+                    <?php endif; ?>
                 </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <p>No properties available at the moment.</p>
-        <?php endif; ?>
-    </div>
+                <div class="property-content">
+                    <h3><?= htmlspecialchars($property['title']) ?></h3>
+                    <p class="property-location">
+                        <i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($property['location']) ?>
+                    </p>
+                    <p class="property-price">₱<?= number_format($property['price'], 2) ?></p>
+                    <div class="property-features">
+                        <span><i class="fas fa-bed"></i> <?= (int) $property['bedrooms'] ?> Beds</span>
+                        <span><i class="fas fa-bath"></i> <?= (int) $property['bathrooms'] ?> Baths</span>
+                    </div>
+                    <a href="property_details.php?id=<?= (int) $property['id'] ?>" class="btn btn-outline">View Details</a>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <p>No properties available at the moment.</p>
+    <?php endif; ?>
+</div>
+
 </div>
 
 <style>
@@ -228,17 +232,30 @@ $conn->close();
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Update selected value display
     document.querySelectorAll('.search-field select').forEach(function (selectEl) {
         selectEl.addEventListener('change', function () {
-            // Find the .value span in the same .search-field button
             const valueSpan = this.closest('.search-field').querySelector('.value');
-
-            // If no selection or empty, reset to default text
             if (this.value === "") {
-                valueSpan.textContent = valueSpan.dataset.default || 'Any';
+                valueSpan.textContent = valueSpan.dataset.default;
             } else {
                 valueSpan.textContent = this.options[this.selectedIndex].text;
             }
+        });
+    });
+
+    // Handle AJAX filtering
+    document.getElementById('searchForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        formData.append('ajax', '1');
+
+        fetch('<?= $_SERVER['PHP_SELF'] ?>?' + new URLSearchParams(formData), {
+            method: 'GET'
+        })
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById('propertiesGrid').innerHTML = html;
         });
     });
 });
