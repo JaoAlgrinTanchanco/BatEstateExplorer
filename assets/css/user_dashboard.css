@@ -5,7 +5,6 @@
   margin: 0;
   padding: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #222;
 }
 
 body, html {
@@ -102,7 +101,7 @@ body, html {
 
 .main-content {
   flex-grow: 1;
-  background-color: #fff;
+  background-color: #fefefe;
   padding: 30px 40px;
   display: flex;
   flex-direction: column;
@@ -271,6 +270,7 @@ body, html {
     height: 60px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     flex-shrink: 0;
+    z-index: 9999;
 }
 .topbar-left {
     display: flex;
@@ -347,12 +347,12 @@ body, html {
     color: #ff6b6b;
 }
 /* Main content styling */
-.main-content {
+/* .main-content {
     flex-grow: 1;
     padding: 20px;
     margin: 0 auto;
     width: 100%;
-}
+} */
 
 
 
@@ -728,79 +728,135 @@ body, html {
 
 
 //search
-.search-card {
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.07);
-  padding: 30px 35px;
-  max-width: 700px;
-  margin: 0 auto 40px auto;
+.search {
 }
 
-.search-card h2 {
-  font-size: 1.8rem;
-  color: #34495e;
-  margin-bottom: 25px;
-  text-align: center;
-}
-
-.search-form .form-group {
-  margin-bottom: 20px;
-}
-
-.search-form label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #2c3e50;
-  font-size: 1rem;
-}
-
-.search-form select {
+.search-form {
   width: 100%;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1.5px solid #d1d9e6;
-  font-size: 1rem;
-  color: #34495e;
-  transition: border-color 0.3s ease;
+  max-width: 60rem;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 0;
+  border: 1px solid black;
+  border-radius: 40px;
+  overflow: hidden;
 }
 
-.search-form select:focus {
-  border-color: #1abc9c;
-  outline: none;
-}
 
-.search-form button[type="submit"] {
-  background-color: #1abc9c;
-  color: white;
+/* Each field button looks like a segment */
+.search-field {
+  flex: 1 1 0;
   border: none;
-  padding: 12px 28px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  border-radius: 30px;
+  background: transparent;
   cursor: pointer;
-  display: block;
-  margin: 0 auto;
+  padding: 12px 24px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-right: 1px solid #eee;
+  position: relative;
+  font-size: 14px;
+  color: #222;
   transition: background-color 0.3s ease;
+  user-select: none;
 }
 
-.search-form button[type="submit"]:hover {
-  background-color: #16a085;
+/* Remove border from last field */
+.search-field:last-of-type {
+  border-right: none;
 }
 
-/* Results Section */
+/* Label (small text above) */
+.search-field .label {
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #717171;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
 
-.results-section {
-  max-width: 700px;
-  margin: 0 auto;
-  background: #f4f7fa;
-  padding: 25px 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  color: #34495e;
-  font-size: 1rem;
-  text-align: center;
+/* Selected value (main text) */
+.search-field .value {
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Hide native select */
+.search-field select {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Hover background on each segment */
+.search-field:hover {
+  background-color: #f7f7f7;
+}
+
+/* The search submit button */
+.search-submit {
+  background-color: #ff385c;
+  border: none;
+  border-radius: 50%;
+  width: 55px;
+  height: 55px;
+  margin-left: 12px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.3s ease;
+  flex-shrink: 0;
+}
+
+.search-submit:hover {
+  background-color: #e03150;
+}
+
+.search-submit i {
+  font-size: 18px;
+}
+
+.result {
+  background-color: red; /* test */
+  display: flex;         /* or grid, depending on your card layout */
+  flex-wrap: wrap;       /* so items wrap naturally */
+  width: 100%;
+  height: auto;          /* grow based on content */
+  box-sizing: border-box;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .search-form {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .search-field {
+    border-right: none !important;
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+
+  .search-submit {
+    width: 100%;
+    border-radius: 12px;
+  }
 }
 
 /* Footer styling */
@@ -1000,9 +1056,8 @@ body, html {
     display: none;
   }
 
-  .main-content {
-    
-  }
+/* and so on for other selectors */
+
 
   .content-body {
     max-width: 100%;
