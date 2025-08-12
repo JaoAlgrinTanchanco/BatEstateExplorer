@@ -187,25 +187,61 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // === APPROVE / REJECT APPLICATION ===
-    function reviewApplication(id, action, button) {
-        if (!confirm(`Are you sure you want to ${action} this application?`)) return;
+    // === Custom non-blocking confirmation modal ===
+function showConfirm(message) {
+    return new Promise(resolve => {
+        const modal = document.createElement('div');
+        modal.className = 'confirm-modal';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.background = 'rgba(0,0,0,0.5)';
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.innerHTML = `
+            <div style="background: white; padding: 20px; border-radius: 10px; max-width: 300px; text-align: center;">
+                <p>${message}</p>
+                <button id="confirmYes">Yes</button>
+                <button id="confirmNo">No</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
 
-        fetch('/api/admin_application_action.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, action })
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert(`Application ${action}d`);
-                    button.closest('.application-card')?.remove();
-                } else {
-                    alert(`Error: ${data.message}`);
-                }
-            })
-            .catch(() => alert('Network error'));
-    }
+        modal.querySelector('#confirmYes').addEventListener('click', () => {
+            modal.remove();
+            resolve(true);
+        });
+        modal.querySelector('#confirmNo').addEventListener('click', () => {
+            modal.remove();
+            resolve(false);
+        });
+    });
+}
+
+// === APPROVE / REJECT APPLICATION ===
+async function reviewApplication(id, action, button) {
+    const confirmed = await showConfirm(`Are you sure you want to ${action} this application?`);
+    if (!confirmed) return;
+
+    fetch('/BatEstateExplorer/public/api/admin_application_action.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Application ${action}d`);
+            button.closest('.application-card')?.remove();
+        } else {
+            alert(`Error: ${data.message}`);
+        }
+    })
+    .catch(() => alert('Network error'));
+}
 
     // === SORT APPLICATION CARDS ===
     function handleSortChange() {
