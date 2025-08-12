@@ -91,7 +91,7 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
                          data-date="<?php echo htmlspecialchars($property['date_uploaded'] ?? ''); ?>">
 
                         <div class="property-image"
-                             style="background-image: url('<?php echo htmlspecialchars($property['image_url'] ?? 'Pictures/bg4.jpg'); ?>')">
+                             style="background-image: url('<?php echo htmlspecialchars($property['image_url'] ?? '/BatEstateExplorer/assets/images/bg4.jpg'); ?>')">
                         </div>
 
                         <div class="property-info">
