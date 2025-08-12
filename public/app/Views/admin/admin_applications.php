@@ -112,6 +112,71 @@ if ($conn) {
   </div>
 </div>
 
+<style>
+/* Overlay background */
+.confirm-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+/* Modal card */
+.confirm-modal .modal-content {
+    background: #fff;
+    color: #333;
+    padding: 20px 25px;
+    border-radius: 12px;
+    width: 320px;
+    max-width: 90%;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+    font-family: sans-serif;
+    text-align: center;
+    animation: scaleIn 0.2s ease;
+}
+
+/* Buttons */
+.confirm-modal .btn {
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    margin: 8px;
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.confirm-modal .btn:hover {
+    transform: translateY(-1px);
+}
+
+.confirm-modal .btn-primary {
+    background: #007bff;
+    color: #fff;
+}
+
+.confirm-modal .btn-primary:hover {
+    background: #0062cc;
+}
+
+.confirm-modal .btn-secondary {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.confirm-modal .btn-secondary:hover {
+    background: #cfcfcf;
+}
+
+/* Animation */
+@keyframes scaleIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -192,20 +257,11 @@ function showConfirm(message) {
     return new Promise(resolve => {
         const modal = document.createElement('div');
         modal.className = 'confirm-modal';
-        modal.style.position = 'fixed';
-        modal.style.top = '0';
-        modal.style.left = '0';
-        modal.style.width = '100%';
-        modal.style.height = '100%';
-        modal.style.background = 'rgba(0,0,0,0.5)';
-        modal.style.display = 'flex';
-        modal.style.alignItems = 'center';
-        modal.style.justifyContent = 'center';
         modal.innerHTML = `
-            <div style="background: white; padding: 20px; border-radius: 10px; max-width: 300px; text-align: center;">
-                <p>${message}</p>
-                <button id="confirmYes">Yes</button>
-                <button id="confirmNo">No</button>
+            <div class="modal-content">
+                <p style="margin-bottom: 15px; font-size: 15px;">${message}</p>
+                <button class="btn btn-primary" id="confirmYes">Yes</button>
+                <button class="btn btn-secondary" id="confirmNo">No</button>
             </div>
         `;
         document.body.appendChild(modal);

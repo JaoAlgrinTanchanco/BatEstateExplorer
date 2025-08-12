@@ -28,10 +28,63 @@ if (!in_array($action, ['approve', 'reject'])) {
 
 $status = ($action === 'approve') ? 'approved' : 'rejected';
 
-// Update query
+// If approve, copy to `users` table
+if ($action === 'approve') {
+    // Get application data (only needed columns for `users` table)
+    $stmt = $conn->prepare("
+        SELECT first_name, last_name, email, password_hash, phone, address, agent_type
+        FROM applications
+        WHERE id = ?
+    ");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $application = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$application) {
+        echo json_encode(['success' => false, 'message' => 'Application not found']);
+        exit;
+    }
+
+    // Map agent_type to valid user_type in `users` table
+    // Adjust mapping logic if needed
+    $user_type = match ($application['agent_type']) {
+        'direct_agent' => 'direct_agent',
+        'associate_agent' => 'associate_agent',
+        default => 'user'
+    };
+
+    // Insert into users table
+    $stmt = $conn->prepare("
+        INSERT INTO users (
+            first_name, last_name, email, password_hash, phone, address,
+            user_type, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+
+    $active_status = 'active';
+    $stmt->bind_param(
+        "ssssssss",
+        $application['first_name'],
+        $application['last_name'],
+        $application['email'],
+        $application['password_hash'], // already hashed in applications table
+        $application['phone'],
+        $application['address'],
+        $user_type,
+        $active_status
+    );
+
+    if (!$stmt->execute()) {
+        echo json_encode(['success' => false, 'message' => 'Failed to insert into users table: ' . $stmt->error]);
+        exit;
+    }
+    $stmt->close();
+}
+
+// Update application status
 $stmt = $conn->prepare("UPDATE applications SET status = ? WHERE id = ?");
 $stmt->bind_param("si", $status, $id);
-
 if ($stmt->execute()) {
     echo json_encode(['success' => true]);
 } else {

@@ -8,12 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Optional: auto-refresh, comment out if not desired
-  setInterval(function() {
-    if (document.visibilityState === 'visible') {
-      location.reload();
-    }
-  }, 30000);
+
 });
 
 // admin direct agents
