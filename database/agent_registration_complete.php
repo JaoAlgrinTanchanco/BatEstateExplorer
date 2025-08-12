@@ -1,4 +1,5 @@
 <?php
+session_start();
 // Complete agent registration system
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -22,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 try {
-    require_once 'config/database.php';
+    require_once '../config/database.php';
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
@@ -275,6 +276,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_commit($conn);
             
             error_log("Transaction committed successfully");
+
+            $_SESSION['flash_message'] = 'Application submitted successfully! Your application will be reviewed by admin.';
+            require_once '../public/app/redirects.php';
+            redirect_to_home();
             
             $response['success'] = true;
             $response['message'] = 'Application submitted successfully! Your application will be reviewed by admin.';
@@ -303,5 +308,11 @@ echo json_encode([
     'success' => false,
     'message' => 'Invalid request method'
 ]);
+exit;
+
+// If request method not POST:
+$_SESSION['flash_message'] = 'Invalid request method';
+require_once '../public/app/redirects.php';
+redirect_to('../agent_registration.php');
 exit;
 ?> 

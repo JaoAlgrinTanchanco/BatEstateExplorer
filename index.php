@@ -1,3 +1,15 @@
+<?php
+session_start();
+
+if (isset($_SESSION['flash_message'])) {
+    echo '<div class="flash-message" id="flashMessage">'
+        . htmlspecialchars($_SESSION['flash_message'])
+        . '<button class="close-btn" onclick="document.getElementById(\'flashMessage\').style.display=\'none\'">&times;</button>'
+        . '</div>';
+    unset($_SESSION['flash_message']);
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -300,3 +312,55 @@
     </script>
 </body>
 </html>
+
+<style>
+.flash-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 99999;
+
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    padding: 15px 20px;
+    max-width: 350px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.flash-message .close-btn {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    color: #155724;
+    cursor: pointer;
+}
+</style>
+
+<?php
+session_start();
+
+if (isset($_SESSION['flash_message'])) {
+    echo '<div class="flash-message" id="flashMessage">'
+        . htmlspecialchars($_SESSION['flash_message'])
+        . '<button class="close-btn" onclick="document.getElementById(\'flashMessage\').style.display=\'none\'">&times;</button>'
+        . '</div>';
+    unset($_SESSION['flash_message']);
+}
+?>
+
+<script>
+  // Optional: auto-hide message after 5 seconds
+  setTimeout(() => {
+    const flash = document.getElementById('flashMessage');
+    if(flash) flash.style.display = 'none';
+  }, 5000);
+</script>
