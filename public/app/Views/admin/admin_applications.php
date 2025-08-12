@@ -86,7 +86,7 @@ if ($conn) {
                     </div>
 
                     <div class="application-actions">
-                        <button class="view-btn" data-id="<?php echo (int)$app['id']; ?>">View Details</button>
+                        <button class="view-btn" id="openModalBtn" data-id="<?php echo (int)$app['id']; ?>">View Details</button>
                         <?php if ($app['status'] === 'pending'): ?>
                             <button class="approve-btn" data-id="<?php echo (int)$app['id']; ?>">Approve</button>
                             <button class="reject-btn" data-id="<?php echo (int)$app['id']; ?>">Reject</button>
@@ -112,3 +112,154 @@ if ($conn) {
   </div>
 </div>
 
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // === ELEMENT REFERENCES ===
+    const applicationList = document.getElementById('applicationList');
+    const modal = document.getElementById('applicationModal');
+    const modalBody = document.getElementById('modalBody');
+    const sortSelect = document.getElementById('sort');
+
+    // === EVENT LISTENERS ===
+    if (applicationList) {
+        applicationList.addEventListener('click', handleApplicationClick);
+    }
+    if (sortSelect) {
+        sortSelect.addEventListener('change', handleSortChange);
+    }
+    initModalCloseEvents();
+
+    // === MAIN CLICK HANDLER FOR APPLICATION LIST ===
+    function handleApplicationClick(e) {
+        const targetBtn = e.target.closest('.view-btn, .approve-btn, .reject-btn');
+        if (!targetBtn) return;
+
+        const id = targetBtn.dataset.id;
+        if (!id) return;
+
+        if (targetBtn.classList.contains('view-btn')) {
+            fetchApplicationDetails(id);
+        } else if (targetBtn.classList.contains('approve-btn')) {
+            reviewApplication(id, 'approve', targetBtn);
+        } else if (targetBtn.classList.contains('reject-btn')) {
+            reviewApplication(id, 'reject', targetBtn);
+        }
+    }
+
+    // === FETCH APPLICATION DETAILS ===
+    function fetchApplicationDetails(id) {
+        fetch(`/BatEstateExplorer/public/api/get_application_details.php?id=${encodeURIComponent(id)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('Failed to load application details');
+                    return;
+                }
+                renderApplicationDetails(data.application);
+                showModal();
+            })
+            .catch(() => alert('Error loading application details'));
+    }
+
+    // === RENDER APPLICATION DETAILS IN MODAL ===
+    function renderApplicationDetails(app) {
+        modalBody.innerHTML = `
+            <div class="detail-section">
+                <h3>Applicant Info</h3>
+                ${detailRow('Full Name', `${escapeHtml(app.first_name)} ${escapeHtml(app.last_name)}`)}
+                ${detailRow('Email', escapeHtml(app.email))}
+                ${detailRow('Broker ID', escapeHtml(app.broker_id || 'N/A'))}
+                ${detailRow('Experience', `${escapeHtml(app.experience_years || 'N/A')} years`)}
+                ${detailRow('Address', escapeHtml(app.address || 'N/A'))}
+                ${detailRow('Company', escapeHtml(app.company_name || 'N/A'))}
+            </div>
+        `;
+    }
+
+    function detailRow(label, value) {
+        return `
+            <div class="detail-row">
+                <div class="detail-label">${label}:</div>
+                <div class="detail-value">${value}</div>
+            </div>
+        `;
+    }
+
+    // === APPROVE / REJECT APPLICATION ===
+    function reviewApplication(id, action, button) {
+        if (!confirm(`Are you sure you want to ${action} this application?`)) return;
+
+        fetch('/api/admin_application_action.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, action })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Application ${action}d`);
+                    button.closest('.application-card')?.remove();
+                } else {
+                    alert(`Error: ${data.message}`);
+                }
+            })
+            .catch(() => alert('Network error'));
+    }
+
+    // === SORT APPLICATION CARDS ===
+    function handleSortChange() {
+        const sortBy = sortSelect.value;
+        const cards = Array.from(applicationList.querySelectorAll('.application-card'));
+
+        cards.sort((a, b) => {
+            switch (sortBy) {
+                case 'newest':
+                    return new Date(b.dataset.date) - new Date(a.dataset.date);
+                case 'oldest':
+                    return new Date(a.dataset.date) - new Date(b.dataset.date);
+                case 'name':
+                    return a.dataset.name.localeCompare(b.dataset.name);
+                case 'type':
+                    return a.dataset.type.localeCompare(b.dataset.type);
+                default:
+                    return 0;
+            }
+        });
+
+        cards.forEach(card => applicationList.appendChild(card));
+    }
+
+    // === MODAL HANDLING ===
+    function initModalCloseEvents() {
+        modal.querySelectorAll('.close, .cancel-btn').forEach(btn => {
+            btn.addEventListener('click', closeModal);
+        });
+        window.addEventListener('click', e => {
+            if (e.target === modal) closeModal();
+        });
+    }
+
+    function showModal() {
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+        document.querySelector('#openModalBtn')?.focus();
+    }
+
+    // === UTILITY: ESCAPE HTML ===
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+});
+</script>
