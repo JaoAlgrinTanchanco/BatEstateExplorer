@@ -42,11 +42,105 @@ if (!isset($user)) {
                 break;
 
             default:
+                $fullName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+                if ($fullName === '') {
+                    $fullName = 'Agent';
+                }
+
                 echo "<h2>Profile Overview</h2>";
-                echo "<p>Name: {$user['name']}</p>";
-                echo "<p>Email: {$user['email']}</p>";
-                echo "<p>User Type: {$user['user_type']}</p>";
+                echo "<p>Name: " . htmlspecialchars($fullName) . "</p>";
+                echo "<p>Email: " . htmlspecialchars($user['email'] ?? '') . "</p>";
+                echo "<p>User Type: " . htmlspecialchars($user['user_type'] ?? '') . "</p>";
+                break;
+
         }
         ?>
     </section>
 </div>
+
+<style>
+/* ===== Profile Page Layout ===== */
+.dashboard-container {
+    padding: 20px;
+    max-width: 1100px;
+    margin: auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* ===== Header ===== */
+.dashboard-header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+    color: #222;
+}
+
+/* ===== Tabs ===== */
+.dashboard-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 20px;
+}
+.dashboard-tabs .tab {
+    padding: 10px 18px;
+    text-decoration: none;
+    color: #555;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+.dashboard-tabs .tab:hover {
+    background: #f8f8f8;
+    color: #222;
+}
+.dashboard-tabs .tab.active {
+    border-bottom-color: #3498db;
+    color: #3498db;
+}
+
+/* ===== Content Section ===== */
+.dashboard-content h2 {
+    margin-bottom: 10px;
+    font-size: 1.4rem;
+    color: #333;
+}
+.dashboard-content p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #555;
+}
+
+/* ===== Table Styling (Future Tabs) ===== */
+.dashboard-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+.dashboard-content table th,
+.dashboard-content table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+.dashboard-content table th {
+    background: #f3f3f3;
+    font-weight: bold;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .dashboard-tabs {
+        flex-direction: column;
+    }
+    .dashboard-tabs .tab {
+        border-bottom: none;
+        border-left: 3px solid transparent;
+    }
+    .dashboard-tabs .tab.active {
+        border-left-color: #3498db;
+        border-bottom: none;
+    }
+}
+</style>
