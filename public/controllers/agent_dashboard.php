@@ -8,33 +8,31 @@ if (!$user || !in_array($user['user_type'], ['direct_agent', 'associate_agent'],
     exit;
 }
 
-$view = $_GET['view'] ?? 'dashboard';
+$view = $_GET['view'] ?? (
+    $user['user_type'] === 'associate_agent'
+        ? 'associate_home'
+        : 'direct_dashboard'
+);
 
 switch ($view) {
-    case 'direct_dashboard':
-        // require __DIR__ . '/../app/Views/agent/direct_agent_dashboard_full.php';
+    case 'associate_home':
+        $view_file = __DIR__ . '/../app/Views/agent/associate_home.php';
+        $page_title = "Associate Dashboard";
         break;
-
-    case 'direct_search':
-        // require __DIR__ . '/../app/Views/agent/direct_agent_search.php';
-        break;
-
-    case 'associate_dashboard':
-        require __DIR__ . '/../app/Views/agent/associate_home.php';
-        break;
-
     case 'associate_profile':
-        require __DIR__ . '/../app/Views/agent/associate_profile.php';
+        $view_file = __DIR__ . '/../app/Views/agent/associate_profile.php';
+        $page_title = "My Profile";
         break;
-
     case 'associate_search':
-        require __DIR__ . '/../app/Views/agent/associate_search.php';
+        $view_file = __DIR__ . '/../app/Views/agent/associate_search.php';
+        $page_title = "Search Properties";
         break;
-
+    // Future: direct agent cases
     default:
-        if ($user['user_type'] === 'direct_agent') {
-            // require __DIR__ . '/../app/Views/agent/direct_agent_dashboard_full.php';
-        } else {
-            require __DIR__ . '/../app/Views/agent/associate_home.php';
-        }
+        $view_file = __DIR__ . '/../app/Views/agent/associate_home.php';
+        $page_title = "Associate Dashboard";
+        break;
 }
+
+// finally load layout
+require __DIR__ . '/../app/Views/layout/agent_layout.php';
