@@ -49,12 +49,12 @@ if ($tab === 'my_listings') {
 
     <!-- Content Section -->
     <section class="dashboard-content">
-        <?php switch ($tab):
-        // ================= MY LISTINGS =================
-        case 'my_listings': ?>
+        <?php 
+        switch ($tab):
+            // ================= MY LISTINGS =================
+            case 'my_listings': 
+        ?>
             <h2>My Listings</h2>
-            <!-- Floating Action Button -->
-            <button id="addListingBtn" class="floating-btn" title="Add Listing">+</button>
 
             <div class="overview-container">
                 <?php if (!empty($listings)): ?>
@@ -68,49 +68,19 @@ if ($tab === 'my_listings') {
                             <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($property['status']) ?></span></div>
                             <div class="info-row actions">
                                 <a href="?view=edit_listing&id=<?= $property['id'] ?>" class="btn-edit">Edit</a>
-                                <a href="?view=delete_listing&id=<?= $property['id'] ?>" class="btn-delete">Delete</a>
+                                <a href="?view=delete_listing&id=<?= $property['id'] ?>" class="btn-delete" onclick="return confirm('Are you sure you want to delete this listing?')">Delete</a>
                             </div>
                         </div>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div class="overview-card">
-                        <p>No listings found. Click the + button to add a property.</p>
+                        <p>No listings found.</p>
                     </div>
                 <?php endif; ?>
-
-                <!-- Modal -->
-                <div id="addListingModal" class="modal" style="display:none;">
-                    <div class="modal-content">
-                        <span id="closeModal" class="modal-close">&times;</span>
-                        <h2>Add New Property</h2>
-                        <form id="addListingForm">
-                            <label>Property Title</label>
-                            <input type="text" name="title" required>
-
-                            <label>Description</label>
-                            <textarea name="description" required></textarea>
-
-                            <label>Location</label>
-                            <input type="text" name="location" required>
-
-                            <label>Price</label>
-                            <input type="number" name="price" required>
-
-                            <label>Bedrooms</label>
-                            <input type="number" name="bedrooms" min="0">
-
-                            <label>Bathrooms</label>
-                            <input type="number" name="bathrooms" min="0">
-
-                            <label>Square Meters</label>
-                            <input type="number" name="sqm" min="0">
-
-                            <button type="submit">Save Listing</button>
-                        </form>
-                    </div>
-                </div>
             </div>
-        <?php break; ?>
+        <?php 
+        break;
+        ?>
 
         <?php case 'add_listing': ?>
                 <h2>Add New Listing</h2>
