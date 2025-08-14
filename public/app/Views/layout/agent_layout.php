@@ -49,6 +49,7 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
 <main class="dashboard-content">
   <?php require $view_file; ?>
 </main>
+<script src="/BatEstateExplorer/assets/js/agents.js"></script>
 
 </body>
 </html>

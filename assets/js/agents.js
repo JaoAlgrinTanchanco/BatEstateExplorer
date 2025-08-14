@@ -1,7 +1,23 @@
-<!-- app/Views/agent/partials/agent_property_scripts.php -->
-<script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Open edit modal
+    // ===== Edit Profile Toggle =====
+    const editBtn = document.getElementById('editProfileBtn');
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    const profileView = document.querySelector('.profile-view');
+    const profileEdit = document.querySelector('.profile-edit');
+
+    if (editBtn && cancelBtn && profileView && profileEdit) {
+        editBtn.addEventListener('click', () => {
+            profileView.style.display = 'none';
+            profileEdit.style.display = 'block';
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            profileEdit.style.display = 'none';
+            profileView.style.display = 'block';
+        });
+    }
+
+    // ===== Property Edit Buttons =====
     document.querySelectorAll('.btn-edit-property').forEach(btn => {
         btn.addEventListener('click', () => {
             const propertyId = btn.dataset.id;
@@ -16,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Open delete modal
+    // ===== Property Delete Buttons =====
     document.querySelectorAll('.btn-delete-property').forEach(btn => {
         btn.addEventListener('click', () => {
             const propertyId = btn.dataset.id;
@@ -35,4 +51,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
-</script>

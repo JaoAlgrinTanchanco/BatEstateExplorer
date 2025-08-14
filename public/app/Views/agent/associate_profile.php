@@ -161,20 +161,5 @@ $tab = $_GET['tab'] ?? 'overview';
     </section>
 </div>
 
-<script>
-const editBtn = document.getElementById('editProfileBtn');
-const cancelBtn = document.getElementById('cancelEditBtn');
-const profileView = document.querySelector('.profile-view');
-const profileEdit = document.querySelector('.profile-edit');
 
-editBtn.addEventListener('click', () => {
-    profileView.style.display = 'none';
-    profileEdit.style.display = 'block';
-});
-
-cancelBtn.addEventListener('click', () => {
-    profileEdit.style.display = 'none';
-    profileView.style.display = 'block';
-});
-</script>
 
