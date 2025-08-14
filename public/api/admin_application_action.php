@@ -28,13 +28,10 @@ if (!in_array($action, ['approve', 'reject'])) {
 
 $status = ($action === 'approve') ? 'approved' : 'rejected';
 
-// If approve, copy to `users` table
+// If approve, copy to `users` table with all application columns
 if ($action === 'approve') {
-    // Get application data (only needed columns for `users` table)
     $stmt = $conn->prepare("
-        SELECT first_name, last_name, email, password_hash, phone, address, agent_type
-        FROM applications
-        WHERE id = ?
+        SELECT * FROM applications WHERE id = ?
     ");
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -46,33 +43,59 @@ if ($action === 'approve') {
         exit;
     }
 
-    // Map agent_type to valid user_type in `users` table
-    // Adjust mapping logic if needed
-    $user_type = match ($application['agent_type']) {
+    // Map agent_type to user_type
+    $user_type = match ($application['agent_type'] ?? '') {
         'direct_agent' => 'direct_agent',
         'associate_agent' => 'associate_agent',
         default => 'user'
     };
 
-    // Insert into users table
+    // Insert all relevant columns into users table
     $stmt = $conn->prepare("
         INSERT INTO users (
             first_name, last_name, email, password_hash, phone, address,
-            user_type, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            user_type, status,
+            education, school, course, graduation_year, certifications, training,
+            broker_license_path, prc_license_path, resume_path, valid_id_path, additional_docs_path,
+            agent_type, company_id, broker_id, license_number, experience_years,
+            specialization, bio
+        ) VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?, ?
+        )
     ");
 
     $active_status = 'active';
     $stmt->bind_param(
-        "ssssssss",
+        "sssssssssssssssssssssssss",
         $application['first_name'],
         $application['last_name'],
         $application['email'],
-        $application['password_hash'], // already hashed in applications table
+        $application['password_hash'],
         $application['phone'],
         $application['address'],
         $user_type,
-        $active_status
+        $active_status,
+        $application['education'],
+        $application['school'],
+        $application['course'],
+        $application['graduation_year'],
+        $application['certifications'],
+        $application['training'],
+        $application['broker_license_path'],
+        $application['prc_license_path'],
+        $application['resume_path'],
+        $application['valid_id_path'],
+        $application['additional_docs_path'],
+        $application['agent_type'],
+        $application['company_id'],
+        $application['broker_id'],
+        $application['license_number'],
+        $application['experience_years'],
+        $application['specialization'],
+        $application['bio']
     );
 
     if (!$stmt->execute()) {
