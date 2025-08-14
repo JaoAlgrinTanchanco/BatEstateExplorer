@@ -254,6 +254,118 @@
 }
 
 
+//add listing tab
+/* Container */
+.overview-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Card style */
+.overview-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* Labels */
+.overview-card label {
+    display: block;
+    margin: 15px 0 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Inputs, Selects, and Textareas */
+.overview-card input,
+.overview-card select,
+.overview-card textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.overview-card input:focus,
+.overview-card select:focus,
+.overview-card textarea:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.1);
+    outline: none;
+}
+
+/* Drag & Drop Image Upload Area */
+/* drag area */
+.drag-drop-area {
+  border: 2px dashed #007bff;
+  border-radius: 6px;
+  padding: 20px;
+  text-align: center;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.drag-drop-area:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    border-color: #0056b3;
+}
+
+.drag-drop-area.drag-over {
+  background-color: rgba(0,123,255,0.05);
+  border-color: #0056b3;
+}
+
+/* preview area */
+.image-preview {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* single thumbnail wrapper */
+.image-preview .img-wrap {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* actual thumbnail */
+.image-preview .img-wrap img.thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display:block;
+}
+
+/* remove button */
+.image-preview .img-wrap button.remove-img {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+}
+
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
     .info-row {

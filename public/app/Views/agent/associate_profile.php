@@ -83,8 +83,81 @@ if ($tab === 'my_listings') {
         ?>
 
         <?php case 'add_listing': ?>
+                <?php case 'add_listing': ?>
                 <h2>Add New Listing</h2>
-                <p>Form to create a new property listing.</p>
+
+                <div class="overview-container">
+                    <div class="overview-card">
+                        <form id="addListingForm" action="?view=save_listing" method="POST" enctype="multipart/form-data">
+                            
+                            <!-- Property Name -->
+                            <label for="title"><strong>Enter property name</strong></label>
+                            <input type="text" id="title" name="title" required>
+
+                            <!-- Location -->
+                            <label for="location"><strong>Select Location</strong></label>
+                            <select id="location" name="location" required>
+                                <option value="">-- Select Location --</option>
+                                <option value="Lipa City">Lipa City</option>
+                                <option value="Batangas City">Batangas City</option>
+                                <option value="Tanauan City">Tanauan City</option>
+                            </select>
+
+                            <!-- Price -->
+                            <label for="price"><strong>Enter price in pesos</strong></label>
+                            <input type="number" id="price" name="price" min="0" step="0.01" required>
+
+                            <!-- Lot Size -->
+                            <label for="lot_size"><strong>Enter lot size in sqm</strong></label>
+                            <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
+
+                            <!-- Property Type -->
+                            <label for="property_type"><strong>Select Property Type</strong></label>
+                            <select id="property_type" name="property_type" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="House">House</option>
+                                <option value="Condo">Condo</option>
+                                <option value="Lot">Lot</option>
+                                <option value="Apartment">Apartment</option>
+                            </select>
+
+                            <!-- Bedrooms -->
+                            <label for="bedrooms"><strong>Select Bedrooms</strong></label>
+                            <select id="bedrooms" name="bedrooms" required>
+                                <option value="">-- Select Bedrooms --</option>
+                                <?php for ($i = 0; $i <= 10; $i++): ?>
+                                    <option value="<?= $i ?>"><?= $i ?></option>
+                                <?php endfor; ?>
+                            </select>
+
+                            <!-- Bathrooms -->
+                            <label for="bathrooms"><strong>Select Bathrooms</strong></label>
+                            <select id="bathrooms" name="bathrooms" required>
+                                <option value="">-- Select Bathrooms --</option>
+                                <?php for ($i = 0; $i <= 10; $i++): ?>
+                                    <option value="<?= $i ?>"><?= $i ?></option>
+                                <?php endfor; ?>
+                            </select>
+
+                            <!-- Description -->
+                            <label for="description"><strong>Enter property description</strong></label>
+                            <textarea id="description" name="description" rows="4" required></textarea>
+
+                            <!-- Images Upload -->
+                            <label><strong>Property Images</strong></label>
+                            <div id="imageUploadArea" class="drag-drop-area">
+                                <p>Drag & drop images here or click to browse</p>
+                                <input type="file" name="images[]" id="images" accept="image/*" multiple style="display:none;">
+                            </div>
+
+                            <!-- where previews will appear -->
+                            <div id="imagePreview" class="image-preview" aria-live="polite"></div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn-submit">Save Listing</button>
+                        </form>
+                    </div>
+                </div>
         <?php break; ?>
 
         <?php case 'analytics': ?>
@@ -200,3 +273,101 @@ if ($tab === 'my_listings') {
         <?php endswitch; ?>
     </section>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const dropArea = document.getElementById('imageUploadArea');
+  const fileInput = document.getElementById('images');
+  let preview = document.getElementById('imagePreview');
+
+  if (!dropArea || !fileInput) {
+    console.warn('Image upload elements missing.');
+    return;
+  }
+
+  // ensure preview container exists
+  if (!preview) {
+    preview = document.createElement('div');
+    preview.id = 'imagePreview';
+    preview.className = 'image-preview';
+    dropArea.insertAdjacentElement('afterend', preview);
+  }
+
+  // prevent default for drag/drop events
+  ['dragenter','dragover','dragleave','drop'].forEach(evt =>
+    dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }, false)
+  );
+
+  // highlight on dragover
+  dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
+  dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
+  dropArea.addEventListener('drop', (e) => {
+    dropArea.classList.remove('drag-over');
+    handleFiles(e.dataTransfer.files);
+  });
+
+  // click to open file picker
+  dropArea.addEventListener('click', () => fileInput.click());
+  // keyboard support: Enter or Space opens picker
+  dropArea.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+  });
+
+  // file input change
+  fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+  // handle list of files (FileList)
+  function handleFiles(fileList) {
+    if (!fileList || fileList.length === 0) return;
+
+    // Convert FileList -> Array and filter images
+    const files = Array.from(fileList).filter(f => f.type && f.type.startsWith('image/'));
+    if (files.length === 0) return;
+
+    // Put these files into fileInput (replace existing selection)
+    const dt = new DataTransfer();
+    files.forEach(f => dt.items.add(f));
+    fileInput.files = dt.files;
+
+    // Clear existing previews
+    preview.innerHTML = '';
+
+    // Render previews
+    files.forEach((file, idx) => {
+      const reader = new FileReader();
+      const wrap = document.createElement('div');
+      wrap.className = 'img-wrap';
+
+      const img = document.createElement('img');
+      img.className = 'thumb';
+      wrap.appendChild(img);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'remove-img';
+      removeBtn.setAttribute('title', 'Remove image');
+      removeBtn.innerHTML = '&times;';
+      wrap.appendChild(removeBtn);
+
+      // remove handler: remove file from fileInput and preview
+      removeBtn.addEventListener('click', () => {
+        const currentFiles = Array.from(fileInput.files);
+        const dt2 = new DataTransfer();
+        currentFiles.forEach(f => {
+          // compare by name+size+lastModified to identify file
+          if (!(f.name === file.name && f.size === file.size && f.lastModified === file.lastModified)) {
+            dt2.items.add(f);
+          }
+        });
+        fileInput.files = dt2.files;
+        wrap.remove();
+      });
+
+      reader.onload = (e) => { img.src = e.target.result; };
+      reader.readAsDataURL(file);
+
+      preview.appendChild(wrap);
+    });
+  }
+});
+</script>

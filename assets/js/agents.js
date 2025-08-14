@@ -50,4 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
             new bootstrap.Modal(document.getElementById('deletePropertyModal')).show();
         });
     });
+
+    //add listing
+    
 });
