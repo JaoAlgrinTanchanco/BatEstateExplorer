@@ -1,6 +1,18 @@
 <?php
 if (!isset($user)) die('Access denied.');
 
+if (!empty($_SESSION['flash_success'])): ?>
+    <div class="alert alert-success">
+        <?= $_SESSION['flash_success']; unset($_SESSION['flash_success']); ?>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($_SESSION['flash_error'])): ?>
+    <div class="alert alert-danger">
+        <?= $_SESSION['flash_error']; unset($_SESSION['flash_error']); ?>
+    </div>
+<?php endif;
+
 // Detect active tab
 $tab = $_GET['tab'] ?? 'overview';
 ?>
@@ -120,7 +132,7 @@ $tab = $_GET['tab'] ?? 'overview';
                     </div>
                 </div>  
                 
-                <form class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php" style="display:none;">
+                <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php" style="display:none;">
                     <label>First Name</label>
                     <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" required>
 
@@ -142,6 +154,7 @@ $tab = $_GET['tab'] ?? 'overview';
                     <button type="submit">Save Changes</button>
                     <button type="button" id="cancelEditBtn">Cancel</button>
                 </form>
+
                 <div id="profileMessage"></div>
             </div>
         <?php endswitch; ?>
@@ -163,21 +176,5 @@ cancelBtn.addEventListener('click', () => {
     profileEdit.style.display = 'none';
     profileView.style.display = 'block';
 });
-
-document.getElementById('profileForm').addEventListener('submit', async function(e) {
-    e.preventDefault(); // prevent normal form submit
-
-    const formData = new FormData(this);
-    const response = await fetch('/BatEstateExplorer/public/api/save_profile.php', {
-        method: 'POST',
-        body: formData
-    });
-    const result = await response.json();
-
-    document.getElementById('profileMessage').textContent = result.message;
-
-    if (result.status === 'success') {
-        // Optionally, update the visible profile fields
-    }
-});
 </script>
+
