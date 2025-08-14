@@ -273,19 +273,19 @@ if ($tab === 'my_listings') {
         <?php endswitch; ?>
     </section>
 </div>
-
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const dropArea = document.getElementById('imageUploadArea');
+  const dropArea  = document.getElementById('imageUploadArea');
   const fileInput = document.getElementById('images');
-  let preview = document.getElementById('imagePreview');
+  let preview     = document.getElementById('imagePreview');
+  const MAX_FILES = 10;
 
-  if (!dropArea || !fileInput) {
-    console.warn('Image upload elements missing.');
-    return;
-  }
+  // Single source of truth (prevents duplicates)
+  let selectedFiles = [];
 
-  // ensure preview container exists
+  if (!dropArea || !fileInput) return;
+
+  // Ensure preview container exists
   if (!preview) {
     preview = document.createElement('div');
     preview.id = 'imagePreview';
@@ -293,48 +293,18 @@ document.addEventListener('DOMContentLoaded', () => {
     dropArea.insertAdjacentElement('afterend', preview);
   }
 
-  // prevent default for drag/drop events
-  ['dragenter','dragover','dragleave','drop'].forEach(evt =>
-    dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }, false)
-  );
+  // Utils
+  const sig = f => `${f.name}|${f.size}|${f.lastModified}`;
 
-  // highlight on dragover
-  dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
-  dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
-  dropArea.addEventListener('drop', (e) => {
-    dropArea.classList.remove('drag-over');
-    handleFiles(e.dataTransfer.files);
-  });
-
-  // click to open file picker
-  dropArea.addEventListener('click', () => fileInput.click());
-  // keyboard support: Enter or Space opens picker
-  dropArea.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
-  });
-
-  // file input change
-  fileInput.addEventListener('change', () => handleFiles(fileInput.files));
-
-  // handle list of files (FileList)
-  function handleFiles(fileList) {
-    if (!fileList || fileList.length === 0) return;
-
-    // Convert FileList -> Array and filter images
-    const files = Array.from(fileList).filter(f => f.type && f.type.startsWith('image/'));
-    if (files.length === 0) return;
-
-    // Put these files into fileInput (replace existing selection)
+  function rebuildFileInput() {
     const dt = new DataTransfer();
-    files.forEach(f => dt.items.add(f));
+    selectedFiles.forEach(f => dt.items.add(f));
     fileInput.files = dt.files;
+  }
 
-    // Clear existing previews
+  function renderPreviews() {
     preview.innerHTML = '';
-
-    // Render previews
-    files.forEach((file, idx) => {
-      const reader = new FileReader();
+    selectedFiles.forEach((file) => {
       const wrap = document.createElement('div');
       wrap.className = 'img-wrap';
 
@@ -345,29 +315,80 @@ document.addEventListener('DOMContentLoaded', () => {
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'remove-img';
-      removeBtn.setAttribute('title', 'Remove image');
+      removeBtn.title = 'Remove image';
       removeBtn.innerHTML = '&times;';
       wrap.appendChild(removeBtn);
 
-      // remove handler: remove file from fileInput and preview
       removeBtn.addEventListener('click', () => {
-        const currentFiles = Array.from(fileInput.files);
-        const dt2 = new DataTransfer();
-        currentFiles.forEach(f => {
-          // compare by name+size+lastModified to identify file
-          if (!(f.name === file.name && f.size === file.size && f.lastModified === file.lastModified)) {
-            dt2.items.add(f);
-          }
-        });
-        fileInput.files = dt2.files;
-        wrap.remove();
+        const fileSig = sig(file);
+        selectedFiles = selectedFiles.filter(f => sig(f) !== fileSig);
+        rebuildFileInput();
+        renderPreviews();
       });
 
-      reader.onload = (e) => { img.src = e.target.result; };
+      const reader = new FileReader();
+      reader.onload = e => { img.src = e.target.result; };
       reader.readAsDataURL(file);
 
       preview.appendChild(wrap);
     });
   }
+
+  function addFiles(fileList) {
+    if (!fileList || fileList.length === 0) return;
+
+    const incoming = Array.from(fileList)
+      .filter(f => f.type && f.type.startsWith('image/'));
+
+    if (incoming.length === 0) return;
+
+    // Deduplicate and enforce limit
+    const existingSigs = new Set(selectedFiles.map(sig));
+    const toAdd = [];
+    for (const f of incoming) {
+      if (selectedFiles.length + toAdd.length >= MAX_FILES) break;
+      if (!existingSigs.has(sig(f))) {
+        toAdd.push(f);
+        existingSigs.add(sig(f));
+      }
+    }
+
+    if (selectedFiles.length + toAdd.length > MAX_FILES) {
+      alert(`You can only upload up to ${MAX_FILES} images.`);
+    }
+
+    if (toAdd.length === 0) {
+      // nothing new to add
+      return;
+    }
+
+    selectedFiles = [...selectedFiles, ...toAdd];
+    rebuildFileInput();
+    renderPreviews();
+  }
+
+  // Drag/drop plumbing
+  ['dragenter','dragover','dragleave','drop'].forEach(evt =>
+    dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }, false)
+  );
+  dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
+  dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
+  dropArea.addEventListener('drop', e => {
+    dropArea.classList.remove('drag-over');
+    addFiles(e.dataTransfer.files);
+  });
+
+  // Click + keyboard to open picker
+  dropArea.addEventListener('click', () => fileInput.click());
+  dropArea.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+  });
+
+  // Picker change => treat as new files (don't concatenate with fileInput.files)
+  fileInput.addEventListener('change', () => {
+    addFiles(fileInput.files);
+    // Reset the picker so selecting the same files again still triggers 'change'
+    fileInput.value = '';
+  });
 });
 </script>
