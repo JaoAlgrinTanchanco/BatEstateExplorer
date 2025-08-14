@@ -1,6 +1,7 @@
 <?php
 if (!isset($user)) die('Access denied.');
 
+// Display flash messages
 if (!empty($_SESSION['flash_success'])): ?>
     <div class="alert alert-success">
         <?= $_SESSION['flash_success']; unset($_SESSION['flash_success']); ?>
@@ -11,10 +12,22 @@ if (!empty($_SESSION['flash_success'])): ?>
     <div class="alert alert-danger">
         <?= $_SESSION['flash_error']; unset($_SESSION['flash_error']); ?>
     </div>
-<?php endif;
+<?php endif; ?>
 
+<?php
 // Detect active tab
 $tab = $_GET['tab'] ?? 'overview';
+
+// Fetch listings for My Listings tab
+$listings = [];
+if ($tab === 'my_listings') {
+    $stmt = $conn->prepare("SELECT * FROM properties WHERE agent_id = ? ORDER BY created_at DESC");
+    $stmt->bind_param("i", $user['id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $listings = $result->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+}
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_profile_tab.css">
@@ -37,9 +50,66 @@ $tab = $_GET['tab'] ?? 'overview';
     <!-- Content Section -->
     <section class="dashboard-content">
         <?php switch ($tab):
-            case 'my_listings': ?>
-                <h2>My Listings</h2>
-                <p>Display list of properties posted by this agent.</p>
+        // ================= MY LISTINGS =================
+        case 'my_listings': ?>
+            <h2>My Listings</h2>
+            <!-- Floating Action Button -->
+            <button id="addListingBtn" class="floating-btn" title="Add Listing">+</button>
+
+            <div class="overview-container">
+                <?php if (!empty($listings)): ?>
+                    <?php foreach ($listings as $property): ?>
+                        <div class="overview-card listing-card">
+                            <div class="info-row"><strong>Title:</strong> <span><?= htmlspecialchars($property['title']) ?></span></div>
+                            <div class="info-row"><strong>Location:</strong> <span><?= htmlspecialchars($property['location']) ?></span></div>
+                            <div class="info-row"><strong>Price:</strong> <span><?= number_format($property['price'], 2) ?></span></div>
+                            <div class="info-row"><strong>Bedrooms:</strong> <span><?= htmlspecialchars($property['bedrooms']) ?></span></div>
+                            <div class="info-row"><strong>Bathrooms:</strong> <span><?= htmlspecialchars($property['bathrooms']) ?></span></div>
+                            <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($property['status']) ?></span></div>
+                            <div class="info-row actions">
+                                <a href="?view=edit_listing&id=<?= $property['id'] ?>" class="btn-edit">Edit</a>
+                                <a href="?view=delete_listing&id=<?= $property['id'] ?>" class="btn-delete">Delete</a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="overview-card">
+                        <p>No listings found. Click the + button to add a property.</p>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Modal -->
+                <div id="addListingModal" class="modal" style="display:none;">
+                    <div class="modal-content">
+                        <span id="closeModal" class="modal-close">&times;</span>
+                        <h2>Add New Property</h2>
+                        <form id="addListingForm">
+                            <label>Property Title</label>
+                            <input type="text" name="title" required>
+
+                            <label>Description</label>
+                            <textarea name="description" required></textarea>
+
+                            <label>Location</label>
+                            <input type="text" name="location" required>
+
+                            <label>Price</label>
+                            <input type="number" name="price" required>
+
+                            <label>Bedrooms</label>
+                            <input type="number" name="bedrooms" min="0">
+
+                            <label>Bathrooms</label>
+                            <input type="number" name="bathrooms" min="0">
+
+                            <label>Square Meters</label>
+                            <input type="number" name="sqm" min="0">
+
+                            <button type="submit">Save Listing</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         <?php break; ?>
 
         <?php case 'add_listing': ?>
@@ -160,6 +230,3 @@ $tab = $_GET['tab'] ?? 'overview';
         <?php endswitch; ?>
     </section>
 </div>
-
-
-
