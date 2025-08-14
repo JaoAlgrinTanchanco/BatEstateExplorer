@@ -3,12 +3,11 @@ session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
 require_login(); // Ensure user is logged in
 
-header('Content-Type: application/json');
-
 // Get current user ID
 $userId = $_SESSION['user_id'] ?? null;
 if (!$userId) {
-    echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
+    $_SESSION['flash_error'] = 'User not logged in.';
+    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile');
     exit;
 }
 
@@ -21,43 +20,36 @@ $user = $result->fetch_assoc();
 $stmt->close();
 
 if (!$user) {
-    echo json_encode(['status' => 'error', 'message' => 'User not found.']);
+    $_SESSION['flash_error'] = 'User not found.';
+    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile');
     exit;
 }
+
+// Preserve current user_type
+$userType = $user['user_type'];
 
 // Collect POST data
 $firstName      = trim($_POST['first_name'] ?? '');
 $lastName       = trim($_POST['last_name'] ?? '');
 $phone          = trim($_POST['phone'] ?? '');
 $email          = trim($_POST['email'] ?? '');
-$newPass        = $_POST['password'] ?? '';
 $currentPass    = $_POST['current_password'] ?? '';
+$newPass        = $_POST['new_password'] ?? '';
 $address        = trim($_POST['address'] ?? '');
-$education      = trim($_POST['education'] ?? '');
-$school         = trim($_POST['school'] ?? '');
-$course         = trim($_POST['course'] ?? '');
-$graduationYear = trim($_POST['graduation_year'] ?? '');
-$certifications = trim($_POST['certifications'] ?? '');
-$training       = trim($_POST['training'] ?? '');
-$agentType      = trim($_POST['agent_type'] ?? '');
-$brokerId       = trim($_POST['broker_id'] ?? '');
-$licenseNumber  = trim($_POST['license_number'] ?? '');
-$experienceYears= (int)($_POST['experience_years'] ?? 0);
-$specialization = trim($_POST['specialization'] ?? '');
-$bio            = trim($_POST['bio'] ?? '');
 $status         = trim($_POST['status'] ?? $user['status']);
-$adminNotes     = trim($_POST['admin_notes'] ?? '');
 
 // Validate required fields
 if (!$firstName || !$lastName || !$email) {
-    echo json_encode(['status' => 'error', 'message' => 'First name, last name, and email are required.']);
+    $_SESSION['flash_error'] = 'First name, last name, and email are required.';
+    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile');
     exit;
 }
 
 // Handle password change
 if (!empty($newPass)) {
     if (!$currentPass || !password_verify($currentPass, $user['password_hash'])) {
-        echo json_encode(['status' => 'error', 'message' => 'Current password is incorrect.']);
+        $_SESSION['flash_error'] = 'Current password is incorrect.';
+        header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile');
         exit;
     }
     $hashedPass = password_hash($newPass, PASSWORD_DEFAULT);
@@ -70,12 +62,13 @@ $stmt = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
 $stmt->bind_param("si", $email, $userId);
 $stmt->execute();
 if ($stmt->get_result()->num_rows > 0) {
-    echo json_encode(['status' => 'error', 'message' => 'Email already in use by another account.']);
+    $_SESSION['flash_error'] = 'Email already in use by another account.';
+    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile');
     exit;
 }
 $stmt->close();
 
-// Update user with all fields (without admin_notes)
+// Update user
 $stmt = $conn->prepare("
     UPDATE users SET
         first_name = ?, last_name = ?, phone = ?, email = ?, password_hash = ?,
@@ -92,9 +85,13 @@ $stmt->bind_param(
 );
 
 if ($stmt->execute()) {
-    echo json_encode(['status' => 'success', 'message' => 'Profile updated successfully.']);
+    $_SESSION['flash_success'] = 'Profile updated successfully.';
 } else {
-    echo json_encode(['status' => 'error', 'message' => 'Failed to update profile: ' . $stmt->error]);
+    $_SESSION['flash_error'] = 'Failed to update profile: ' . $stmt->error;
 }
 $stmt->close();
 $conn->close();
+
+// Redirect back to profile
+header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile');
+exit;

@@ -51,7 +51,7 @@ try {
         $company_id = (int)($application['company_id'] ?? 0);
         $experience_years = (int)($application['experience_years'] ?? 0);
 
-        // Build INSERT with named placeholders
+        // Build INSERT with named placeholders (no agent_type)
         $insert = "
             INSERT INTO users (
                 first_name, last_name, email, password_hash, phone, address,
@@ -59,7 +59,7 @@ try {
                 education, school, course, graduation_year,
                 certifications, training,
                 broker_license_path, prc_license_path, resume_path, valid_id_path, additional_docs_path,
-                agent_type, company_id, broker_id, license_number, experience_years,
+                company_id, broker_id, license_number, experience_years,
                 specialization, bio
             ) VALUES (
                 :first_name, :last_name, :email, :password_hash, :phone, :address,
@@ -67,7 +67,7 @@ try {
                 :education, :school, :course, :graduation_year,
                 :certifications, :training,
                 :broker_license_path, :prc_license_path, :resume_path, :valid_id_path, :additional_docs_path,
-                :agent_type, :company_id, :broker_id, :license_number, :experience_years,
+                :company_id, :broker_id, :license_number, :experience_years,
                 :specialization, :bio
             )
         ";
@@ -94,7 +94,6 @@ try {
             ':resume_path' => $application['resume_path'] ?? '',
             ':valid_id_path' => $application['valid_id_path'] ?? '',
             ':additional_docs_path' => $application['additional_docs_path'] ?? '',
-            ':agent_type' => $application['agent_type'] ?? '',
             ':company_id' => $company_id,
             ':broker_id' => $application['broker_id'] ?? '',
             ':license_number' => $application['license_number'] ?? '',
@@ -104,7 +103,7 @@ try {
         ]);
     }
 
-    // === UPDATE APPLICATION STATUS ===
+    // Update application status
     $stmt = $pdo->prepare("UPDATE applications SET status = :status WHERE id = :id");
     $stmt->execute([
         ':status' => $status,

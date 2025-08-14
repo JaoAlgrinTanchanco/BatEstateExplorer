@@ -142,6 +142,7 @@ $tab = $_GET['tab'] ?? 'overview';
                     <button type="submit">Save Changes</button>
                     <button type="button" id="cancelEditBtn">Cancel</button>
                 </form>
+                <div id="profileMessage"></div>
             </div>
         <?php endswitch; ?>
     </section>
@@ -161,5 +162,22 @@ editBtn.addEventListener('click', () => {
 cancelBtn.addEventListener('click', () => {
     profileEdit.style.display = 'none';
     profileView.style.display = 'block';
+});
+
+document.getElementById('profileForm').addEventListener('submit', async function(e) {
+    e.preventDefault(); // prevent normal form submit
+
+    const formData = new FormData(this);
+    const response = await fetch('/BatEstateExplorer/public/api/save_profile.php', {
+        method: 'POST',
+        body: formData
+    });
+    const result = await response.json();
+
+    document.getElementById('profileMessage').textContent = result.message;
+
+    if (result.status === 'success') {
+        // Optionally, update the visible profile fields
+    }
 });
 </script>
