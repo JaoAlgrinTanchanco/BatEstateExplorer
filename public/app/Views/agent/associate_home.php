@@ -135,7 +135,6 @@ $result = $conn->query($sql);
   padding: 30px 35px;
   box-shadow: 0 8px 20px rgba(26, 188, 156, 0.3);
   text-align: center;
-  margin-top: 60px;
   margin-bottom: 40px;
 }
 

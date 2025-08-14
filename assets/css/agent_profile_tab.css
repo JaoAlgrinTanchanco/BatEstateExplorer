@@ -1,0 +1,60 @@
+
+/* ===== Overview Tab Container ===== */
+.overview-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+/* ===== Each Section Card ===== */
+.overview-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+}
+.overview-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* ===== Section Header ===== */
+.overview-card h3 {
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+    color: #3498db;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 5px;
+}
+
+/* ===== Info Rows ===== */
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #f1f1f1;
+}
+.info-row:last-child {
+    border-bottom: none;
+}
+.info-row strong {
+    color: #555;
+}
+
+/* ===== Links Styling ===== */
+.info-row a {
+    color: #3498db;
+    text-decoration: none;
+}
+.info-row a:hover {
+    text-decoration: underline;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .info-row {
+        flex-direction: column;
+        gap: 4px;
+    }
+}
+
