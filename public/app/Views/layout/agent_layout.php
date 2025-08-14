@@ -27,7 +27,22 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
     <?php else: ?>
       <!-- Future: direct_agent nav here -->
     <?php endif; ?>
-    <a href="/BatEstateExplorer/public/auth/logout.php"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+
+    <!-- Logout Button (POST Form) -->
+    <form action="../../auth/logout.php" method="POST" style="display:inline;">
+      <button type="submit" class="logout-button" style="
+        background-color: #dc3545;
+        border: none;
+        color: white;
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-family: inherit;
+      ">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </button>
+    </form>
   </nav>
 </header>
 
