@@ -1,114 +1,118 @@
 <?php
-// save_listing.php
+// DEBUG MODE
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 require_once __DIR__ . '/../../config/pdo_database.php';
 session_start();
 
-// Redirect location after save
 $redirect_url = "/BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=add_listing";
-
-// Only allow POST
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: $redirect_url");
-    exit;
-}
 
 // Get logged-in user
 $user_data = get_logged_in_user($pdo);
 if (!$user_data) {
-    header("Location: $redirect_url");
-    exit;
+    die("❌ No logged in user detected.");
 }
 
-// Get agent_id linked to this user
+// Get agent_id
 $stmtAgent = $pdo->prepare("SELECT id FROM agents WHERE user_id = ?");
 $stmtAgent->execute([$user_data['id']]);
-$agent = $stmtAgent->fetch();
-
+$agent = $stmtAgent->fetch(PDO::FETCH_ASSOC);
 if (!$agent) {
-    header("Location: $redirect_url");
-    exit;
+    die("❌ Agent not found for user_id: " . $user_data['id']);
 }
 $agent_id = $agent['id'];
 
-// Collect inputs
-$title         = sanitize_input($_POST['title'] ?? '');
-$description   = sanitize_input($_POST['description'] ?? '');
+echo "✅ Agent ID: $agent_id<br>";
+
+// Collect form data
+$title         = $_POST['title'] ?? '';
+$description   = $_POST['description'] ?? '';
 $price         = floatval($_POST['price'] ?? 0);
-$location      = sanitize_input($_POST['location'] ?? '');
+$location      = $_POST['location'] ?? '';
 $bedrooms      = intval($_POST['bedrooms'] ?? 0);
 $bathrooms     = intval($_POST['bathrooms'] ?? 0);
 $sqm           = floatval($_POST['sqm'] ?? 0);
 $lot_size      = floatval($_POST['lot_size'] ?? 0);
-$property_type = sanitize_input($_POST['property_type'] ?? '');
-
-// Validation
-if (!$title || !$description || !$price || !$location || !$property_type) {
-    header("Location: $redirect_url");
-    exit;
-}
+$property_type = $_POST['property_type'] ?? '';
 
 try {
     $pdo->beginTransaction();
 
-    // Insert property first
+    // Insert property
     $stmt = $pdo->prepare("
         INSERT INTO properties
         (title, description, property_type, location, price, bedrooms, bathrooms, sqm, lot_size, agent_id, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', NOW())
     ");
     $stmt->execute([
-        $title,
-        $description,
-        $property_type,
-        $location,
-        $price,
-        $bedrooms,
-        $bathrooms,
-        $sqm,
-        $lot_size,
-        $agent_id
+        $title, $description, $property_type, $location, $price,
+        $bedrooms, $bathrooms, $sqm, $lot_size, $agent_id
     ]);
 
-    // Get the last inserted property ID
     $property_id = $pdo->lastInsertId();
+    echo "✅ Property inserted with ID: $property_id<br>";
 
-    // Handle file uploads
-    if (!empty($_FILES['images']['name'][0])) {
-        $upload_dir = __DIR__ . '/../../storage/uploads/property_images/';
-        if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+    // Path to uploads
+    $upload_dir = 'C:\\xampp\\htdocs\\BatEstateExplorer\\storage\\uploads\\property_images\\';
+    echo "📂 Upload directory: $upload_dir<br>";
 
-        $file_count = min(count($_FILES['images']['name']), 10);
-        $allowed_ext = ['jpg', 'jpeg', 'png', 'gif'];
+    // Ensure folder exists
+    if (!is_dir($upload_dir)) {
+        error_log("❌ Upload directory does not exist: " . $upload_dir);
+    } elseif (!is_writable($upload_dir)) {
+        error_log("❌ Upload directory is not writable: " . $upload_dir);
+    } else {
+        error_log("✅ Upload directory ready: " . $upload_dir);
+    }
+
+    // Debug: See what PHP received
+    echo '<pre>'; print_r($_FILES); echo '</pre>';
+
+    if (isset($_FILES['images']) && is_array($_FILES['images']['tmp_name']) && $_FILES['images']['tmp_name'][0] !== '') {
+        $file_count = min(count($_FILES['images']['tmp_name']), 10);
+        echo "📸 Number of files to process: $file_count<br>";
 
         for ($i = 0; $i < $file_count; $i++) {
-            $file_name = basename($_FILES['images']['name'][$i]);
-            $file_tmp  = $_FILES['images']['tmp_name'][$i];
-            $file_ext  = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+            $tmp   = $_FILES['images']['tmp_name'][$i];
+            $name  = $_FILES['images']['name'][$i];
+            $error = $_FILES['images']['error'][$i];
 
-            if (in_array($file_ext, $allowed_ext)) {
-                $new_name = uniqid('listing_', true) . '.' . $file_ext;
-                $dest_path = $upload_dir . $new_name;
+            echo "🔍 File $i: name=$name, tmp=$tmp, error=$error<br>";
 
-                if (move_uploaded_file($file_tmp, $dest_path)) {
-                    // Insert into property_images table
-                    $stmtImg = $pdo->prepare("
-                        INSERT INTO property_images (property_id, image_path, is_primary, created_at)
-                        VALUES (?, ?, ?, NOW())
-                    ");
-                    // Make the first image primary
-                    $is_primary = ($i === 0) ? 1 : 0;
-                    $stmtImg->execute([$property_id, 'uploads/property_images/' . $new_name, $is_primary]);
-                }
+            if ($error !== UPLOAD_ERR_OK) {
+                echo "❌ Upload error code $error for file $name<br>";
+                continue;
+            }
+
+            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
+                echo "❌ Invalid file extension for $name<br>";
+                continue;
+            }
+
+            $newFileName = uniqid() . '.' . $ext;
+            $destination = $upload_dir . $newFileName; // fixed variable
+
+            if (move_uploaded_file($tmp, $destination)) {
+                echo "✅ File moved to $destination<br>";
+                $relativePath = 'storage/uploads/property_images/' . $newFileName;
+
+                $stmtImg = $pdo->prepare("INSERT INTO property_images (property_id, image_path) VALUES (?, ?)");
+                $stmtImg->execute([$property_id, $relativePath]);
+                echo "✅ DB record inserted for image: $relativePath<br>";
+            } else {
+                echo "❌ Failed to move $name to $destination<br>";
             }
         }
+    } else {
+        echo "⚠ No images uploaded.<br>";
     }
 
     $pdo->commit();
+    echo "✅ Transaction committed.<br>";
 
 } catch (Exception $e) {
     $pdo->rollBack();
-    error_log("Save listing failed: " . $e->getMessage());
+    die("❌ ERROR: " . $e->getMessage());
 }
-
-header("Location: $redirect_url");
-exit;

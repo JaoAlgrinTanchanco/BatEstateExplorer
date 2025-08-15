@@ -79,19 +79,24 @@ if ($tab === 'my_listings') {
 
             <div class="overview-container">
                 <?php if (!empty($listings)): ?>
-                    <?php foreach ($listings as $property): ?>
-                        <div class="overview-card listing-card">
-                            <?php
-                                $images = json_decode($property['images'], true) ?? [];
-                                if (!empty($images)) {
-                                    // Use correct path
-                                    $first_img = '/' . htmlspecialchars($images[0]);
-                                    echo "<div class='listing-thumb'><img src='{$first_img}' alt='Property Image'></div>";
-                                }
+                    <?php foreach ($listings as $property): 
+                        // Ownership
+                        $ownership = ($property['agent_id'] == $agent_id) ? 'Owned' : 'Shared';
 
-                                // Determine ownership
-                                $ownership = ($property['agent_id'] == $agent_id) ? 'Owned' : 'Shared';
-                            ?>
+                        // Images from DB
+                        $images_data = unserialize($property['images_blob'] ?? '') ?: [];
+                        $first_img_src = '';
+                        if (!empty($images_data)) {
+                            $first_img_src = "data:{$images_data[0]['type']};base64," . base64_encode($images_data[0]['data']);
+                        }
+                    ?>
+                        <div class="overview-card listing-card">
+                            <?php if ($first_img_src): ?>
+                                <div class="listing-thumb">
+                                    <img src="<?= $first_img_src ?>" alt="Property Image">
+                                </div>
+                            <?php endif; ?>
+
                             <div class="info-row"><strong>Title:</strong> <span><?= htmlspecialchars($property['title']) ?></span></div>
                             <div class="info-row"><strong>Location:</strong> <span><?= htmlspecialchars($property['location']) ?></span></div>
                             <div class="info-row"><strong>Price:</strong> <span><?= number_format($property['price'], 2) ?></span></div>
@@ -99,6 +104,7 @@ if ($tab === 'my_listings') {
                             <div class="info-row"><strong>Bathrooms:</strong> <span><?= htmlspecialchars($property['bathrooms']) ?></span></div>
                             <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($property['status']) ?></span></div>
                             <div class="info-row"><strong>Type:</strong> <span><?= $ownership ?></span></div>
+                            
                             <div class="info-row actions">
                                 <a href="?view=edit_listing&id=<?= $property['id'] ?>" class="btn-edit">Edit</a>
                                 <a href="?view=delete_listing&id=<?= $property['id'] ?>" class="btn-delete" onclick="return confirm('Are you sure you want to delete this listing?')">Delete</a>
@@ -118,37 +124,40 @@ if ($tab === 'my_listings') {
 
                 <div class="overview-container">
                     <div class="overview-card">
-                        <form id="addListingForm" action="/BatEstateExplorer/public/api/save_listing.php" method="POST" enctype="multipart/form-data">
+                        <form id="addListingForm" 
+                            action="/BatEstateExplorer/public/api/save_listing.php" 
+                            method="POST" 
+                            enctype="multipart/form-data">
 
                             <!-- Property Name -->
-                            <label for="title"><strong>Enter property name</strong></label>
+                            <label for="title"><strong>Property Name</strong></label>
                             <input type="text" id="title" name="title" required>
 
                             <!-- Location -->
-                            <label for="location"><strong>Select Location</strong></label>
+                            <label for="location"><strong>Location</strong></label>
                             <select id="location" name="location" required>
                                 <option value="">-- Select Location --</option>
-                                <option value="Lipa City">Lipa City</option>
-                                <option value="Batangas City">Batangas City</option>
-                                <option value="Tanauan City">Tanauan City</option>
-                                <option value="Balayan">Balayan</option>
-                                <option value="Santo Tomas">Santo Tomas</option>
+                                <?php 
+                                $locations = ["Lipa City", "Batangas City", "Tanauan City", "Balayan", "Santo Tomas"];
+                                foreach ($locations as $loc): ?>
+                                    <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
+                                <?php endforeach; ?>
                             </select>
 
                             <!-- Price -->
-                            <label for="price"><strong>Enter price in pesos</strong></label>
+                            <label for="price"><strong>Price (₱)</strong></label>
                             <input type="number" id="price" name="price" min="0" step="0.01" required>
 
-                            <!-- Floor Area (sqm) -->
-                            <label for="sqm"><strong>Enter floor area in sqm</strong></label>
+                            <!-- Floor Area -->
+                            <label for="sqm"><strong>Floor Area (sqm)</strong></label>
                             <input type="number" id="sqm" name="sqm" min="0" step="0.01">
 
                             <!-- Lot Size -->
-                            <label for="lot_size"><strong>Enter lot size in sqm</strong></label>
+                            <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
                             <input type="number" id="lot_size" name="lot_size" min="0" step="0.01">
 
                             <!-- Property Type -->
-                            <label for="property_type"><strong>Select Property Type</strong></label>
+                            <label for="property_type"><strong>Property Type</strong></label>
                             <select id="property_type" name="property_type" required>
                                 <option value="">-- Select Type --</option>
                                 <option value="Property">Property</option>
@@ -156,7 +165,7 @@ if ($tab === 'my_listings') {
                             </select>
 
                             <!-- Bedrooms -->
-                            <label for="bedrooms"><strong>Select Bedrooms</strong></label>
+                            <label for="bedrooms"><strong>Bedrooms</strong></label>
                             <select id="bedrooms" name="bedrooms">
                                 <option value="">-- Select Bedrooms --</option>
                                 <?php for ($i = 0; $i <= 10; $i++): ?>
@@ -165,7 +174,7 @@ if ($tab === 'my_listings') {
                             </select>
 
                             <!-- Bathrooms -->
-                            <label for="bathrooms"><strong>Select Bathrooms</strong></label>
+                            <label for="bathrooms"><strong>Bathrooms</strong></label>
                             <select id="bathrooms" name="bathrooms">
                                 <option value="">-- Select Bathrooms --</option>
                                 <?php for ($i = 0; $i <= 10; $i++): ?>
@@ -174,20 +183,20 @@ if ($tab === 'my_listings') {
                             </select>
 
                             <!-- Description -->
-                            <label for="description"><strong>Enter property description</strong></label>
+                            <label for="description"><strong>Description</strong></label>
                             <textarea id="description" name="description" rows="4" required></textarea>
 
-                            <!-- Images Upload -->
-                            <label><strong>Property Images</strong></label>
-                            <div id="imageUploadArea" class="drag-drop-area">
+                            <!-- Image Upload -->
+                            <label for="images"><strong>Property Images</strong></label>
+                            <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
                                 <p>Drag & drop images here or click to browse</p>
-                                <input type="file" name="images[]" id="images" accept="image/*" multiple style="display:none;">
+                                <input type="file" id="images" accept="image/*" multiple style="display:none;">
                             </div>
 
-                            <!-- where previews will appear -->
+                            <!-- Preview Area -->
                             <div id="imagePreview" class="image-preview" aria-live="polite"></div>
 
-                            <!-- Submit Button -->
+                            <!-- Submit -->
                             <button type="submit" class="btn-submit">Save Listing</button>
                         </form>
                     </div>
@@ -312,134 +321,107 @@ if ($tab === 'my_listings') {
 document.addEventListener('DOMContentLoaded', () => {
     const dropArea  = document.getElementById('imageUploadArea');
     const fileInput = document.getElementById('images');
-    let preview     = document.getElementById('imagePreview');
+    const preview   = document.getElementById('imagePreview');
+    const form      = document.getElementById('addListingForm');
     const MAX_FILES = 10;
 
-    // Single source of truth (prevents duplicates)
     let selectedFiles = [];
 
-    if (dropArea && fileInput) {
-        // Ensure preview container exists
-        if (!preview) {
-            preview = document.createElement('div');
-            preview.id = 'imagePreview';
-            preview.className = 'image-preview';
-            dropArea.insertAdjacentElement('afterend', preview);
-        }
+    const sig = f => `${f.name}|${f.size}|${f.lastModified}`;
 
-        const sig = f => `${f.name}|${f.size}|${f.lastModified}`;
+    function renderPreviews() {
+        preview.innerHTML = '';
+        selectedFiles.forEach((file, index) => {
+            const wrap = document.createElement('div');
+            wrap.className = 'img-wrap';
 
-        function rebuildFileInput() {
-            const dt = new DataTransfer();
-            selectedFiles.forEach(f => dt.items.add(f));
-            fileInput.files = dt.files;
-        }
+            const img = document.createElement('img');
+            img.className = 'thumb';
+            wrap.appendChild(img);
 
-        function renderPreviews() {
-            preview.innerHTML = '';
-            selectedFiles.forEach((file) => {
-                const wrap = document.createElement('div');
-                wrap.className = 'img-wrap';
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'remove-img';
+            removeBtn.innerHTML = '&times;';
+            wrap.appendChild(removeBtn);
 
-                const img = document.createElement('img');
-                img.className = 'thumb';
-                wrap.appendChild(img);
-
-                const removeBtn = document.createElement('button');
-                removeBtn.type = 'button';
-                removeBtn.className = 'remove-img';
-                removeBtn.title = 'Remove image';
-                removeBtn.innerHTML = '&times;';
-                wrap.appendChild(removeBtn);
-
-                removeBtn.addEventListener('click', () => {
-                    const fileSig = sig(file);
-                    selectedFiles = selectedFiles.filter(f => sig(f) !== fileSig);
-                    rebuildFileInput();
-                    renderPreviews();
-                });
-
-                const reader = new FileReader();
-                reader.onload = e => { img.src = e.target.result; };
-                reader.readAsDataURL(file);
-
-                preview.appendChild(wrap);
+            removeBtn.addEventListener('click', () => {
+                selectedFiles.splice(index, 1);
+                renderPreviews();
             });
+
+            const reader = new FileReader();
+            reader.onload = e => img.src = e.target.result;
+            reader.readAsDataURL(file);
+
+            preview.appendChild(wrap);
+        });
+    }
+
+    function addFiles(fileList) {
+        if (!fileList) return;
+        const incoming = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+        const existingSigs = new Set(selectedFiles.map(sig));
+
+        for (const f of incoming) {
+            if (selectedFiles.length >= MAX_FILES) break;
+            if (!existingSigs.has(sig(f))) {
+                selectedFiles.push(f);
+                existingSigs.add(sig(f));
+            }
         }
+        renderPreviews();
+    }
 
-        function addFiles(fileList) {
-            if (!fileList || fileList.length === 0) return;
+    // Drag/drop handlers
+    const el = document.querySelector("#someElement");
+    if (el) {
+        el.addEventListener("click", function () {
+            ['dragenter','dragover','dragleave','drop'].forEach(evt =>
+                dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }, false)
+            );
+            dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
+            dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
+            dropArea.addEventListener('drop', e => {
+                dropArea.classList.remove('drag-over');
+                addFiles(e.dataTransfer.files);
+            });
+        });
+    }
 
-            const incoming = Array.from(fileList)
-                .filter(f => f.type && f.type.startsWith('image/'));
+    // Click to open file picker
+    dropArea.addEventListener('click', () => fileInput.click());
+    dropArea.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput.click();
+        }
+    });
+    fileInput.addEventListener('change', () => {
+        addFiles(fileInput.files);
+        fileInput.value = ''; // allow re-selection of same file
+    });
 
-            if (incoming.length === 0) return;
+    // Form submission
+    form.addEventListener('submit', e => {
+        e.preventDefault(); // prevent default form submit
 
-            const existingSigs = new Set(selectedFiles.map(sig));
-            const toAdd = [];
-            for (const f of incoming) {
-                if (selectedFiles.length + toAdd.length >= MAX_FILES) break;
-                if (!existingSigs.has(sig(f))) {
-                    toAdd.push(f);
-                    existingSigs.add(sig(f));
-                }
-            }
+        const fd = new FormData(form);
+        selectedFiles.forEach(f => fd.append('images[]', f));
 
-            if (selectedFiles.length + toAdd.length > MAX_FILES) {
-                alert(`You can only upload up to ${MAX_FILES} images.`);
-            }
-
-            if (toAdd.length === 0) return;
-
-            selectedFiles = [...selectedFiles, ...toAdd];
-            rebuildFileInput();
+        fetch(form.action, {
+            method: 'POST',
+            body: fd
+        })
+        .then(res => res.text())
+        .then(data => {
+            console.log('Server response:', data);
+            alert('Listing saved!');
+            form.reset();
+            selectedFiles = [];
             renderPreviews();
-        }
-
-        // Drag/drop events
-        ['dragenter','dragover','dragleave','drop'].forEach(evt =>
-            dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }, false)
-        );
-        dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
-        dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
-        dropArea.addEventListener('drop', e => {
-            dropArea.classList.remove('drag-over');
-            addFiles(e.dataTransfer.files);
-        });
-
-        // Click to open picker
-        dropArea.addEventListener('click', () => fileInput.click());
-        dropArea.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') { 
-                e.preventDefault(); 
-                fileInput.click(); 
-            }
-        });
-
-        // Picker change
-        fileInput.addEventListener('change', () => {
-            addFiles(fileInput.files);
-            fileInput.value = ''; // reset so same file re-select works
-        });
-    }
-
-    // Property type toggle (only if element exists)
-    const propertyTypeSelect = document.getElementById('property_type');
-    if (propertyTypeSelect) {
-        propertyTypeSelect.addEventListener('change', function () {
-            const isLot = this.value === 'Lot';
-            const bedrooms = document.getElementById('bedrooms');
-            const bathrooms = document.getElementById('bathrooms');
-
-            if (bedrooms) bedrooms.disabled = isLot;
-            if (bathrooms) bathrooms.disabled = isLot;
-            
-            if (isLot) {
-                if (bedrooms) bedrooms.value = '';
-                if (bathrooms) bathrooms.value = '';
-            }
-        });
-    }
+        })
+        .catch(err => console.error('Upload error:', err));
+    });
 });
 </script>
-
