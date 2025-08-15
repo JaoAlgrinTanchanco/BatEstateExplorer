@@ -18,30 +18,20 @@ if (!empty($_SESSION['flash_success'])): ?>
 // Detect active tab
 $tab = $_GET['tab'] ?? 'overview';
 
-
-// Fetch listings for My Listings tab (associate agent)
+// Fetch listings for My Listings tab (associate agent only)
 $listings = [];
-
 if ($tab === 'my_listings') {
-    $agent_id = isset($user['id']) ? (int)$user['id'] : 0;
-
-    if ($agent_id > 0) {
-        $stmt = $conn->prepare("
-            SELECT *
-            FROM properties
-            WHERE agent_id = ? OR sold_by_agent_id = ?
-            ORDER BY created_at DESC
-        ");
-        if ($stmt) {
-            $stmt->bind_param("ii", $agent_id, $agent_id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $listings = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
-            $stmt->close();
-        } else {
-            error_log("Prepare failed: " . $conn->error);
-        }
-    }
+    $stmt = $conn->prepare("
+        SELECT * 
+        FROM properties 
+        WHERE sold_by_agent_id = ?
+        ORDER BY created_at DESC
+    ");
+    $stmt->bind_param("i", $user['id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $listings = $result->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
 }
 
 ?>
@@ -141,8 +131,10 @@ if ($tab === 'my_listings') {
                             <label for="property_type"><strong>Select Property Type</strong></label>
                             <select id="property_type" name="property_type" required>
                                 <option value="">-- Select Type --</option>
-                                <option value="Property">Property</option>
+                                <option value="House">House</option>
+                                <option value="Condo">Condo</option>
                                 <option value="Lot">Lot</option>
+                                <option value="Apartment">Apartment</option>
                             </select>
 
                             <!-- Bedrooms -->

@@ -28,6 +28,19 @@ switch ($view) {
         $page_title = "Search Properties";
         break;
     // Future: direct agent cases
+    case 'direct_home':
+        $view_file = __DIR__ . '/../app/Views/agent/associate_home.php';
+        $page_title = "Associate Dashboard";
+        break;
+    case 'direct_profile':
+        $view_file = __DIR__ . '/../app/Views/agent/associate_profile.php';
+        $page_title = "My Profile";
+        break;
+    case 'direct_search':
+        $view_file = __DIR__ . '/../app/Views/agent/associate_search.php';
+        $page_title = "Search Properties";
+        break;
+
     default:
         $view_file = __DIR__ . '/../app/Views/agent/associate_home.php';
         $page_title = "Associate Dashboard";
