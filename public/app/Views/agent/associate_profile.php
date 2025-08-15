@@ -18,14 +18,20 @@ if (!empty($_SESSION['flash_success'])): ?>
 // Detect active tab
 $tab = $_GET['tab'] ?? 'overview';
 
-
 // Fetch listings for My Listings tab (associate agent)
 $listings = [];
 
 if ($tab === 'my_listings') {
-    $agent_id = isset($user['id']) ? (int)$user['id'] : 0;
+    // First, get the agent record linked to this user
+    $stmtAgent = $conn->prepare("SELECT id FROM agents WHERE user_id = ?");
+    $stmtAgent->bind_param("i", $user['id']);
+    $stmtAgent->execute();
+    $res = $stmtAgent->get_result();
+    $agent = $res ? $res->fetch_assoc() : null;
+    $stmtAgent->close();
 
-    if ($agent_id > 0) {
+    if ($agent) {
+        $agent_id = (int)$agent['id'];
         $stmt = $conn->prepare("
             SELECT *
             FROM properties
@@ -82,6 +88,9 @@ if ($tab === 'my_listings') {
                                     $first_img = '/BatEstateExplorer/uploads/listings/' . htmlspecialchars($images[0]);
                                     echo "<div class='listing-thumb'><img src='{$first_img}' alt='Property Image'></div>";
                                 }
+
+                                // Determine ownership
+                                $ownership = ($property['agent_id'] == $agent_id) ? 'Owned' : 'Shared';
                             ?>
                             <div class="info-row"><strong>Title:</strong> <span><?= htmlspecialchars($property['title']) ?></span></div>
                             <div class="info-row"><strong>Location:</strong> <span><?= htmlspecialchars($property['location']) ?></span></div>
@@ -89,6 +98,7 @@ if ($tab === 'my_listings') {
                             <div class="info-row"><strong>Bedrooms:</strong> <span><?= htmlspecialchars($property['bedrooms']) ?></span></div>
                             <div class="info-row"><strong>Bathrooms:</strong> <span><?= htmlspecialchars($property['bathrooms']) ?></span></div>
                             <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($property['status']) ?></span></div>
+                            <div class="info-row"><strong>Type:</strong> <span><?= $ownership ?></span></div>
                             <div class="info-row actions">
                                 <a href="?view=edit_listing&id=<?= $property['id'] ?>" class="btn-edit">Edit</a>
                                 <a href="?view=delete_listing&id=<?= $property['id'] ?>" class="btn-delete" onclick="return confirm('Are you sure you want to delete this listing?')">Delete</a>
@@ -100,6 +110,7 @@ if ($tab === 'my_listings') {
                         <p>No listings found.</p>
                     </div>
                 <?php endif; ?>
+
             </div>
         <?php break; ?>
 
