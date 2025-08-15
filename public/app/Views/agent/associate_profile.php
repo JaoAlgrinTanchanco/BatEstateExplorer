@@ -83,13 +83,12 @@ if ($tab === 'my_listings') {
         ?>
 
         <?php case 'add_listing': ?>
-                <?php case 'add_listing': ?>
                 <h2>Add New Listing</h2>
 
                 <div class="overview-container">
                     <div class="overview-card">
-                        <form id="addListingForm" action="?view=save_listing" method="POST" enctype="multipart/form-data">
-                            
+                        <form id="addListingForm" action="/BatEstateExplorer/public/api/save_listing.php" method="POST" enctype="multipart/form-data">
+
                             <!-- Property Name -->
                             <label for="title"><strong>Enter property name</strong></label>
                             <input type="text" id="title" name="title" required>
@@ -101,15 +100,21 @@ if ($tab === 'my_listings') {
                                 <option value="Lipa City">Lipa City</option>
                                 <option value="Batangas City">Batangas City</option>
                                 <option value="Tanauan City">Tanauan City</option>
+                                <option value="Balayan">Balayan</option>
+                                <option value="Santo Tomas">Santo Tomas</option>
                             </select>
 
                             <!-- Price -->
                             <label for="price"><strong>Enter price in pesos</strong></label>
                             <input type="number" id="price" name="price" min="0" step="0.01" required>
 
+                            <!-- Floor Area (sqm) -->
+                            <label for="sqm"><strong>Enter floor area in sqm</strong></label>
+                            <input type="number" id="sqm" name="sqm" min="0" step="0.01">
+
                             <!-- Lot Size -->
                             <label for="lot_size"><strong>Enter lot size in sqm</strong></label>
-                            <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
+                            <input type="number" id="lot_size" name="lot_size" min="0" step="0.01">
 
                             <!-- Property Type -->
                             <label for="property_type"><strong>Select Property Type</strong></label>
@@ -123,7 +128,7 @@ if ($tab === 'my_listings') {
 
                             <!-- Bedrooms -->
                             <label for="bedrooms"><strong>Select Bedrooms</strong></label>
-                            <select id="bedrooms" name="bedrooms" required>
+                            <select id="bedrooms" name="bedrooms">
                                 <option value="">-- Select Bedrooms --</option>
                                 <?php for ($i = 0; $i <= 10; $i++): ?>
                                     <option value="<?= $i ?>"><?= $i ?></option>
@@ -132,7 +137,7 @@ if ($tab === 'my_listings') {
 
                             <!-- Bathrooms -->
                             <label for="bathrooms"><strong>Select Bathrooms</strong></label>
-                            <select id="bathrooms" name="bathrooms" required>
+                            <select id="bathrooms" name="bathrooms">
                                 <option value="">-- Select Bathrooms --</option>
                                 <?php for ($i = 0; $i <= 10; $i++): ?>
                                     <option value="<?= $i ?>"><?= $i ?></option>
@@ -274,121 +279,131 @@ if ($tab === 'my_listings') {
     </section>
 </div>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const dropArea  = document.getElementById('imageUploadArea');
-  const fileInput = document.getElementById('images');
-  let preview     = document.getElementById('imagePreview');
-  const MAX_FILES = 10;
+    document.addEventListener('DOMContentLoaded', () => {
+    const dropArea  = document.getElementById('imageUploadArea');
+    const fileInput = document.getElementById('images');
+    let preview     = document.getElementById('imagePreview');
+    const MAX_FILES = 10;
 
-  // Single source of truth (prevents duplicates)
-  let selectedFiles = [];
+    // Single source of truth (prevents duplicates)
+    let selectedFiles = [];
 
-  if (!dropArea || !fileInput) return;
+    if (!dropArea || !fileInput) return;
 
-  // Ensure preview container exists
-  if (!preview) {
-    preview = document.createElement('div');
-    preview.id = 'imagePreview';
-    preview.className = 'image-preview';
-    dropArea.insertAdjacentElement('afterend', preview);
-  }
+    // Ensure preview container exists
+    if (!preview) {
+        preview = document.createElement('div');
+        preview.id = 'imagePreview';
+        preview.className = 'image-preview';
+        dropArea.insertAdjacentElement('afterend', preview);
+    }
 
-  // Utils
-  const sig = f => `${f.name}|${f.size}|${f.lastModified}`;
+    // Utils
+    const sig = f => `${f.name}|${f.size}|${f.lastModified}`;
 
-  function rebuildFileInput() {
-    const dt = new DataTransfer();
-    selectedFiles.forEach(f => dt.items.add(f));
-    fileInput.files = dt.files;
-  }
+    function rebuildFileInput() {
+        const dt = new DataTransfer();
+        selectedFiles.forEach(f => dt.items.add(f));
+        fileInput.files = dt.files;
+    }
 
-  function renderPreviews() {
-    preview.innerHTML = '';
-    selectedFiles.forEach((file) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'img-wrap';
+    function renderPreviews() {
+        preview.innerHTML = '';
+        selectedFiles.forEach((file) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'img-wrap';
 
-      const img = document.createElement('img');
-      img.className = 'thumb';
-      wrap.appendChild(img);
+        const img = document.createElement('img');
+        img.className = 'thumb';
+        wrap.appendChild(img);
 
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'remove-img';
-      removeBtn.title = 'Remove image';
-      removeBtn.innerHTML = '&times;';
-      wrap.appendChild(removeBtn);
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-img';
+        removeBtn.title = 'Remove image';
+        removeBtn.innerHTML = '&times;';
+        wrap.appendChild(removeBtn);
 
-      removeBtn.addEventListener('click', () => {
-        const fileSig = sig(file);
-        selectedFiles = selectedFiles.filter(f => sig(f) !== fileSig);
+        removeBtn.addEventListener('click', () => {
+            const fileSig = sig(file);
+            selectedFiles = selectedFiles.filter(f => sig(f) !== fileSig);
+            rebuildFileInput();
+            renderPreviews();
+        });
+
+        const reader = new FileReader();
+        reader.onload = e => { img.src = e.target.result; };
+        reader.readAsDataURL(file);
+
+        preview.appendChild(wrap);
+        });
+    }
+
+    function addFiles(fileList) {
+        if (!fileList || fileList.length === 0) return;
+
+        const incoming = Array.from(fileList)
+        .filter(f => f.type && f.type.startsWith('image/'));
+
+        if (incoming.length === 0) return;
+
+        // Deduplicate and enforce limit
+        const existingSigs = new Set(selectedFiles.map(sig));
+        const toAdd = [];
+        for (const f of incoming) {
+        if (selectedFiles.length + toAdd.length >= MAX_FILES) break;
+        if (!existingSigs.has(sig(f))) {
+            toAdd.push(f);
+            existingSigs.add(sig(f));
+        }
+        }
+
+        if (selectedFiles.length + toAdd.length > MAX_FILES) {
+        alert(`You can only upload up to ${MAX_FILES} images.`);
+        }
+
+        if (toAdd.length === 0) {
+        // nothing new to add
+        return;
+        }
+
+        selectedFiles = [...selectedFiles, ...toAdd];
         rebuildFileInput();
         renderPreviews();
-      });
+    }
 
-      const reader = new FileReader();
-      reader.onload = e => { img.src = e.target.result; };
-      reader.readAsDataURL(file);
-
-      preview.appendChild(wrap);
+    // Drag/drop plumbing
+    ['dragenter','dragover','dragleave','drop'].forEach(evt =>
+        dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }, false)
+    );
+    dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
+    dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
+    dropArea.addEventListener('drop', e => {
+        dropArea.classList.remove('drag-over');
+        addFiles(e.dataTransfer.files);
     });
-  }
 
-  function addFiles(fileList) {
-    if (!fileList || fileList.length === 0) return;
+    // Click + keyboard to open picker
+    dropArea.addEventListener('click', () => fileInput.click());
+    dropArea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+    });
 
-    const incoming = Array.from(fileList)
-      .filter(f => f.type && f.type.startsWith('image/'));
+    // Picker change => treat as new files (don't concatenate with fileInput.files)
+    fileInput.addEventListener('change', () => {
+        addFiles(fileInput.files);
+        // Reset the picker so selecting the same files again still triggers 'change'
+        fileInput.value = '';
+    });
+    });
 
-    if (incoming.length === 0) return;
-
-    // Deduplicate and enforce limit
-    const existingSigs = new Set(selectedFiles.map(sig));
-    const toAdd = [];
-    for (const f of incoming) {
-      if (selectedFiles.length + toAdd.length >= MAX_FILES) break;
-      if (!existingSigs.has(sig(f))) {
-        toAdd.push(f);
-        existingSigs.add(sig(f));
-      }
-    }
-
-    if (selectedFiles.length + toAdd.length > MAX_FILES) {
-      alert(`You can only upload up to ${MAX_FILES} images.`);
-    }
-
-    if (toAdd.length === 0) {
-      // nothing new to add
-      return;
-    }
-
-    selectedFiles = [...selectedFiles, ...toAdd];
-    rebuildFileInput();
-    renderPreviews();
-  }
-
-  // Drag/drop plumbing
-  ['dragenter','dragover','dragleave','drop'].forEach(evt =>
-    dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }, false)
-  );
-  dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
-  dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
-  dropArea.addEventListener('drop', e => {
-    dropArea.classList.remove('drag-over');
-    addFiles(e.dataTransfer.files);
-  });
-
-  // Click + keyboard to open picker
-  dropArea.addEventListener('click', () => fileInput.click());
-  dropArea.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
-  });
-
-  // Picker change => treat as new files (don't concatenate with fileInput.files)
-  fileInput.addEventListener('change', () => {
-    addFiles(fileInput.files);
-    // Reset the picker so selecting the same files again still triggers 'change'
-    fileInput.value = '';
-  });
-});
+    document.getElementById('property_type').addEventListener('change', function () {
+        const isLot = this.value === 'Lot';
+        document.getElementById('bedrooms').disabled = isLot;
+        document.getElementById('bathrooms').disabled = isLot;
+        if (isLot) {
+            document.getElementById('bedrooms').value = '';
+            document.getElementById('bathrooms').value = '';
+        }
+    });
 </script>
