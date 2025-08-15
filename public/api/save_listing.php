@@ -41,7 +41,7 @@ $sqm           = floatval($_POST['sqm'] ?? 0);
 $lot_size      = floatval($_POST['lot_size'] ?? 0);
 $property_type = sanitize_input($_POST['property_type'] ?? '');
 
-// Validation (basic required fields)
+// Validation
 if (!$title || !$description || !$price || !$location || !$property_type) {
     header("Location: $redirect_url");
     exit;
@@ -50,13 +50,32 @@ if (!$title || !$description || !$price || !$location || !$property_type) {
 try {
     $pdo->beginTransaction();
 
+    // Insert property first
+    $stmt = $pdo->prepare("
+        INSERT INTO properties
+        (title, description, property_type, location, price, bedrooms, bathrooms, sqm, lot_size, agent_id, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', NOW())
+    ");
+    $stmt->execute([
+        $title,
+        $description,
+        $property_type,
+        $location,
+        $price,
+        $bedrooms,
+        $bathrooms,
+        $sqm,
+        $lot_size,
+        $agent_id
+    ]);
+
+    // Get the last inserted property ID
+    $property_id = $pdo->lastInsertId();
+
     // Handle file uploads
-    $image_files = [];
     if (!empty($_FILES['images']['name'][0])) {
-        $upload_dir = __DIR__ . '/../../uploads/listings/';
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
-        }
+        $upload_dir = __DIR__ . '/../../storage/uploads/property_images/';
+        if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
 
         $file_count = min(count($_FILES['images']['name']), 10);
         $allowed_ext = ['jpg', 'jpeg', 'png', 'gif'];
@@ -71,37 +90,25 @@ try {
                 $dest_path = $upload_dir . $new_name;
 
                 if (move_uploaded_file($file_tmp, $dest_path)) {
-                    $image_files[] = $new_name;
+                    // Insert into property_images table
+                    $stmtImg = $pdo->prepare("
+                        INSERT INTO property_images (property_id, image_path, is_primary, created_at)
+                        VALUES (?, ?, ?, NOW())
+                    ");
+                    // Make the first image primary
+                    $is_primary = ($i === 0) ? 1 : 0;
+                    $stmtImg->execute([$property_id, 'uploads/property_images/' . $new_name, $is_primary]);
                 }
             }
         }
     }
 
-    // Insert listing with images stored as JSON
-    $stmt = $pdo->prepare("
-        INSERT INTO properties 
-        (title, description, property_type, location, price, bedrooms, bathrooms, sqm, lot_size, agent_id, status, images, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', ?, NOW())
-    ");
-    $stmt->execute([
-        $title,
-        $description,
-        $property_type,
-        $location,
-        $price,
-        $bedrooms,
-        $bathrooms,
-        $sqm,
-        $lot_size,
-        $agent_id,
-        json_encode($image_files)
-    ]);
-
     $pdo->commit();
+
 } catch (Exception $e) {
     $pdo->rollBack();
+    error_log("Save listing failed: " . $e->getMessage());
 }
 
-// Redirect back regardless of outcome
 header("Location: $redirect_url");
 exit;

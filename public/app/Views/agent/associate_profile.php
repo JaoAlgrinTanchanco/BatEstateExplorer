@@ -73,7 +73,6 @@ if ($tab === 'my_listings') {
     <section class="dashboard-content">
         <?php 
         switch ($tab):
-            // ================= MY LISTINGS =================
             case 'my_listings': 
         ?>
             <h2>My Listings</h2>
@@ -85,7 +84,8 @@ if ($tab === 'my_listings') {
                             <?php
                                 $images = json_decode($property['images'], true) ?? [];
                                 if (!empty($images)) {
-                                    $first_img = '/BatEstateExplorer/uploads/listings/' . htmlspecialchars($images[0]);
+                                    // Use correct path
+                                    $first_img = '/' . htmlspecialchars($images[0]);
                                     echo "<div class='listing-thumb'><img src='{$first_img}' alt='Property Image'></div>";
                                 }
 
@@ -110,7 +110,6 @@ if ($tab === 'my_listings') {
                         <p>No listings found.</p>
                     </div>
                 <?php endif; ?>
-
             </div>
         <?php break; ?>
 
