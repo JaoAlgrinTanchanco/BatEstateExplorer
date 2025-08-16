@@ -197,6 +197,13 @@
 
 //listing tab
 /* Modal Styles */
+.image-wrapper { position: relative; display: inline-block; margin-right: 10px; }
+.image-wrapper img { max-height: 120px; border-radius: 5px; }
+.remove-image-btn {
+    position: absolute; top: -5px; right: -5px; background: red; color: #fff;
+    border: none; border-radius: 50%; cursor: pointer; width: 20px; height: 20px;
+}
+
 .edit-modal {
     display: none; 
     position: fixed; 

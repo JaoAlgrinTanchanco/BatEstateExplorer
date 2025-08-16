@@ -122,7 +122,8 @@ if ($tab === 'my_listings') {
                             <a href="javascript:void(0)" class="btn-edit" onclick="openModal(<?= $property['id'] ?>)">Edit</a>
                             <a href="?view=delete_listing&id=<?= $property['id'] ?>" class="btn-delete" onclick="return confirm('Are you sure you want to delete this listing?')">Delete</a>
                         </div>
-                        <!-- Edit Modal -->
+                    </div>
+                    <!-- Edit Modal -->
                         <div id="editModal-<?= $property['id'] ?>" class="edit-modal">
                             <div class="modal-content">
                                 <span class="close" onclick="closeModal(<?= $property['id'] ?>)">&times;</span>
@@ -135,8 +136,21 @@ if ($tab === 'my_listings') {
                                     <label>Title</label>
                                     <input type="text" name="title" value="<?= htmlspecialchars($property['title']) ?>" required>
 
+                                    <label>Description</label>
+                                    <textarea name="description"><?= htmlspecialchars($property['description']) ?></textarea>
+
+                                    <label>Property Type</label>
+                                    <select name="property_type" required>
+                                        <option value="Lot" <?= $property['property_type']=='Lot'?'selected':'' ?>>Lot</option>
+                                        <option value="Property" <?= $property['property_type']=='Property'?'selected':'' ?>>Property</option>
+                                    </select>
+
                                     <label>Location</label>
-                                    <input type="text" name="location" value="<?= htmlspecialchars($property['location']) ?>" required>
+                                    <select name="location" required>
+                                        <option value="Lipa City" <?= $property['location']=='Lipa City'?'selected':'' ?>>Lipa City</option>
+                                        <option value="Batangas" <?= $property['location']=='Batangas'?'selected':'' ?>>Batangas</option>
+                                        <!-- Add more options -->
+                                    </select>
 
                                     <label>Price</label>
                                     <input type="number" step="0.01" name="price" value="<?= $property['price'] ?>" required>
@@ -147,6 +161,12 @@ if ($tab === 'my_listings') {
                                     <label>Bathrooms</label>
                                     <input type="number" name="bathrooms" value="<?= $property['bathrooms'] ?>">
 
+                                    <label>Square Meters (sqm)</label>
+                                    <input type="number" step="0.01" name="sqm" value="<?= $property['sqm'] ?>">
+
+                                    <label>Lot Size</label>
+                                    <input type="number" step="0.01" name="lot_size" value="<?= $property['lot_size'] ?>">
+
                                     <label>Status</label>
                                     <select name="status">
                                         <option value="available" <?= $property['status']=='available'?'selected':'' ?>>Available</option>
@@ -154,18 +174,25 @@ if ($tab === 'my_listings') {
                                         <option value="pending" <?= $property['status']=='pending'?'selected':'' ?>>Pending</option>
                                     </select>
 
-                                    <!-- Image Slider -->
+                                    <!-- Existing images -->
                                     <div class="image-slider">
                                         <?php foreach ($property['images'] as $img): ?>
-                                            <img src="/BatEstateExplorer/<?= $img['image_path'] ?>" alt="Property Image">
+                                            <div class="slider-item">
+                                                <img src="/BatEstateExplorer/<?= $img['image_path'] ?>" alt="Property Image">
+                                                <input type="hidden" name="existing_images[]" value="<?= $img['image_path'] ?>">
+                                                <button type="button" onclick="removeImage(this)">Remove</button>
+                                            </div>
                                         <?php endforeach; ?>
                                     </div>
+
+                                    <!-- Add new images -->
+                                    <label>Add Images</label>
+                                    <input type="file" name="new_images[]" multiple>
 
                                     <button type="submit">Update Listing</button>
                                 </form>
                             </div>
                         </div>
-                    </div>
                 <?php endforeach; ?>
             <?php else: ?>
                 <div class="overview-card">
@@ -376,125 +403,145 @@ if ($tab === 'my_listings') {
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // ===== Drag & Drop Image Upload =====
     const dropArea  = document.getElementById('imageUploadArea');
     const fileInput = document.getElementById('images');
     const preview   = document.getElementById('imagePreview');
     const form      = document.getElementById('addListingForm');
     const MAX_FILES = 10;
 
-    if (!dropArea || !fileInput || !form) return; // only run if form exists
+    if (dropArea && fileInput && form) {
+        let selectedFiles = [];
 
-    let selectedFiles = [];
+        const fileSignature = f => `${f.name}|${f.size}|${f.lastModified}`;
 
-    const sig = f => `${f.name}|${f.size}|${f.lastModified}`;
+        const renderPreviews = () => {
+            preview.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const wrap = document.createElement('div');
+                wrap.className = 'img-wrap';
 
-    function renderPreviews() {
-        preview.innerHTML = '';
-        selectedFiles.forEach((file, index) => {
-            const wrap = document.createElement('div');
-            wrap.className = 'img-wrap';
+                const img = document.createElement('img');
+                img.className = 'thumb';
+                wrap.appendChild(img);
 
-            const img = document.createElement('img');
-            img.className = 'thumb';
-            wrap.appendChild(img);
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'remove-img';
+                removeBtn.innerHTML = '&times;';
+                wrap.appendChild(removeBtn);
 
-            const removeBtn = document.createElement('button');
-            removeBtn.type = 'button';
-            removeBtn.className = 'remove-img';
-            removeBtn.innerHTML = '&times;';
-            wrap.appendChild(removeBtn);
+                removeBtn.addEventListener('click', () => {
+                    selectedFiles.splice(index, 1);
+                    renderPreviews();
+                });
 
-            removeBtn.addEventListener('click', () => {
-                selectedFiles.splice(index, 1);
-                renderPreviews();
+                const reader = new FileReader();
+                reader.onload = e => img.src = e.target.result;
+                reader.readAsDataURL(file);
+
+                preview.appendChild(wrap);
             });
+        };
 
-            const reader = new FileReader();
-            reader.onload = e => img.src = e.target.result;
-            reader.readAsDataURL(file);
+        const addFiles = fileList => {
+            if (!fileList) return;
+            const incoming = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+            const existingSigs = new Set(selectedFiles.map(fileSignature));
 
-            preview.appendChild(wrap);
+            for (const f of incoming) {
+                if (selectedFiles.length >= MAX_FILES) break;
+                if (!existingSigs.has(fileSignature(f))) {
+                    selectedFiles.push(f);
+                    existingSigs.add(fileSignature(f));
+                }
+            }
+            renderPreviews();
+        };
+
+        // Drag/drop handlers
+        ['dragenter','dragover','dragleave','drop'].forEach(evt => {
+            dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
+        });
+        dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
+        dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
+        dropArea.addEventListener('drop', e => {
+            dropArea.classList.remove('drag-over');
+            addFiles(e.dataTransfer.files);
+        });
+
+        // Click & keyboard file picker
+        dropArea.addEventListener('click', () => fileInput.click());
+        dropArea.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInput.click();
+            }
+        });
+        fileInput.addEventListener('change', () => {
+            addFiles(fileInput.files);
+            fileInput.value = '';
+        });
+
+        // Form submission
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            const fd = new FormData(form);
+            selectedFiles.forEach(f => fd.append('images[]', f));
+
+            fetch(form.action, { method: 'POST', body: fd })
+                .then(res => res.text())
+                .then(data => {
+                    console.log('Server response:', data);
+                    alert('Listing saved!');
+                    form.reset();
+                    selectedFiles = [];
+                    renderPreviews();
+                })
+                .catch(err => console.error('Upload error:', err));
         });
     }
 
-    function addFiles(fileList) {
-        if (!fileList) return;
-        const incoming = Array.from(fileList).filter(f => f.type.startsWith('image/'));
-        const existingSigs = new Set(selectedFiles.map(sig));
+    // ===== Modal Handling =====
+    window.openModal = id => {
+        document.getElementById(`editModal-${id}`).style.display = 'block';
+    };
+    window.closeModal = id => {
+        document.getElementById(`editModal-${id}`).style.display = 'none';
+    };
+    window.onclick = event => {
+        document.querySelectorAll('.edit-modal').forEach(modal => {
+            if (event.target === modal) modal.style.display = 'none';
+        });
+    };
 
-        for (const f of incoming) {
-            if (selectedFiles.length >= MAX_FILES) break;
-            if (!existingSigs.has(sig(f))) {
-                selectedFiles.push(f);
-                existingSigs.add(sig(f));
-            }
-        }
-        renderPreviews();
-    }
+    // ===== Remove Image from Slider =====
+    window.removeImage = btn => btn.closest('.slider-item').remove();
 
-    // Drag/drop handlers
-    ['dragenter','dragover','dragleave','drop'].forEach(evt =>
-        dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }, false)
-    );
-    dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
-    dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
-    dropArea.addEventListener('drop', e => {
-        dropArea.classList.remove('drag-over');
-        addFiles(e.dataTransfer.files);
-    });
+    // ===== Disable Bedrooms/Bathrooms for "Lot" =====
+    const initPropertyTypeToggles = () => {
+        document.querySelectorAll('.edit-modal').forEach(modal => {
+            const propertyType = modal.querySelector('select[name="property_type"]');
+            const bedrooms = modal.querySelector('input[name="bedrooms"]');
+            const bathrooms = modal.querySelector('input[name="bathrooms"]');
 
-    // Click to open file picker
-    dropArea.addEventListener('click', () => fileInput.click());
-    dropArea.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            fileInput.click();
-        }
-    });
-    fileInput.addEventListener('change', () => {
-        addFiles(fileInput.files);
-        fileInput.value = '';
-    });
+            if (!propertyType || !bedrooms || !bathrooms) return;
 
-    // Form submission
-    form.addEventListener('submit', e => {
-        e.preventDefault();
+            const toggleRooms = () => {
+                const isLot = propertyType.value === 'Lot';
+                bedrooms.disabled = isLot;
+                bathrooms.disabled = isLot;
+                if (isLot) {
+                    bedrooms.value = 0;
+                    bathrooms.value = 0;
+                }
+            };
 
-        const fd = new FormData(form);
-        selectedFiles.forEach(f => fd.append('images[]', f));
+            toggleRooms();
+            propertyType.addEventListener('change', toggleRooms);
+        });
+    };
 
-        fetch(form.action, {
-            method: 'POST',
-            body: fd
-        })
-        .then(res => res.text())
-        .then(data => {
-            console.log('Server response:', data);
-            alert('Listing saved!');
-            form.reset();
-            selectedFiles = [];
-            renderPreviews();
-        })
-        .catch(err => console.error('Upload error:', err));
-    });
+    initPropertyTypeToggles();
 });
-
-function openModal(id) {
-    document.getElementById(`editModal-${id}`).style.display = 'block';
-}
-
-function closeModal(id) {
-    document.getElementById(`editModal-${id}`).style.display = 'none';
-}
-
-// Close modal when clicking outside of content
-window.onclick = function(event) {
-    document.querySelectorAll('.edit-modal').forEach(modal => {
-        if (event.target === modal) {
-            modal.style.display = "none";
-        }
-    });
-};
-
-
 </script>
