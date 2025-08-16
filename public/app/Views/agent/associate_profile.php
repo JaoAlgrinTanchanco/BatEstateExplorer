@@ -120,7 +120,14 @@ if ($tab === 'my_listings') {
                         
                         <div class="info-row actions">
                             <a href="javascript:void(0)" class="btn-edit" onclick="openModal(<?= $property['id'] ?>)">Edit</a>
-                            <a href="?view=delete_listing&id=<?= $property['id'] ?>" class="btn-delete" onclick="return confirm('Are you sure you want to delete this listing?')">Delete</a>
+                            <!-- Delete button -->
+                            <form method="POST" action="/BatEstateExplorer/public/api/delete_listing.php" style="display:inline;">
+                                <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
+                                <button type="submit" class="btn-delete" 
+                                        onclick="return confirm('Are you sure you want to delete this listing?')">
+                                    Delete
+                                </button>
+                            </form>
                         </div>
                     </div>
                     <!-- Edit Modal -->
