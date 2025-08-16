@@ -302,7 +302,104 @@ if ($tab === 'my_listings') {
         <?php case 'company_listings': ?>
                 <h2>Company Listings</h2>
                 <p>List of all properties from your company.</p>
-        <?php break; ?>
+
+                <?php
+                // Fetch all properties with agent info
+                $stmt = $conn->prepare("
+                    SELECT 
+                        p.id, 
+                        p.title,  -- use title instead of image
+                        p.location, 
+                        p.price, 
+                        p.bedrooms, 
+                        p.bathrooms, 
+                        p.sqm, 
+                        p.status, 
+                        p.created_at,
+                        a.id AS agent_id, 
+                        CONCAT(u.first_name, ' ', u.last_name) AS created_by,
+                        sa.id AS sold_agent_id, 
+                        CONCAT(su.first_name, ' ', su.last_name) AS sold_by
+                    FROM properties p
+                    LEFT JOIN agents a ON p.agent_id = a.id
+                    LEFT JOIN users u ON a.user_id = u.id
+                    LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
+                    LEFT JOIN users su ON sa.user_id = su.id
+                    ORDER BY p.created_at DESC
+                ");
+
+                $stmt->execute();
+                $res = $stmt->get_result();
+                ?>
+
+                <table border="1" cellpadding="8" cellspacing="0" width="100%">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Location</th>
+                            <th>Price</th>
+                            <th>Bedrooms</th>
+                            <th>Bathrooms</th>
+                            <th>Size (sqm)</th>
+                            <th>Status</th>
+                            <th>Created By</th>
+                            <th>Sold By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php while ($row = $res->fetch_assoc()): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($row['title']); ?></td>
+                                <td><?= htmlspecialchars($row['location']); ?></td>
+                                <td>₱<?= number_format($row['price'], 2); ?></td>
+                                <td><?= (int)$row['bedrooms']; ?></td>
+                                <td><?= (int)$row['bathrooms']; ?></td>
+                                <td><?= number_format($row['sqm'], 2); ?></td>
+                                <td><?= ucfirst($row['status']); ?></td>
+                                <td><?= htmlspecialchars($row['created_by'] ?? 'N/A'); ?></td>
+                                <td><?= htmlspecialchars($row['sold_by'] ?? 'N/A'); ?></td>
+                                <td>
+                                    <a href="#" 
+                                    class="view-details" 
+                                    data-id="<?= $row['id']; ?>" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#propertyModal">Details</a>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+                <!-- Modal placed at bottom of page, hidden until triggered -->
+                <div class="modal fade" id="propertyModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="propertyTitle">Property Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- Image slider -->
+                                <div id="propertyCarousel" class="carousel slide mb-3" data-bs-ride="carousel">
+                                <div class="carousel-inner" id="carouselImages"></div>
+                                <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon"></span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon"></span>
+                                </button>
+                                </div>
+
+                                <!-- Property details -->
+                                <ul class="list-group" id="propertyDetails"></ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php break; ?>
 
         <?php default:
             // Overview Tab
@@ -550,5 +647,74 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     initPropertyTypeToggles();
+
+    //company listing
+    const propertyModal = document.getElementById('propertyModal');
+    const propertyTitle = document.getElementById('propertyTitle');
+    const propertyDetails = document.getElementById('propertyDetails');
+    const carouselImages = document.getElementById('carouselImages');
+
+    document.querySelectorAll('.view-details').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const propertyId = btn.dataset.id;
+
+            try {
+                // Fetch property details via AJAX
+                const res = await fetch(`api/get_property.php?id=${propertyId}`);
+                const data = await res.json();
+
+                if (data.success) {
+                    const property = data.property;
+
+                    // Title
+                    propertyTitle.textContent = property.title || 'Property Details';
+
+                    // Images
+                    carouselImages.innerHTML = '';
+                    if (property.images && property.images.length > 0) {
+                        property.images.forEach((img, index) => {
+                            const activeClass = index === 0 ? 'active' : '';
+                            carouselImages.innerHTML += `
+                                <div class="carousel-item ${activeClass}">
+                                    <img src="../../${img}" class="d-block w-100" alt="Property Image">
+                                </div>
+                            `;
+                        });
+                    } else {
+                        carouselImages.innerHTML = `
+                            <div class="carousel-item active">
+                                <img src="../../storage/uploads/property_images/no-image.png" 
+                                     class="d-block w-100" alt="No Image">
+                            </div>
+                        `;
+                    }
+
+                    // Details
+                    propertyDetails.innerHTML = `
+                        <li class="list-group-item"><strong>Location:</strong> ${property.location}</li>
+                        <li class="list-group-item"><strong>Price:</strong> ₱${parseFloat(property.price).toLocaleString()}</li>
+                        <li class="list-group-item"><strong>Bedrooms:</strong> ${property.bedrooms}</li>
+                        <li class="list-group-item"><strong>Bathrooms:</strong> ${property.bathrooms}</li>
+                        <li class="list-group-item"><strong>Size:</strong> ${property.sqm} sqm</li>
+                        <li class="list-group-item"><strong>Status:</strong> ${property.status}</li>
+                        <li class="list-group-item"><strong>Created By:</strong> ${property.created_by ?? 'N/A'}</li>
+                        <li class="list-group-item"><strong>Sold By:</strong> ${property.sold_by ?? 'N/A'}</li>
+                        <li class="list-group-item"><strong>Created At:</strong> ${property.created_at}</li>
+                    `;
+                } else {
+                    propertyTitle.textContent = "Error";
+                    propertyDetails.innerHTML = `<li class="list-group-item text-danger">Failed to load property details.</li>`;
+                    carouselImages.innerHTML = '';
+                }
+            } catch (error) {
+                console.error(error);
+                propertyTitle.textContent = "Error";
+                propertyDetails.innerHTML = `<li class="list-group-item text-danger">Something went wrong.</li>`;
+                carouselImages.innerHTML = '';
+            }
+        });
+    });
 });
+
 </script>
