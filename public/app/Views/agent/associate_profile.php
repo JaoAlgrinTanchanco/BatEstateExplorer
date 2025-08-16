@@ -119,8 +119,51 @@ if ($tab === 'my_listings') {
                         <div class="info-row"><strong>Type:</strong> <span><?= $ownership ?></span></div>
                         
                         <div class="info-row actions">
-                            <a href="?view=edit_listing&id=<?= $property['id'] ?>" class="btn-edit">Edit</a>
+                            <a href="javascript:void(0)" class="btn-edit" onclick="openModal(<?= $property['id'] ?>)">Edit</a>
                             <a href="?view=delete_listing&id=<?= $property['id'] ?>" class="btn-delete" onclick="return confirm('Are you sure you want to delete this listing?')">Delete</a>
+                        </div>
+                        <!-- Edit Modal -->
+                        <div id="editModal-<?= $property['id'] ?>" class="edit-modal">
+                            <div class="modal-content">
+                                <span class="close" onclick="closeModal(<?= $property['id'] ?>)">&times;</span>
+                                
+                                <h2>Edit Listing: <?= htmlspecialchars($property['title']) ?></h2>
+                                
+                                <form id="editForm-<?= $property['id'] ?>" method="POST" action="/BatEstateExplorer/public/api/update_property.php" enctype="multipart/form-data">
+                                    <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
+
+                                    <label>Title</label>
+                                    <input type="text" name="title" value="<?= htmlspecialchars($property['title']) ?>" required>
+
+                                    <label>Location</label>
+                                    <input type="text" name="location" value="<?= htmlspecialchars($property['location']) ?>" required>
+
+                                    <label>Price</label>
+                                    <input type="number" step="0.01" name="price" value="<?= $property['price'] ?>" required>
+
+                                    <label>Bedrooms</label>
+                                    <input type="number" name="bedrooms" value="<?= $property['bedrooms'] ?>">
+
+                                    <label>Bathrooms</label>
+                                    <input type="number" name="bathrooms" value="<?= $property['bathrooms'] ?>">
+
+                                    <label>Status</label>
+                                    <select name="status">
+                                        <option value="available" <?= $property['status']=='available'?'selected':'' ?>>Available</option>
+                                        <option value="sold" <?= $property['status']=='sold'?'selected':'' ?>>Sold</option>
+                                        <option value="pending" <?= $property['status']=='pending'?'selected':'' ?>>Pending</option>
+                                    </select>
+
+                                    <!-- Image Slider -->
+                                    <div class="image-slider">
+                                        <?php foreach ($property['images'] as $img): ?>
+                                            <img src="/BatEstateExplorer/<?= $img['image_path'] ?>" alt="Property Image">
+                                        <?php endforeach; ?>
+                                    </div>
+
+                                    <button type="submit">Update Listing</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -435,5 +478,23 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => console.error('Upload error:', err));
     });
 });
+
+function openModal(id) {
+    document.getElementById(`editModal-${id}`).style.display = 'block';
+}
+
+function closeModal(id) {
+    document.getElementById(`editModal-${id}`).style.display = 'none';
+}
+
+// Close modal when clicking outside of content
+window.onclick = function(event) {
+    document.querySelectorAll('.edit-modal').forEach(modal => {
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    });
+};
+
 
 </script>
