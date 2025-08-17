@@ -49,3 +49,4 @@ switch ($view) {
 
 // finally load layout
 require __DIR__ . '/../app/Views/layout/agent_layout.php';
+

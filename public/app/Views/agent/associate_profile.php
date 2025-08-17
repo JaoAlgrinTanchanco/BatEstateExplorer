@@ -654,67 +654,53 @@ document.addEventListener('DOMContentLoaded', () => {
     const propertyDetails = document.getElementById('propertyDetails');
     const carouselImages = document.getElementById('carouselImages');
 
-    document.querySelectorAll('.view-details').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const propertyId = btn.dataset.id;
+    document.querySelectorAll('.view-details').forEach(link => {
+    link.addEventListener('click', function (e) {
+        e.preventDefault();
+        const propertyId = this.dataset.id;
 
-            try {
-                // Fetch property details via AJAX
-                const res = await fetch(`api/get_property.php?id=${propertyId}`);
-                const data = await res.json();
+        fetch('http://localhost/BatEstateExplorer/public/api/get_company_listings.php?id=' + propertyId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
 
-                if (data.success) {
-                    const property = data.property;
+                // Set title
+                document.getElementById('propertyTitle').textContent = data.title;
 
-                    // Title
-                    propertyTitle.textContent = property.title || 'Property Details';
-
-                    // Images
-                    carouselImages.innerHTML = '';
-                    if (property.images && property.images.length > 0) {
-                        property.images.forEach((img, index) => {
-                            const activeClass = index === 0 ? 'active' : '';
-                            carouselImages.innerHTML += `
-                                <div class="carousel-item ${activeClass}">
-                                    <img src="../../${img}" class="d-block w-100" alt="Property Image">
-                                </div>
-                            `;
-                        });
-                    } else {
-                        carouselImages.innerHTML = `
-                            <div class="carousel-item active">
-                                <img src="../../storage/uploads/property_images/no-image.png" 
-                                     class="d-block w-100" alt="No Image">
+                // Images
+                const carousel = document.getElementById('carouselImages');
+                carousel.innerHTML = '';
+                if (data.images && data.images.length > 0) {
+                    data.images.forEach((img, index) => {
+                        carousel.innerHTML += `
+                            <div class="carousel-item ${index === 0 ? 'active' : ''}">
+                                <img src="storage/uploads/property_images/${img}" class="d-block w-100">
                             </div>
                         `;
-                    }
-
-                    // Details
-                    propertyDetails.innerHTML = `
-                        <li class="list-group-item"><strong>Location:</strong> ${property.location}</li>
-                        <li class="list-group-item"><strong>Price:</strong> ₱${parseFloat(property.price).toLocaleString()}</li>
-                        <li class="list-group-item"><strong>Bedrooms:</strong> ${property.bedrooms}</li>
-                        <li class="list-group-item"><strong>Bathrooms:</strong> ${property.bathrooms}</li>
-                        <li class="list-group-item"><strong>Size:</strong> ${property.sqm} sqm</li>
-                        <li class="list-group-item"><strong>Status:</strong> ${property.status}</li>
-                        <li class="list-group-item"><strong>Created By:</strong> ${property.created_by ?? 'N/A'}</li>
-                        <li class="list-group-item"><strong>Sold By:</strong> ${property.sold_by ?? 'N/A'}</li>
-                        <li class="list-group-item"><strong>Created At:</strong> ${property.created_at}</li>
-                    `;
+                    });
                 } else {
-                    propertyTitle.textContent = "Error";
-                    propertyDetails.innerHTML = `<li class="list-group-item text-danger">Failed to load property details.</li>`;
-                    carouselImages.innerHTML = '';
+                    carousel.innerHTML = '<div class="carousel-item active"><p>No images</p></div>';
                 }
-            } catch (error) {
-                console.error(error);
-                propertyTitle.textContent = "Error";
-                propertyDetails.innerHTML = `<li class="list-group-item text-danger">Something went wrong.</li>`;
-                carouselImages.innerHTML = '';
-            }
-        });
+
+                // Details
+                const details = document.getElementById('propertyDetails');
+                details.innerHTML = `
+                    <li class="list-group-item"><b>Location:</b> ${data.location}</li>
+                    <li class="list-group-item"><b>Price:</b> ₱${parseFloat(data.price).toLocaleString()}</li>
+                    <li class="list-group-item"><b>Bedrooms:</b> ${data.bedrooms}</li>
+                    <li class="list-group-item"><b>Bathrooms:</b> ${data.bathrooms}</li>
+                    <li class="list-group-item"><b>Size:</b> ${data.sqm} sqm</li>
+                    <li class="list-group-item"><b>Status:</b> ${data.status}</li>
+                    <li class="list-group-item"><b>Created By:</b> ${data.created_by ?? 'N/A'}</li>
+                    <li class="list-group-item"><b>Sold By:</b> ${data.sold_by ?? 'N/A'}</li>
+                `;
+            })
+            .catch(err => console.error(err));
     });
+});
 });
 
 </script>

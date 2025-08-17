@@ -375,13 +375,13 @@
 //company listing
 /* Ensure modal always on top */
 .modal {
-    z-index: 9999 !important;
+    z-index: 1050 !important;
 }
 
 /* Backdrop effect */
 .modal-backdrop {
     background-color: rgba(0, 0, 0, 0.7) !important;
-    z-index: 9998 !important;
+    z-index: 1040 !important;
 }
 
 /* Modal content styling */
