@@ -1,5 +1,5 @@
 <?php
-// agent_registration.php
+require_once '../config/pdo_database.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -200,11 +200,20 @@
 
             <!-- Company (for Associate Agents only) -->
             <div id="company-field" style="display:none;">
-                <h3>Company Information</h3>
-                <div class="form-group">
-                    <label for="company_name">Company Name *</label>
-                    <input type="text" id="company_name" name="company_name">
-                </div>
+                <label for="company_id">Select Company (Associate Agent only):</label>
+                <select name="company_id" id="company_id" class="form-control">
+                    <option value="" disabled selected>-- Select Company --</option>
+                    <?php
+                    try {
+                        $stmt = $pdo->query("SELECT id, name FROM companies ORDER BY name ASC");
+                        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                            echo '<option value="' . htmlspecialchars($row['id']) . '">' . htmlspecialchars($row['name']) . '</option>';
+                        }
+                    } catch (PDOException $e) {
+                        echo '<option disabled>Error: could not load companies</option>';
+                    }
+                    ?>
+                </select>
             </div>
 
             <!-- Required Docs (for Direct Agents only) -->
@@ -240,33 +249,61 @@
     </div>
 
 <script>
-    const userType = document.getElementById('user_type');
-    const docsSection = document.getElementById('required-documents');
+document.addEventListener('DOMContentLoaded', () => {
+    const userType     = document.getElementById('user_type');
+    const docsSection  = document.getElementById('required-documents');
     const companyField = document.getElementById('company-field');
-    const companyInput = document.getElementById('company_name');
+    const companySelect = document.getElementById('company_id');
 
     function toggleFields() {
-        if (userType.value === 'direct_agent') {
-            docsSection.style.display = 'block';
-            companyField.style.display = 'none';
-            companyInput.required = false;
+        if (!userType) return; // safety guard
 
-            docsSection.querySelectorAll('input[type="file"]').forEach(el => el.required = true);
-        } else if (userType.value === 'associate_agent') {
-            docsSection.style.display = 'none';
-            companyField.style.display = 'block';
-            companyInput.required = true;
+        const type = userType.value;
 
-            docsSection.querySelectorAll('input[type="file"]').forEach(el => el.required = false);
+        if (type === 'direct_agent') {
+            if (docsSection) docsSection.style.display = 'block';
+            if (companyField) companyField.style.display = 'none';
+            if (companySelect) companySelect.required = false;
+
+            if (docsSection) {
+                docsSection.querySelectorAll('input[type="file"]').forEach(el => {
+                    el.required = true;
+                });
+            }
+
+        } else if (type === 'associate_agent') {
+            if (docsSection) docsSection.style.display = 'none';
+            if (companyField) companyField.style.display = 'block';
+            if (companySelect) companySelect.required = true;
+
+            if (docsSection) {
+                docsSection.querySelectorAll('input[type="file"]').forEach(el => {
+                    el.required = false;
+                });
+            }
+
         } else {
-            docsSection.style.display = 'none';
-            companyField.style.display = 'none';
-            companyInput.required = false;
-            docsSection.querySelectorAll('input[type="file"]').forEach(el => el.required = false);
+            if (docsSection) docsSection.style.display = 'none';
+            if (companyField) companyField.style.display = 'none';
+            if (companySelect) companySelect.required = false;
+
+            if (docsSection) {
+                docsSection.querySelectorAll('input[type="file"]').forEach(el => {
+                    el.required = false;
+                });
+            }
         }
     }
-    userType.addEventListener('change', toggleFields);
-    window.addEventListener('DOMContentLoaded', toggleFields);
+
+    // Run immediately on page load
+    toggleFields();
+
+    // Run whenever the user changes type
+    if (userType) {
+        userType.addEventListener('change', toggleFields);
+    }
+});
 </script>
+
 </body>
 </html>
