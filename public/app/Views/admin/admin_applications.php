@@ -23,10 +23,10 @@ if (!$is_logged_in || !$is_admin) {
 $applications = [];
 if ($conn) {
     $query = "SELECT a.*, c.name AS company_name
-              FROM applications a
-              LEFT JOIN companies c ON a.company_id = c.id
-              WHERE a.status = 'pending'
-              ORDER BY a.created_at DESC";
+        FROM applications a
+        LEFT JOIN companies c ON a.company_id = c.id
+        WHERE a.status = 'pending'
+        ORDER BY a.created_at DESC";
     $result = mysqli_query($conn, $query);
     if ($result) {
         while ($row = mysqli_fetch_assoc($result)) {
@@ -229,18 +229,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === RENDER APPLICATION DETAILS IN MODAL ===
     function renderApplicationDetails(app) {
-        modalBody.innerHTML = `
-            <div class="detail-section">
-                <h3>Applicant Info</h3>
-                ${detailRow('Full Name', `${escapeHtml(app.first_name)} ${escapeHtml(app.last_name)}`)}
-                ${detailRow('Email', escapeHtml(app.email))}
-                ${detailRow('Broker ID', escapeHtml(app.broker_id || 'N/A'))}
-                ${detailRow('Experience', `${escapeHtml(app.experience_years || 'N/A')} years`)}
-                ${detailRow('Address', escapeHtml(app.address || 'N/A'))}
-                ${detailRow('Company', escapeHtml(app.company_name || 'N/A'))}
-            </div>
+    let docSection = '';
+
+    if (app.agent_type === 'direct_agent') {
+        docSection = `
+            <h3>Documents Submitted</h3>
+            <div class="detail-row"><a href="${escapeHtml(app.broker_license_path)}" target="_blank">View Broker License</a></div>
+            <div class="detail-row"><a href="${escapeHtml(app.prc_license_path)}" target="_blank">View PRC License</a></div>
+            <div class="detail-row"><a href="${escapeHtml(app.resume_path)}" target="_blank">View Resume / CV</a></div>
+            <div class="detail-row"><a href="${escapeHtml(app.valid_id_path)}" target="_blank">View Valid ID</a></div>
         `;
     }
+
+    modalBody.innerHTML = `
+        <div class="detail-section">
+            <h3>Applicant Info</h3>
+            ${detailRow('Full Name', `${escapeHtml(app.first_name)} ${escapeHtml(app.last_name)}`)}
+            ${detailRow('Email', escapeHtml(app.email))}
+            ${detailRow('Phone', escapeHtml(app.phone || 'N/A'))}
+            ${detailRow('Address', escapeHtml(app.address || 'N/A'))}
+            ${detailRow('Agent Type', escapeHtml(app.agent_type))}
+            ${app.company_name ? detailRow('Company', escapeHtml(app.company_name)) : ''}
+            ${detailRow('Broker ID', escapeHtml(app.broker_id || 'N/A'))}
+            ${detailRow('PRC Number', escapeHtml(app.prc_number || 'N/A'))}
+            ${detailRow('Experience Years', escapeHtml(app.experience_years || 'N/A'))}
+            ${detailRow('Specializations', escapeHtml(app.specializations || 'N/A'))}
+            ${detailRow('Experience Details', escapeHtml(app.experience_details || 'N/A'))}
+            ${detailRow('Education', escapeHtml(app.education || 'N/A'))}
+            ${detailRow('School', escapeHtml(app.school || 'N/A'))}
+            ${detailRow('Course', escapeHtml(app.course || 'N/A'))}
+            ${detailRow('Graduation Year', escapeHtml(app.graduation_year || 'N/A'))}
+            ${detailRow('Certifications', escapeHtml(app.certifications || 'N/A'))}
+            ${detailRow('Training', escapeHtml(app.training || 'N/A'))}
+        </div>
+        ${docSection}
+    `;
+}
 
     function detailRow(label, value) {
         return `

@@ -42,11 +42,23 @@ $result = mysqli_stmt_get_result($stmt);
 
 if ($result && mysqli_num_rows($result) > 0) {
     $application = mysqli_fetch_assoc($result);
-    
+
+    // Exclude password_hash from JSON output
+    unset($application['password_hash']);
+
     // Sanitize values for JSON output
     $application = array_map(function ($value) {
         return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
     }, $application);
+
+    // For Direct Agents: add document paths as full URLs
+    if ($application['agent_type'] === 'direct_agent') {
+        $baseUrl = 'http://localhost/BatEstateExplorer/storage/uploads/documents/';
+        $application['broker_license_path'] = $application['broker_license_path'] ? $baseUrl . basename($application['broker_license_path']) : '';
+        $application['prc_license_path']    = $application['prc_license_path'] ? $baseUrl . basename($application['prc_license_path']) : '';
+        $application['resume_path']         = $application['resume_path'] ? $baseUrl . basename($application['resume_path']) : '';
+        $application['valid_id_path']       = $application['valid_id_path'] ? $baseUrl . basename($application['valid_id_path']) : '';
+    }
 
     header('Content-Type: application/json');
     echo json_encode([
