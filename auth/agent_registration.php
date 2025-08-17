@@ -1,5 +1,5 @@
 <?php
-
+// agent_registration.php
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -11,74 +11,59 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .registration-container {
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 25px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.12);
         }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
+        .form-group { margin-bottom: 20px; }
         .form-group label {
-            display: block;
-            margin-bottom: 5px;
             font-weight: 600;
+            margin-bottom: 6px;
+            display: block;
             color: #333;
         }
-        
         .form-group input,
         .form-group select,
         .form-group textarea {
             width: 100%;
             padding: 12px;
+            font-size: 15px;
             border: 2px solid #e1e5e9;
-            border-radius: 5px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
+            border-radius: 6px;
+            transition: 0.3s;
         }
-        
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
-            outline: none;
             border-color: #007bff;
+            outline: none;
         }
-        
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
         }
-        
         .submit-btn {
             background: #007bff;
-            color: white;
+            color: #fff;
             padding: 15px 30px;
-            border: none;
-            border-radius: 5px;
             font-size: 18px;
+            border: none;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background 0.3s ease;
+            transition: 0.3s;
         }
-        
-        .submit-btn:hover {
-            background: #0056b3;
-        }
-        
+        .submit-btn:hover { background: #0056b3; }
         .back-link {
             display: inline-block;
             margin-bottom: 20px;
             color: #007bff;
             text-decoration: none;
         }
-        
-        .back-link:hover {
-            text-decoration: underline;
-        }
+        .back-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -86,11 +71,13 @@
         <a href="../index.php" class="back-link">
             <i class="fas fa-arrow-left"></i> Back to Home
         </a>
-        
+
         <h1><i class="fas fa-user-tie"></i> Agent Registration</h1>
         <p>Join our network of professional real estate agents and start your journey with BatEstate Explorer.</p>
-        
+
         <form action="../public/api/agent_registration_complete.php" method="POST" enctype="multipart/form-data">
+            
+            <!-- Personal Info -->
             <h3>Personal Information</h3>
             <div class="form-row">
                 <div class="form-group">
@@ -102,7 +89,7 @@
                     <input type="text" id="last_name" name="last_name" required>
                 </div>
             </div>
-            
+
             <div class="form-row">
                 <div class="form-group">
                     <label for="email">Email Address *</label>
@@ -113,12 +100,12 @@
                     <input type="tel" id="phone" name="phone" required>
                 </div>
             </div>
-            
+
             <div class="form-group">
                 <label for="address">Address *</label>
                 <textarea id="address" name="address" rows="3" required></textarea>
             </div>
-            
+
             <div class="form-row">
                 <div class="form-group">
                     <label for="password">Password *</label>
@@ -133,7 +120,8 @@
                     </select>
                 </div>
             </div>
-            
+
+            <!-- Professional Info -->
             <h3>Professional Information</h3>
             <div class="form-row">
                 <div class="form-group">
@@ -145,7 +133,7 @@
                     <input type="text" id="prc_number" name="prc_number">
                 </div>
             </div>
-            
+
             <div class="form-row">
                 <div class="form-group">
                     <label for="experience_years">Years of Experience</label>
@@ -162,12 +150,13 @@
                     <input type="text" id="specializations" name="specializations" placeholder="e.g., Residential, Commercial, Luxury">
                 </div>
             </div>
-            
+
             <div class="form-group">
                 <label for="experience_details">Experience Details</label>
                 <textarea id="experience_details" name="experience_details" rows="4" placeholder="Describe your real estate experience and achievements"></textarea>
             </div>
-            
+
+            <!-- Education -->
             <h3>Educational Background</h3>
             <div class="form-row">
                 <div class="form-group">
@@ -186,7 +175,7 @@
                     <input type="text" id="school" name="school">
                 </div>
             </div>
-            
+
             <div class="form-row">
                 <div class="form-group">
                     <label for="course">Course/Major</label>
@@ -197,18 +186,51 @@
                     <input type="number" id="graduation_year" name="graduation_year" min="1950" max="2030">
                 </div>
             </div>
-            
+
+            <!-- Certifications -->
             <h3>Certifications & Training</h3>
             <div class="form-group">
                 <label for="certifications">Professional Certifications</label>
                 <textarea id="certifications" name="certifications" rows="3" placeholder="List any professional certifications you hold"></textarea>
             </div>
-            
             <div class="form-group">
                 <label for="training">Additional Training</label>
                 <textarea id="training" name="training" rows="3" placeholder="List any additional training or workshops attended"></textarea>
             </div>
-            
+
+            <!-- Company (for Associate Agents only) -->
+            <div id="company-field" style="display:none;">
+                <h3>Company Information</h3>
+                <div class="form-group">
+                    <label for="company_name">Company Name *</label>
+                    <input type="text" id="company_name" name="company_name">
+                </div>
+            </div>
+
+            <!-- Required Docs (for Direct Agents only) -->
+            <div id="required-documents" style="display:none;">
+                <h3>Required Documents</h3>
+                <p>Please upload clear copies of the following (JPG, PNG, PDF, DOC, DOCX | Max: 5MB each)</p>
+
+                <div class="form-group">
+                    <label for="broker_license">Broker's License *</label>
+                    <input type="file" id="broker_license" name="documents[broker_license]" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+                </div>
+                <div class="form-group">
+                    <label for="prc_license">PRC License *</label>
+                    <input type="file" id="prc_license" name="documents[prc_license]" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+                </div>
+                <div class="form-group">
+                    <label for="resume">Resume / CV *</label>
+                    <input type="file" id="resume" name="documents[resume]" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+                </div>
+                <div class="form-group">
+                    <label for="valid_id">Valid Government ID *</label>
+                    <input type="file" id="valid_id" name="documents[valid_id]" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+                </div>
+            </div>
+
+            <!-- Submit -->
             <div class="form-group">
                 <button type="submit" class="submit-btn">
                     <i class="fas fa-paper-plane"></i> Submit Application
@@ -216,5 +238,35 @@
             </div>
         </form>
     </div>
+
+<script>
+    const userType = document.getElementById('user_type');
+    const docsSection = document.getElementById('required-documents');
+    const companyField = document.getElementById('company-field');
+    const companyInput = document.getElementById('company_name');
+
+    function toggleFields() {
+        if (userType.value === 'direct_agent') {
+            docsSection.style.display = 'block';
+            companyField.style.display = 'none';
+            companyInput.required = false;
+
+            docsSection.querySelectorAll('input[type="file"]').forEach(el => el.required = true);
+        } else if (userType.value === 'associate_agent') {
+            docsSection.style.display = 'none';
+            companyField.style.display = 'block';
+            companyInput.required = true;
+
+            docsSection.querySelectorAll('input[type="file"]').forEach(el => el.required = false);
+        } else {
+            docsSection.style.display = 'none';
+            companyField.style.display = 'none';
+            companyInput.required = false;
+            docsSection.querySelectorAll('input[type="file"]').forEach(el => el.required = false);
+        }
+    }
+    userType.addEventListener('change', toggleFields);
+    window.addEventListener('DOMContentLoaded', toggleFields);
+</script>
 </body>
 </html>
