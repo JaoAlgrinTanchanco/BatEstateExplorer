@@ -2,7 +2,7 @@
 session_start();
 require_once __DIR__ . '/../../config/database.php';
 
-// Check if user is logged in and is admin
+// Check admin login
 $is_logged_in = is_logged_in();
 $current_user = null;
 $is_admin = false;
@@ -12,16 +12,14 @@ if ($is_logged_in) {
     $is_admin = ($current_user && $current_user['user_type'] === 'admin');
 }
 
-// Redirect if not logged in or not admin
 if (!$is_logged_in || !$is_admin) {
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
 
-// Get application ID from request
+// Get application ID
 $application_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-
 if (!$application_id) {
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'message' => 'Invalid application ID']);
@@ -30,7 +28,9 @@ if (!$application_id) {
 
 // Fetch application details
 $query = "
-    SELECT a.*, c.name AS company_name
+    SELECT 
+        a.*, 
+        c.name AS company_name 
     FROM applications a
     LEFT JOIN companies c ON a.company_id = c.id
     WHERE a.id = ?
@@ -43,22 +43,42 @@ $result = mysqli_stmt_get_result($stmt);
 if ($result && mysqli_num_rows($result) > 0) {
     $application = mysqli_fetch_assoc($result);
 
-    // Exclude password_hash from JSON output
+    // Remove sensitive info
     unset($application['password_hash']);
 
-    // Sanitize values for JSON output
-    $application = array_map(function ($value) {
-        return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-    }, $application);
-
-    // For Direct Agents: add document paths as full URLs
+    // Fix document URLs for Direct Agents
     if ($application['agent_type'] === 'direct_agent') {
-        $baseUrl = 'http://localhost/BatEstateExplorer/storage/uploads/documents/';
-        $application['broker_license_path'] = $application['broker_license_path'] ? $baseUrl . basename($application['broker_license_path']) : '';
-        $application['prc_license_path']    = $application['prc_license_path'] ? $baseUrl . basename($application['prc_license_path']) : '';
-        $application['resume_path']         = $application['resume_path'] ? $baseUrl . basename($application['resume_path']) : '';
-        $application['valid_id_path']       = $application['valid_id_path'] ? $baseUrl . basename($application['valid_id_path']) : '';
+        $docBaseUrl = 'http://localhost/BatEstateExplorer/storage/uploads/documents/';
+        $imgBaseUrl = 'http://localhost/BatEstateExplorer/storage/uploads/images/';
+
+        function isImage($path) {
+            $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+            return in_array($ext, ['jpg','jpeg','png','gif']);
+        }
+
+        $docs = ['broker_license_path', 'prc_license_path', 'resume_path', 'valid_id_path'];
+        foreach ($docs as $doc) {
+            if (!empty($application[$doc])) {
+                $application[$doc] = isImage($application[$doc])
+                    ? $imgBaseUrl . basename($application[$doc])
+                    : $docBaseUrl . basename($application[$doc]);
+            } else {
+                $application[$doc] = '';
+            }
+        }
     }
+
+    // Sanitize all other fields except document URLs
+    foreach ($application as $key => $value) {
+        if (!in_array($key, ['broker_license_path','prc_license_path','resume_path','valid_id_path'])) {
+            $application[$key] = htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+        }
+    }
+
+    // Map DB fields to modal-friendly fields with fallbacks
+    $application['prc_number']        = !empty($application['license_number']) ? $application['license_number'] : 'N/A';
+    $application['specializations']   = !empty($application['specialization']) ? $application['specialization'] : 'N/A';
+    $application['experience_details'] = !empty($application['bio']) ? $application['bio'] : 'N/A';
 
     header('Content-Type: application/json');
     echo json_encode([
