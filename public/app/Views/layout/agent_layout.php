@@ -11,7 +11,6 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-
 <header class="main-header">
   <div class="logo">BatEstate Agent</div>
   <nav class="main-nav">
@@ -25,8 +24,21 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
       <a href="agent_dashboard.php?view=associate_search" class="<?= ($view === 'associate_search') ? 'active' : '' ?>">
         <i class="fa-solid fa-search"></i> Search Properties
       </a>
-    <?php else: ?>
-      <!-- Future: direct_agent nav here -->
+
+    <?php elseif ($user['user_type'] === 'direct_agent'): ?>
+      <!-- Direct Agent Navigation -->
+      <a href="agent_dashboard.php?view=direct_home" class="<?= ($view === 'direct_home') ? 'active' : '' ?>">
+        <i class="fa-solid fa-house"></i> Home
+      </a>
+      <a href="agent_dashboard.php?view=direct_profile" class="<?= ($view === 'direct_profile') ? 'active' : '' ?>">
+        <i class="fa-solid fa-user"></i> Profile
+      </a>
+      <a href="agent_dashboard.php?view=direct_listings" class="<?= ($view === 'direct_listings') ? 'active' : '' ?>">
+        <i class="fa-solid fa-list"></i> My Listings
+      </a>
+      <a href="agent_dashboard.php?view=direct_search" class="<?= ($view === 'direct_search') ? 'active' : '' ?>">
+        <i class="fa-solid fa-search"></i> Search Properties
+      </a>
     <?php endif; ?>
 
     <!-- Logout Button (POST Form) -->
