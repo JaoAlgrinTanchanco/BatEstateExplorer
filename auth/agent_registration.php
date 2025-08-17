@@ -1,3 +1,6 @@
+<?php
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -87,7 +90,7 @@
         <h1><i class="fas fa-user-tie"></i> Agent Registration</h1>
         <p>Join our network of professional real estate agents and start your journey with BatEstate Explorer.</p>
         
-        <form action="../database/agent_registration_complete.php" method="POST" enctype="multipart/form-data">
+        <form action="../public/api/agent_registration_complete.php" method="POST" enctype="multipart/form-data">
             <h3>Personal Information</h3>
             <div class="form-row">
                 <div class="form-group">
