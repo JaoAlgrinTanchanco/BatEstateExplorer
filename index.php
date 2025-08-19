@@ -23,19 +23,25 @@ if (isset($_SESSION['flash_message'])) {
     <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
+            <!-- Left: Logo -->
             <div class="nav-logo">
-                <i class="fas fa-home"></i>
-                <span>BatEstate Explorer</span>
+            <i class="fas fa-home"></i>
+            <span>BatEstate Explorer</span>
             </div>
+
+            <!-- Center: Navigation -->
             <div class="nav-menu">
-                <a href="#home" class="nav-link">Home</a>
-                <a href="#properties" class="nav-link">Properties</a>
-                <a href="#about" class="nav-link">About</a>
-                <a href="#contact" class="nav-link">Contact</a>
-                <a href="auth/login.php" class="nav-link login-btn">Login</a>
+            <a href="#home" class="nav-link">Home</a>
+            <a href="#properties" class="nav-link">Properties</a>
+            <a href="#about" class="nav-link">About</a>
+            <a href="#contact" class="nav-link">Contact</a>
             </div>
+
+            <!-- Right: Login -->
+            <a href="auth/login.php" class="nav-link login-btn">Login</a>
         </div>
     </nav>
+
 
     <!-- Hero Section -->
     <section id="home" class="hero">
@@ -52,9 +58,6 @@ if (isset($_SESSION['flash_message'])) {
                     Sign In
                 </a>
             </div>
-        </div>
-        <div class="hero-image">
-            <img src="assets/images/bg4.jpg" alt="Beautiful Property">
         </div>
     </section>
 
@@ -288,28 +291,38 @@ if (isset($_SESSION['flash_message'])) {
         </div>
     </footer>
 
-    <script src="assets/js/hero.js"></script>
-    <script>
-        // Contact form handler
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const name = formData.get('name');
-            const email = formData.get('email');
-            const message = formData.get('message');
-            
-            // Simple validation
-            if (!name || !email || !message) {
-                alert('Please fill in all fields.');
-                return;
-            }
-            
-            // Show success message (in a real app, this would send to a server)
-            alert('Thank you for your message! We\'ll get back to you soon.');
-            this.reset();
-        });
-    </script>
+<script>
+  // Contact form handler
+  document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const name = formData.get('name');
+    const email = formData.get('email');
+    const message = formData.get('message');
+
+    // Simple validation
+    if (!name || !email || !message) {
+      alert('Please fill in all fields.');
+      return;
+    }
+
+    // Show success message (in a real app, this would send to a server)
+    alert("Thank you for your message! We'll get back to you soon.");
+    this.reset();
+  });
+
+  // Navbar scroll behavior
+  window.addEventListener("scroll", () => {
+    const navbar = document.querySelector(".navbar");
+    if (window.scrollY > 50) {
+      navbar.classList.add("scrolled");
+    } else {
+      navbar.classList.remove("scrolled");
+    }
+  });
+</script>
+
 </body>
 </html>
 
