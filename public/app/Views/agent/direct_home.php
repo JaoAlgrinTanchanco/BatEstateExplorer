@@ -30,8 +30,14 @@ $sql = "SELECT p.id, p.title, p.location, p.price, p.bedrooms, p.bathrooms, pi.i
         LEFT JOIN property_images pi 
             ON p.id = pi.property_id AND pi.is_primary = 1
         WHERE p.status = 'available'
+          AND p.agent_id = ?
         ORDER BY p.created_at DESC";
-$result = $conn->query($sql);
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $user['id']); // Direct agent's user ID
+$stmt->execute();
+$result = $stmt->get_result();
+
 ?>
 
 <!-- user_home.php -->

@@ -36,7 +36,7 @@ if ($tab === 'my_listings') {
         $stmt = $conn->prepare("
             SELECT *
             FROM properties
-            WHERE agent_id = ? OR sold_by_agent_id = ?
+            WHERE agent_id = ?
             ORDER BY created_at DESC
         ");
         $stmt->bind_param("ii", $agent_id, $agent_id);
@@ -215,7 +215,7 @@ if ($tab === 'my_listings') {
                 <div class="overview-container">
                     <div class="overview-card">
                         <form id="addListingForm" 
-                            action="/BatEstateExplorer/public/api/save_listing.php" 
+                            action="/BatEstateExplorer/public/api/direct_save_listing.php" 
                             method="POST" 
                             enctype="multipart/form-data">
 
