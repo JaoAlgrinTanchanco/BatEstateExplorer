@@ -21,31 +21,32 @@ $tab = $_GET['tab'] ?? 'overview';
 $listings = [];
 
 if ($tab === 'my_listings') {
-    // Get agent record
-    $stmtAgent = $conn->prepare("SELECT id FROM agents WHERE user_id = ?");
-    $stmtAgent->bind_param("i", $user['id']);
-    $stmtAgent->execute();
-    $res = $stmtAgent->get_result();
-    $agent = $res ? $res->fetch_assoc() : null;
-    $stmtAgent->close();
+    if ($user['user_type'] === 'direct') {
+        $agent_id = (int)$user['id']; // use user_id directly for direct agents
+    } else {
+        $stmtAgent = $conn->prepare("SELECT id FROM agents WHERE user_id = ?");
+        $stmtAgent->bind_param("i", $user['id']);
+        $stmtAgent->execute();
+        $res = $stmtAgent->get_result();
+        $agent = $res ? $res->fetch_assoc() : null;
+        $stmtAgent->close();
 
-    if ($agent) {
-        $agent_id = (int)$agent['id'];
+        $agent_id = $agent ? (int)$agent['id'] : 0;
+    }
 
-        // Fetch properties
+    if ($agent_id) {
         $stmt = $conn->prepare("
             SELECT *
             FROM properties
             WHERE agent_id = ?
             ORDER BY created_at DESC
         ");
-        $stmt->bind_param("ii", $agent_id, $agent_id);
+        $stmt->bind_param("i", $agent_id); // Only one param
         $stmt->execute();
         $result = $stmt->get_result();
         $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
         $stmt->close();
 
-        // For each property, fetch its images
         foreach ($properties as $property) {
             $stmtImg = $conn->prepare("
                 SELECT image_path 
@@ -59,13 +60,11 @@ if ($tab === 'my_listings') {
             $images = $resImg ? $resImg->fetch_all(MYSQLI_ASSOC) : [];
             $stmtImg->close();
 
-            // Add images to property array
             $property['images'] = $images;
             $listings[] = $property;
         }
     }
 }
-
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_profile_tab.css">

@@ -17,8 +17,22 @@ if ($user_data['user_type'] !== 'direct_agent') {
     die("❌ Access denied: only direct agents can save listings.");
 }
 
-$agent_id = $user_data['id']; // use users.id directly
-echo "✅ Agent/User ID: $agent_id<br>";
+// ✅ Get or create agent.id from agents table
+$stmt = $pdo->prepare("SELECT id FROM agents WHERE user_id = ?");
+$stmt->execute([$user_data['id']]);
+$agent = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$agent) {
+    // 🔧 Auto-create agent record for direct agent
+    $stmtInsert = $pdo->prepare("INSERT INTO agents (user_id, created_at) VALUES (?, NOW())");
+    $stmtInsert->execute([$user_data['id']]);
+
+    $agent_id = $pdo->lastInsertId();
+    echo "🆕 Agent record created for user_id {$user_data['id']} → Agent ID: $agent_id<br>";
+} else {
+    $agent_id = $agent['id'];
+    echo "✅ Agent ID (from agents table): $agent_id<br>";
+}
 
 // Collect form data
 $title         = $_POST['title'] ?? '';
@@ -34,15 +48,15 @@ $property_type = $_POST['property_type'] ?? '';
 try {
     $pdo->beginTransaction();
 
-    // Insert property (agent_id is users.id here)
+    // ✅ Insert property using agent_id
     $stmt = $pdo->prepare("
         INSERT INTO properties
-        (title, description, property_type, location, price, bedrooms, bathrooms, sqm, lot_size, user_id, status, created_at)
+        (title, description, property_type, location, price, bedrooms, bathrooms, sqm, lot_size, agent_id, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', NOW())
     ");
     $stmt->execute([
         $title, $description, $property_type, $location, $price,
-        $bedrooms, $bathrooms, $sqm, $lot_size, $agent_id // here $agent_id = users.id
+        $bedrooms, $bathrooms, $sqm, $lot_size, $agent_id
     ]);
 
     $property_id = $pdo->lastInsertId();
@@ -52,7 +66,6 @@ try {
     $upload_dir = 'C:\\xampp\\htdocs\\BatEstateExplorer\\storage\\uploads\\property_images\\';
     echo "📂 Upload directory: $upload_dir<br>";
 
-    // Ensure folder exists
     if (!is_dir($upload_dir)) {
         error_log("❌ Upload directory does not exist: " . $upload_dir);
     } elseif (!is_writable($upload_dir)) {
@@ -61,7 +74,6 @@ try {
         error_log("✅ Upload directory ready: " . $upload_dir);
     }
 
-    // Debug: See what PHP received
     echo '<pre>'; print_r($_FILES); echo '</pre>';
 
     if (isset($_FILES['images']) && is_array($_FILES['images']['tmp_name']) && $_FILES['images']['tmp_name'][0] !== '') {
