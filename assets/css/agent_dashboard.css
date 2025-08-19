@@ -42,6 +42,17 @@ body {
     background-color: rgba(0, 0, 0, 0.2);
 }
 
+.agent-role {
+    margin-top: 4px;
+    font-size: 14px;
+    display: inline-block;
+    background-color: white;
+    color: #333;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
 /* Dashboard Content */
 .dashboard-content {
     padding: 1.5rem;

@@ -10,9 +10,20 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
   <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_dashboard.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
+
 <header class="main-header">
-  <div class="logo">BatEstate Agent</div>
+  <div class="logo">
+    BatEstate Agent
+
+    <?php if (isset($user['user_type'])): ?>
+      <div class="agent-role">
+        <?= $user['user_type'] === 'direct_agent' ? 'Direct' : 'Associate' ?>
+      </div>
+    <?php endif; ?>
+  </div>
+  
   <nav class="main-nav">
     <?php if ($user['user_type'] === 'associate_agent'): ?>
       <a href="agent_dashboard.php?view=associate_home" class="<?= ($view === 'associate_home') ? 'active' : '' ?>">
@@ -32,9 +43,6 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
       </a>
       <a href="agent_dashboard.php?view=direct_profile" class="<?= ($view === 'direct_profile') ? 'active' : '' ?>">
         <i class="fa-solid fa-user"></i> Profile
-      </a>
-      <a href="agent_dashboard.php?view=direct_listings" class="<?= ($view === 'direct_listings') ? 'active' : '' ?>">
-        <i class="fa-solid fa-list"></i> My Listings
       </a>
       <a href="agent_dashboard.php?view=direct_search" class="<?= ($view === 'direct_search') ? 'active' : '' ?>">
         <i class="fa-solid fa-search"></i> Search Properties

@@ -346,8 +346,6 @@ if (isset($_SESSION['flash_message'])) {
 </style>
 
 <?php
-session_start();
-
 if (isset($_SESSION['flash_message'])) {
     echo '<div class="flash-message" id="flashMessage">'
         . htmlspecialchars($_SESSION['flash_message'])
