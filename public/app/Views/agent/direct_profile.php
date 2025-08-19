@@ -73,16 +73,15 @@ if ($tab === 'my_listings') {
 <div class="dashboard-container">
     <!-- Header -->
     <header class="dashboard-header">
-        <h1>Associate Agent Profile</h1>
+        <h1>Direct Agent Profile</h1>
     </header>
 
     <!-- Navigation Tabs -->
     <nav class="dashboard-tabs">
-        <a href="?view=associate_profile" class="tab <?= ($tab === 'overview') ? 'active' : '' ?>">Overview</a>
-        <a href="?view=associate_profile&tab=my_listings" class="tab <?= ($tab === 'my_listings') ? 'active' : '' ?>">My Listings</a>
-        <a href="?view=associate_profile&tab=add_listing" class="tab <?= ($tab === 'add_listing') ? 'active' : '' ?>">Add Listing</a>
-        <a href="?view=associate_profile&tab=analytics" class="tab <?= ($tab === 'analytics') ? 'active' : '' ?>">Analytics</a>
-        <a href="?view=associate_profile&tab=company_listings" class="tab <?= ($tab === 'company_listings') ? 'active' : '' ?>">Company Listings</a>
+        <a href="?view=direct_profile" class="tab <?= ($tab === 'overview') ? 'active' : '' ?>">Overview</a>
+        <a href="?view=direct_profile&tab=my_listings" class="tab <?= ($tab === 'my_listings') ? 'active' : '' ?>">My Listings</a>
+        <a href="?view=direct_profile&tab=add_listing" class="tab <?= ($tab === 'add_listing') ? 'active' : '' ?>">Add Listing</a>
+        <a href="?view=direct_profile&tab=analytics" class="tab <?= ($tab === 'analytics') ? 'active' : '' ?>">Analytics</a>
     </nav>
 
     <!-- Content Section -->
@@ -298,108 +297,6 @@ if ($tab === 'my_listings') {
                 <h2>Performance Analytics</h2>
                 <p>Charts, leads, and sales data here.</p>
         <?php break; ?>
-
-        <?php case 'company_listings': ?>
-                <h2>Company Listings</h2>
-                <p>List of all properties from your company.</p>
-
-                <?php
-                // Fetch all properties with agent info
-                $stmt = $conn->prepare("
-                    SELECT 
-                        p.id, 
-                        p.title,  -- use title instead of image
-                        p.location, 
-                        p.price, 
-                        p.bedrooms, 
-                        p.bathrooms, 
-                        p.sqm, 
-                        p.status, 
-                        p.created_at,
-                        a.id AS agent_id, 
-                        CONCAT(u.first_name, ' ', u.last_name) AS created_by,
-                        sa.id AS sold_agent_id, 
-                        CONCAT(su.first_name, ' ', su.last_name) AS sold_by
-                    FROM properties p
-                    LEFT JOIN agents a ON p.agent_id = a.id
-                    LEFT JOIN users u ON a.user_id = u.id
-                    LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
-                    LEFT JOIN users su ON sa.user_id = su.id
-                    ORDER BY p.created_at DESC
-                ");
-
-                $stmt->execute();
-                $res = $stmt->get_result();
-                ?>
-
-                <table border="1" cellpadding="8" cellspacing="0" width="100%">
-                    <thead>
-                        <tr>
-                            <th>Property</th>
-                            <th>Location</th>
-                            <th>Price</th>
-                            <th>Bedrooms</th>
-                            <th>Bathrooms</th>
-                            <th>Size (sqm)</th>
-                            <th>Status</th>
-                            <th>Created By</th>
-                            <th>Sold By</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php while ($row = $res->fetch_assoc()): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($row['title']); ?></td>
-                                <td><?= htmlspecialchars($row['location']); ?></td>
-                                <td>₱<?= number_format($row['price'], 2); ?></td>
-                                <td><?= (int)$row['bedrooms']; ?></td>
-                                <td><?= (int)$row['bathrooms']; ?></td>
-                                <td><?= number_format($row['sqm'], 2); ?></td>
-                                <td><?= ucfirst($row['status']); ?></td>
-                                <td><?= htmlspecialchars($row['created_by'] ?? 'N/A'); ?></td>
-                                <td><?= htmlspecialchars($row['sold_by'] ?? 'N/A'); ?></td>
-                                <td>
-                                    <a href="#" 
-                                    class="view-details" 
-                                    data-id="<?= $row['id']; ?>" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#propertyModal">Details</a>
-                                </td>
-                            </tr>
-                        <?php endwhile; ?>
-                    </tbody>
-                </table>
-                <!-- Modal placed at bottom of page, hidden until triggered -->
-                <div class="modal fade" id="propertyModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="propertyTitle">Property Details</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <!-- Image slider -->
-                                <div id="propertyCarousel" class="carousel slide mb-3" data-bs-ride="carousel">
-                                <div class="carousel-inner" id="carouselImages"></div>
-                                <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev">
-                                    <span class="carousel-control-prev-icon"></span>
-                                </button>
-                                <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next">
-                                    <span class="carousel-control-next-icon"></span>
-                                </button>
-                                </div>
-
-                                <!-- Property details -->
-                                <ul class="list-group" id="propertyDetails"></ul>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <?php break; ?>
 
         <?php default:
             // Overview Tab
@@ -647,60 +544,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     initPropertyTypeToggles();
-
-    //company listing
-    const propertyModal = document.getElementById('propertyModal');
-    const propertyTitle = document.getElementById('propertyTitle');
-    const propertyDetails = document.getElementById('propertyDetails');
-    const carouselImages = document.getElementById('carouselImages');
-
-    document.querySelectorAll('.view-details').forEach(link => {
-    link.addEventListener('click', function (e) {
-        e.preventDefault();
-        const propertyId = this.dataset.id;
-
-        fetch('http://localhost/BatEstateExplorer/public/api/get_company_listings.php?id=' + propertyId)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                    return;
-                }
-
-                // Set title
-                document.getElementById('propertyTitle').textContent = data.title;
-
-                // Images
-                const carousel = document.getElementById('carouselImages');
-                carousel.innerHTML = '';
-                if (data.images && data.images.length > 0) {
-                    data.images.forEach((img, index) => {
-                        carousel.innerHTML += `
-                            <div class="carousel-item ${index === 0 ? 'active' : ''}">
-                                <img src="storage/uploads/property_images/${img}" class="d-block w-100">
-                            </div>
-                        `;
-                    });
-                } else {
-                    carousel.innerHTML = '<div class="carousel-item active"><p>No images</p></div>';
-                }
-
-                // Details
-                const details = document.getElementById('propertyDetails');
-                details.innerHTML = `
-                    <li class="list-group-item"><b>Location:</b> ${data.location}</li>
-                    <li class="list-group-item"><b>Price:</b> ₱${parseFloat(data.price).toLocaleString()}</li>
-                    <li class="list-group-item"><b>Bedrooms:</b> ${data.bedrooms}</li>
-                    <li class="list-group-item"><b>Bathrooms:</b> ${data.bathrooms}</li>
-                    <li class="list-group-item"><b>Size:</b> ${data.sqm} sqm</li>
-                    <li class="list-group-item"><b>Status:</b> ${data.status}</li>
-                    <li class="list-group-item"><b>Created By:</b> ${data.created_by ?? 'N/A'}</li>
-                    <li class="list-group-item"><b>Sold By:</b> ${data.sold_by ?? 'N/A'}</li>
-                `;
-            })
-            .catch(err => console.error(err));
-    });
-});
 });
 
 </script>

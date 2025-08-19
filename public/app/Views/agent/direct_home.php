@@ -40,13 +40,13 @@ $result = $conn->query($sql);
   <p>Here’s a quick overview of your latest listings and tools.</p>
   
   <div class="action-buttons">
-    <a href="agent_dashboard.php?view=associate_search" class="btn btn-primary">
+    <a href="agent_dashboard.php?view=direct_search" class="btn btn-primary">
       <i class="fa-solid fa-search"></i> Search Properties
     </a>
-    <a href="agent_dashboard.php?view=associate_profile" class="btn btn-secondary">
+    <a href="agent_dashboard.php?view=direct_profile" class="btn btn-secondary">
       <i class="fa-solid fa-user"></i> Manage Profile
     </a>
-    <a href="agent_dashboard.php?view=associate_profile" class="btn btn-success">
+    <a href="agent_dashboard.php?view=direct_profile" class="btn btn-success">
       <i class="fa-solid fa-plus"></i> Add New Property
     </a>
   </div>

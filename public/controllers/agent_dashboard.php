@@ -8,13 +8,23 @@ if (!$user || !in_array($user['user_type'], ['direct_agent', 'associate_agent'],
     exit;
 }
 
-$view = $_GET['view'] ?? (
-    $user['user_type'] === 'associate_agent'
-        ? 'associate_home'
-        : 'direct_dashboard'
-);
+// Get requested view
+$requested_view = $_GET['view'] ?? null;
+
+// Restrict views based on user type
+if ($user['user_type'] === 'associate_agent') {
+    $allowed_views = ['associate_home', 'associate_profile', 'associate_search'];
+    $default_view  = 'associate_home';
+} else { // direct_agent
+    $allowed_views = ['direct_home', 'direct_profile', 'direct_search'];
+    $default_view  = 'direct_home';
+}
+
+// If requested view is not allowed for this user, fallback
+$view = in_array($requested_view, $allowed_views, true) ? $requested_view : $default_view;
 
 switch ($view) {
+    // Associate agent views
     case 'associate_home':
         $view_file = __DIR__ . '/../app/Views/agent/associate_home.php';
         $page_title = "Associate Dashboard";
@@ -27,26 +37,26 @@ switch ($view) {
         $view_file = __DIR__ . '/../app/Views/agent/associate_search.php';
         $page_title = "Search Properties";
         break;
-    // Future: direct agent cases
+
+    // Direct agent views
     case 'direct_home':
-        $view_file = __DIR__ . '/../app/Views/agent/associate_home.php';
-        $page_title = "Associate Dashboard";
+        $view_file = __DIR__ . '/../app/Views/agent/direct_home.php';
+        $page_title = "Direct Dashboard";
         break;
     case 'direct_profile':
-        $view_file = __DIR__ . '/../app/Views/agent/associate_profile.php';
+        $view_file = __DIR__ . '/../app/Views/agent/direct_profile.php';
         $page_title = "My Profile";
         break;
     case 'direct_search':
-        $view_file = __DIR__ . '/../app/Views/agent/associate_search.php';
+        $view_file = __DIR__ . '/../app/Views/agent/direct_search.php';
         $page_title = "Search Properties";
         break;
 
     default:
-        $view_file = __DIR__ . '/../app/Views/agent/associate_home.php';
-        $page_title = "Associate Dashboard";
+        $view_file = __DIR__ . '/../app/Views/agent/' . $default_view . '.php';
+        $page_title = ($user['user_type'] === 'associate_agent') ? "Associate Dashboard" : "Direct Dashboard";
         break;
 }
 
 // finally load layout
 require __DIR__ . '/../app/Views/layout/agent_layout.php';
-
