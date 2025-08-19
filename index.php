@@ -18,37 +18,74 @@ if (isset($_SESSION['flash_message'])) {
     <title>BatEstate Explorer - Find Your Dream Property</title>
     <link rel="stylesheet" href="assets/css/hero.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Scroll animations */
+        .scroll-animation {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .scroll-animation.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Flash message styles (existing) */
+        .flash-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 15px 20px;
+            max-width: 350px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .flash-message .close-btn {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            color: #155724;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar">
+    <nav class="navbar scroll-animation">
         <div class="nav-container">
-            <!-- Left: Logo -->
-            <div class="nav-logo">
-            <i class="fas fa-home"></i>
-            <span>BatEstate Explorer</span>
+            <div class="nav-logo scroll-animation">
+                <i class="fas fa-home"></i>
+                <span>BatEstate Explorer</span>
             </div>
 
-            <!-- Center: Navigation -->
-            <div class="nav-menu">
-            <a href="#home" class="nav-link">Home</a>
-            <a href="#properties" class="nav-link">Properties</a>
-            <a href="#about" class="nav-link">About</a>
-            <a href="#contact" class="nav-link">Contact</a>
+            <div class="nav-menu scroll-animation">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#properties" class="nav-link">Properties</a>
+                <a href="#about" class="nav-link">About</a>
+                <a href="#contact" class="nav-link">Contact</a>
             </div>
 
-            <!-- Right: Login -->
-            <a href="auth/login.php" class="nav-link login-btn">Login</a>
+            <a href="auth/login.php" class="nav-link login-btn scroll-animation">Login</a>
         </div>
     </nav>
 
-
     <!-- Hero Section -->
-    <section id="home" class="hero">
-        <div class="hero-content">
-            <h1 class="hero-title">Find Your Perfect Property</h1>
-            <p class="hero-subtitle">Discover amazing properties in your area with our comprehensive real estate platform</p>
-            <div class="hero-buttons">
+    <section id="home" class="hero scroll-animation">
+        <div class="hero-content scroll-animation">
+            <h1 class="hero-title scroll-animation">Find Your Perfect Property</h1>
+            <p class="hero-subtitle scroll-animation">Discover amazing properties in your area with our comprehensive real estate platform</p>
+            <div class="hero-buttons scroll-animation">
                 <a href="auth/signup.php" class="btn btn-primary">
                     <i class="fas fa-user-plus"></i>
                     Get Started
@@ -62,17 +99,17 @@ if (isset($_SESSION['flash_message'])) {
     </section>
 
     <!-- Properties Section -->
-    <section id="properties" class="properties">
-        <div class="container">
-            <h2 class="section-title">Featured Properties</h2>
-            <p class="section-subtitle">Discover our handpicked selection of premium properties</p>
+    <section id="properties" class="properties scroll-animation">
+        <div class="container scroll-animation">
+            <h2 class="section-title scroll-animation">Featured Properties</h2>
+            <p class="section-subtitle scroll-animation">Discover our handpicked selection of premium properties</p>
             <div class="properties-grid">
-                <div class="property-card">
-                    <div class="property-image">
+                <div class="property-card scroll-animation">
+                    <div class="property-image scroll-animation">
                         <img src="assets/images/bg4.jpg" alt="Luxury Home">
                         <div class="property-badge">Featured</div>
                     </div>
-                    <div class="property-content">
+                    <div class="property-content scroll-animation">
                         <h3>Modern Luxury Villa</h3>
                         <p class="property-location"><i class="fas fa-map-marker-alt"></i> Prime Location</p>
                         <p class="property-price">$850,000</p>
@@ -84,12 +121,12 @@ if (isset($_SESSION['flash_message'])) {
                         <a href="auth/login.php" class="btn btn-outline">View Details</a>
                     </div>
                 </div>
-                <div class="property-card">
-                    <div class="property-image">
+                <div class="property-card scroll-animation">
+                    <div class="property-image scroll-animation">
                         <img src="assets/images/bg4.jpg" alt="Townhouse">
                         <div class="property-badge">New</div>
                     </div>
-                    <div class="property-content">
+                    <div class="property-content scroll-animation">
                         <h3>Cozy Townhouse</h3>
                         <p class="property-location"><i class="fas fa-map-marker-alt"></i> Family Neighborhood</p>
                         <p class="property-price">$450,000</p>
@@ -101,12 +138,12 @@ if (isset($_SESSION['flash_message'])) {
                         <a href="auth/login.php" class="btn btn-outline">View Details</a>
                     </div>
                 </div>
-                <div class="property-card">
-                    <div class="property-image">
+                <div class="property-card scroll-animation">
+                    <div class="property-image scroll-animation">
                         <img src="assets/images/bg4.jpg" alt="Apartment">
                         <div class="property-badge">Hot Deal</div>
                     </div>
-                    <div class="property-content">
+                    <div class="property-content scroll-animation">
                         <h3>Downtown Apartment</h3>
                         <p class="property-location"><i class="fas fa-map-marker-alt"></i> City Center</p>
                         <p class="property-price">$320,000</p>
@@ -119,7 +156,7 @@ if (isset($_SESSION['flash_message'])) {
                     </div>
                 </div>
             </div>
-            <div class="properties-cta">
+            <div class="properties-cta scroll-animation">
                 <a href="auth/login.php" class="btn btn-primary btn-large">
                     <i class="fas fa-search"></i>
                     Browse All Properties
@@ -129,28 +166,22 @@ if (isset($_SESSION['flash_message'])) {
     </section>
 
     <!-- Features Section -->
-    <section id="features" class="features">
-        <div class="container">
-            <h2 class="section-title">Why Choose BatEstate Explorer?</h2>
+    <section id="features" class="features scroll-animation">
+        <div class="container scroll-animation">
+            <h2 class="section-title scroll-animation">Why Choose BatEstate Explorer?</h2>
             <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
+                <div class="feature-card scroll-animation">
+                    <div class="feature-icon"><i class="fas fa-search"></i></div>
                     <h3>Smart Search</h3>
                     <p>Find properties that match your exact criteria with our advanced search filters.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
+                <div class="feature-card scroll-animation">
+                    <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
                     <h3>Trusted Platform</h3>
                     <p>Connect with verified agents and browse legitimate property listings.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-mobile-alt"></i>
-                    </div>
+                <div class="feature-card scroll-animation">
+                    <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
                     <h3>Mobile Friendly</h3>
                     <p>Access our platform from anywhere with our responsive mobile design.</p>
                 </div>
@@ -159,29 +190,29 @@ if (isset($_SESSION['flash_message'])) {
     </section>
 
     <!-- About Section -->
-    <section id="about" class="about">
-        <div class="container">
-            <div class="about-content">
-                <div class="about-text">
-                    <h2 class="section-title">About BatEstate Explorer</h2>
-                    <p>We are a leading real estate platform dedicated to connecting buyers, sellers, and agents in a seamless and trustworthy environment. Our mission is to make property discovery and transactions as simple and efficient as possible.</p>
-                    <p>With years of experience in the real estate industry, we understand the importance of finding the perfect property that matches your lifestyle and investment goals.</p>
+    <section id="about" class="about scroll-animation">
+        <div class="container scroll-animation">
+            <div class="about-content scroll-animation">
+                <div class="about-text scroll-animation">
+                    <h2 class="section-title scroll-animation">About BatEstate Explorer</h2>
+                    <p>We are a leading real estate platform dedicated to connecting buyers, sellers, and agents in a seamless and trustworthy environment...</p>
+                    <p>With years of experience in the real estate industry, we understand the importance of finding the perfect property...</p>
                     <div class="about-stats">
-                        <div class="stat-item">
+                        <div class="stat-item scroll-animation">
                             <h3>1000+</h3>
                             <p>Properties Listed</p>
                         </div>
-                        <div class="stat-item">
+                        <div class="stat-item scroll-animation">
                             <h3>500+</h3>
                             <p>Happy Clients</p>
                         </div>
-                        <div class="stat-item">
+                        <div class="stat-item scroll-animation">
                             <h3>50+</h3>
                             <p>Expert Agents</p>
                         </div>
                     </div>
                 </div>
-                <div class="about-image">
+                <div class="about-image scroll-animation">
                     <img src="assets/images/bg4.jpg" alt="About BatEstate Explorer">
                 </div>
             </div>
@@ -189,41 +220,35 @@ if (isset($_SESSION['flash_message'])) {
     </section>
 
     <!-- Contact Section -->
-    <section id="contact" class="contact">
-        <div class="container">
-            <h2 class="section-title">Get in Touch</h2>
-            <p class="section-subtitle">Have questions? We'd love to hear from you.</p>
-            <div class="contact-content">
-                <div class="contact-info">
-                    <div class="contact-item">
-                        <div class="contact-icon">
-                            <i class="fas fa-map-marker-alt"></i>
-                        </div>
+    <section id="contact" class="contact scroll-animation">
+        <div class="container scroll-animation">
+            <h2 class="section-title scroll-animation">Get in Touch</h2>
+            <p class="section-subtitle scroll-animation">Have questions? We'd love to hear from you.</p>
+            <div class="contact-content scroll-animation">
+                <div class="contact-info scroll-animation">
+                    <div class="contact-item scroll-animation">
+                        <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
                         <div>
                             <h4>Address</h4>
                             <p>123 Real Estate Street<br>Property City, PC 12345</p>
                         </div>
                     </div>
-                    <div class="contact-item">
-                        <div class="contact-icon">
-                            <i class="fas fa-phone"></i>
-                        </div>
+                    <div class="contact-item scroll-animation">
+                        <div class="contact-icon"><i class="fas fa-phone"></i></div>
                         <div>
                             <h4>Phone</h4>
                             <p>+1 (555) 123-4567</p>
                         </div>
                     </div>
-                    <div class="contact-item">
-                        <div class="contact-icon">
-                            <i class="fas fa-envelope"></i>
-                        </div>
+                    <div class="contact-item scroll-animation">
+                        <div class="contact-icon"><i class="fas fa-envelope"></i></div>
                         <div>
                             <h4>Email</h4>
                             <p>info@batestate.com</p>
                         </div>
                     </div>
                 </div>
-                <div class="contact-form">
+                <div class="contact-form scroll-animation">
                     <form id="contactForm">
                         <div class="form-group">
                             <input type="text" name="name" placeholder="Your Name" required>
@@ -245,11 +270,11 @@ if (isset($_SESSION['flash_message'])) {
     </section>
 
     <!-- CTA Section -->
-    <section id="cta" class="cta">
-        <div class="container">
-            <h2>Ready to Start Your Property Journey?</h2>
-            <p>Join thousands of satisfied users who found their dream properties with us.</p>
-            <div class="cta-buttons">
+    <section id="cta" class="cta scroll-animation">
+        <div class="container scroll-animation">
+            <h2 class="scroll-animation">Ready to Start Your Property Journey?</h2>
+            <p class="scroll-animation">Join thousands of satisfied users who found their dream properties with us.</p>
+            <div class="cta-buttons scroll-animation">
                 <a href="auth/signup.php" class="btn btn-primary btn-large">
                     <i class="fas fa-rocket"></i>
                     Start Exploring Now
@@ -263,14 +288,14 @@ if (isset($_SESSION['flash_message'])) {
     </section>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
+    <footer class="footer scroll-animation">
+        <div class="container scroll-animation">
+            <div class="footer-content scroll-animation">
+                <div class="footer-section scroll-animation">
                     <h3>BatEstate Explorer</h3>
                     <p>Your trusted partner in finding the perfect property.</p>
                 </div>
-                <div class="footer-section">
+                <div class="footer-section scroll-animation">
                     <h4>Quick Links</h4>
                     <ul>
                         <li><a href="#home">Home</a></li>
@@ -279,19 +304,74 @@ if (isset($_SESSION['flash_message'])) {
                         <li><a href="#contact">Contact</a></li>
                     </ul>
                 </div>
-                <div class="footer-section">
+                <div class="footer-section scroll-animation">
                     <h4>Contact Info</h4>
                     <p><i class="fas fa-envelope"></i> info@batestate.com</p>
                     <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
                 </div>
             </div>
-            <div class="footer-bottom">
+            <div class="footer-bottom scroll-animation">
                 <p>&copy; 2025 BatEstate Explorer. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
 <script>
+  // Smooth scroll to section and highlight active nav link
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  function removeActive() {
+    navLinks.forEach(link => {
+      link.style.color = '';
+      link.style.transform = '';
+    });
+  }
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const targetId = this.getAttribute('href').substring(1);
+      const target = document.getElementById(targetId);
+
+      if (target) {
+        const targetTop = target.getBoundingClientRect().top + window.scrollY;
+        const sectionHeight = target.offsetHeight;
+        const viewportHeight = window.innerHeight;
+        const scrollTo = targetTop - (viewportHeight / 2) + (sectionHeight / 2);
+
+        window.scrollTo({
+          top: scrollTo,
+          behavior: 'smooth'
+        });
+
+        // Highlight active link
+        removeActive();
+        this.style.color = '#000';
+        this.style.transform = 'scale(1.3)';
+      }
+    });
+  });
+
+  // Highlight nav link on scroll based on viewport
+  const sections = document.querySelectorAll('section');
+  window.addEventListener('scroll', () => {
+    let scrollPos = window.scrollY + window.innerHeight / 2; // center of viewport
+    sections.forEach(sec => {
+      const secTop = sec.offsetTop;
+      const secBottom = secTop + sec.offsetHeight;
+      const id = sec.getAttribute('id');
+
+      if (scrollPos >= secTop && scrollPos < secBottom) {
+        removeActive();
+        const activeLink = document.querySelector(`.nav-link[href="#${id}"]`);
+        if (activeLink) {
+          activeLink.style.color = '#000';
+          activeLink.style.transform = 'scale(1.3)';
+        }
+      }
+    });
+  });
+
   // Contact form handler
   document.getElementById('contactForm').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -301,13 +381,11 @@ if (isset($_SESSION['flash_message'])) {
     const email = formData.get('email');
     const message = formData.get('message');
 
-    // Simple validation
     if (!name || !email || !message) {
       alert('Please fill in all fields.');
       return;
     }
 
-    // Show success message (in a real app, this would send to a server)
     alert("Thank you for your message! We'll get back to you soon.");
     this.reset();
   });
@@ -321,57 +399,29 @@ if (isset($_SESSION['flash_message'])) {
       navbar.classList.remove("scrolled");
     }
   });
+
+  // Intersection Observer with staggered delay
+  const scrollElements = document.querySelectorAll('.scroll-animation');
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const parent = entry.target.parentElement;
+        const children = Array.from(parent.children).filter(child => child.classList.contains('scroll-animation'));
+        
+        children.forEach((child, index) => {
+          setTimeout(() => {
+            child.classList.add('visible');
+          }, index * 150);
+        });
+
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  scrollElements.forEach(el => observer.observe(el));
 </script>
 
 </body>
 </html>
-
-<style>
-.flash-message {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 99999;
-
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-    padding: 15px 20px;
-    max-width: 350px;
-    border-radius: 6px;
-    font-weight: 600;
-    text-align: center;
-    font-family: Arial, sans-serif;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-.flash-message .close-btn {
-    position: absolute;
-    right: 12px;
-    top: 12px;
-    background: transparent;
-    border: none;
-    font-size: 18px;
-    font-weight: bold;
-    color: #155724;
-    cursor: pointer;
-}
-</style>
-
-<?php
-if (isset($_SESSION['flash_message'])) {
-    echo '<div class="flash-message" id="flashMessage">'
-        . htmlspecialchars($_SESSION['flash_message'])
-        . '<button class="close-btn" onclick="document.getElementById(\'flashMessage\').style.display=\'none\'">&times;</button>'
-        . '</div>';
-    unset($_SESSION['flash_message']);
-}
-?>
-
-<script>
-  // Optional: auto-hide message after 5 seconds
-  setTimeout(() => {
-    const flash = document.getElementById('flashMessage');
-    if(flash) flash.style.display = 'none';
-  }, 5000);
-</script>

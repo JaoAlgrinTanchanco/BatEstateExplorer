@@ -76,7 +76,7 @@ body {
 
 .nav-link:hover {
   color: #000;
-  transform: scale(1.1); /* slightly enlarge */
+  transform: scale(1.3); /* slightly enlarge */
 }
 
 /* Login (right) */
@@ -178,6 +178,7 @@ body {
 
 /* Properties Section */
 .properties {
+    margin-top: 5   rem;
   padding: 5rem 8%;
   background: #fff;
 }
@@ -209,22 +210,31 @@ body {
   border-radius: 15px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  transition: transform 0.3s ease;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
+              box-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  transform: translateY(0) scale(1);
 }
 
 .property-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-15px) scale(1.05); /* entire card lifts and grows */
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2); /* stronger shadow for floating effect */
 }
 
 .property-image {
   position: relative;
   height: 220px;
+  overflow: hidden;
 }
 
 .property-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.property-card:hover .property-image img {
+  transform: scale(1.1); /* subtle zoom for depth */
 }
 
 .property-badge {
@@ -236,6 +246,11 @@ body {
   font-size: 0.8rem;
   padding: 0.3rem 0.8rem;
   border-radius: 20px;
+  transition: transform 0.3s ease;
+}
+
+.property-card:hover .property-badge {
+  transform: translateY(-5px) scale(1.05);
 }
 
 .property-content {
@@ -318,6 +333,7 @@ body {
 /* Features Section */
 .features {
   padding: 5rem 8%;
+  margin: 1rem 0 5rem 0;
   background: #fff;
 }
 
