@@ -118,7 +118,7 @@ if (isset($_SESSION['flash_message'])) {
                             <span><i class="fas fa-bath"></i> 3 Baths</span>
                             <span><i class="fas fa-ruler-combined"></i> 2,500 sqft</span>
                         </div>
-                        <a href="auth/login.php" class="btn btn-outline">View Details</a>
+                        <a href="auth/login.php" class="btn btn-outline" style="padding: 7px 12px; margin-top: 20px; font-size: 12px;">View Details</a>
                     </div>
                 </div>
                 <div class="property-card scroll-animation">
@@ -135,7 +135,7 @@ if (isset($_SESSION['flash_message'])) {
                             <span><i class="fas fa-bath"></i> 2 Baths</span>
                             <span><i class="fas fa-ruler-combined"></i> 1,800 sqft</span>
                         </div>
-                        <a href="auth/login.php" class="btn btn-outline">View Details</a>
+                        <a href="auth/login.php" class="btn btn-outline" style="padding: 7px 12px; margin-top: 20px; font-size: 12px;">View Details</a>
                     </div>
                 </div>
                 <div class="property-card scroll-animation">
@@ -152,7 +152,7 @@ if (isset($_SESSION['flash_message'])) {
                             <span><i class="fas fa-bath"></i> 2 Baths</span>
                             <span><i class="fas fa-ruler-combined"></i> 1,200 sqft</span>
                         </div>
-                        <a href="auth/login.php" class="btn btn-outline">View Details</a>
+                        <a href="auth/login.php" class="btn btn-outline" style="padding: 7px 12px; margin-top: 20px; font-size: 12px;">View Details</a>
                     </div>
                 </div>
             </div>
@@ -279,7 +279,7 @@ if (isset($_SESSION['flash_message'])) {
                     <i class="fas fa-rocket"></i>
                     Start Exploring Now
                 </a>
-                <a href="auth/agent_registration.php" class="btn btn-outline btn-large">
+                <a href="auth/agent_registration.php" class="btn btn-secondary btn-large">
                     <i class="fas fa-user-tie"></i>
                     Become an Agent
                 </a>
