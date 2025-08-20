@@ -64,8 +64,8 @@ if (isset($_SESSION['flash_message'])) {
     <!-- Navigation -->
     <nav class="navbar scroll-animation">
         <div class="nav-container">
-            <div class="nav-logo scroll-animation">
-                <i class="fas fa-home"></i>
+            <div class="nav-logo">
+                <img src="assets/images/logo-batestate.png" alt="BatEstate Explorer Logo" class="nav-logo-img">
                 <span>BatEstate Explorer</span>
             </div>
 
