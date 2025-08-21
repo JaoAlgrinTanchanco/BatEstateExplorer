@@ -11,13 +11,13 @@ body {
   font-family: "Inter", Arial, sans-serif;
   background: #f9fafc;
   color: #111;
-  min-height: 100vh;   /* ✅ use min-height instead of fixed height */
+  min-height: 100vh;  
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative;  /* needed for ::before */
-  overflow-x: hidden;  /* ✅ only hide horizontal overflow */
-  overflow-y: auto;    /* ✅ allow vertical scroll if needed */
+  position: relative;  
+  overflow-x: hidden;  
+  overflow-y: auto;    
 }
 
 /* Background logo */
@@ -26,7 +26,7 @@ body::before {
   position: absolute;
   inset: 0;
   background: url("../images/Vector 1.png") repeat center;
-  background-size: 30% auto; /* ✅ logo size + gap (increase % for more gap) */
+  background-size: 30% auto; 
   background-repeat: repeat;
   opacity: 0.03;
   z-index: 0;

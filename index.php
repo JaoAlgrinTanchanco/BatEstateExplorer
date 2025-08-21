@@ -276,7 +276,7 @@ if (isset($_SESSION['flash_message'])) {
             <h2 class="scroll-animation">Ready to Start Your Property Journey?</h2>
             <p class="scroll-animation">Join thousands of satisfied users who found their dream properties with us.</p>
             <div class="cta-buttons scroll-animation">
-                <a href="auth/signup.php" class="btn btn-primary btn-large">
+                <a href="auth/signup.php" class="btn btn-primary btn-large" style="margin-bottom: 0.5rem">
                     <i class="fas fa-rocket"></i>
                     Start Exploring Now
                 </a>

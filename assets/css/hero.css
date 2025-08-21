@@ -133,14 +133,12 @@ body {
   padding: 6rem 8%;
   gap: 3rem;
 
-  /* Gradient + image */
   background: url("/BatEstateExplorer/assets/images/hero_image.png");
-
   background-repeat: no-repeat;
-  background-size: 95rem auto;   /* adjust size of PNG */
-  background-position: right 3% bottom 3%; /* bottom-right corner */
+  background-size: 95rem auto;   /* default large size */
+  background-position: right 3% bottom 3%;
 
-  min-height: 100vh; /* full viewport height */
+  min-height: 100vh;
   box-sizing: border-box;
 }
 
@@ -538,21 +536,109 @@ body {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
   .hero {
-    grid-template-columns: 1fr;
-    text-align: center;
-    padding: 4rem 1.5rem;
+    background-size: 70rem auto;
   }
+}
 
-  .about-content,
+/* Tablets & Medium Screens */
+@media (max-width: 992px) {
+  .nav-menu {
+    gap: 2rem;
+  }
+  .hero {
+    background-size: 55rem auto;
+    background-position: center bottom;
+    grid-template-columns: 1fr; /* stack */
+    text-align: center;
+    padding: 5rem 2rem;
+  }
+  .hero-content {
+    order: 2; /* put content below image if you want */
+  }
+  .hero-image {
+    order: 1;
+    margin-bottom: 2rem;
+  }
+  .about-content {
+    grid-template-columns: 1fr;
+  }
   .contact-content {
     grid-template-columns: 1fr;
   }
+}
 
+/* Small Screens (phones) */
+@media (max-width: 768px) {
+  .hero {
+    background-size: 40rem auto;
+    background-position: center bottom;
+  }
+  .nav-container {
+    grid-template-columns: 1fr auto; /* logo + menu toggle */
+  }
+  .nav-menu {
+    display: none; /* hide default */
+  }
+
+  /* Add hamburger */
+  .nav-toggle {
+    display: block;
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: #111;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+  .hero-buttons {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .properties-grid {
+    grid-template-columns: 1fr;
+  }
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
   .about-stats {
     flex-direction: column;
-    gap: 1rem;
     text-align: center;
+  }
+  .cta {
+    margin: 2rem 1rem;
+    padding: 2rem 1rem;
+  }
+}
+
+/* Extra Small (very narrow phones) */
+@media (max-width: 480px) {
+  .hero {
+    background-size: 28rem auto;
+    background-position: center bottom;
+  }
+  .nav-logo {
+    font-size: 1rem;
+  }
+  .hero-title {
+    font-size: 1.6rem;
+  }
+  .hero-subtitle {
+    font-size: 0.9rem;
+  }
+  .btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+  .property-content h3 {
+    font-size: 1rem;
+  }
+  .section-title {
+    font-size: 1.5rem;
   }
 }
