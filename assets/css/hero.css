@@ -53,13 +53,20 @@ body {
   align-items: center;
 }
 
-.nav-container span {
+.nav-logo {
   font-family: 'satoshi';
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-self: start;
 }
 
 /* Logo (left) */
 .nav-logo-img {
-  width: 40px; /* adjust size as needed */
+  width: 28px; /* adjust size as needed */
   height: auto;
   display: inline-block;
   vertical-align: middle;
@@ -83,6 +90,23 @@ body {
 .nav-link:hover {
   color: #000;
   transform: scale(1.3); /* slightly enlarge */
+}
+
+/* Glowing gradient animated text */
+.glow-link {
+  /* font-weight: 700; */
+  background: linear-gradient(270deg, #ff4d4d, #ff9933, #33cc33, #3399ff, #9933ff);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: glowGradient 8s ease infinite;
+  text-shadow: 0 0 5px rgba(255,255,255,0.4);
+}
+
+@keyframes glowGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Login (right) */

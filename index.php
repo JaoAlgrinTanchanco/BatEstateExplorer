@@ -65,7 +65,7 @@ if (isset($_SESSION['flash_message'])) {
     <nav class="navbar scroll-animation">
         <div class="nav-container">
             <div class="nav-logo">
-                <img src="assets/images/logo-batestate.png" alt="BatEstate Explorer Logo" class="nav-logo-img">
+                <img src="assets/images/vector 1.png" alt="BatEstate Explorer Logo" class="nav-logo-img">
                 <span>BatEstate Explorer</span>
             </div>
 
@@ -74,6 +74,7 @@ if (isset($_SESSION['flash_message'])) {
                 <a href="#properties" class="nav-link">Properties</a>
                 <a href="#about" class="nav-link">About</a>
                 <a href="#contact" class="nav-link">Contact</a>
+                <a href="#cta" class="nav-link glow-link">Become an Agent</a>
             </div>
 
             <a href="auth/login.php" class="nav-link login-btn scroll-animation">Login</a>
