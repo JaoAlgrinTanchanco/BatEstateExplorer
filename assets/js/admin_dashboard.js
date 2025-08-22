@@ -11,6 +11,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+  const sidebarWrapper = document.querySelector(".sidebar-wrapper");
+  const toggleBtn = document.querySelector(".sidebar-toggle");
+
+  toggleBtn.addEventListener("click", () => {
+    sidebarWrapper.classList.toggle("collapsed");
+  });
+});
+
+
 // admin direct agents
 // admin direct agents
 document.addEventListener('DOMContentLoaded', () => {

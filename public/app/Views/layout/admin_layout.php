@@ -12,29 +12,42 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin Panel | BatEstate</title>
-  <link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_dashboard.css" />
+  <link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_layout.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
 </head>
 <body>
   <div class="admin-container">
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <h2>🏠 BatEstate</h2>
-        <p>Admin Panel</p>
+    <div class="sidebar-wrapper collapsed"> <!-- collapsed class added for default demo -->
+      <div class="role">   
+        <p>Admin</p>
       </div>
-      <nav class="sidebar-nav">
-        <ul>
-          <li><a href="admin_dashboard.php?view=dashboard"><i class="fa-solid fa-tachometer-alt"></i> Dashboard</a></li>
-          <li><a href="admin_dashboard.php?view=direct_agents"><i class="fa-solid fa-user-tie"></i> Direct Agents</a></li>
-          <li><a href="admin_dashboard.php?view=associate_agents"><i class="fa-solid fa-users"></i> Associate Agents</a></li>
-          <li><a href="admin_dashboard.php?view=properties"><i class="fa-solid fa-house-chimney"></i> Property Listings</a></li>
-          <li><a href="admin_dashboard.php?view=applications"><i class="fa-solid fa-file-lines"></i> Applications</a></li>
-          <li><a href="admin_dashboard.php?view=reports"><i class="fa-solid fa-flag"></i> Reports</a></li>
-          <li><a href="admin_dashboard.php?view=performance"><i class="fa-solid fa-chart-bar"></i> Performance</a></li>
-        </ul>
-      </nav>
-      <div class="sidebar-footer">
-        <a href="../../auth/logout.php"><i class="fa-solid fa-sign-out-alt"></i> Logout</a>
+
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <img src="/BatEstateExplorer/assets/images/Vector 1.png" alt="BatEstate Logo" class="sidebar-logo" />
+          <h2>BatEstate Explorer</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+          <ul>
+            <li><a href="admin_dashboard.php?view=dashboard"><i class="fa-solid fa-chart-pie"></i><span>Dashboard</span></a></li>
+            <li><a href="admin_dashboard.php?view=direct_agents"><i class="fa-solid fa-user-tie"></i><span>Direct Agents</span></a></li>
+            <li><a href="admin_dashboard.php?view=associate_agents"><i class="fa-solid fa-people-group"></i><span>Associate Agents</span></a></li>
+            <li><a href="admin_dashboard.php?view=properties"><i class="fa-solid fa-building"></i><span>Property Listings</span></a></li>
+            <li><a href="admin_dashboard.php?view=applications"><i class="fa-solid fa-file-signature"></i><span>Applications</span></a></li>
+            <li><a href="admin_dashboard.php?view=reports"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a></li>
+            <li><a href="admin_dashboard.php?view=performance"><i class="fa-solid fa-ranking-star"></i><span>Performance</span></a></li>
+          </ul>
+        </nav>
+
+        <!-- Collapse toggle button -->
+        <div class="sidebar-toggle">
+          <i class="fa-solid fa-chevron-left"></i>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="../../auth/logout.php"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+        </div>
       </div>
     </div>
 
