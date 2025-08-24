@@ -1,28 +1,92 @@
-// Admin Dashboard interactions
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
-    toggle.addEventListener('click', function(e) {
-      e.preventDefault();
-      const dropdown = this.parentElement;
-      dropdown.classList.toggle('open');
+// ================== Sidebar Navigation Highlight ==================
+document.addEventListener("DOMContentLoaded", () => {
+  const navLinks = document.querySelectorAll(".sidebar-nav a");
+
+  // Keep nav link active
+  navLinks.forEach(link => {
+    link.addEventListener("click", () => {
+      navLinks.forEach(l => l.classList.remove("active"));
+      link.classList.add("active");
+
+      // Store active link in localStorage so it persists on reload
+      localStorage.setItem("activeNav", link.getAttribute("href"));
     });
   });
 
-
+  // Restore active nav from localStorage
+  const savedNav = localStorage.getItem("activeNav");
+  if (savedNav) {
+    const activeLink = document.querySelector(`.sidebar-nav a[href="${savedNav}"]`);
+    if (activeLink) activeLink.classList.add("active");
+  }
 });
 
-document.addEventListener("DOMContentLoaded", () => {
-  const sidebarWrapper = document.querySelector(".sidebar-wrapper");
-  const toggleBtn = document.querySelector(".sidebar-toggle");
+// ================= Responsive Sidebar =================
+const sidebar   = document.querySelector(".sidebar-wrapper");
+const toggleBtn = document.querySelector(".sidebar-toggle-btn");
+const toggleIcon = toggleBtn.querySelector("i");
+const backdrop  = document.querySelector(".sidebar-backdrop");
 
-  toggleBtn.addEventListener("click", () => {
-    sidebarWrapper.classList.toggle("collapsed");
+// Gap between sidebar edge and toggle when open
+const toggleGap = 12; // px
+
+function openSidebar() {
+  sidebar.classList.add("open");
+  sidebar.classList.remove("collapsed");
+  backdrop.classList.add("show");
+  toggleBtn.style.left = `${260 + toggleGap}px`;
+  toggleIcon.classList.replace("fa-chevron-right", "fa-chevron-left");
+}
+
+function closeSidebar() {
+  sidebar.classList.remove("open");
+  backdrop.classList.remove("show");
+  toggleBtn.style.left = "0.75rem";
+  toggleIcon.classList.replace("fa-chevron-left", "fa-chevron-right");
+}
+
+toggleBtn.addEventListener("click", () => {
+  if (sidebar.classList.contains("open")) {
+    closeSidebar();
+  } else {
+    openSidebar();
+  }
+});
+
+backdrop.addEventListener("click", closeSidebar);
+
+// Handle responsive state on resize
+function handleResize() {
+  if (window.innerWidth <= 1024) {
+    // Mobile/Tablet → force expanded sidebar mode (no collapsed hover)
+    sidebar.classList.remove("collapsed");
+    closeSidebar(); // start hidden off-canvas
+    toggleBtn.style.display = "flex";
+  } else {
+    // Desktop → collapsed by default with hover-expand
+    sidebar.classList.add("collapsed");
+    sidebar.classList.remove("open");
+    backdrop.classList.remove("show");
+    toggleBtn.style.display = "none"; // hide floating toggle on desktop
+  }
+}
+
+// Run once at load
+handleResize();
+window.addEventListener("resize", handleResize);
+
+// ================== Dropdowns (if any) ==================
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+    toggle.addEventListener('click', function (e) {
+      e.preventDefault();
+      this.parentElement.classList.toggle('open');
+    });
   });
 });
 
 
-// admin direct agents
-// admin direct agents
+// ================== Admin Direct Agents ==================
 document.addEventListener('DOMContentLoaded', () => {
   const agentList = document.getElementById('agentList');
   const agentModal = document.getElementById('agentModal');
@@ -37,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Only attach event listener if agentList exists
+  // Agent list actions
   if (agentList) {
     agentList.addEventListener('click', async (e) => {
       if (e.target.matches('.btn-view')) {
@@ -46,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         function docLink(label, path) {
           return path
             ? `<div class="detail-row"><div class="detail-label">${label}:</div>
-              <div class="detail-value"><a href="${path}" target="_blank" class="document-link">View Document</a></div></div>`
+                <div class="detail-value"><a href="${path}" target="_blank" class="document-link">View Document</a></div></div>`
             : '';
         }
 
@@ -58,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .filter(d => d);
           additionalDocsHtml = docs.map((doc, i) =>
             `<div class="detail-row"><div class="detail-label">Additional Document ${i + 1}:</div>
-            <div class="detail-value"><a href="${doc}" target="_blank" class="document-link">View Document</a></div></div>`
+              <div class="detail-value"><a href="${doc}" target="_blank" class="document-link">View Document</a></div></div>`
           ).join('');
         }
 
@@ -157,5 +221,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-
-//admin application functions

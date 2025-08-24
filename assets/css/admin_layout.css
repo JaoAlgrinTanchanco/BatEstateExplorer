@@ -39,55 +39,68 @@ html, body {
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-  transition: width 0.3s ease;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Collapsed Mode */
 .sidebar-wrapper.collapsed {
   width: 80px;
 }
+
+/* Keep icons always aligned */
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* space between icon and label */
+}
+
+/* Animate ONLY the labels (span inside links) */
+.sidebar-header h2,
+.sidebar-nav a span,
+.sidebar-footer a span {
+  opacity: 1;
+  white-space: nowrap;
+  transition: opacity 0.2s ease, transform 0.25s ease;
+  transition-delay: 0.1s;
+}
+
 .sidebar-wrapper.collapsed .sidebar-header h2,
 .sidebar-wrapper.collapsed .sidebar-nav a span,
-.sidebar-wrapper.collapsed .sidebar-footer a span,
-.sidebar-wrapper.collapsed .role {
-  display: none;
+.sidebar-wrapper.collapsed .sidebar-footer a span {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition-delay: 0s;
+  pointer-events: none; /* prevent accidental clicks */
 }
+
+/* Role remains visible in collapsed */
+.sidebar-wrapper.collapsed .role {
+  display: block;
+}
+
+/* Logo sizing in collapsed */
 .sidebar-wrapper.collapsed .sidebar-logo {
   max-width: 50px;
   margin: 0 auto;
 }
 
-/* Toggle Button (circular, inside sidebar) */
-.sidebar-toggle {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #f3f4f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1rem auto;   /* center above logout */
-  cursor: pointer;
-  transition: background 0.3s ease;
+/* --- Expand on hover --- */
+.sidebar-wrapper.collapsed:hover {
+  width: 260px;
 }
 
-.sidebar-toggle:hover {
-  background: #e5e7eb;
+.sidebar-wrapper.collapsed:hover .sidebar-header h2,
+.sidebar-wrapper.collapsed:hover .sidebar-nav a span,
+.sidebar-wrapper.collapsed:hover .sidebar-footer a span {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 0.15s; /* fade in after width expands */
 }
 
-.sidebar-toggle i {
-  font-size: 14px;
-  color: #333;
-  transition: transform 0.3s ease;
-}
-
-.sidebar-wrapper.collapsed .sidebar-toggle i {
-  transform: rotate(180deg);
-}
-
-/* Keep role visible in collapsed mode */
-.sidebar-wrapper.collapsed .role {
-  display: block;
+/* Grow logo when hover-expanded */
+.sidebar-wrapper.collapsed:hover .sidebar-logo {
+  max-width: 80px;
+  transition: max-width 0.3s ease;
 }
 
 /* ---------------- Role Strip ---------------- */
@@ -259,30 +272,96 @@ tr:hover td {
   background: #dc2626;
 }
 
-/* ---------------- Responsive ---------------- */
-@media (max-width: 992px) {
-  .admin-container {
-    flex-direction: column;
+/* Floating toggle button */
+.sidebar-toggle-btn {
+  position: fixed;
+  top: 1rem;
+  left: 0.75rem; /* small spacing from edge */
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #fff;
+  display: none; /* only show <=1024px */
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+  z-index: 1200;
+  transition: left 0.3s ease, background 0.3s ease;
+}
+
+.sidebar-toggle-btn:hover {
+  background: #f3f4f6;
+}
+
+.sidebar-toggle-btn i {
+  font-size: 18px;
+  color: #111;
+  transition: transform 0.3s ease;
+}
+
+/* Responsive: <=1024px */
+@media (max-width: 1024px) {
+  .sidebar-wrapper.collapsed,
+  .sidebar-wrapper.collapsed:hover {
+    width: 260px;
   }
+
+  .sidebar-wrapper.collapsed .sidebar-header h2,
+  .sidebar-wrapper.collapsed .sidebar-nav a span,
+  .sidebar-wrapper.collapsed .sidebar-footer a span,
+  .sidebar-wrapper.collapsed .role {
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto;
+  }
+
+  .sidebar-wrapper.collapsed .sidebar-logo {
+    max-width: 80px;
+    margin: 0 auto 1rem;
+  }
+  
   .sidebar-wrapper {
-    position: relative;
+    position: fixed;
     top: 0;
-    width: 100%;
-    height: auto;
-    flex-direction: row;
-    border-radius: 12px;
+    left: 0;
+    height: 100vh;
+    width: 260px;
+    transform: translateX(-100%); /* hidden */
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    border-radius: 0;
   }
-  .sidebar {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+
+  .sidebar-wrapper.open {
+    transform: translateX(0); /* visible */
+  }
+
+  .sidebar-toggle-btn {
+    display: flex;
+  }
+
+  .main-content {
+    margin-left: 0;
     padding: 1rem;
   }
-  .sidebar-nav ul {
-    display: flex;
-    gap: 1rem;
+
+  /* backdrop */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
   }
-  .main-content {
-    padding: 1.5rem;
+  .sidebar-backdrop.show {
+    display: block;
+  }
+}
+
+/* Desktop: hide toggle */
+@media (min-width: 1025px) {
+  .sidebar-toggle-btn {
+    display: none !important;
   }
 }

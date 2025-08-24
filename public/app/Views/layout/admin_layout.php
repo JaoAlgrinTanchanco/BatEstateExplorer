@@ -1,10 +1,8 @@
 <?php
 // admin_layout.php
-
 // Requires:
 // - $current_user array available
 // - $content_html string with the page's main content
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -16,9 +14,15 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
 </head>
 <body>
+  <!-- Floating Sidebar Toggle (chevron button) -->
+  <div class="sidebar-toggle-btn" aria-label="Toggle sidebar">
+    <i class="fa-solid fa-chevron-right"></i>
+  </div>
+
   <div class="admin-container">
-    <div class="sidebar-wrapper collapsed"> <!-- collapsed class added for default demo -->
-      <div class="role">   
+    <!-- Sidebar -->
+    <div class="sidebar-wrapper collapsed"> <!-- collapsed = default -->
+      <div class="role">
         <p>Admin</p>
       </div>
 
@@ -40,22 +44,18 @@
           </ul>
         </nav>
 
-        <!-- Collapse toggle button -->
-        <div class="sidebar-toggle">
-          <i class="fa-solid fa-chevron-left"></i>
-        </div>
-
         <div class="sidebar-footer">
           <a href="../../auth/logout.php"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
         </div>
       </div>
     </div>
 
+    <!-- Backdrop (only visible when sidebar is open on mobile/tablet) -->
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Main content -->
     <div class="main-content">
-      
-
       <?= $content_html ?>
-
     </div>
   </div>
 
