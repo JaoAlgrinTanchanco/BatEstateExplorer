@@ -38,12 +38,11 @@ if ($result) {
 }
 ?>
 
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_dashboard_new.css" />
+
 <!-- Dashboard content -->
 <header class="content-header">
     <h1>Admin Dashboard</h1>
-    <div class="user-info">
-        <span>Welcome, <?php echo htmlspecialchars($current_user['email']); ?></span>
-    </div>
 </header>
 
 <div class="stats-grid">

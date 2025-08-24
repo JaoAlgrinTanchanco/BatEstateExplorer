@@ -15,7 +15,7 @@
 html, body {
   height: 100%;
   font-family: "Inter", Arial, sans-serif;
-  background: #f5f6f8;
+  background: #f5f6f8ff;
   color: #222;
   line-height: 1.5;
 }
@@ -200,7 +200,6 @@ html, body {
 /* ---------------- Main Content ---------------- */
 .main-content {
   flex: 1;
-  padding: 2rem;
   overflow-y: auto;
 }
 
