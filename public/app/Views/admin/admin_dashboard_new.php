@@ -36,6 +36,43 @@ if ($result) {
         $recent_applications[] = $row;
     }
 }
+
+// Applications by status (Donut Chart)
+$applications_by_status = [];
+$query = "SELECT status, COUNT(*) as total
+          FROM applications
+          GROUP BY status";
+$result = mysqli_query($conn, $query);
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $applications_by_status[$row['status']] = $row['total'];
+    }
+}
+
+// Applications over time (Line Chart)
+$applications_over_time = [];
+$query = "SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as total
+          FROM applications
+          GROUP BY month
+          ORDER BY month ASC";
+$result = mysqli_query($conn, $query);
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $applications_over_time[] = $row;
+    }
+}
+
+// Properties by location (Bar Chart)
+$properties_by_location = [];
+$query = "SELECT location, COUNT(*) as total
+          FROM properties
+          GROUP BY location";
+$result = mysqli_query($conn, $query);
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $properties_by_location[$row['location']] = $row['total'];
+    }
+}
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_dashboard_new.css" />
@@ -79,39 +116,144 @@ if ($result) {
     </div>
 </div>
 
-<div class="recent-section">
-    <h2>Recent Applications</h2>
-    <div class="applications-list">
-        <?php if (empty($recent_applications)): ?>
-            <p class="no-data">No applications found.</p>
-        <?php else: ?>
-            <?php foreach ($recent_applications as $app): ?>
-                <div class="application-item">
-                    <div class="app-info">
-                        <h4><?= htmlspecialchars($app['applicant_name'] ?? 'Unknown Applicant') ?></h4>
-                        <p><?= htmlspecialchars($app['company_name'] ?? 'No Company') ?></p>
-                        <span class="status status-<?= $app['status'] ?>"><?= ucfirst($app['status']) ?></span>
-                    </div>
-                    <div class="app-date">
-                        <?= date('M j, Y', strtotime($app['created_at'])) ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
+<div class="dashboard-grid">
+    <!-- LEFT COLUMN -->
+    <div class="recent-card">
+        <div class="recent-card-header">
+            <h2><i class="fa-solid fa-clock-rotate-left"></i> Recent Applications</h2>
+        </div>
+        <div class="recent-card-body">
+            <div class="applications-list">
+                <?php if (empty($recent_applications)): ?>
+                    <p class="no-data">No applications found.</p>
+                <?php else: ?>
+                    <?php foreach ($recent_applications as $app): ?>
+                        <div class="application-item">
+                            <div class="app-info">
+                                <h4><?= htmlspecialchars($app['applicant_name'] ?? 'Unknown Applicant') ?></h4>
+                                <p><?= htmlspecialchars($app['company_name'] ?? 'No Company') ?></p>
+                                <span class="status status-<?= $app['status'] ?>"><?= ucfirst($app['status']) ?></span>
+                            </div>
+                            <div class="app-date">
+                                <?= date('M j, Y', strtotime($app['created_at'])) ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-column">
+        <!-- Top: Charts side by side -->
+        <div class="right-top">
+            <div class="chart-container">
+                <h2>Applications by Status</h2>
+                <canvas id="donutChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Applications Over Time</h2>
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Bottom: Bar Graph -->
+        <div class="right-bottom">
+            <div class="chart-container">
+                <h2>Properties by Location</h2>
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="quick-actions">
-    <h2>Quick Actions</h2>
-    <div class="action-buttons">
-        <a href="admin_dashboard.php?view=applications" class="btn btn-primary">
-            <i class="fa-solid fa-file-lines"></i> Review Applications
-        </a>
-        <a href="admin_dashboard.php?view=properties" class="btn btn-secondary">
-            <i class="fa-solid fa-house"></i> Manage Properties
-        </a>
-        <a href="admin_dashboard.php?view=direct_agents" class="btn btn-success">
-            <i class="fa-solid fa-user-plus"></i> Add Agent
-        </a>
-    </div>
-</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    window.addEventListener('resize', () => {
+        Object.values(Chart.instances).forEach(chart => chart.resize());
+        // Also fix grid overflow
+        document.querySelectorAll('.dashboard-grid, .right-column').forEach(el => {
+            el.style.maxWidth = "100%";
+            el.style.overflowX = "hidden";
+        });
+    });
+    const grayShades = ["#111827", "#374151", "#6b7280", "#9ca3af", "#d1d5db"];
+
+    // Donut data
+    const donutData = {
+        labels: <?= json_encode(array_keys($applications_by_status)) ?>,
+        datasets: [{
+            data: <?= json_encode(array_values($applications_by_status)) ?>,
+            backgroundColor: [grayShades[0], grayShades[2], grayShades[4]],
+            borderWidth: 0
+        }]
+    };
+
+    // Line data
+    const lineData = {
+        labels: <?= json_encode(array_column($applications_over_time, 'month')) ?>,
+        datasets: [{
+            label: "Applications",
+            data: <?= json_encode(array_column($applications_over_time, 'total')) ?>,
+            borderColor: grayShades[0],
+            backgroundColor: "rgba(17,24,39,0.08)",
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: grayShades[1],
+            pointBorderColor: "#fff",
+            pointBorderWidth: 2,
+            pointRadius: 4
+        }]
+    };
+
+    // Bar data
+    const barData = {
+        labels: <?= json_encode(array_keys($properties_by_location)) ?>,
+        datasets: [{
+            label: "Properties",
+            data: <?= json_encode(array_values($properties_by_location)) ?>,
+            backgroundColor: grayShades,
+            borderRadius: 6
+        }]
+    };
+
+    // Render charts
+    new Chart(document.getElementById('donutChart'), {
+        type: 'doughnut',
+        data: donutData,
+        options: {
+            responsive: true,
+            cutout: "70%",
+            plugins: {
+                legend: { position: 'bottom', labels: { color: "#374151", font: { family: "Satoshi-Regular" } } }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('lineChart'), {
+        type: 'line',
+        data: lineData,
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: "#6b7280" }, grid: { display: false } },
+                y: { ticks: { color: "#6b7280" }, grid: { color: "rgba(0,0,0,0.05)" }, beginAtZero: true }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: barData,
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: "#6b7280" }, grid: { display: false } },
+                y: { ticks: { color: "#6b7280" }, grid: { color: "rgba(0,0,0,0.05)" }, beginAtZero: true }
+            }
+        }
+    });
+</script>

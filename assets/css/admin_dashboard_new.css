@@ -1,4 +1,4 @@
-/* ===== Font ===== */
+/* ====== Fonts ====== */
 @font-face {
     font-family: 'Satoshi';
     src: url('../fonts/Satoshi-Medium.otf') format('opentype');
@@ -12,45 +12,66 @@
     font-style: normal;
 }
 
-/* ===== General Layout ===== */
+@font-face {
+    font-family: 'Satoshi-Medium';
+    src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Satoshi-Regular';
+    src: url('../fonts/Satoshi-Regular.otf') format('opentype');
+    font-style: normal;
+}
+
+/* ====== Dashboard Wrapper (full screen) ====== */
+.dashboard-wrapper {
+    display: grid;
+    grid-template-rows: auto auto 1fr; /* header, stats, grid */
+    gap: 1.5rem;
+    height: 100vh; /* always equal to viewport */
+    padding: 1.5rem;
+    box-sizing: border-box;
+    overflow: hidden; /* prevent outer scroll */
+}
+
+/* ====== Header ====== */
 .content-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
     flex-wrap: wrap;
 }
 
-/* Dashboard Header */
 .content-header h1 {
     background: #fff;
-    padding: 1rem 2rem;
+    padding: 0.75rem 2rem;
     font-family: 'Satoshi', sans-serif;
+    margin-bottom: 1.5rem;
     font-size: 2.5rem;
     color: #111827;
-    border-radius: 1rem;
+    border-radius: 20px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.08);
     display: inline-block;
-    margin-bottom: 2rem;
 }
 
-/* ===== Stat Card with Gradient ===== */
+/* ====== Stat Cards Grid ====== */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* flexible row layout */
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 1.5rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 
-/* ===== Stat Card ===== */
+/* Stat Card */
 .stat-card {
-    background: linear-gradient(90deg, #111827, #ffffff02); /* dark gradient */
-    border-radius: 1rem;
+    background: linear-gradient(90deg, #111, #ffffff02);
+    border-radius: 2rem;
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
     padding: 1rem 1.5rem;
-    min-height: 160px;
+    min-height: 163px;
     position: relative;
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
@@ -59,18 +80,19 @@
 .stat-card:hover {
     transform: translateY(-8px);
     box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+    .stat-icon {
+      color: #111;
+    }
 }
 
-/* Move icon to background on right */
 .stat-icon {
     position: absolute;
-    right: 0rem;
-    font-size: 8.5rem; /* make it big */
-    color: rgba(255, 255, 255, 0.30); /* faded / watermark effect */
-    pointer-events: none; /* so clicks go through */
+    right: 0;
+    font-size: 8.5rem;
+    color: rgba(255, 255, 255, 0.3);
+    pointer-events: none;
 }
 
-/* Stat Content stays in front */
 .stat-content {
     position: relative;
     z-index: 1;
@@ -91,27 +113,59 @@
     font-weight: 600;
 }
 
-/* Optional: icon color variants if you still want them */
 .stat-card[data-type="properties"] .stat-icon { color: #10b981; }
 .stat-card[data-type="applications"] .stat-icon { color: #f59e0b; }
-.stat-card[data-type="agents"]()
+.stat-card[data-type="agents"] .stat-icon { color: #3b82f6; }
+.stat-card[data-type="clients"] .stat-icon { color: #6366f1; }
 
-/* ===== Recent Applications ===== */
-.recent-section {
-    margin-bottom: 2.5rem;
+/* ====== Dashboard Grid (fills remaining height) ====== */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    overflow: hidden; /* keep it in viewport */
 }
 
-.recent-section h2 {
-    font-size: 1.3rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
+/* Left and Right Columns */
+.dashboard-grid > div {
+    border-radius: 20px;
+    overflow-y: auto; /* scroll inside if overflow */
+}
+
+/* Right column split into two rows */
+.right-column {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+/* ====== Recent Applications ====== */
+.recent-card {
+    background: #e7e7e7;
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    height: 100%; /* fill grid space */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* scroll inside if overflow */
+}
+
+.recent-card-header h2 {
+    font-family: 'Satoshi-Bold';
+    font-size: 1.25rem;
     color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
 }
 
 .applications-list {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    overflow-y: auto;
 }
 
 .application-item {
@@ -120,29 +174,27 @@
     align-items: center;
     background: #fff;
     padding: 1rem 1.25rem;
-    border-radius: 1rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    transition: transform 0.2s ease;
-}
-
-.application-item:hover {
-    transform: translateY(-2px);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .app-info h4 {
+    font-family: 'Satoshi-Medium';
     font-size: 1rem;
-    font-weight: 600;
     margin-bottom: 0.25rem;
+    color: #111827;
 }
 
 .app-info p {
     font-size: 0.85rem;
     color: #6b7280;
+    margin-bottom: 0.3rem;
 }
 
+/* Status badge */
 .status {
     display: inline-block;
-    margin-top: 0.25rem;
     font-size: 0.75rem;
     font-weight: 600;
     padding: 0.25rem 0.6rem;
@@ -159,52 +211,196 @@
     color: #6b7280;
 }
 
-/* ===== Quick Actions ===== */
-.quick-actions h2 {
-    font-size: 1.3rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    color: #111827;
+/* ====== Right column
+/* Chart containers */
+.right-top canvas,
+.right-bottom canvas {
+    max-height: 220px;  /* keeps charts smaller */
+    width: 100%;
 }
 
+/* Chart headings */
+.right-top h2,
+.right-bottom h2 {
+    font-family: 'Satoshi-Bold';
+    font-size: 1.1rem;
+    color: #111827;
+    margin-bottom: 1rem;
+}
+
+/* Right top: split into 2 columns */
+.right-top {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.chart-container {
+    height: -webkit-fill-available;
+    background: #fff;
+    border-radius: 20px;
+    padding: 1rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-container h2 {
+    font-family: 'Satoshi-Bold';
+    font-size: 1.1rem;
+    color: #111827;
+    margin-bottom: 1rem;
+}
+
+/* Chart canvas sizing */
+.chart-container canvas {
+    max-height: 200px;
+    width: 100%;
+}
+
+/*=======right bottom ====== */
+
+
+/* ====== Quick Actions ====== */
+.quick-actions {
+    background: linear-gradient(180deg, #111, #1f2937); /* dark gradient */
+    height: 100%;
+    width: 100%;
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    color: #fff;
+}
+
+/* Heading */
+.quick-actions h2 {
+    font-family: 'Satoshi-Bold';
+    font-size: 1.3rem;
+    color: #f9fafb;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 0.5rem;
+}
+
+/* Button container */
 .action-buttons {
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
+    justify-content: space-between;
 }
 
-.action-buttons .btn {
-    display: flex;
+/* Buttons */
+.btn {
+    flex: 1 1 calc(33% - 1rem); /* 3 per row, responsive */
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.25rem;
-    border-radius: 1rem;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.9rem 1.25rem;
+    border-radius: 14px;
     font-size: 0.95rem;
-    font-weight: 500;
+    font-weight: 600;
     text-decoration: none;
-    transition: background 0.2s ease, transform 0.2s ease;
+    transition: all 0.25s ease;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    text-align: center;
 }
 
-.btn-primary { background: #2563eb; color: #fff; }
-.btn-primary:hover { background: #1d4ed8; }
+/* Individual button themes (muted but modern) */
+.btn-primary { background: #374151; }  /* dark gray */
+.btn-secondary { background: #4b5563; } /* slightly lighter gray */
+.btn-success { background: #6b7280; }   /* mid gray */
 
-.btn-secondary { background: #f3f4f6; color: #111827; }
-.btn-secondary:hover { background: #e5e7eb; }
+/* Hover effect */
+.btn:hover {
+    opacity: 0.95;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+}
 
-.btn-success { background: #10b981; color: #fff; }
-.btn-success:hover { background: #059669; }
+/* ====== Responsive ====== */
+/* ====== Fix for ≥1024px (desktop) ====== */
+@media (min-width: 1024px) {
+    .dashboard-grid,
+    .dashboard-grid > div,
+    .right-column,
+    .right-column > div,
+    .chart-container,
+    .chart-container canvas {
+        max-width: 100% !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box;
+    }
 
-/* ===== Responsive ===== */
+    .right-column {
+        min-width: 0;   /* ✅ prevents grid child overflow */
+    }
+}
+
+/* Tablet and smaller (≤ 1023px) */
+@media (max-width: 1023px) {
+    .dashboard-wrapper {
+        grid-template-rows: auto auto auto;
+        height: auto;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr; /* stack left + right */
+    }
+
+    .right-column {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+        display: grid;
+        grid-template-rows: auto auto;
+    }
+    .right-column * {
+        max-width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    .right-top {
+        grid-template-columns: 1fr; /* stack charts vertically */
+        width: 100%; /* ✅ responsive */
+    }
+
+    /* ✅ Stat cards 2x2 layout */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    /* ✅ Reduce recent-card height + scrollable */
+    .recent-card {
+        max-height: 300px;
+        overflow-y: auto;
+        overflow-x: hidden; /* ✅ prevent horizontal overflow */
+    }
+}
+
+/* Mobile (≤ 768px) */
 @media (max-width: 768px) {
     .content-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.5rem;
+        gap: 0.75rem;
     }
 
     .content-header h1 {
-        font-size: 2rem;
-        padding: 0.75rem 1.5rem;
+        font-size: 1.75rem;
+        padding: 0.5rem 1rem;
     }
 
     .stat-card {
@@ -213,13 +409,13 @@
         min-height: 120px;
     }
 
-    .stat-icon {
-        margin-right: 0;
-        margin-bottom: 0.5rem;
+    .stat-content h3 {
+        font-size: 1.75rem;
     }
 
-    .stat-content h3 {
-        font-size: 1.5rem;
+    /* ✅ Keep 2x2 grid on mobile */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .application-item {
@@ -228,7 +424,78 @@
         gap: 0.5rem;
     }
 
-    .action-buttons {
-        flex-direction: column;
+    .chart-container {
+        padding: 0.75rem;
+        width: 100%; /* ✅ responsive */
+    }
+
+    .chart-container h2 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .chart-container canvas {
+        max-height: 160px;
+        width: 100% !important; /* ✅ canvas scales down */
+    }
+
+    /* ✅ Smaller recent-card */
+    .recent-card {
+        max-height: 240px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+}
+
+/* Extra small (≤ 480px) */
+@media (max-width: 480px) {
+    .content-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .stat-content h3 {
+        font-size: 1.5rem;
+    }
+
+    .stat-content p {
+        font-size: 0.9rem;
+    }
+
+    /* ✅ Stack cards vertically here */
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .applications-list {
+        gap: 0.75rem;
+    }
+
+    .application-item {
+        padding: 0.75rem 1rem;
+    }
+
+    .chart-container canvas {
+        max-height: 140px;
+        width: 100% !important; /* ✅ scale properly */
+    }
+
+    /* ✅ Even smaller for very small screens */
+    .recent-card {
+        max-height: 200px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    /* ====== Global overflow fix ====== */
+    .dashboard-grid,
+    .dashboard-grid > div,
+    .right-column,
+    .right-column > div,
+    .chart-container,
+    .chart-container canvas {
+        max-width: 100% !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box;
     }
 }
