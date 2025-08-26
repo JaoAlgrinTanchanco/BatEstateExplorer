@@ -184,6 +184,14 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
 
 </div>
 
+<!-- Modal Structure -->
+<div id="propertyModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="modalBody">Loading...</div>
+    </div>
+</div>
+
 <script>
 document.querySelectorAll('.tab-btn').forEach(button => {
     button.addEventListener('click', () => {
@@ -194,29 +202,61 @@ document.querySelectorAll('.tab-btn').forEach(button => {
     });
 });
 
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('btn-approve') || 
-        e.target.classList.contains('btn-reject') || 
-        e.target.classList.contains('btn-remove')) {
-        
-        const action = e.target.classList.contains('btn-approve') ? 'approve' :
-                       e.target.classList.contains('btn-reject') ? 'reject' : 'remove';
-        const propertyId = e.target.dataset.id;
+// Modal logic
+const modal = document.getElementById('propertyModal');
+const modalBody = document.getElementById('modalBody');
+const closeBtn = modal.querySelector('.close');
 
-        fetch('/BatEstateExplorer/public/api/admin_property_action.php', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `action=${action}&property_id=${propertyId}`
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert(`Property ${action}d successfully`);
-                location.reload();
-            } else {
-                alert(data.error || 'Action failed');
-            }
-        });
+// Close when clicking X
+closeBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+});
+
+// Close when clicking outside modal content
+window.addEventListener('click', (e) => {
+    if (e.target === modal) {
+        modal.style.display = 'none';
+    }
+});
+
+// View Post button
+document.addEventListener('click', async (e) => {
+    if (!e.target.classList.contains('btn-view')) return;
+
+    const propertyId = e.target.dataset.id;
+    if (!propertyId) return;
+
+    modal.style.display = 'block';
+    modalBody.innerHTML = '<p>Loading...</p>';
+
+    try {
+        const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${propertyId}`);
+        const data = await res.json();
+
+        if (!data.success) {
+            modalBody.innerHTML = `<p>${data.error || 'Failed to load property details'}</p>`;
+            return;
+        }
+
+        const prop = data.property;
+        modalBody.innerHTML = `
+            <h2>${prop.title}</h2>
+            <p><strong>Location:</strong> ${prop.location || '-'}</p>
+            <p><strong>Price:</strong> ₱${parseFloat(prop.price || 0).toLocaleString()}</p>
+            <p><strong>Bedrooms:</strong> ${prop.bedrooms || 0}</p>
+            <p><strong>Bathrooms:</strong> ${prop.bathrooms || 0}</p>
+            <p><strong>Area:</strong> ${prop.sqm || 0} sqm</p>
+            <p><strong>Lot Size:</strong> ${prop.lot_size || 0} sqm</p>
+            <p><strong>Status:</strong> ${prop.status}</p>
+            <p><strong>Date Uploaded:</strong> ${prop.date_uploaded}</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                ${prop.images.map(img => `<img src="${img}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">`).join('')}
+            </div>
+            <p style="margin-top:10px;">${prop.description || ''}</p>
+        `;
+    } catch (err) {
+        console.error(err);
+        modalBody.innerHTML = '<p>An unexpected error occurred.</p>';
     }
 });
 </script>
