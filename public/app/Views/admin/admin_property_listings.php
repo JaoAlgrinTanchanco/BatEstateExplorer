@@ -121,9 +121,9 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
                             <?php if ($property['status'] === 'pending'): ?>
                                 <button class="btn-approve" data-id="<?php echo $property['property_id']; ?>">Approve</button>
                                 <button class="btn-reject" data-id="<?php echo $property['property_id']; ?>">Reject</button>
+                            <?php else: ?>
+                                <button class="btn-remove" data-id="<?php echo $property['property_id']; ?>">Remove Post</button>
                             <?php endif; ?>
-
-                            <button class="btn-remove" data-id="<?php echo $property['property_id']; ?>">Remove Post</button>
                         </div>
 
                     </div>
@@ -203,7 +203,7 @@ document.addEventListener('click', function(e) {
                        e.target.classList.contains('btn-reject') ? 'reject' : 'remove';
         const propertyId = e.target.dataset.id;
 
-        fetch('../api/admin_property_action.php', {
+        fetch('/BatEstateExplorer/public/api/admin_property_action.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: `action=${action}&property_id=${propertyId}`

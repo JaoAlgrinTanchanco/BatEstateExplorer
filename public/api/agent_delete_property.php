@@ -3,9 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once __DIR__ . '/../../../../config/database.php';
-
-header('Content-Type: application/json');
+require_once __DIR__ . '/../../config/database.php';
 
 // --- Check if user is logged in ---
 $is_logged_in = is_logged_in();
@@ -14,19 +12,19 @@ if ($is_logged_in) {
     $current_user = get_logged_in_user($conn);
 }
 if (!$is_logged_in || !$current_user) {
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&error=unauthorized");
     exit;
 }
 
 // Only direct or associate agents can use this
 if (!in_array($current_user['user_type'], ['direct_agent', 'associate_agent'])) {
-    echo json_encode(['success' => false, 'error' => 'Only agents can delete properties']);
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&error=forbidden");
     exit;
 }
 
 $property_id = intval($_POST['property_id'] ?? 0);
 if (!$property_id) {
-    echo json_encode(['success' => false, 'error' => 'Invalid property ID']);
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&error=invalid_id");
     exit;
 }
 
@@ -40,7 +38,7 @@ $agent = $result->fetch_assoc();
 $stmt->close();
 
 if (!$agent) {
-    echo json_encode(['success' => false, 'error' => 'Agent record not found']);
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&error=agent_not_found");
     exit;
 }
 
@@ -56,7 +54,7 @@ $property = $result->fetch_assoc();
 $stmt->close();
 
 if (!$property) {
-    echo json_encode(['success' => false, 'error' => 'Property not found or not rejected']);
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&error=not_rejected");
     exit;
 }
 
@@ -66,11 +64,9 @@ $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $property_id);
 
 if ($stmt->execute()) {
-    $response = ['success' => true, 'message' => 'Property deleted successfully'];
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&success=deleted");
+    exit;
 } else {
-    $response = ['success' => false, 'error' => 'Failed to delete property'];
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&error=delete_failed");
+    exit;
 }
-$stmt->close();
-
-echo json_encode($response);
-exit;
