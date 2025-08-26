@@ -117,16 +117,21 @@ if ($tab === 'my_listings') {
                         <div class="info-row"><strong>Type:</strong> <span><?= $ownership ?></span></div>
                         
                         <div class="info-row actions">
-                            <a href="javascript:void(0)" class="btn-edit" onclick="openModal(<?= $property['id'] ?>)">Edit</a>
-                            <!-- Delete button -->
-                            <form method="POST" action="/BatEstateExplorer/public/api/delete_listing.php" style="display:inline;">
-                                <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
-                                <button type="submit" class="btn-delete" 
-                                        onclick="return confirm('Are you sure you want to delete this listing?')">
-                                    Delete
-                                </button>
-                            </form>
+                            <?php if ($property['status'] === 'rejected'): ?>
+                                <!-- Delete only if rejected -->
+                                <form method="POST" action="/BatEstateExplorer/public/api/agent_delete_property.php" style="display:inline;">
+                                    <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
+                                    <button type="submit" class="btn-delete" 
+                                            onclick="return confirm('Are you sure you want to delete this rejected listing?')">
+                                        Delete
+                                    </button>
+                                </form>
+                            <?php else: ?>
+                                <!-- Edit only if not rejected -->
+                                <a href="javascript:void(0)" class="btn-edit" onclick="openModal(<?= $property['id'] ?>)">Edit</a>
+                            <?php endif; ?>
                         </div>
+
                     </div>
                     <!-- Edit Modal -->
                         <div id="editModal-<?= $property['id'] ?>" class="edit-modal">

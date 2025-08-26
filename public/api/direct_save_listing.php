@@ -52,7 +52,7 @@ try {
     $stmt = $pdo->prepare("
         INSERT INTO properties
         (title, description, property_type, location, price, bedrooms, bathrooms, sqm, lot_size, agent_id, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', NOW())
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
     ");
     $stmt->execute([
         $title, $description, $property_type, $location, $price,

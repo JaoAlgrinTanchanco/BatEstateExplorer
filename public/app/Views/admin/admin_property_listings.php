@@ -5,7 +5,6 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../../../../config/database.php';
 
-
 $is_logged_in = is_logged_in();
 $current_user = null;
 $is_admin = false;
@@ -26,13 +25,14 @@ $queryDirect = "SELECT
   p.title AS property_name,
   p.property_type,
   p.price,
+  p.status,
+  p.images,
   p.created_at AS date_uploaded
 FROM properties p
 JOIN agents a ON p.agent_id = a.id
 JOIN users u ON a.user_id = u.id
 WHERE u.user_type = 'direct_agent'
-ORDER BY p.created_at DESC
-";
+ORDER BY p.created_at DESC";
 
 $resultDirect = mysqli_query($conn, $queryDirect);
 $direct_properties = [];
@@ -41,12 +41,14 @@ while ($row = mysqli_fetch_assoc($resultDirect)) {
 }
 
 // Fetch associate agents listings
-$queryAssociate = "SELECT 
-    p.id AS property_id,
-    p.title AS property_name,
-    p.property_type,
-    p.price,
-    p.created_at AS date_uploaded
+$queryAssociate = "SELECT
+  p.id AS property_id,
+  p.title AS property_name,
+  p.property_type,
+  p.price,
+  p.status,
+  p.images,
+  p.created_at AS date_uploaded
 FROM properties p
 JOIN agents a ON p.agent_id = a.id
 JOIN users u ON a.user_id = u.id
@@ -59,6 +61,8 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
     $associate_properties[] = $row;
 }
 ?>
+
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_property_listings.css">
 
 <header class="content-header">
     <h1>Property Listings</h1>
@@ -85,28 +89,43 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
             <?php else: ?>
                 <?php foreach ($direct_properties as $property): ?>
                     <div class="property-card"
-                         data-name="<?php echo htmlspecialchars($property['property_name'] ?? ''); ?>"
-                         data-type="<?php echo htmlspecialchars($property['property_type'] ?? ''); ?>"
-                         data-price="<?php echo (int)($property['price'] ?? 0); ?>"
-                         data-date="<?php echo htmlspecialchars($property['date_uploaded'] ?? ''); ?>">
+                         data-name="<?php echo htmlspecialchars($property['property_name']); ?>"
+                         data-type="<?php echo htmlspecialchars($property['property_type']); ?>"
+                         data-price="<?php echo (int)$property['price']; ?>"
+                         data-date="<?php echo htmlspecialchars($property['date_uploaded']); ?>">
+
+                        <div class="property-status status-<?php echo $property['status']; ?>">
+                            <?php echo ucfirst($property['status']); ?>
+                        </div>
 
                         <div class="property-image"
-                             style="background-image: url('<?php echo htmlspecialchars($property['image_url'] ?? '/BatEstateExplorer/assets/images/bg4.jpg'); ?>')">
+                             style="background-image: url('<?php 
+                                echo htmlspecialchars(
+                                    $property['images'] ?: '/BatEstateExplorer/assets/images/bg4.jpg'
+                                ); 
+                             ?>')">
                         </div>
 
                         <div class="property-info">
-                            <div class="property-name"><?php echo htmlspecialchars($property['property_name'] ?? ''); ?></div>
+                            <div class="property-name"><?php echo htmlspecialchars($property['property_name']); ?></div>
                             <div class="property-meta">
-                                <span>Type: <?php echo htmlspecialchars($property['property_type'] ?? 'Unknown'); ?></span>
-                                <span>₱<?php echo number_format((float)($property['price'] ?? 0), 2); ?></span>
-                                <span>Date: <?php echo htmlspecialchars($property['date_uploaded'] ?? ''); ?></span>
+                                <span>Type: <?php echo htmlspecialchars($property['property_type']); ?></span>
+                                <span>₱<?php echo number_format((float)$property['price'], 2); ?></span>
+                                <span>Date: <?php echo htmlspecialchars($property['date_uploaded']); ?></span>
                             </div>
                         </div>
 
                         <div class="property-actions">
-                            <button class="btn-view" data-id="<?php echo $property['property_id'] ?? ''; ?>">View Post</button>
-                            <button class="btn-remove" data-id="<?php echo $property['property_id'] ?? ''; ?>">Remove Post</button>
+                            <button class="btn-view" data-id="<?php echo $property['property_id']; ?>">View Post</button>
+
+                            <?php if ($property['status'] === 'pending'): ?>
+                                <button class="btn-approve" data-id="<?php echo $property['property_id']; ?>">Approve</button>
+                                <button class="btn-reject" data-id="<?php echo $property['property_id']; ?>">Reject</button>
+                            <?php endif; ?>
+
+                            <button class="btn-remove" data-id="<?php echo $property['property_id']; ?>">Remove Post</button>
                         </div>
+
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -119,28 +138,42 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
             <?php else: ?>
                 <?php foreach ($associate_properties as $property): ?>
                     <div class="property-card"
-                         data-name="<?php echo htmlspecialchars($property['property_name'] ?? ''); ?>"
-                         data-type="<?php echo htmlspecialchars($property['property_type'] ?? ''); ?>"
-                         data-price="<?php echo (int)($property['price'] ?? 0); ?>"
-                         data-date="<?php echo htmlspecialchars($property['date_uploaded'] ?? ''); ?>">
+                         data-name="<?php echo htmlspecialchars($property['property_name']); ?>"
+                         data-type="<?php echo htmlspecialchars($property['property_type']); ?>"
+                         data-price="<?php echo (int)$property['price']; ?>"
+                         data-date="<?php echo htmlspecialchars($property['date_uploaded']); ?>">
+
+                        <div class="property-status status-<?php echo $property['status']; ?>">
+                            <?php echo ucfirst($property['status']); ?>
+                        </div>
 
                         <div class="property-image"
-                             style="background-image: url('<?php echo htmlspecialchars($property['image_url'] ?? 'Pictures/bg4.jpg'); ?>')">
+                             style="background-image: url('<?php 
+                                echo htmlspecialchars(
+                                    $property['images'] ?: '/BatEstateExplorer/assets/images/bg4.jpg'
+                                ); 
+                             ?>')">
                         </div>
 
                         <div class="property-info">
-                            <div class="property-name"><?php echo htmlspecialchars($property['property_name'] ?? ''); ?></div>
+                            <div class="property-name"><?php echo htmlspecialchars($property['property_name']); ?></div>
                             <div class="property-meta">
-                                <span>Type: <?php echo htmlspecialchars($property['property_type'] ?? 'Unknown'); ?></span>
-                                <span>₱<?php echo number_format((float)($property['price'] ?? 0), 2); ?></span>
-                                <span>Date: <?php echo htmlspecialchars($property['date_uploaded'] ?? ''); ?></span>
+                                <span>Type: <?php echo htmlspecialchars($property['property_type']); ?></span>
+                                <span>₱<?php echo number_format((float)$property['price'], 2); ?></span>
+                                <span>Date: <?php echo htmlspecialchars($property['date_uploaded']); ?></span>
                             </div>
                         </div>
 
                         <div class="property-actions">
-                            <button class="btn-view" data-id="<?php echo $property['property_id'] ?? ''; ?>">View Post</button>
-                            <button class="btn-doc" data-id="<?php echo $property['property_id'] ?? ''; ?>">View Property Document</button>
-                            <button class="btn-remove" data-id="<?php echo $property['property_id'] ?? ''; ?>">Remove Post</button>
+                            <button class="btn-view" data-id="<?php echo $property['property_id']; ?>">View Post</button>
+                            <button class="btn-doc" data-id="<?php echo $property['property_id']; ?>">View Property Document</button>
+
+                            <?php if ($property['status'] === 'pending'): ?>
+                                <button class="btn-approve" data-id="<?php echo $property['property_id']; ?>">Approve</button>
+                                <button class="btn-reject" data-id="<?php echo $property['property_id']; ?>">Reject</button>
+                            <?php endif; ?>
+
+                            <button class="btn-remove" data-id="<?php echo $property['property_id']; ?>">Remove Post</button>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -154,16 +187,36 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
 <script>
 document.querySelectorAll('.tab-btn').forEach(button => {
     button.addEventListener('click', () => {
-        // Remove active class from all buttons and panels
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(panel => panel.style.display = 'none');
-
-        // Add active to clicked tab button
         button.classList.add('active');
-
-        // Show corresponding tab panel
-        const tab = button.dataset.tab;
-        document.getElementById('tab-' + tab).style.display = 'block';
+        document.getElementById('tab-' + button.dataset.tab).style.display = 'block';
     });
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('btn-approve') || 
+        e.target.classList.contains('btn-reject') || 
+        e.target.classList.contains('btn-remove')) {
+        
+        const action = e.target.classList.contains('btn-approve') ? 'approve' :
+                       e.target.classList.contains('btn-reject') ? 'reject' : 'remove';
+        const propertyId = e.target.dataset.id;
+
+        fetch('../api/admin_property_action.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `action=${action}&property_id=${propertyId}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Property ${action}d successfully`);
+                location.reload();
+            } else {
+                alert(data.error || 'Action failed');
+            }
+        });
+    }
 });
 </script>
