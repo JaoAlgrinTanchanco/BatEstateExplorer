@@ -19,14 +19,26 @@ if (!$is_logged_in || !$is_admin) {
     exit;
 }
 
-// Fetch direct agents listings
+// Function to get first image for a property
+function get_property_image($conn, $property_id) {
+    $res = mysqli_query($conn, "
+        SELECT image_path 
+        FROM property_images 
+        WHERE property_id = $property_id 
+        ORDER BY is_primary DESC, id ASC 
+        LIMIT 1
+    ");
+    $row = mysqli_fetch_assoc($res);
+    return $row['image_path'] ?? null;
+}
+
+// Direct agents
 $queryDirect = "SELECT
   p.id AS property_id,
   p.title AS property_name,
   p.property_type,
   p.price,
   p.status,
-  p.images,
   p.created_at AS date_uploaded
 FROM properties p
 JOIN agents a ON p.agent_id = a.id
@@ -37,17 +49,17 @@ ORDER BY p.created_at DESC";
 $resultDirect = mysqli_query($conn, $queryDirect);
 $direct_properties = [];
 while ($row = mysqli_fetch_assoc($resultDirect)) {
+    $row['image_path'] = get_property_image($conn, $row['property_id']);
     $direct_properties[] = $row;
 }
 
-// Fetch associate agents listings
+// Associate agents
 $queryAssociate = "SELECT
   p.id AS property_id,
   p.title AS property_name,
   p.property_type,
   p.price,
   p.status,
-  p.images,
   p.created_at AS date_uploaded
 FROM properties p
 JOIN agents a ON p.agent_id = a.id
@@ -58,6 +70,7 @@ ORDER BY p.created_at DESC";
 $resultAssociate = mysqli_query($conn, $queryAssociate);
 $associate_properties = [];
 while ($row = mysqli_fetch_assoc($resultAssociate)) {
+    $row['image_path'] = get_property_image($conn, $row['property_id']);
     $associate_properties[] = $row;
 }
 ?>
@@ -72,7 +85,6 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
 </header>
 
 <div class="content-body">
-
     <!-- Tabs -->
     <div class="tab-bar">
         <button class="tab-btn active" data-tab="direct">Direct Agents</button>
@@ -81,7 +93,6 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
 
     <!-- Tab Content -->
     <div id="tab-content">
-
         <!-- Direct Agents Tab -->
         <div class="tab-panel" id="tab-direct" style="display: block;">
             <?php if (empty($direct_properties)): ?>
@@ -98,13 +109,12 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
                             <?php echo ucfirst($property['status']); ?>
                         </div>
 
-                        <div class="property-image"
-                             style="background-image: url('<?php 
-                                echo htmlspecialchars(
-                                    $property['images'] ?: '/BatEstateExplorer/assets/images/bg4.jpg'
-                                ); 
-                             ?>')">
-                        </div>
+                        <?php
+                        $image_url = $property['image_path'] 
+                            ? '/BatEstateExplorer/' . ltrim($property['image_path'], '/')
+                            : '/BatEstateExplorer/assets/images/bg4.jpg';
+                        ?>
+                        <div class="property-image" style="background-image: url('<?php echo htmlspecialchars($image_url); ?>')"></div>
 
                         <div class="property-info">
                             <div class="property-name"><?php echo htmlspecialchars($property['property_name']); ?></div>
@@ -125,7 +135,6 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
                                 <button class="btn-remove" data-id="<?php echo $property['property_id']; ?>">Remove Post</button>
                             <?php endif; ?>
                         </div>
-
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -147,13 +156,12 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
                             <?php echo ucfirst($property['status']); ?>
                         </div>
 
-                        <div class="property-image"
-                             style="background-image: url('<?php 
-                                echo htmlspecialchars(
-                                    $property['images'] ?: '/BatEstateExplorer/assets/images/bg4.jpg'
-                                ); 
-                             ?>')">
-                        </div>
+                        <?php
+                        $image_url = $property['image_path'] 
+                            ? '/BatEstateExplorer/' . ltrim($property['image_path'], '/')
+                            : '/BatEstateExplorer/assets/images/bg4.jpg';
+                        ?>
+                        <div class="property-image" style="background-image: url('<?php echo htmlspecialchars($image_url); ?>')"></div>
 
                         <div class="property-info">
                             <div class="property-name"><?php echo htmlspecialchars($property['property_name']); ?></div>
@@ -179,9 +187,7 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
-
     </div>
-
 </div>
 
 <!-- Modal Structure -->
@@ -207,20 +213,10 @@ const modal = document.getElementById('propertyModal');
 const modalBody = document.getElementById('modalBody');
 const closeBtn = modal.querySelector('.close');
 
-// Close when clicking X
-closeBtn.addEventListener('click', () => {
-    modal.style.display = 'none';
-});
+closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+window.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
 
-// Close when clicking outside modal content
-window.addEventListener('click', (e) => {
-    if (e.target === modal) {
-        modal.style.display = 'none';
-    }
-});
-
-// View Post button
-document.addEventListener('click', async (e) => {
+document.addEventListener('click', async e => {
     if (!e.target.classList.contains('btn-view')) return;
 
     const propertyId = e.target.dataset.id;
