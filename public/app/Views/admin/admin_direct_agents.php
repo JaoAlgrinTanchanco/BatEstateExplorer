@@ -71,11 +71,10 @@ while ($row = $result->fetch_assoc()) {
 $stmt->close();
 ?>
 
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_direct_agent.css" />
+
 <header class="content-header">
   <h1>Direct Agents</h1>
-  <div class="user-info">
-    <span>Welcome, <?php echo htmlspecialchars($current_user['email']); ?></span>
-  </div>
 </header>
 
 <div class="content-body">
