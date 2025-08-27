@@ -147,10 +147,10 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
             <?php else: ?>
                 <?php foreach ($associate_properties as $property): ?>
                     <div class="property-card"
-                         data-name="<?php echo htmlspecialchars($property['property_name']); ?>"
-                         data-type="<?php echo htmlspecialchars($property['property_type']); ?>"
-                         data-price="<?php echo (int)$property['price']; ?>"
-                         data-date="<?php echo htmlspecialchars($property['date_uploaded']); ?>">
+                        data-name="<?php echo htmlspecialchars($property['property_name']); ?>"
+                        data-type="<?php echo htmlspecialchars($property['property_type']); ?>"
+                        data-price="<?php echo (int)$property['price']; ?>"
+                        data-date="<?php echo htmlspecialchars($property['date_uploaded']); ?>">
 
                         <div class="property-status status-<?php echo $property['status']; ?>">
                             <?php echo ucfirst($property['status']); ?>
@@ -174,7 +174,6 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
 
                         <div class="property-actions">
                             <button class="btn-view" data-id="<?php echo $property['property_id']; ?>">View Post</button>
-                            <button class="btn-doc" data-id="<?php echo $property['property_id']; ?>">View Property Document</button>
 
                             <?php if ($property['status'] === 'pending'): ?>
                                 <button class="btn-approve" data-id="<?php echo $property['property_id']; ?>">Approve</button>
@@ -187,6 +186,7 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
+
     </div>
 </div>
 
@@ -199,6 +199,7 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
 </div>
 
 <script>
+// Tabs
 document.querySelectorAll('.tab-btn').forEach(button => {
     button.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -208,7 +209,7 @@ document.querySelectorAll('.tab-btn').forEach(button => {
     });
 });
 
-// Modal logic
+// Modal
 const modal = document.getElementById('propertyModal');
 const modalBody = document.getElementById('modalBody');
 const closeBtn = modal.querySelector('.close');
@@ -216,43 +217,81 @@ const closeBtn = modal.querySelector('.close');
 closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
 window.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
 
+// View Post (works for both tabs)
 document.addEventListener('click', async e => {
-    if (!e.target.classList.contains('btn-view')) return;
+    if (e.target.classList.contains('btn-view')) {
+        const propertyId = e.target.dataset.id;
+        modal.style.display = 'block';
+        modalBody.innerHTML = '<p>Loading...</p>';
 
-    const propertyId = e.target.dataset.id;
-    if (!propertyId) return;
+        try {
+            const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${propertyId}`);
+            const data = await res.json();
 
-    modal.style.display = 'block';
-    modalBody.innerHTML = '<p>Loading...</p>';
+            if (!data.success) {
+                modalBody.innerHTML = `<p>${data.error || 'Failed to load property details'}</p>`;
+                return;
+            }
 
-    try {
-        const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${propertyId}`);
-        const data = await res.json();
-
-        if (!data.success) {
-            modalBody.innerHTML = `<p>${data.error || 'Failed to load property details'}</p>`;
-            return;
+            const prop = data.property;
+            modalBody.innerHTML = `
+                <h2>${prop.title}</h2>
+                <p><strong>Location:</strong> ${prop.location || '-'}</p>
+                <p><strong>Price:</strong> ₱${parseFloat(prop.price || 0).toLocaleString()}</p>
+                <p><strong>Bedrooms:</strong> ${prop.bedrooms || 0}</p>
+                <p><strong>Bathrooms:</strong> ${prop.bathrooms || 0}</p>
+                <p><strong>Area:</strong> ${prop.sqm || 0} sqm</p>
+                <p><strong>Lot Size:</strong> ${prop.lot_size || 0} sqm</p>
+                <p><strong>Status:</strong> ${prop.status}</p>
+                <p><strong>Date Uploaded:</strong> ${prop.date_uploaded}</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                    ${prop.images.map(img => `<img src="${img}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">`).join('')}
+                </div>
+                <p style="margin-top:10px;">${prop.description || ''}</p>
+            `;
+        } catch (err) {
+            console.error(err);
+            modalBody.innerHTML = '<p>An unexpected error occurred.</p>';
         }
-
-        const prop = data.property;
-        modalBody.innerHTML = `
-            <h2>${prop.title}</h2>
-            <p><strong>Location:</strong> ${prop.location || '-'}</p>
-            <p><strong>Price:</strong> ₱${parseFloat(prop.price || 0).toLocaleString()}</p>
-            <p><strong>Bedrooms:</strong> ${prop.bedrooms || 0}</p>
-            <p><strong>Bathrooms:</strong> ${prop.bathrooms || 0}</p>
-            <p><strong>Area:</strong> ${prop.sqm || 0} sqm</p>
-            <p><strong>Lot Size:</strong> ${prop.lot_size || 0} sqm</p>
-            <p><strong>Status:</strong> ${prop.status}</p>
-            <p><strong>Date Uploaded:</strong> ${prop.date_uploaded}</p>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
-                ${prop.images.map(img => `<img src="${img}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">`).join('')}
-            </div>
-            <p style="margin-top:10px;">${prop.description || ''}</p>
-        `;
-    } catch (err) {
-        console.error(err);
-        modalBody.innerHTML = '<p>An unexpected error occurred.</p>';
     }
 });
+
+// Actions (approve / reject / remove) → use admin_property_action.php
+document.addEventListener('click', async e => {
+    if (e.target.classList.contains('btn-approve') ||
+        e.target.classList.contains('btn-reject') ||
+        e.target.classList.contains('btn-remove')) {
+
+        const id = e.target.dataset.id;
+        let action = '';
+
+        if (e.target.classList.contains('btn-approve')) action = 'approve';
+        if (e.target.classList.contains('btn-reject')) action = 'reject';
+        if (e.target.classList.contains('btn-remove')) action = 'remove';
+
+        if (!id || !action) return;
+
+        if (!confirm(`Are you sure you want to ${action} this property?`)) return;
+
+        try {
+            const formData = new FormData();
+            formData.append('property_id', id);
+            formData.append('action', action);
+
+            const res = await fetch('/BatEstateExplorer/public/api/admin_property_action.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json();
+            alert(data.message || data.error || 'Unexpected response');
+
+            if (data.success) location.reload();
+        } catch (err) {
+            console.error(err);
+            alert('An error occurred while performing the action.');
+        }
+    }
+});
+
 </script>

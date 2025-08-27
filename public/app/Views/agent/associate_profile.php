@@ -220,7 +220,7 @@ if ($tab === 'my_listings') {
             <div class="overview-container">
                 <div class="overview-card">
                     <form id="addListingForm" 
-                        action="/BatEstateExplorer/public/api/save_listing.php" 
+                        action="/BatEstateExplorer/public/api/associate_save_listing.php" 
                         method="POST" 
                         enctype="multipart/form-data">
 

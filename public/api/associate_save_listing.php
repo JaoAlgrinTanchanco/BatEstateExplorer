@@ -6,24 +6,33 @@ ini_set('display_errors', 1);
 require_once __DIR__ . '/../../config/pdo_database.php';
 session_start();
 
-$redirect_url = "/BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=add_listing";
-
 // Get logged-in user
 $user_data = get_logged_in_user($pdo);
 if (!$user_data) {
     die("❌ No logged in user detected.");
 }
 
-// Get agent_id
-$stmtAgent = $pdo->prepare("SELECT id FROM agents WHERE user_id = ?");
-$stmtAgent->execute([$user_data['id']]);
-$agent = $stmtAgent->fetch(PDO::FETCH_ASSOC);
-if (!$agent) {
-    die("❌ Agent not found for user_id: " . $user_data['id']);
+// Ensure only associate agents can use this
+if ($user_data['user_type'] !== 'associate_agent') {
+    die("❌ Access denied: only associates can save listings. Your type is: " . $user_data['user_type']);
 }
-$agent_id = $agent['id'];
 
-echo "✅ Agent ID: $agent_id<br>";
+// ✅ Get or create agent.id from agents table
+$stmt = $pdo->prepare("SELECT id FROM agents WHERE user_id = ?");
+$stmt->execute([$user_data['id']]);
+$agent = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$agent) {
+    // 🔧 Auto-create agent record for associate agent
+    $stmtInsert = $pdo->prepare("INSERT INTO agents (user_id, created_at) VALUES (?, NOW())");
+    $stmtInsert->execute([$user_data['id']]);
+
+    $agent_id = $pdo->lastInsertId();
+    echo "🆕 Agent record created for user_id {$user_data['id']} → Agent ID: $agent_id<br>";
+} else {
+    $agent_id = $agent['id'];
+    echo "✅ Agent ID (from agents table): $agent_id<br>";
+}
 
 // Collect form data
 $title         = $_POST['title'] ?? '';
@@ -39,11 +48,11 @@ $property_type = $_POST['property_type'] ?? '';
 try {
     $pdo->beginTransaction();
 
-    // Insert property
+    // ✅ Insert property using agent_id
     $stmt = $pdo->prepare("
         INSERT INTO properties
         (title, description, property_type, location, price, bedrooms, bathrooms, sqm, lot_size, agent_id, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', NOW())
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
     ");
     $stmt->execute([
         $title, $description, $property_type, $location, $price,
@@ -57,7 +66,6 @@ try {
     $upload_dir = 'C:\\xampp\\htdocs\\BatEstateExplorer\\storage\\uploads\\property_images\\';
     echo "📂 Upload directory: $upload_dir<br>";
 
-    // Ensure folder exists
     if (!is_dir($upload_dir)) {
         error_log("❌ Upload directory does not exist: " . $upload_dir);
     } elseif (!is_writable($upload_dir)) {
@@ -66,7 +74,6 @@ try {
         error_log("✅ Upload directory ready: " . $upload_dir);
     }
 
-    // Debug: See what PHP received
     echo '<pre>'; print_r($_FILES); echo '</pre>';
 
     if (isset($_FILES['images']) && is_array($_FILES['images']['tmp_name']) && $_FILES['images']['tmp_name'][0] !== '') {
@@ -92,7 +99,7 @@ try {
             }
 
             $newFileName = uniqid() . '.' . $ext;
-            $destination = $upload_dir . $newFileName; // fixed variable
+            $destination = $upload_dir . $newFileName;
 
             if (move_uploaded_file($tmp, $destination)) {
                 echo "✅ File moved to $destination<br>";
