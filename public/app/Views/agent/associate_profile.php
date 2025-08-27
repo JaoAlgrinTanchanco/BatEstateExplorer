@@ -144,46 +144,37 @@ if ($tab === 'my_listings') {
                             <form id="editForm-<?= $property['id'] ?>" method="POST" action="/BatEstateExplorer/public/api/update_property.php" enctype="multipart/form-data">
                                 <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
 
-                                <label>Title</label>
+                                <label>Property Name</label>
                                 <input type="text" name="title" value="<?= htmlspecialchars($property['title']) ?>" required>
 
                                 <label>Description</label>
                                 <textarea name="description"><?= htmlspecialchars($property['description']) ?></textarea>
 
                                 <label>Property Type</label>
-                                <select name="property_type" required>
-                                    <option value="Lot" <?= $property['property_type']=='Lot'?'selected':'' ?>>Lot</option>
+                                <select name="property_type" class="property-type" required>
                                     <option value="Property" <?= $property['property_type']=='Property'?'selected':'' ?>>Property</option>
+                                    <option value="Lot" <?= $property['property_type']=='Lot'?'selected':'' ?>>Lot</option>
                                 </select>
 
                                 <label>Location</label>
-                                <select name="location" required>
+                                <select name="location" class="location" required>
+                                    <option value="">Select Location</option>
+                                    <!-- Add all locations like before -->
                                     <option value="Lipa City" <?= $property['location']=='Lipa City'?'selected':'' ?>>Lipa City</option>
-                                    <option value="Batangas" <?= $property['location']=='Batangas'?'selected':'' ?>>Batangas</option>
-                                    <!-- Add more options -->
+                                    <!-- ...other options... -->
                                 </select>
 
                                 <label>Price</label>
                                 <input type="number" step="0.01" name="price" value="<?= $property['price'] ?>" required>
 
                                 <label>Bedrooms</label>
-                                <input type="number" name="bedrooms" value="<?= $property['bedrooms'] ?>">
+                                <input type="number" name="bedrooms" class="bedrooms" value="<?= $property['bedrooms'] ?>">
 
                                 <label>Bathrooms</label>
-                                <input type="number" name="bathrooms" value="<?= $property['bathrooms'] ?>">
+                                <input type="number" name="bathrooms" class="bathrooms" value="<?= $property['bathrooms'] ?>">
 
-                                <label>Square Meters (sqm)</label>
-                                <input type="number" step="0.01" name="sqm" value="<?= $property['sqm'] ?>">
-
-                                <label>Lot Size</label>
+                                <label>Lot Size (sqm)</label>
                                 <input type="number" step="0.01" name="lot_size" value="<?= $property['lot_size'] ?>">
-
-                                <label>Status</label>
-                                <select name="status">
-                                    <option value="available" <?= $property['status']=='available'?'selected':'' ?>>Available</option>
-                                    <option value="sold" <?= $property['status']=='sold'?'selected':'' ?>>Sold</option>
-                                    <option value="pending" <?= $property['status']=='pending'?'selected':'' ?>>Pending</option>
-                                </select>
 
                                 <!-- Existing images -->
                                 <div class="image-slider">
@@ -204,6 +195,7 @@ if ($tab === 'my_listings') {
                             </form>
                         </div>
                     </div>
+
                 <?php endforeach; ?>
             <?php else: ?>
                 <div class="overview-card">
@@ -215,76 +207,101 @@ if ($tab === 'my_listings') {
         <?php break; ?>
 
         <?php case 'add_listing': ?>
-            <h2>Add New Listing (Associate)</h2>
+        <h2>Add New Listing (Associate)</h2>
 
-            <div class="overview-container">
-                <div class="overview-card">
-                    <form id="addListingForm" 
-                        action="/BatEstateExplorer/public/api/associate_save_listing.php" 
-                        method="POST" 
-                        enctype="multipart/form-data">
+        <div class="overview-container">
+        <div class="overview-card">
+            <form id="addListingForm" 
+                action="/BatEstateExplorer/public/api/associate_save_listing.php" 
+                method="POST" 
+                enctype="multipart/form-data">
 
-                        <label for="title"><strong>Property Name</strong></label>
-                        <input type="text" id="title" name="title" required>
+                <!-- Property Name -->
+                <label for="title"><strong>Property Name</strong></label>
+                <input type="text" id="title" name="title" required>
 
-                        <label for="location"><strong>Location</strong></label>
-                        <select id="location" name="location" required>
-                            <option value="">-- Select Location --</option>
-                            <?php 
-                            $locations = ["Lipa City", "Batangas City", "Tanauan City", "Balayan", "Santo Tomas"];
-                            foreach ($locations as $loc): ?>
-                                <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                <!-- Location -->
+                <label for="location"><strong>Location</strong></label>
+                <select id="location" name="location" required>
+                    <option value="">Select Location</option>
+                    <option value="Agoncillo">Agoncillo</option>
+                    <option value="Alitagtag">Alitagtag</option>
+                    <option value="Balayan">Balayan</option>
+                    <option value="Balete">Balete</option>
+                    <option value="Batangas City">Batangas City</option>
+                    <option value="Bauan">Bauan</option>
+                    <option value="Calaca">Calaca</option>
+                    <option value="Calatagan">Calatagan</option>
+                    <option value="Cuenca">Cuenca</option>
+                    <option value="Ibaan">Ibaan</option>
+                    <option value="Laurel">Laurel</option>
+                    <option value="Lemery">Lemery</option>
+                    <option value="Lian">Lian</option>
+                    <option value="Lipa City">Lipa City</option>
+                    <option value="Lobo">Lobo</option>
+                    <option value="Mabini">Mabini</option>
+                    <option value="Malvar">Malvar</option>
+                    <option value="Mataasnakahoy">Mataasnakahoy</option>
+                    <option value="Nasugbu">Nasugbu</option>
+                    <option value="Padre Garcia">Padre Garcia</option>
+                    <option value="Rosario">Rosario</option>
+                    <option value="San Jose">San Jose</option>
+                    <option value="San Juan">San Juan</option>
+                    <option value="San Luis">San Luis</option>
+                    <option value="San Nicolas">San Nicolas</option>
+                    <option value="San Pascual">San Pascual</option>
+                    <option value="Santa Teresita">Santa Teresita</option>
+                    <option value="Santo Tomas">Santo Tomas</option>
+                    <option value="Taal">Taal</option>
+                    <option value="Talisay">Talisay</option>
+                    <option value="Tanauan City">Tanauan City</option>
+                    <option value="Taysan">Taysan</option>
+                    <option value="Tingloy">Tingloy</option>
+                    <option value="Tuy">Tuy</option>
+                </select>
 
-                        <label for="price"><strong>Price (₱)</strong></label>
-                        <input type="number" id="price" name="price" min="0" step="0.01" required>
+                <!-- Price -->
+                <label for="price"><strong>Price (₱)</strong></label>
+                <input type="number" id="price" name="price" min="0" step="0.01" required>
 
-                        <label for="sqm"><strong>Floor Area (sqm)</strong></label>
-                        <input type="number" id="sqm" name="sqm" min="0" step="0.01">
+                <!-- Lot Size -->
+                <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
+                <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
 
-                        <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
-                        <input type="number" id="lot_size" name="lot_size" min="0" step="0.01">
+                <!-- Property Type -->
+                <label for="property_type"><strong>Property Type</strong></label>
+                <select id="property_type" name="property_type" required>
+                    <option value="">-- Select Type --</option>
+                    <option value="Property">Property</option>
+                    <option value="Lot">Lot</option>
+                </select>
 
-                        <label for="property_type"><strong>Property Type</strong></label>
-                        <select id="property_type" name="property_type" required>
-                            <option value="">-- Select Type --</option>
-                            <option value="Property">Property</option>
-                            <option value="Lot">Lot</option>
-                        </select>
+                <!-- Bedrooms -->
+                <label for="bedrooms"><strong>Bedrooms</strong></label>
+                <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
 
-                        <label for="bedrooms"><strong>Bedrooms</strong></label>
-                        <select id="bedrooms" name="bedrooms">
-                            <option value="">-- Select Bedrooms --</option>
-                            <?php for ($i = 0; $i <= 10; $i++): ?>
-                                <option value="<?= $i ?>"><?= $i ?></option>
-                            <?php endfor; ?>
-                        </select>
+                <!-- Bathrooms -->
+                <label for="bathrooms"><strong>Bathrooms</strong></label>
+                <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
 
-                        <label for="bathrooms"><strong>Bathrooms</strong></label>
-                        <select id="bathrooms" name="bathrooms">
-                            <option value="">-- Select Bathrooms --</option>
-                            <?php for ($i = 0; $i <= 10; $i++): ?>
-                                <option value="<?= $i ?>"><?= $i ?></option>
-                            <?php endfor; ?>
-                        </select>
+                <!-- Description -->
+                <label for="description"><strong>Description</strong></label>
+                <textarea id="description" name="description" rows="4" required></textarea>
 
-                        <label for="description"><strong>Description</strong></label>
-                        <textarea id="description" name="description" rows="4" required></textarea>
-
-                        <label for="images"><strong>Property Images</strong></label>
-                        <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
-                            <p>Drag & drop images here or click to browse</p>
-                            <input type="file" id="images" accept="image/*" multiple style="display:none;">
-                        </div>
-
-                        <div id="imagePreview" class="image-preview" aria-live="polite"></div>
-
-                        <button type="submit" class="btn-submit">Save Listing</button>
-                    </form>
+                <!-- Images -->
+                <label for="images"><strong>Property Images</strong></label>
+                <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
+                    <p>Drag & drop images here or click to browse</p>
+                    <input type="file" id="images" accept="image/*" multiple style="display:none;">
                 </div>
-            </div>
-        <?php break; ?>
+
+                <div id="imagePreview" class="image-preview" aria-live="polite"></div>
+
+                <button type="submit" class="btn-submit">Save Listing</button>
+            </form>
+        </div>
+        </div>
+<?php break; ?>
 
         <?php case 'analytics': ?>
                 <h2>Performance Analytics</h2>
@@ -499,14 +516,26 @@ if ($tab === 'my_listings') {
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // ===== Drag & Drop Image Upload =====
-    const dropArea  = document.getElementById('imageUploadArea');
-    const fileInput = document.getElementById('images');
-    const preview   = document.getElementById('imagePreview');
-    const form      = document.getElementById('addListingForm');
-    const MAX_FILES = 10;
 
-    if (dropArea && fileInput && form) {
+    // ===== Helper: Toggle Bedrooms/Bathrooms for "Lot" =====
+    const toggleRooms = (typeSelect, bedroomsInput, bathroomsInput) => {
+        const isLot = typeSelect.value === 'Lot';
+        bedroomsInput.disabled = isLot;
+        bathroomsInput.disabled = isLot;
+        if (isLot) {
+            bedroomsInput.value = 0;
+            bathroomsInput.value = 0;
+        }
+    };
+
+    // ===== Drag & Drop Image Upload =====
+    const initImageUpload = ({ dropAreaId, fileInputId, previewId, formId, maxFiles = 10 }) => {
+        const dropArea  = document.getElementById(dropAreaId);
+        const fileInput = document.getElementById(fileInputId);
+        const preview   = document.getElementById(previewId);
+        const form      = document.getElementById(formId);
+        if (!dropArea || !fileInput || !form) return;
+
         let selectedFiles = [];
 
         const fileSignature = f => `${f.name}|${f.size}|${f.lastModified}`;
@@ -525,12 +554,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 removeBtn.type = 'button';
                 removeBtn.className = 'remove-img';
                 removeBtn.innerHTML = '&times;';
-                wrap.appendChild(removeBtn);
-
                 removeBtn.addEventListener('click', () => {
                     selectedFiles.splice(index, 1);
                     renderPreviews();
                 });
+                wrap.appendChild(removeBtn);
 
                 const reader = new FileReader();
                 reader.onload = e => img.src = e.target.result;
@@ -546,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const existingSigs = new Set(selectedFiles.map(fileSignature));
 
             for (const f of incoming) {
-                if (selectedFiles.length >= MAX_FILES) break;
+                if (selectedFiles.length >= maxFiles) break;
                 if (!existingSigs.has(fileSignature(f))) {
                     selectedFiles.push(f);
                     existingSigs.add(fileSignature(f));
@@ -555,21 +583,18 @@ document.addEventListener('DOMContentLoaded', () => {
             renderPreviews();
         };
 
-        // Drag/drop handlers
-        ['dragenter','dragover','dragleave','drop'].forEach(evt => {
-            dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
-        });
+        ['dragenter','dragover','dragleave','drop'].forEach(evt =>
+            dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); })
+        );
         dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
         dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
         dropArea.addEventListener('drop', e => {
             dropArea.classList.remove('drag-over');
             addFiles(e.dataTransfer.files);
         });
-
-        // Click & keyboard file picker
         dropArea.addEventListener('click', () => fileInput.click());
         dropArea.addEventListener('keydown', e => {
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (['Enter',' '].includes(e.key)) {
                 e.preventDefault();
                 fileInput.click();
             }
@@ -579,7 +604,6 @@ document.addEventListener('DOMContentLoaded', () => {
             fileInput.value = '';
         });
 
-        // Form submission
         form.addEventListener('submit', e => {
             e.preventDefault();
             const fd = new FormData(form);
@@ -596,15 +620,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .catch(err => console.error('Upload error:', err));
         });
-    }
+    };
+
+    initImageUpload({
+        dropAreaId: 'imageUploadArea',
+        fileInputId: 'images',
+        previewId: 'imagePreview',
+        formId: 'addListingForm',
+        maxFiles: 10
+    });
 
     // ===== Modal Handling =====
-    window.openModal = id => {
-        document.getElementById(`editModal-${id}`).style.display = 'block';
-    };
-    window.closeModal = id => {
-        document.getElementById(`editModal-${id}`).style.display = 'none';
-    };
+    window.openModal = id => document.getElementById(`editModal-${id}`).style.display = 'block';
+    window.closeModal = id => document.getElementById(`editModal-${id}`).style.display = 'none';
     window.onclick = event => {
         document.querySelectorAll('.edit-modal').forEach(modal => {
             if (event.target === modal) modal.style.display = 'none';
@@ -614,85 +642,66 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== Remove Image from Slider =====
     window.removeImage = btn => btn.closest('.slider-item').remove();
 
-    // ===== Disable Bedrooms/Bathrooms for "Lot" =====
-    const initPropertyTypeToggles = () => {
-        document.querySelectorAll('.edit-modal').forEach(modal => {
-            const propertyType = modal.querySelector('select[name="property_type"]');
-            const bedrooms = modal.querySelector('input[name="bedrooms"]');
-            const bathrooms = modal.querySelector('input[name="bathrooms"]');
-
-            if (!propertyType || !bedrooms || !bathrooms) return;
-
-            const toggleRooms = () => {
-                const isLot = propertyType.value === 'Lot';
-                bedrooms.disabled = isLot;
-                bathrooms.disabled = isLot;
-                if (isLot) {
-                    bedrooms.value = 0;
-                    bathrooms.value = 0;
-                }
-            };
-
-            toggleRooms();
-            propertyType.addEventListener('change', toggleRooms);
-        });
-    };
-
-    initPropertyTypeToggles();
-
-    //company listing
-    const propertyModal = document.getElementById('propertyModal');
-    const propertyTitle = document.getElementById('propertyTitle');
-    const propertyDetails = document.getElementById('propertyDetails');
-    const carouselImages = document.getElementById('carouselImages');
-
-    document.querySelectorAll('.view-details').forEach(link => {
-    link.addEventListener('click', function (e) {
-        e.preventDefault();
-        const propertyId = this.dataset.id;
-
-        fetch('http://localhost/BatEstateExplorer/public/api/get_company_listings.php?id=' + propertyId)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                    return;
-                }
-
-                // Set title
-                document.getElementById('propertyTitle').textContent = data.title;
-
-                // Images
-                const carousel = document.getElementById('carouselImages');
-                carousel.innerHTML = '';
-                if (data.images && data.images.length > 0) {
-                    data.images.forEach((img, index) => {
-                        carousel.innerHTML += `
-                            <div class="carousel-item ${index === 0 ? 'active' : ''}">
-                                <img src="storage/uploads/property_images/${img}" class="d-block w-100">
-                            </div>
-                        `;
-                    });
-                } else {
-                    carousel.innerHTML = '<div class="carousel-item active"><p>No images</p></div>';
-                }
-
-                // Details
-                const details = document.getElementById('propertyDetails');
-                details.innerHTML = `
-                    <li class="list-group-item"><b>Location:</b> ${data.location}</li>
-                    <li class="list-group-item"><b>Price:</b> ₱${parseFloat(data.price).toLocaleString()}</li>
-                    <li class="list-group-item"><b>Bedrooms:</b> ${data.bedrooms}</li>
-                    <li class="list-group-item"><b>Bathrooms:</b> ${data.bathrooms}</li>
-                    <li class="list-group-item"><b>Size:</b> ${data.sqm} sqm</li>
-                    <li class="list-group-item"><b>Status:</b> ${data.status}</li>
-                    <li class="list-group-item"><b>Created By:</b> ${data.created_by ?? 'N/A'}</li>
-                    <li class="list-group-item"><b>Sold By:</b> ${data.sold_by ?? 'N/A'}</li>
-                `;
-            })
-            .catch(err => console.error(err));
+    // ===== Init Bedrooms/Bathrooms Toggle for Edit Modals =====
+    document.querySelectorAll('.edit-modal').forEach(modal => {
+        const typeSelect = modal.querySelector('select[name="property_type"]');
+        const bedrooms = modal.querySelector('input[name="bedrooms"]');
+        const bathrooms = modal.querySelector('input[name="bathrooms"]');
+        if (!typeSelect || !bedrooms || !bathrooms) return;
+        toggleRooms(typeSelect, bedrooms, bathrooms);
+        typeSelect.addEventListener('change', () => toggleRooms(typeSelect, bedrooms, bathrooms));
     });
-});
-});
 
+    // ===== Init Bedrooms/Bathrooms Toggle for Add Listing =====
+    const addType = document.getElementById('property_type');
+    const addBeds = document.getElementById('bedrooms');
+    const addBaths = document.getElementById('bathrooms');
+    if (addType && addBeds && addBaths) {
+        toggleRooms(addType, addBeds, addBaths);
+        addType.addEventListener('change', () => toggleRooms(addType, addBeds, addBaths));
+    }
+
+    // ===== Company Listing Modal =====
+    const propertyModal = document.getElementById('propertyModal');
+    document.querySelectorAll('.view-details').forEach(link => {
+        link.addEventListener('click', e => {
+            e.preventDefault();
+            const propertyId = link.dataset.id;
+            fetch(`/BatEstateExplorer/public/api/get_company_listings.php?id=${propertyId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) { alert(data.error); return; }
+
+                    document.getElementById('propertyTitle').textContent = data.title || 'N/A';
+
+                    const carousel = document.getElementById('carouselImages');
+                    carousel.innerHTML = '';
+                    if (data.images?.length) {
+                        data.images.forEach((img, idx) => {
+                            carousel.innerHTML += `
+                                <div class="carousel-item ${idx===0?'active':''}">
+                                    <img src="storage/uploads/property_images/${img}" class="d-block w-100">
+                                </div>`;
+                        });
+                    } else {
+                        carousel.innerHTML = '<div class="carousel-item active"><p>No images</p></div>';
+                    }
+
+                    const details = document.getElementById('propertyDetails');
+                    details.innerHTML = `
+                        <li class="list-group-item"><b>Location:</b> ${data.location}</li>
+                        <li class="list-group-item"><b>Price:</b> ₱${parseFloat(data.price).toLocaleString()}</li>
+                        <li class="list-group-item"><b>Bedrooms:</b> ${data.bedrooms}</li>
+                        <li class="list-group-item"><b>Bathrooms:</b> ${data.bathrooms}</li>
+                        <li class="list-group-item"><b>Size:</b> ${data.sqm} sqm</li>
+                        <li class="list-group-item"><b>Status:</b> ${data.status}</li>
+                        <li class="list-group-item"><b>Created By:</b> ${data.created_by ?? 'N/A'}</li>
+                        <li class="list-group-item"><b>Sold By:</b> ${data.sold_by ?? 'N/A'}</li>
+                    `;
+                })
+                .catch(err => console.error(err));
+        });
+    });
+
+});
 </script>
