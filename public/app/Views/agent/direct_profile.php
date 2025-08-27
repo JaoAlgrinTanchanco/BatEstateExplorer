@@ -18,51 +18,53 @@ if (!empty($_SESSION['flash_success'])): ?>
 // Detect active tab
 $tab = $_GET['tab'] ?? 'overview';
 
+// 🔹 Fetch agent's properties once (works for both listings + privilege modal)
 $listings = [];
 
-if ($tab === 'my_listings') {
-    if ($user['user_type'] === 'direct') {
-        $agent_id = (int)$user['id']; // use user_id directly for direct agents
-    } else {
-        $stmtAgent = $conn->prepare("SELECT id FROM agents WHERE user_id = ?");
-        $stmtAgent->bind_param("i", $user['id']);
-        $stmtAgent->execute();
-        $res = $stmtAgent->get_result();
-        $agent = $res ? $res->fetch_assoc() : null;
-        $stmtAgent->close();
+if ($user['user_type'] === 'direct') {
+    // Direct agents: their user_id is the agent_id
+    $agent_id = (int)$user['id'];
+} else {
+    // Associates: map user -> agent
+    $stmtAgent = $conn->prepare("SELECT id FROM agents WHERE user_id = ?");
+    $stmtAgent->bind_param("i", $user['id']);
+    $stmtAgent->execute();
+    $res = $stmtAgent->get_result();
+    $agent = $res ? $res->fetch_assoc() : null;
+    $stmtAgent->close();
 
-        $agent_id = $agent ? (int)$agent['id'] : 0;
-    }
+    $agent_id = $agent ? (int)$agent['id'] : 0;
+}
 
-    if ($agent_id) {
-        $stmt = $conn->prepare("
-            SELECT *
-            FROM properties
-            WHERE agent_id = ?
-            ORDER BY created_at DESC
+if ($agent_id) {
+    $stmt = $conn->prepare("
+        SELECT *
+        FROM properties
+        WHERE agent_id = ? OR sold_by_agent_id = ?
+        ORDER BY created_at DESC
+    ");
+    $stmt->bind_param("ii", $agent_id, $agent_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    $stmt->close();
+
+    foreach ($properties as $property) {
+        $stmtImg = $conn->prepare("
+            SELECT image_path 
+            FROM property_images 
+            WHERE property_id = ? 
+            ORDER BY is_primary DESC, id ASC
+            LIMIT 1
         ");
-        $stmt->bind_param("i", $agent_id); // Only one param
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
-        $stmt->close();
+        $stmtImg->bind_param("i", $property['id']);
+        $stmtImg->execute();
+        $resImg = $stmtImg->get_result();
+        $images = $resImg ? $resImg->fetch_all(MYSQLI_ASSOC) : [];
+        $stmtImg->close();
 
-        foreach ($properties as $property) {
-            $stmtImg = $conn->prepare("
-                SELECT image_path 
-                FROM property_images 
-                WHERE property_id = ? 
-                ORDER BY is_primary DESC, id ASC
-            ");
-            $stmtImg->bind_param("i", $property['id']);
-            $stmtImg->execute();
-            $resImg = $stmtImg->get_result();
-            $images = $resImg ? $resImg->fetch_all(MYSQLI_ASSOC) : [];
-            $stmtImg->close();
-
-            $property['images'] = $images;
-            $listings[] = $property;
-        }
+        $property['images'] = $images;
+        $listings[] = $property;
     }
 }
 ?>
@@ -81,6 +83,7 @@ if ($tab === 'my_listings') {
         <a href="?view=direct_profile&tab=my_listings" class="tab <?= ($tab === 'my_listings') ? 'active' : '' ?>">My Listings</a>
         <a href="?view=direct_profile&tab=add_listing" class="tab <?= ($tab === 'add_listing') ? 'active' : '' ?>">Add Listing</a>
         <a href="?view=direct_profile&tab=analytics" class="tab <?= ($tab === 'analytics') ? 'active' : '' ?>">Analytics</a>
+        <a href="?view=direct_profile&tab=review_privileges" class="tab <?= ($tab === 'review_privileges') ? 'active' : '' ?>">Review Privileges</a>
     </nav>
 
     <!-- Content Section -->
@@ -300,6 +303,133 @@ if ($tab === 'my_listings') {
         <?php case 'analytics': ?>
                 <h2>Performance Analytics</h2>
                 <p>Charts, leads, and sales data here.</p>
+        <?php break; ?>
+
+        <?php case 'review_privileges': ?>
+            <h2>Review Privileges</h2>
+
+            <div class="overview-container">
+                <div class="overview-card">
+                    <label for="searchEmail">Search Client by Email:</label>
+                    <input type="email" id="searchEmail" placeholder="Enter email..." />
+                    <button onclick="searchClient()">Search</button>
+                </div>
+            </div>
+
+            <!-- Privilege Modal -->
+            <div id="privilegeModal" class="edit-modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closePrivilegeModal()">&times;</span>
+                    <h2>Grant Review Privilege</h2>
+                    <p id="userNameEmail"></p>
+
+                    <h3>Select a Property</h3>
+                    <div id="propertyList" class="property-list">
+                        <?php if (!empty($listings)): ?>
+                            <?php foreach ($listings as $property): 
+                                $first_img_src = !empty($property['images']) 
+                                    ? "/BatEstateExplorer/" . $property['images'][0]['image_path'] 
+                                    : "/BatEstateExplorer/assets/img/no-image.png"; 
+                            ?>
+                                <div class="property-card" 
+                                    onclick="selectProperty(this, <?= $property['id'] ?>)">
+                                    <img src="<?= $first_img_src ?>" alt="Property Image">
+                                    <h4><?= htmlspecialchars($property['title']) ?></h4>
+                                    <p><?= htmlspecialchars($property['location']) ?></p>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <p>No properties found.</p>
+                        <?php endif; ?>
+                    </div>
+
+                    <button onclick="givePrivilege()">Give Privilege</button>
+                    <button onclick="closePrivilegeModal()">Exit</button>
+                </div>
+            </div>
+
+            <style>
+                .property-list {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                    gap: 1rem;
+                    margin: 1rem 0;
+                }
+                .property-card {
+                    border: 2px solid #ccc;
+                    border-radius: 8px;
+                    padding: 0.5rem;
+                    text-align: center;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                }
+                .property-card img {
+                    width: 100%;
+                    height: 120px;
+                    object-fit: cover;
+                    border-radius: 6px;
+                }
+                .property-card.selected {
+                    border-color: #007bff;
+                    background-color: #eef5ff;
+                }
+            </style>
+
+            <script>
+                let selectedPropertyId = null;
+
+                function searchClient() {
+                    const email = document.getElementById('searchEmail').value.trim();
+                    if (!email) return alert('Please enter an email');
+
+                    fetch(`/BatEstateExplorer/public/api/give_privilege.php?email=${encodeURIComponent(email)}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.error) {
+                                alert(data.error);
+                                return;
+                            }
+
+                            document.getElementById('userNameEmail').textContent =
+                                `${data.name || ''} (${data.email})`;
+
+                            document.getElementById('privilegeModal').style.display = 'block';
+                            window.currentEmail = data.email; // store globally
+                        })
+                        .catch(err => console.error('Search client error:', err));
+                }
+
+                function selectProperty(card, propertyId) {
+                    document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    selectedPropertyId = propertyId;
+                }
+
+                function closePrivilegeModal() {
+                    document.getElementById('privilegeModal').style.display = 'none';
+                    selectedPropertyId = null;
+                }
+
+                function givePrivilege() {
+                    if (!selectedPropertyId) return alert('Please select a property first.');
+
+                    fetch('/BatEstateExplorer/public/api/give_privilege.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `email=${encodeURIComponent(window.currentEmail)}&property_id=${encodeURIComponent(selectedPropertyId)}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Privilege granted successfully!');
+                            closePrivilegeModal();
+                        } else {
+                            alert(data.error || 'Something went wrong.');
+                        }
+                    })
+                    .catch(err => console.error('Give privilege error:', err));
+                }
+            </script>
         <?php break; ?>
 
         <?php default:
