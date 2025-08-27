@@ -1,7 +1,7 @@
 <?php
 // user_home.php
 ob_start();
-
+$userId = $_SESSION['user']['id'] ?? 0;
 // Make sure $conn is your active mysqli connection
 // If not available here, include or require your DB connection file
 // Example:
@@ -114,11 +114,39 @@ $result = $conn->query($sql);
         <div class="modal-actions">
           <button class="btn btn-primary"><i class="fas fa-envelope"></i> Message Agent</button>
           <button class="btn btn-outline"><i class="fas fa-heart"></i> Save to Favorites</button>
+          <button id="leaveReviewBtn" class="btn btn-success" style="display:none;">
+            <i class="fas fa-star"></i> Leave a Review
+          </button>
         </div>
+
       </div>
     </div>
   </div>
 </div>
+
+<div id="reviewModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span class="modal-close" onclick="document.getElementById('reviewModal').style.display='none'">&times;</span>
+    <h3>Leave a Review</h3>
+    <form id="reviewForm">
+      <label>Rating:</label>
+      <select name="rating" required>
+        <option value="">Select...</option>
+        <option value="5">⭐⭐⭐⭐⭐</option>
+        <option value="4">⭐⭐⭐⭐</option>
+        <option value="3">⭐⭐⭐</option>
+        <option value="2">⭐⭐</option>
+        <option value="1">⭐</option>
+      </select>
+      <label>Your Review:</label>
+      <textarea name="review_text" rows="4" required></textarea>
+      <input type="hidden" name="property_id" id="reviewPropertyId">
+      <input type="hidden" name="user_id" id="reviewUserId">
+      <button type="submit" class="btn btn-success">Submit</button>
+    </form>
+  </div>
+</div>
+
 
 <style>
   .modal {
@@ -130,35 +158,45 @@ $result = $conn->query($sql);
     justify-content: center;
     z-index: 999999;
     animation: fadeIn 0.3s ease;
-    padding: 10px; /* Prevents touching screen edges */
+    padding: 10px;
+    overflow-y: auto; /* Allow scrolling if modal content exceeds viewport */
   }
+
   .modal-content {
     background: #fff;
-    max-width: 900px; /* smaller than before */
+    max-width: 900px;
     width: 90%;
+    max-height: 90vh; /* Prevent modal from going outside viewport */
     border-radius: 12px;
     padding: 20px;
     position: relative;
     display: flex;
     flex-direction: column;
+    overflow-y: auto; /* Scroll inside modal if needed */
   }
+
   .modal-body {
     display: flex;
     gap: 20px;
     flex-wrap: wrap;
   }
+
   .modal-image {
     flex: 1 1 45%;
   }
+
   .modal-image img {
     width: 100%;
-    height: auto;
+    max-height: 350px; /* Prevent image from stretching too tall */
     border-radius: 8px;
     object-fit: cover;
   }
+
   .modal-details {
     flex: 1 1 55%;
+    overflow-y: auto;
   }
+
   .modal-close {
     font-size: 26px;
     cursor: pointer;
@@ -172,48 +210,58 @@ $result = $conn->query($sql);
   .modal-close:hover {
     color: #000;
   }
+
   .features span {
     display: inline-block;
     margin-right: 12px;
     font-size: 14px;
   }
+
   .price {
     font-size: 20px;
     color: #28a745;
     margin: 8px 0;
     font-weight: bold;
   }
+
   .modal-actions {
     margin-top: 15px;
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
   }
+
   .btn {
     padding: 8px 14px;
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
   }
+
   .btn-primary {
     background: #007bff;
     color: #fff;
     border: none;
   }
+
   .btn-outline {
     border: 1px solid #ccc;
     background: white;
   }
+
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
   }
 </style>
 
-
 <!-- Swiper CSS & JS -->
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css"/>
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+
+<script>
+  const userId = <?= (int)$userId ?>; // ✅ now available in JavaScript
+</script>
 
 <script>
 let modalSwiper;
@@ -225,41 +273,58 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
       const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(id)}`);
       const data = await res.json();
 
-      if (data.error) {
-        alert(data.error);
+      if (!data.success) {
+        alert(data.error || 'Failed to fetch property.');
         return;
       }
+
+      const prop = data.property;
 
       // Build image slides
       const wrapper = document.getElementById('modalImageWrapper');
       wrapper.innerHTML = '';
-      (data.images && data.images.length ? data.images : [data.image_path]).forEach(img => {
-        wrapper.innerHTML += `
-          <div class="swiper-slide">
-            <img src="${img || '/BatEstateExplorer/assets/images/bg4.jpg'}" style="width:100%;border-radius:8px;">
-          </div>
-        `;
-      });
+      (prop.images && prop.images.length ? prop.images : ['/BatEstateExplorer/assets/images/bg4.jpg'])
+        .forEach(img => {
+          wrapper.innerHTML += `
+            <div class="swiper-slide">
+              <img src="${img}" style="width:100%;border-radius:8px;">
+            </div>
+          `;
+        });
 
       // Init or update Swiper
       if (modalSwiper) {
         modalSwiper.update();
       } else {
         modalSwiper = new Swiper('.modal-swiper', {
-          loop: (data.images && data.images.length > 1),
+          loop: (prop.images && prop.images.length > 1),
           navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
           pagination: { el: '.swiper-pagination', clickable: true },
         });
       }
 
       // Fill details
-      document.getElementById('modalTitle').textContent = data.title;
-      document.getElementById('modalLocation').textContent = `📍 ${data.location}`;
-      document.getElementById('modalPrice').textContent = `₱${parseFloat(data.price).toLocaleString()}`;
-      document.getElementById('modalBedrooms').textContent = data.bedrooms;
-      document.getElementById('modalBathrooms').textContent = data.bathrooms;
-      document.getElementById('modalDescription').textContent = data.description || 'No description available.';
+      document.getElementById('modalTitle').textContent = prop.title;
+      document.getElementById('modalLocation').textContent = `📍 ${prop.location}`;
+      document.getElementById('modalPrice').textContent = `₱${parseFloat(prop.price).toLocaleString()}`;
+      document.getElementById('modalBedrooms').textContent = prop.bedrooms;
+      document.getElementById('modalBathrooms').textContent = prop.bathrooms;
+      document.getElementById('modalDescription').textContent = prop.description || 'No description available.';
 
+      // Review button visibility
+      // Review button visibility
+      const reviewBtn = document.getElementById('leaveReviewBtn');
+      console.log("🔎 Debug: has_privilege =", data.has_privilege, "for property ID", prop.id);
+
+      if (data.has_privilege) {
+        reviewBtn.style.display = 'inline-block';
+        reviewBtn.onclick = () => openReviewModal(prop.id);
+      } else {
+        reviewBtn.style.display = 'none';
+        reviewBtn.onclick = null;
+      }
+
+      // Show modal
       document.getElementById('propertyModal').style.display = 'flex';
     } catch (err) {
       console.error(err);
@@ -268,6 +333,7 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
   });
 });
 
+// Close modal
 document.querySelector('.modal-close').addEventListener('click', () => {
   document.getElementById('propertyModal').style.display = 'none';
 });
@@ -275,6 +341,38 @@ document.querySelector('.modal-close').addEventListener('click', () => {
 document.getElementById('propertyModal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) {
     e.currentTarget.style.display = 'none';
+  }
+});
+
+// Review modal
+function openReviewModal(propertyId) {
+  document.getElementById('reviewPropertyId').value = propertyId;
+  document.getElementById("reviewUserId").value = userId;
+  document.getElementById('reviewModal').style.display = 'flex';
+}
+
+// Review form submit
+document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+
+  try {
+    const res = await fetch('/BatEstateExplorer/public/api/submit_review.php', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      alert('Review submitted successfully!');
+      document.getElementById('reviewModal').style.display = 'none';
+      e.target.reset();
+    } else {
+      alert(data.error || 'Failed to submit review.');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Error submitting review.');
   }
 });
 </script>
