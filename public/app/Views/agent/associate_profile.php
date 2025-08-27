@@ -91,13 +91,14 @@ if ($tab === 'my_listings') {
         switch ($tab):
             case 'my_listings': 
         ?>
-            <h2>My Listings</h2>
+            <h2>My Listings (Associate)</h2>
 
             <div class="overview-container">
             <?php if (!empty($listings)): ?>
                 <?php foreach ($listings as $property): 
                     $ownership = ($property['agent_id'] == $agent_id) ? 'Owned' : 'Shared';
 
+                    // ✅ Grab first uploaded image if available
                     $first_img_src = '';
                     if (!empty($property['images'])) {
                         $first_img_src = "/BatEstateExplorer/" . $property['images'][0]['image_path'];
@@ -112,15 +113,17 @@ if ($tab === 'my_listings') {
 
                         <div class="info-row"><strong>Title:</strong> <span><?= htmlspecialchars($property['title']) ?></span></div>
                         <div class="info-row"><strong>Location:</strong> <span><?= htmlspecialchars($property['location']) ?></span></div>
-                        <div class="info-row"><strong>Price:</strong> <span><?= number_format($property['price'], 2) ?></span></div>
+                        <div class="info-row"><strong>Price:</strong> <span>₱<?= number_format($property['price'], 2) ?></span></div>
                         <div class="info-row"><strong>Bedrooms:</strong> <span><?= htmlspecialchars($property['bedrooms']) ?></span></div>
                         <div class="info-row"><strong>Bathrooms:</strong> <span><?= htmlspecialchars($property['bathrooms']) ?></span></div>
                         <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($property['status']) ?></span></div>
-                        <div class="info-row"><strong>Type:</strong> <span><?= $ownership ?></span></div>
+                        <div class="info-row"><strong>Listing Type:</strong> <span><?= $ownership ?></span></div>
                         
                         <div class="info-row actions">
+                            <!-- Associates can edit -->
                             <a href="javascript:void(0)" class="btn-edit" onclick="openModal(<?= $property['id'] ?>)">Edit</a>
-                            <!-- Delete button -->
+                            
+                            <!-- Delete -->
                             <form method="POST" action="/BatEstateExplorer/public/api/delete_listing.php" style="display:inline;">
                                 <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
                                 <button type="submit" class="btn-delete" 
@@ -130,76 +133,77 @@ if ($tab === 'my_listings') {
                             </form>
                         </div>
                     </div>
+
                     <!-- Edit Modal -->
-                        <div id="editModal-<?= $property['id'] ?>" class="edit-modal">
-                            <div class="modal-content">
-                                <span class="close" onclick="closeModal(<?= $property['id'] ?>)">&times;</span>
-                                
-                                <h2>Edit Listing: <?= htmlspecialchars($property['title']) ?></h2>
-                                
-                                <form id="editForm-<?= $property['id'] ?>" method="POST" action="/BatEstateExplorer/public/api/update_property.php" enctype="multipart/form-data">
-                                    <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
+                    <div id="editModal-<?= $property['id'] ?>" class="edit-modal">
+                        <div class="modal-content">
+                            <span class="close" onclick="closeModal(<?= $property['id'] ?>)">&times;</span>
+                            
+                            <h2>Edit Listing: <?= htmlspecialchars($property['title']) ?></h2>
+                            
+                            <form id="editForm-<?= $property['id'] ?>" method="POST" action="/BatEstateExplorer/public/api/update_property.php" enctype="multipart/form-data">
+                                <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
 
-                                    <label>Title</label>
-                                    <input type="text" name="title" value="<?= htmlspecialchars($property['title']) ?>" required>
+                                <label>Title</label>
+                                <input type="text" name="title" value="<?= htmlspecialchars($property['title']) ?>" required>
 
-                                    <label>Description</label>
-                                    <textarea name="description"><?= htmlspecialchars($property['description']) ?></textarea>
+                                <label>Description</label>
+                                <textarea name="description"><?= htmlspecialchars($property['description']) ?></textarea>
 
-                                    <label>Property Type</label>
-                                    <select name="property_type" required>
-                                        <option value="Lot" <?= $property['property_type']=='Lot'?'selected':'' ?>>Lot</option>
-                                        <option value="Property" <?= $property['property_type']=='Property'?'selected':'' ?>>Property</option>
-                                    </select>
+                                <label>Property Type</label>
+                                <select name="property_type" required>
+                                    <option value="Lot" <?= $property['property_type']=='Lot'?'selected':'' ?>>Lot</option>
+                                    <option value="Property" <?= $property['property_type']=='Property'?'selected':'' ?>>Property</option>
+                                </select>
 
-                                    <label>Location</label>
-                                    <select name="location" required>
-                                        <option value="Lipa City" <?= $property['location']=='Lipa City'?'selected':'' ?>>Lipa City</option>
-                                        <option value="Batangas" <?= $property['location']=='Batangas'?'selected':'' ?>>Batangas</option>
-                                        <!-- Add more options -->
-                                    </select>
+                                <label>Location</label>
+                                <select name="location" required>
+                                    <option value="Lipa City" <?= $property['location']=='Lipa City'?'selected':'' ?>>Lipa City</option>
+                                    <option value="Batangas" <?= $property['location']=='Batangas'?'selected':'' ?>>Batangas</option>
+                                    <!-- Add more options -->
+                                </select>
 
-                                    <label>Price</label>
-                                    <input type="number" step="0.01" name="price" value="<?= $property['price'] ?>" required>
+                                <label>Price</label>
+                                <input type="number" step="0.01" name="price" value="<?= $property['price'] ?>" required>
 
-                                    <label>Bedrooms</label>
-                                    <input type="number" name="bedrooms" value="<?= $property['bedrooms'] ?>">
+                                <label>Bedrooms</label>
+                                <input type="number" name="bedrooms" value="<?= $property['bedrooms'] ?>">
 
-                                    <label>Bathrooms</label>
-                                    <input type="number" name="bathrooms" value="<?= $property['bathrooms'] ?>">
+                                <label>Bathrooms</label>
+                                <input type="number" name="bathrooms" value="<?= $property['bathrooms'] ?>">
 
-                                    <label>Square Meters (sqm)</label>
-                                    <input type="number" step="0.01" name="sqm" value="<?= $property['sqm'] ?>">
+                                <label>Square Meters (sqm)</label>
+                                <input type="number" step="0.01" name="sqm" value="<?= $property['sqm'] ?>">
 
-                                    <label>Lot Size</label>
-                                    <input type="number" step="0.01" name="lot_size" value="<?= $property['lot_size'] ?>">
+                                <label>Lot Size</label>
+                                <input type="number" step="0.01" name="lot_size" value="<?= $property['lot_size'] ?>">
 
-                                    <label>Status</label>
-                                    <select name="status">
-                                        <option value="available" <?= $property['status']=='available'?'selected':'' ?>>Available</option>
-                                        <option value="sold" <?= $property['status']=='sold'?'selected':'' ?>>Sold</option>
-                                        <option value="pending" <?= $property['status']=='pending'?'selected':'' ?>>Pending</option>
-                                    </select>
+                                <label>Status</label>
+                                <select name="status">
+                                    <option value="available" <?= $property['status']=='available'?'selected':'' ?>>Available</option>
+                                    <option value="sold" <?= $property['status']=='sold'?'selected':'' ?>>Sold</option>
+                                    <option value="pending" <?= $property['status']=='pending'?'selected':'' ?>>Pending</option>
+                                </select>
 
-                                    <!-- Existing images -->
-                                    <div class="image-slider">
-                                        <?php foreach ($property['images'] as $img): ?>
-                                            <div class="slider-item">
-                                                <img src="/BatEstateExplorer/<?= $img['image_path'] ?>" alt="Property Image">
-                                                <input type="hidden" name="existing_images[]" value="<?= $img['image_path'] ?>">
-                                                <button type="button" onclick="removeImage(this)">Remove</button>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
+                                <!-- Existing images -->
+                                <div class="image-slider">
+                                    <?php foreach ($property['images'] as $img): ?>
+                                        <div class="slider-item">
+                                            <img src="/BatEstateExplorer/<?= $img['image_path'] ?>" alt="Property Image">
+                                            <input type="hidden" name="existing_images[]" value="<?= $img['image_path'] ?>">
+                                            <button type="button" onclick="removeImage(this)">Remove</button>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
 
-                                    <!-- Add new images -->
-                                    <label>Add Images</label>
-                                    <input type="file" name="new_images[]" multiple>
+                                <!-- Add new images -->
+                                <label>Add Images</label>
+                                <input type="file" name="new_images[]" multiple>
 
-                                    <button type="submit">Update Listing</button>
-                                </form>
-                            </div>
+                                <button type="submit">Update Listing</button>
+                            </form>
                         </div>
+                    </div>
                 <?php endforeach; ?>
             <?php else: ?>
                 <div class="overview-card">
@@ -211,87 +215,75 @@ if ($tab === 'my_listings') {
         <?php break; ?>
 
         <?php case 'add_listing': ?>
-                <h2>Add New Listing</h2>
+            <h2>Add New Listing (Associate)</h2>
 
-                <div class="overview-container">
-                    <div class="overview-card">
-                        <form id="addListingForm" 
-                            action="/BatEstateExplorer/public/api/save_listing.php" 
-                            method="POST" 
-                            enctype="multipart/form-data">
+            <div class="overview-container">
+                <div class="overview-card">
+                    <form id="addListingForm" 
+                        action="/BatEstateExplorer/public/api/save_listing.php" 
+                        method="POST" 
+                        enctype="multipart/form-data">
 
-                            <!-- Property Name -->
-                            <label for="title"><strong>Property Name</strong></label>
-                            <input type="text" id="title" name="title" required>
+                        <label for="title"><strong>Property Name</strong></label>
+                        <input type="text" id="title" name="title" required>
 
-                            <!-- Location -->
-                            <label for="location"><strong>Location</strong></label>
-                            <select id="location" name="location" required>
-                                <option value="">-- Select Location --</option>
-                                <?php 
-                                $locations = ["Lipa City", "Batangas City", "Tanauan City", "Balayan", "Santo Tomas"];
-                                foreach ($locations as $loc): ?>
-                                    <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                        <label for="location"><strong>Location</strong></label>
+                        <select id="location" name="location" required>
+                            <option value="">-- Select Location --</option>
+                            <?php 
+                            $locations = ["Lipa City", "Batangas City", "Tanauan City", "Balayan", "Santo Tomas"];
+                            foreach ($locations as $loc): ?>
+                                <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
+                            <?php endforeach; ?>
+                        </select>
 
-                            <!-- Price -->
-                            <label for="price"><strong>Price (₱)</strong></label>
-                            <input type="number" id="price" name="price" min="0" step="0.01" required>
+                        <label for="price"><strong>Price (₱)</strong></label>
+                        <input type="number" id="price" name="price" min="0" step="0.01" required>
 
-                            <!-- Floor Area -->
-                            <label for="sqm"><strong>Floor Area (sqm)</strong></label>
-                            <input type="number" id="sqm" name="sqm" min="0" step="0.01">
+                        <label for="sqm"><strong>Floor Area (sqm)</strong></label>
+                        <input type="number" id="sqm" name="sqm" min="0" step="0.01">
 
-                            <!-- Lot Size -->
-                            <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
-                            <input type="number" id="lot_size" name="lot_size" min="0" step="0.01">
+                        <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
+                        <input type="number" id="lot_size" name="lot_size" min="0" step="0.01">
 
-                            <!-- Property Type -->
-                            <label for="property_type"><strong>Property Type</strong></label>
-                            <select id="property_type" name="property_type" required>
-                                <option value="">-- Select Type --</option>
-                                <option value="Property">Property</option>
-                                <option value="Lot">Lot</option>
-                            </select>
+                        <label for="property_type"><strong>Property Type</strong></label>
+                        <select id="property_type" name="property_type" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="Property">Property</option>
+                            <option value="Lot">Lot</option>
+                        </select>
 
-                            <!-- Bedrooms -->
-                            <label for="bedrooms"><strong>Bedrooms</strong></label>
-                            <select id="bedrooms" name="bedrooms">
-                                <option value="">-- Select Bedrooms --</option>
-                                <?php for ($i = 0; $i <= 10; $i++): ?>
-                                    <option value="<?= $i ?>"><?= $i ?></option>
-                                <?php endfor; ?>
-                            </select>
+                        <label for="bedrooms"><strong>Bedrooms</strong></label>
+                        <select id="bedrooms" name="bedrooms">
+                            <option value="">-- Select Bedrooms --</option>
+                            <?php for ($i = 0; $i <= 10; $i++): ?>
+                                <option value="<?= $i ?>"><?= $i ?></option>
+                            <?php endfor; ?>
+                        </select>
 
-                            <!-- Bathrooms -->
-                            <label for="bathrooms"><strong>Bathrooms</strong></label>
-                            <select id="bathrooms" name="bathrooms">
-                                <option value="">-- Select Bathrooms --</option>
-                                <?php for ($i = 0; $i <= 10; $i++): ?>
-                                    <option value="<?= $i ?>"><?= $i ?></option>
-                                <?php endfor; ?>
-                            </select>
+                        <label for="bathrooms"><strong>Bathrooms</strong></label>
+                        <select id="bathrooms" name="bathrooms">
+                            <option value="">-- Select Bathrooms --</option>
+                            <?php for ($i = 0; $i <= 10; $i++): ?>
+                                <option value="<?= $i ?>"><?= $i ?></option>
+                            <?php endfor; ?>
+                        </select>
 
-                            <!-- Description -->
-                            <label for="description"><strong>Description</strong></label>
-                            <textarea id="description" name="description" rows="4" required></textarea>
+                        <label for="description"><strong>Description</strong></label>
+                        <textarea id="description" name="description" rows="4" required></textarea>
 
-                            <!-- Image Upload -->
-                            <label for="images"><strong>Property Images</strong></label>
-                            <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
-                                <p>Drag & drop images here or click to browse</p>
-                                <input type="file" id="images" accept="image/*" multiple style="display:none;">
-                            </div>
+                        <label for="images"><strong>Property Images</strong></label>
+                        <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
+                            <p>Drag & drop images here or click to browse</p>
+                            <input type="file" id="images" accept="image/*" multiple style="display:none;">
+                        </div>
 
-                            <!-- Preview Area -->
-                            <div id="imagePreview" class="image-preview" aria-live="polite"></div>
+                        <div id="imagePreview" class="image-preview" aria-live="polite"></div>
 
-                            <!-- Submit -->
-                            <button type="submit" class="btn-submit">Save Listing</button>
-                        </form>
-                    </div>
+                        <button type="submit" class="btn-submit">Save Listing</button>
+                    </form>
                 </div>
+            </div>
         <?php break; ?>
 
         <?php case 'analytics': ?>
