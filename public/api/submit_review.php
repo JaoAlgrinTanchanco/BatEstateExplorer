@@ -2,15 +2,28 @@
 require_once __DIR__ . '/../app/bootstrap.php';
 
 header('Content-Type: application/json');
+if (session_status() === PHP_SESSION_NONE) {
+    session_start(); // only start if not already active
+}
 
-// Get input
-$user_id     = (int)($_POST['user_id'] ?? 0);  // 🔹 user_id must be sent in form
+// --- Get logged in user ID from session ---
+$user_id = (int)($_SESSION['user_id'] ?? 0);
 $property_id = (int)($_POST['property_id'] ?? 0);
 $rating      = (int)($_POST['rating'] ?? 0);
 $review_text = trim($_POST['review_text'] ?? '');
 
+// Debugging if missing
 if (!$user_id || !$property_id || !$rating || !$review_text) {
-    echo json_encode(['error' => 'All fields are required.']);
+    echo json_encode([
+        'error' => 'All fields are required.',
+        'debug' => [
+            'user_id' => $user_id,
+            'property_id' => $property_id,
+            'rating' => $rating,
+            'review_text' => $review_text,
+            'session' => $_SESSION
+        ]
+    ]);
     exit;
 }
 

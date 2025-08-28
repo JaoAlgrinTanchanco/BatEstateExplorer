@@ -141,7 +141,6 @@ $result = $conn->query($sql);
       <label>Your Review:</label>
       <textarea name="review_text" rows="4" required></textarea>
       <input type="hidden" name="property_id" id="reviewPropertyId">
-      <input type="hidden" name="user_id" id="reviewUserId">
       <button type="submit" class="btn btn-success">Submit</button>
     </form>
   </div>
@@ -347,7 +346,6 @@ document.getElementById('propertyModal').addEventListener('click', (e) => {
 // Review modal
 function openReviewModal(propertyId) {
   document.getElementById('reviewPropertyId').value = propertyId;
-  document.getElementById("reviewUserId").value = userId;
   document.getElementById('reviewModal').style.display = 'flex';
 }
 
