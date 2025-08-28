@@ -1,12 +1,8 @@
 <?php
-// C:\xampp\htdocs\BatEstateExplorer\public\api\get_property_details.php
 header('Content-Type: application/json');
 session_start();
 
 require_once __DIR__ . '/../app/bootstrap.php';
-
-// Load logged-in user (if any)
-$user = isset($_SESSION['user']) ? $_SESSION['user'] : null;
 
 // Validate property id
 $property_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
@@ -15,17 +11,13 @@ if ($property_id <= 0) {
     exit;
 }
 
-// Fetch property details
-$sql = "SELECT id, title, description, location, price, bedrooms, bathrooms, sqm, lot_size, status, created_at
+// Fetch property details including agent_id
+$sql = "SELECT id, title, description, location, price, bedrooms, bathrooms, sqm, lot_size, status, created_at, agent_id
         FROM properties
         WHERE id = ?
         LIMIT 1";
 
 $stmt = $conn->prepare($sql);
-if (!$stmt) {
-    echo json_encode(['success' => false, 'error' => 'Database error: ' . $conn->error]);
-    exit;
-}
 $stmt->bind_param("i", $property_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -56,10 +48,10 @@ if (empty($images)) {
 // Check privilege from users.privileges JSON column
 $has_privilege = false;
 $debug_info = [];
+$uid = $_SESSION['user_id'] ?? $_SESSION['user']['id'] ?? null;
 
-if (isset($_SESSION['user_id'])) {  // <-- safer check
-    $uid = (int) $_SESSION['user_id'];
-
+if ($uid) {
+    $uid = (int)$uid;
     $stmt = $conn->prepare("SELECT privileges FROM users WHERE id = ? LIMIT 1");
     $stmt->bind_param("i", $uid);
     $stmt->execute();
@@ -96,7 +88,8 @@ echo json_encode([
         'lot_size' => $property['lot_size'],
         'status' => $property['status'],
         'date_uploaded' => $property['created_at'],
-        'images' => $images
+        'images' => $images,
+        'agent_id' => $property['agent_id'] ?? null
     ],
     'has_privilege' => $has_privilege,
     'debug' => $debug_info

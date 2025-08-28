@@ -112,7 +112,10 @@ $result = $conn->query($sql);
         <p id="modalDescription"></p>
 
         <div class="modal-actions">
-          <button class="btn btn-primary"><i class="fas fa-envelope"></i> Message Agent</button>
+          <button class="btn btn-primary message-agent-btn">
+              <i class="fas fa-envelope"></i> Message Agent
+          </button>
+
           <button class="btn btn-outline"><i class="fas fa-heart"></i> Save to Favorites</button>
           <button id="leaveReviewBtn" class="btn btn-success" style="display:none;">
             <i class="fas fa-star"></i> Leave a Review
@@ -259,17 +262,16 @@ $result = $conn->query($sql);
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 
 <script>
-  const userId = <?= (int)$userId ?>; // ✅ now available in JavaScript
-</script>
+const userId = <?= (int)$userId ?>;
 
-<script>
 let modalSwiper;
 
 document.querySelectorAll('.view-details-btn').forEach(btn => {
   btn.addEventListener('click', async () => {
-    const id = btn.dataset.id;
+    const propertyId = btn.dataset.id;
+
     try {
-      const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(id)}`);
+      const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
       const data = await res.json();
 
       if (!data.success) {
@@ -279,30 +281,30 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
 
       const prop = data.property;
 
-      // Build image slides
+      // Populate images
       const wrapper = document.getElementById('modalImageWrapper');
       wrapper.innerHTML = '';
-      (prop.images && prop.images.length ? prop.images : ['/BatEstateExplorer/assets/images/bg4.jpg'])
-        .forEach(img => {
-          wrapper.innerHTML += `
-            <div class="swiper-slide">
-              <img src="${img}" style="width:100%;border-radius:8px;">
-            </div>
-          `;
-        });
+      const images = (prop.images && prop.images.length) ? prop.images : ['/BatEstateExplorer/assets/images/bg4.jpg'];
+      images.forEach(img => {
+        wrapper.innerHTML += `
+          <div class="swiper-slide">
+            <img src="${img}" style="width:100%;border-radius:8px;">
+          </div>
+        `;
+      });
 
       // Init or update Swiper
       if (modalSwiper) {
         modalSwiper.update();
       } else {
         modalSwiper = new Swiper('.modal-swiper', {
-          loop: (prop.images && prop.images.length > 1),
+          loop: images.length > 1,
           navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
           pagination: { el: '.swiper-pagination', clickable: true },
         });
       }
 
-      // Fill details
+      // Fill property details
       document.getElementById('modalTitle').textContent = prop.title;
       document.getElementById('modalLocation').textContent = `📍 ${prop.location}`;
       document.getElementById('modalPrice').textContent = `₱${parseFloat(prop.price).toLocaleString()}`;
@@ -310,11 +312,8 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
       document.getElementById('modalBathrooms').textContent = prop.bathrooms;
       document.getElementById('modalDescription').textContent = prop.description || 'No description available.';
 
-      // Review button visibility
-      // Review button visibility
+      // Review button
       const reviewBtn = document.getElementById('leaveReviewBtn');
-      console.log("🔎 Debug: has_privilege =", data.has_privilege, "for property ID", prop.id);
-
       if (data.has_privilege) {
         reviewBtn.style.display = 'inline-block';
         reviewBtn.onclick = () => openReviewModal(prop.id);
@@ -323,8 +322,13 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
         reviewBtn.onclick = null;
       }
 
+      // Set agent ID for messaging
+      const messageBtn = document.querySelector('.message-agent-btn');
+      messageBtn.dataset.agentId = prop.agent_id;
+
       // Show modal
       document.getElementById('propertyModal').style.display = 'flex';
+
     } catch (err) {
       console.error(err);
       alert('Failed to load property details.');
@@ -337,10 +341,8 @@ document.querySelector('.modal-close').addEventListener('click', () => {
   document.getElementById('propertyModal').style.display = 'none';
 });
 
-document.getElementById('propertyModal').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) {
-    e.currentTarget.style.display = 'none';
-  }
+document.getElementById('propertyModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
 });
 
 // Review modal
@@ -349,16 +351,13 @@ function openReviewModal(propertyId) {
   document.getElementById('reviewModal').style.display = 'flex';
 }
 
-// Review form submit
-document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+// Submit review
+document.getElementById('reviewForm').addEventListener('submit', async e => {
   e.preventDefault();
   const formData = new FormData(e.target);
 
   try {
-    const res = await fetch('/BatEstateExplorer/public/api/submit_review.php', {
-      method: 'POST',
-      body: formData
-    });
+    const res = await fetch('/BatEstateExplorer/public/api/submit_review.php', { method: 'POST', body: formData });
     const data = await res.json();
 
     if (data.success) {
@@ -372,5 +371,14 @@ document.getElementById('reviewForm').addEventListener('submit', async (e) => {
     console.error(err);
     alert('Error submitting review.');
   }
+});
+
+// Message Agent button
+document.querySelectorAll('.message-agent-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const agentId = btn.dataset.agentId;
+    if (!agentId) return alert('Agent not found.');
+    window.open(`/BatEstateExplorer/public/message.php?agent_id=${agentId}`, '_blank');
+  });
 });
 </script>
