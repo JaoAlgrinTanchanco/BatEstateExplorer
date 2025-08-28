@@ -525,6 +525,67 @@ $stmt->close();
                         <button onclick="closePrivilegeModal()">Exit</button>
                     </div>
                 </div>
+
+                <script>
+                    // Global variables
+                    let selectedPropertyId = null;
+                    window.currentEmail = null;
+
+                    // Search client by email
+                    window.searchClient = function() {
+                        const email = document.getElementById('searchEmail').value.trim();
+                        if (!email) return alert('Please enter an email');
+
+                        fetch(`/BatEstateExplorer/public/api/give_privilege.php?email=${encodeURIComponent(email)}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.error) return alert(data.error);
+
+                                document.getElementById('userNameEmail').textContent =
+                                    `${data.name || ''} (${data.email})`;
+
+                                document.getElementById('privilegeModal').style.display = 'block';
+                                window.currentEmail = data.email;
+                            })
+                            .catch(err => console.error('Search client error:', err));
+                    };
+
+                    // Select a property card
+                    window.selectProperty = function(card, propertyId) {
+                        document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        selectedPropertyId = propertyId;
+                    };
+
+                    // Close privilege modal
+                    window.closePrivilegeModal = function() {
+                        document.getElementById('privilegeModal').style.display = 'none';
+                        selectedPropertyId = null;
+                    };
+
+                    // Give privilege to selected client for selected property
+                    window.givePrivilege = function() {
+                        if (!selectedPropertyId) return alert('Please select a property first.');
+                        if (!window.currentEmail) return alert('No client selected.');
+
+                        fetch('/BatEstateExplorer/public/api/give_privilege.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: `email=${encodeURIComponent(window.currentEmail)}&property_id=${encodeURIComponent(selectedPropertyId)}`
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('Privilege granted successfully!');
+                                closePrivilegeModal();
+                            } else {
+                                alert(data.error || 'Something went wrong.');
+                            }
+                        })
+                        .catch(err => console.error('Give privilege error:', err));
+                    };
+                </script>
+
             <?php break; ?>
 
         <?php default:
@@ -905,113 +966,5 @@ $stmt->close();
                 .catch(err => console.error(err));
         });
     });
-    // ===== Review Privileges Tab =====
-function searchClient() {
-    const email = document.getElementById('searchEmail').value;
-    if (!email) return alert('Enter an email');
-
-    fetch(`/BatEstateExplorer/public/api/get_user.php?email=${encodeURIComponent(email)}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) return alert(data.error);
-
-            const tableBody = document.getElementById('clientsTable');
-            tableBody.innerHTML = `
-                <tr>
-                    <td>${data.first_name} ${data.last_name}</td>
-                    <td>${data.email}</td>
-                    <td>${data.privilege_tag || '-'}</td>
-                    <td>
-                        <button onclick="openPrivilegeModal('${data.first_name} ${data.last_name}', '${data.email}')">Give Privilege</button>
-                    </td>
-                </tr>
-            `;
-        })
-        .catch(err => console.error(err));
-}
-
-function openPrivilegeModal(name, email) {
-    document.getElementById('userNameEmail').textContent = name + " (" + email + ")";
-    document.getElementById('privilegeModal').style.display = 'block';
-    window.currentEmail = email;
-}
-
-function closePrivilegeModal() {
-    document.getElementById('privilegeModal').style.display = 'none';
-}
-
-function givePrivilege() {
-    const propertyId = document.getElementById('propertyIdInput').value;
-    if (!propertyId) return alert('Enter a property ID');
-
-    fetch('/BatEstateExplorer/public/api/give_privilege.php', {
-        method: 'POST',
-        body: new URLSearchParams({ email: window.currentEmail, property_id: propertyId })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert('Privilege granted!');
-            closePrivilegeModal();
-            searchClient(); // refresh table
-        } else {
-            alert(data.error);
-        }
-    });
-}
-let selectedPropertyId = null;
-
-function searchClient() {
-    const email = document.getElementById('searchEmail').value.trim();
-    if (!email) return alert('Please enter an email');
-
-    fetch(`/BatEstateExplorer/public/api/give_privilege.php?email=${encodeURIComponent(email)}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
-                return;
-            }
-
-            document.getElementById('userNameEmail').textContent =
-                `${data.name || ''} (${data.email})`;
-
-            document.getElementById('privilegeModal').style.display = 'block';
-            window.currentEmail = data.email; // store globally
-        })
-        .catch(err => console.error('Search client error:', err));
-}
-
-function selectProperty(card, propertyId) {
-    document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    selectedPropertyId = propertyId;
-}
-
-function closePrivilegeModal() {
-    document.getElementById('privilegeModal').style.display = 'none';
-    selectedPropertyId = null;
-}
-
-function givePrivilege() {
-    if (!selectedPropertyId) return alert('Please select a property first.');
-
-    fetch('/BatEstateExplorer/public/api/give_privilege.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `email=${encodeURIComponent(window.currentEmail)}&property_id=${encodeURIComponent(selectedPropertyId)}`
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert('Privilege granted successfully!');
-            closePrivilegeModal();
-        } else {
-            alert(data.error || 'Something went wrong.');
-        }
-    })
-    .catch(err => console.error('Give privilege error:', err));
-}
-
 });
 </script>
