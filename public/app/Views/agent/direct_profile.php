@@ -2,41 +2,45 @@
 if (!isset($user)) die('Access denied.');
 
 // Display flash messages
-if (!empty($_SESSION['flash_success'])): ?>
-    <div class="alert alert-success">
-        <?= $_SESSION['flash_success']; unset($_SESSION['flash_success']); ?>
-    </div>
-<?php endif; ?>
+foreach (['success', 'error'] as $type) {
+    if (!empty($_SESSION["flash_$type"])): ?>
+        <div class="alert alert-<?= $type ?>">
+            <?= $_SESSION["flash_$type"]; unset($_SESSION["flash_$type"]); ?>
+        </div>
+<?php endif;
+}
 
-<?php if (!empty($_SESSION['flash_error'])): ?>
-    <div class="alert alert-danger">
-        <?= $_SESSION['flash_error']; unset($_SESSION['flash_error']); ?>
-    </div>
-<?php endif; ?>
-
-<?php
 // Detect active tab
 $tab = $_GET['tab'] ?? 'overview';
 
-// 🔹 Fetch agent's properties once (works for both listings + privilege modal)
+// 🔹 Initialize listings array
 $listings = [];
 
+// 🔹 Determine agent_id
+$agent_id = 0;
 if ($user['user_type'] === 'direct') {
-    // Direct agents: their user_id is the agent_id
-    $agent_id = (int)$user['id'];
+    $agent_id = (int)$user['id']; // direct agents: user_id is agent_id
 } else {
-    // Associates: map user -> agent
-    $stmtAgent = $conn->prepare("SELECT id FROM agents WHERE user_id = ?");
-    $stmtAgent->bind_param("i", $user['id']);
-    $stmtAgent->execute();
-    $res = $stmtAgent->get_result();
+    // associates: fetch agent mapping
+    $stmt = $conn->prepare("SELECT id FROM agents WHERE user_id = ?");
+    $stmt->bind_param("i", $user['id']);
+    $stmt->execute();
+    $res = $stmt->get_result();
     $agent = $res ? $res->fetch_assoc() : null;
-    $stmtAgent->close();
+    $stmt->close();
 
     $agent_id = $agent ? (int)$agent['id'] : 0;
 }
 
+// Initialize analytics variables
+$avg_rating = 0;
+$total_reviews = 0;
+$reviews = [];
+
+// Fetch agent's properties
+$listings = [];
 if ($agent_id) {
+    // Fetch properties
     $stmt = $conn->prepare("
         SELECT *
         FROM properties
@@ -45,15 +49,15 @@ if ($agent_id) {
     ");
     $stmt->bind_param("ii", $agent_id, $agent_id);
     $stmt->execute();
-    $result = $stmt->get_result();
-    $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    $res = $stmt->get_result();
+    $properties = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     $stmt->close();
 
     foreach ($properties as $property) {
         $stmtImg = $conn->prepare("
-            SELECT image_path 
-            FROM property_images 
-            WHERE property_id = ? 
+            SELECT image_path
+            FROM property_images
+            WHERE property_id = ?
             ORDER BY is_primary DESC, id ASC
             LIMIT 1
         ");
@@ -66,7 +70,43 @@ if ($agent_id) {
         $property['images'] = $images;
         $listings[] = $property;
     }
+
+    // If Analytics tab, fetch reviews and rating
+    if ($tab === 'analytics') {
+        // Average rating & total reviews
+        $stmt = $conn->prepare("
+            SELECT AVG(pr.rating) AS avg_rating, COUNT(*) AS total_reviews
+            FROM property_reviews pr
+            JOIN properties p ON pr.property_id = p.id
+            WHERE p.agent_id = ?
+        ");
+        $stmt->bind_param("i", $agent_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $avg_rating = $row['avg_rating'] ? round($row['avg_rating'], 1) : 0;
+        $total_reviews = $row['total_reviews'] ?? 0;
+        $stmt->close();
+
+        // Fetch reviews
+        $stmt = $conn->prepare("
+            SELECT pr.rating, pr.review_text, u.first_name, u.last_name, u.email, p.title, pi.image_path
+            FROM property_reviews pr
+            JOIN users u ON pr.user_id = u.id
+            JOIN properties p ON pr.property_id = p.id
+            LEFT JOIN property_images pi 
+                ON pi.property_id = p.id AND pi.is_primary = 1
+            WHERE p.agent_id = ?
+            ORDER BY pr.created_at DESC
+        ");
+        $stmt->bind_param("i", $agent_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $reviews = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        $stmt->close();
+    }
 }
+
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_profile_tab.css">
@@ -302,7 +342,44 @@ if ($agent_id) {
 
         <?php case 'analytics': ?>
                 <h2>Performance Analytics</h2>
-                <p>Charts, leads, and sales data here.</p>
+
+                <div class="analytics-top">
+                    <h1><?= $avg_rating ?></h1>
+                    <div class="stars">
+                        <?php for ($i=1; $i<=5; $i++): ?>
+                            <span class="star <?= $i <= round($avg_rating) ? 'filled' : '' ?>">★</span>
+                        <?php endfor; ?>
+                    </div>
+                    <p><?= $total_reviews ?> Review<?= $total_reviews != 1 ? 's' : '' ?></p>
+                </div>
+
+                <div class="review-cards">
+                    <?php if (!empty($reviews)): ?>
+                        <?php foreach($reviews as $r): 
+                            $user_name = trim($r['first_name'] . ' ' . $r['last_name']);
+                            $image_path = !empty($r['image_path']) ? "/BatEstateExplorer/" . $r['image_path'] : '/assets/images/default.jpg';
+                        ?>
+                        <div class="review-card">
+                            <div class="review-left">
+                                <h4><?= htmlspecialchars($user_name) ?></h4>
+                                <p><?= htmlspecialchars($r['email']) ?></p>
+                                <div class="stars">
+                                    <?php for ($i=1; $i<=5; $i++): ?>
+                                        <span class="star <?= $i <= $r['rating'] ? 'filled' : '' ?>">★</span>
+                                    <?php endfor; ?>
+                                </div>
+                                <p><?= nl2br(htmlspecialchars($r['review_text'])) ?></p>
+                            </div>
+                            <div class="review-right">
+                                <img src="<?= htmlspecialchars($image_path) ?>" alt="<?= htmlspecialchars($r['title']) ?>">
+                                <p><?= htmlspecialchars($r['title']) ?></p>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p>No reviews found for your properties.</p>
+                    <?php endif; ?>
+                </div>
         <?php break; ?>
 
         <?php case 'review_privileges': ?>
@@ -535,6 +612,83 @@ if ($agent_id) {
         <?php endswitch; ?>
     </section>
 </div>
+
+<style>
+/* Property Grid */
+.property-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+    box-sizing: border-box;
+}
+
+/* Property Card */
+.property-card {
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.property-card img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.property-card.selected {
+    border-color: #007bff;
+    background-color: #eef5ff;
+    transform: scale(1.02);
+}
+
+/* Review Card */
+.review-card {
+    display: flex;
+    gap: 20px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background-color: #fff;
+    transition: box-shadow 0.2s ease;
+}
+
+.review-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.review-left { flex: 2; }
+.review-right { flex: 1; text-align: center; }
+
+.review-right img {
+    width: 100px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+/* Stars */
+.stars {
+    display: flex;
+    gap: 2px;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.stars span {
+    color: #ccc;
+    display: inline-block;
+}
+
+.stars span.filled {
+    color: gold !important;
+}
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
