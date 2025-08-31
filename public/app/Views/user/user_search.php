@@ -227,7 +227,11 @@ $conn->close();
             <p id="modalDescription"></p>
 
             <div class="modal-actions">
-              <button class="btn btn-primary messageAgentBtn">
+              <!-- Message button -->
+              <button 
+                  type="button" 
+                  class="btn btn-primary messageAgentBtn" 
+                  data-agent-id="">
                   <i class="fas fa-envelope"></i> Message Agent
               </button>
 
@@ -482,16 +486,16 @@ $conn->close();
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  /** ------------------------------- 
- * 🔍 SEARCH FORM (AJAX)
- * ------------------------------- */
+  /** -------------------------------
+   * 🔍 SEARCH PROPERTIES (AJAX)
+   * ------------------------------- */
   const searchBtn = document.getElementById('searchForm1');
   if (searchBtn) {
     searchBtn.addEventListener('click', async (e) => {
       e.preventDefault();
 
-      // Collect filters from all dropdowns
-      const params = ['location', 'property_type', 'price_range', 'bedrooms', 'bathrooms', 'size']
+      // Collect filters
+      const params = ['location','property_type','price_range','bedrooms','bathrooms','size']
         .reduce((obj, id) => {
           const el = document.getElementById(id);
           obj[id] = el ? el.value : '';
@@ -507,11 +511,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const grid = document.getElementById('propertiesGrid');
         if (!grid) {
-          console.error("❌ propertiesGrid element not found in DOM");
+          console.error("❌ propertiesGrid not found");
           return;
         }
 
-        if (!data.properties || data.properties.length === 0) {
+        if (!data.properties?.length) {
           grid.innerHTML = '<p>No properties available at the moment.</p>';
           return;
         }
@@ -535,10 +539,8 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `).join('');
 
-        // Re-bind modal handlers since cards got replaced
-        if (typeof attachViewDetailHandlers === 'function') {
-          attachViewDetailHandlers();
-        }
+        // Re-bind view details handlers
+        attachViewDetailHandlers();
 
       } catch (err) {
         console.error('❌ Fetch error:', err);
@@ -561,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /** -------------------------------
-   * 🏠 MODAL HANDLING
+   * 🏠 PROPERTY MODAL HANDLING
    * ------------------------------- */
   let modalSwiper;
 
@@ -583,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
           // Build image slides
           const wrapper = document.getElementById('modalImageWrapper');
           wrapper.innerHTML = '';
-          const images = (prop.images && prop.images.length) ? prop.images : ['/BatEstateExplorer/assets/images/bg4.jpg'];
+          const images = (prop.images?.length) ? prop.images : ['/BatEstateExplorer/assets/images/bg4.jpg'];
           images.forEach(img => {
             wrapper.innerHTML += `
               <div class="swiper-slide">
@@ -603,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
           }
 
-          // Fill details
+          // Fill property details
           document.getElementById('modalTitle').textContent = prop.title;
           document.getElementById('modalLocation').textContent = `📍 ${prop.location}`;
           document.getElementById('modalPrice').textContent = `₱${parseFloat(prop.price).toLocaleString()}`;
@@ -611,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('modalBathrooms').textContent = prop.bathrooms;
           document.getElementById('modalDescription').textContent = prop.description || 'No description available.';
 
-          // Review button
+          // Review button toggle
           const reviewBtn = document.getElementById('leaveReviewBtn');
           if (data.has_privilege) {
             reviewBtn.style.display = 'inline-block';
@@ -621,10 +623,14 @@ document.addEventListener('DOMContentLoaded', () => {
             reviewBtn.onclick = null;
           }
 
-          // Save agent id for messaging
+          // ✅ Save agent id for messaging
           const messageBtn = document.querySelector('.messageAgentBtn');
           if (messageBtn) {
             messageBtn.dataset.agentId = prop.agent_id;
+            console.log("✅ Agent ID set:", prop.agent_id);
+
+            // Bind messaging click (replace old one each time)
+            messageBtn.onclick = () => handleMessageClick(prop.agent_id);
           }
 
           // Show modal
@@ -678,23 +684,25 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /** -------------------------------
- * ✉️ MESSAGE AGENT
- * ------------------------------- */
-  document.querySelectorAll('.messageAgentBtn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const agentId = btn.dataset.agentId;
-      if (!agentId) { 
-        alert("Agent not found."); 
-        return; 
-      }
-      window.open(
-        `/BatEstateExplorer/public/message.php?agent_id=${encodeURIComponent(agentId)}`, 
-        '_blank'
-      );
-    });
-  });
+   * 💬 MESSAGE BUTTON HANDLER
+   * ------------------------------- */
+  function handleMessageClick(agentId) {
+    console.log("🔍 Clicked Message Button");
+    console.log("Agent ID from dataset:", agentId);
 
-  // Initial binding
+    if (!agentId) {
+      alert("Agent not found.");
+      console.warn("⚠️ No agentId found for message button");
+      return;
+    }
+
+    const url = `/BatEstateExplorer/public/message.php?agent_id=${encodeURIComponent(agentId)}`;
+    console.log("➡️ Redirecting to:", url);
+    window.open(url, "_blank");
+  }
+
+  // Initial binding for any pre-rendered cards
   attachViewDetailHandlers();
 });
 </script>
+
