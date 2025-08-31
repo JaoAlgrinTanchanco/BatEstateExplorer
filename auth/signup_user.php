@@ -1,5 +1,5 @@
 <?php
-// signup_user.php: Handles AJAX signup from Auth Modal
+// signup_user.php: Handles AJAX signup
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/database.php';
 
@@ -12,12 +12,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Get and sanitize input
-$name = isset($_POST['name']) ? trim($_POST['name']) : '';
-$email = isset($_POST['email']) ? trim($_POST['email']) : '';
-$password = isset($_POST['password']) ? $_POST['password'] : '';
+$first_name = isset($_POST['first_name']) ? trim($_POST['first_name']) : '';
+$last_name  = isset($_POST['last_name']) ? trim($_POST['last_name']) : '';
+$email      = isset($_POST['email']) ? trim($_POST['email']) : '';
+$password   = isset($_POST['password']) ? $_POST['password'] : '';
+$phone      = isset($_POST['phone']) ? trim($_POST['phone']) : '';
 
-if (!$name || !$email || !$password) {
-    $response['message'] = 'All fields are required.';
+if (!$first_name || !$last_name || !$email || !$password) {
+    $response['message'] = 'All required fields must be filled.';
     echo json_encode($response);
     exit;
 }
@@ -45,19 +47,17 @@ if (mysqli_num_rows($result) > 0) {
     exit;
 }
 
-// Split name into first and last (simple split)
-$parts = explode(' ', $name, 2);
-$first_name = $parts[0];
-$last_name = isset($parts[1]) ? $parts[1] : '';
-
 // Hash password
 $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
 // Insert into users table
-$stmt = mysqli_prepare($conn, 'INSERT INTO users (email, password_hash, first_name, last_name, user_type, status) VALUES (?, ?, ?, ?, ?, ?)');
-$user_type = 'buyer'; // Default for modal signup
-$status = 'active';
-mysqli_stmt_bind_param($stmt, 'ssssss', $email, $password_hash, $first_name, $last_name, $user_type, $status);
+$stmt = mysqli_prepare($conn, 'INSERT INTO users 
+    (email, password_hash, first_name, last_name, phone, user_type, status) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)');
+$user_type = 'user';   // ✅ default user type
+$status = 'active';    // ✅ default status
+mysqli_stmt_bind_param($stmt, 'sssssss', $email, $password_hash, $first_name, $last_name, $phone, $user_type, $status);
+
 if (!mysqli_stmt_execute($stmt)) {
     $response['message'] = 'Database error: ' . mysqli_stmt_error($stmt);
     echo json_encode($response);
