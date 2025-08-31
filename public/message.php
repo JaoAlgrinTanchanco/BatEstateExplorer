@@ -1,41 +1,50 @@
 <?php
-// message.php
+    session_start();
+    require_once __DIR__ . '/app/bootstrap.php';
 
-session_start();
-require_once __DIR__ . '/app/bootstrap.php';
+    // ✅ Check for logged-in user (support both session formats)
+    if (isset($_SESSION['user']['id'])) {
+        $user_id = (int) $_SESSION['user']['id'];
+    } elseif (isset($_SESSION['user_id'])) {
+        $user_id = (int) $_SESSION['user_id'];
+    } else {
+        die("User not logged in.");
+    }
 
-// Logged-in user ID (must be set)
-if (!isset($_SESSION['user']['id'])) {
-    die("User not logged in.");
-}
-$user_id = (int) $_SESSION['user']['id'];
+    // ✅ Get agent_id from GET or fallback to first available agent
+    $agent_id = isset($_GET['agent_id']) ? (int)$_GET['agent_id'] : null;
 
-// Get agent_id from GET
-$agent_id = isset($_GET['agent_id']) ? (int)$_GET['agent_id'] : null;
-if (!$agent_id) {
-    die("Agent not specified.");
-}
+    if (!$agent_id) {
+        // fetch the first available agent (direct or associate)
+        $res = $conn->query("SELECT id FROM users WHERE user_type IN ('direct_agent','associate_agent') LIMIT 1");
+        if ($row = $res->fetch_assoc()) {
+            $agent_id = (int) $row['id'];
+        } else {
+            die("No agents available.");
+        }
+    }
 
-// Fetch agent name from DB
-$stmt = $conn->prepare("SELECT id, name FROM users WHERE id = ? AND role = 'agent' LIMIT 1");
-$stmt->bind_param("i", $agent_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$agent = $result->fetch_assoc();
-$stmt->close();
+    // ✅ Fetch agent info from DB
+    $stmt = $conn->prepare("SELECT id, first_name, last_name FROM users WHERE id = ? AND user_type IN ('direct_agent','associate_agent') LIMIT 1");
+    $stmt->bind_param("i", $agent_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $agent = $result->fetch_assoc();
+    $stmt->close();
 
-if (!$agent) {
-    die("Agent not found.");
-}
-$agent_name = $agent['name'];
+    if (!$agent) {
+        die("Agent not found.");
+    }
+    $agent_name = trim($agent['first_name'] . " " . $agent['last_name']);
 
-// Fetch all agents for conversations list
-$agents_list = [];
-$res = $conn->query("SELECT id, name FROM users WHERE role = 'agent'");
-while ($row = $res->fetch_assoc()) {
-    $agents_list[$row['id']] = $row['name'];
-}
+    // ✅ Fetch all agents for conversations list
+    $agents_list = [];
+    $res = $conn->query("SELECT id, CONCAT(first_name,' ',last_name) AS name FROM users WHERE user_type IN ('direct_agent','associate_agent')");
+    while ($row = $res->fetch_assoc()) {
+        $agents_list[$row['id']] = $row['name'];
+    }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -43,21 +52,21 @@ while ($row = $res->fetch_assoc()) {
 <title>Chat with <?= htmlspecialchars($agent_name) ?></title>
 <link rel="stylesheet" href="/assets/css/user_dashboard.css">
 <style>
-body { margin:0;font-family:Arial,sans-serif; }
-.chat-container { display:flex;height:100vh; }
-.conversations-list { width:300px;border-right:1px solid #ddd;overflow-y:auto;padding:10px;background:#f9f9f9; }
-.conversations-list h3 { margin-top:0; }
-.conversation-item { padding:10px;border-bottom:1px solid #eee; cursor:pointer; }
-.conversation-item.unread { background:#eef6ff; font-weight:bold; }
-.chat-window { flex:1; display:flex; flex-direction:column; }
-.messages { flex:1; padding:20px; overflow-y:auto; background:#fff; }
-.message { margin-bottom:15px; }
-.message .sender { font-weight:bold; }
-.message .text { margin:5px 0; }
-.chat-input { display:flex; border-top:1px solid #ddd; padding:10px; background:#f1f1f1; }
-.chat-input input[type="text"] { flex:1; padding:10px; border:1px solid #ccc; border-radius:4px; }
-.chat-input button { padding:10px 15px; margin-left:10px; border:none; background:#007bff; color:white; border-radius:4px; cursor:pointer; }
-.chat-input button:hover { background:#0056b3; }
+    body { margin:0;font-family:Arial,sans-serif; }
+    .chat-container { display:flex;height:100vh; }
+    .conversations-list { width:300px;border-right:1px solid #ddd;overflow-y:auto;padding:10px;background:#f9f9f9; }
+    .conversations-list h3 { margin-top:0; }
+    .conversation-item { padding:10px;border-bottom:1px solid #eee; cursor:pointer; }
+    .conversation-item.unread { background:#eef6ff; font-weight:bold; }
+    .chat-window { flex:1; display:flex; flex-direction:column; }
+    .messages { flex:1; padding:20px; overflow-y:auto; background:#fff; }
+    .message { margin-bottom:15px; }
+    .message .sender { font-weight:bold; }
+    .message .text { margin:5px 0; }
+    .chat-input { display:flex; border-top:1px solid #ddd; padding:10px; background:#f1f1f1; }
+    .chat-input input[type="text"] { flex:1; padding:10px; border:1px solid #ccc; border-radius:4px; }
+    .chat-input button { padding:10px 15px; margin-left:10px; border:none; background:#007bff; color:white; border-radius:4px; cursor:pointer; }
+    .chat-input button:hover { background:#0056b3; }
 </style>
 </head>
 <body>
@@ -91,34 +100,34 @@ body { margin:0;font-family:Arial,sans-serif; }
 </div>
 
 <script>
-const sendBtn = document.getElementById('sendBtn');
-const messageInput = document.getElementById('messageInput');
-const messagesContainer = document.getElementById('messages');
+    const sendBtn = document.getElementById('sendBtn');
+    const messageInput = document.getElementById('messageInput');
+    const messagesContainer = document.getElementById('messages');
 
-// Send message
-sendBtn.addEventListener('click', () => {
-    const message = messageInput.value.trim();
-    if (!message) return;
-    const msgDiv = document.createElement('div');
-    msgDiv.classList.add('message');
-    msgDiv.innerHTML = `<div class="sender">You:</div><div class="text">${message}</div>`;
-    messagesContainer.appendChild(msgDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    messageInput.value = '';
-});
-
-// Enter key
-messageInput.addEventListener('keypress', e => {
-    if (e.key === 'Enter') sendBtn.click();
-});
-
-// Switch conversations
-document.querySelectorAll('.conversation-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const agentId = item.dataset.agentId;
-        window.location.href = `/BatEstateExplorer/public/message.php?agent_id=${agentId}`;
+    // Send message
+    sendBtn.addEventListener('click', () => {
+        const message = messageInput.value.trim();
+        if (!message) return;
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message');
+        msgDiv.innerHTML = `<div class="sender">You:</div><div class="text">${message}</div>`;
+        messagesContainer.appendChild(msgDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        messageInput.value = '';
     });
-});
+
+    // Enter key
+    messageInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') sendBtn.click();
+    });
+
+    // Switch conversations
+    document.querySelectorAll('.conversation-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const agentId = item.dataset.agentId;
+            window.location.href = `/BatEstateExplorer/public/message.php?agent_id=${agentId}`;
+        });
+    });
 </script>
 
 </body>
