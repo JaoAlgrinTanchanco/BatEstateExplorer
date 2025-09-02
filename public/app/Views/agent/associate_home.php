@@ -297,41 +297,45 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
       const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(id)}`);
       const data = await res.json();
 
-      if (data.error) {
-        alert(data.error);
+      if (!data.success || !data.property) {
+        alert(data.error || "Failed to fetch property details.");
         return;
       }
+
+      const property = data.property; // ✅ Extract property object
 
       // Build image slides
       const wrapper = document.getElementById('modalImageWrapper');
       wrapper.innerHTML = '';
-      (data.images && data.images.length ? data.images : [data.image_path]).forEach(img => {
-        wrapper.innerHTML += `
-          <div class="swiper-slide">
-            <img src="${img || '/BatEstateExplorer/assets/images/bg4.jpg'}" style="width:100%;border-radius:8px;">
-          </div>
-        `;
-      });
+      (property.images && property.images.length ? property.images : ["/BatEstateExplorer/assets/images/bg4.jpg"])
+        .forEach(img => {
+          wrapper.innerHTML += `
+            <div class="swiper-slide">
+              <img src="${img}" style="width:100%;border-radius:8px;">
+            </div>
+          `;
+        });
 
       // Init or update Swiper
       if (modalSwiper) {
         modalSwiper.update();
       } else {
         modalSwiper = new Swiper('.modal-swiper', {
-          loop: (data.images && data.images.length > 1),
+          loop: (property.images && property.images.length > 1),
           navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
           pagination: { el: '.swiper-pagination', clickable: true },
         });
       }
 
-      // Fill details
-      document.getElementById('modalTitle').textContent = data.title;
-      document.getElementById('modalLocation').textContent = `📍 ${data.location}`;
-      document.getElementById('modalPrice').textContent = `₱${parseFloat(data.price).toLocaleString()}`;
-      document.getElementById('modalBedrooms').textContent = data.bedrooms;
-      document.getElementById('modalBathrooms').textContent = data.bathrooms;
-      document.getElementById('modalDescription').textContent = data.description || 'No description available.';
+      // ✅ Fill modal details with safe fallbacks
+      document.getElementById('modalTitle').textContent       = property.title || "Untitled";
+      document.getElementById('modalLocation').textContent    = `📍 ${property.location || "Unknown"}`;
+      document.getElementById('modalPrice').textContent       = property.price ? `₱${Number(property.price).toLocaleString()}` : "₱0";
+      document.getElementById('modalBedrooms').textContent    = property.bedrooms ?? 0;
+      document.getElementById('modalBathrooms').textContent   = property.bathrooms ?? 0;
+      document.getElementById('modalDescription').textContent = property.description || "No description available.";
 
+      // Show modal
       document.getElementById('propertyModal').style.display = 'flex';
     } catch (err) {
       console.error(err);
@@ -340,10 +344,12 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
   });
 });
 
+// Close modal
 document.querySelector('.modal-close').addEventListener('click', () => {
   document.getElementById('propertyModal').style.display = 'none';
 });
 
+// Close when clicking outside
 document.getElementById('propertyModal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) {
     e.currentTarget.style.display = 'none';

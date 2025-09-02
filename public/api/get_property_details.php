@@ -73,24 +73,26 @@ if ($uid) {
     $debug_info['error'] = 'No user_id in session';
 }
 
-// Send response
+// ✅ Prepare safe response with defaults
+$property_data = [
+    'id'           => (int)$property['id'],
+    'title'        => $property['title'] ?: 'No Title',
+    'description'  => $property['description'] ?: 'No description available.',
+    'location'     => $property['location'] ?: 'Location not available',
+    'price'        => isset($property['price']) ? (float)$property['price'] : 0,
+    'bedrooms'     => isset($property['bedrooms']) ? (int)$property['bedrooms'] : 0,
+    'bathrooms'    => isset($property['bathrooms']) ? (int)$property['bathrooms'] : 0,
+    'sqm'          => isset($property['sqm']) ? (float)$property['sqm'] : 0,
+    'lot_size'     => isset($property['lot_size']) ? (float)$property['lot_size'] : 0,
+    'status'       => $property['status'] ?? 'pending',
+    'date_uploaded'=> $property['created_at'] ?? null,
+    'images'       => $images,
+    'agent_id'     => $property['agent_id'] ?? null
+];
+
 echo json_encode([
-    'success' => true,
-    'property' => [
-        'id' => $property['id'],
-        'title' => $property['title'],
-        'description' => $property['description'],
-        'location' => $property['location'],
-        'price' => $property['price'],
-        'bedrooms' => $property['bedrooms'],
-        'bathrooms' => $property['bathrooms'],
-        'sqm' => $property['sqm'],
-        'lot_size' => $property['lot_size'],
-        'status' => $property['status'],
-        'date_uploaded' => $property['created_at'],
-        'images' => $images,
-        'agent_id' => $property['agent_id'] ?? null
-    ],
+    'success'       => true,
+    'property'      => $property_data,
     'has_privilege' => $has_privilege,
-    'debug' => $debug_info
+    'debug'         => $debug_info
 ]);
