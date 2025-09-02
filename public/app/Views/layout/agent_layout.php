@@ -49,6 +49,24 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
       </a>
     <?php endif; ?>
 
+    <!-- Message Button -->
+    <a href="/BatEstateExplorer/public/agent_message.php" target="_blank" class="message-btn" title="Messages" style="
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        margin-right: 10px;
+        font-size: 1.2rem;
+        transition: background 0.2s;
+    ">
+        <i class="fa-solid fa-envelope"></i>
+    </a>
+
     <!-- Logout Button (POST Form) -->
     <form action="../../auth/logout.php" method="POST" style="display:inline;">
       <button type="submit" class="logout-button" style="

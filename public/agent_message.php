@@ -32,29 +32,35 @@ if ($agent_id) {
     $stmt->close();
 }
 
-// 3️⃣ Fallback: first client if no user_id found
-if (!$user_id) {
-    $res = $conn->query("SELECT id AS user_id FROM users WHERE user_type = 'user' LIMIT 1");
-    $row = $res->fetch_assoc();
-    if ($row) $user_id = (int)$row['user_id'];
-    else die("No users available.");
+// 3️⃣ Prepare conversation header and contact info
+if ($user_id) {
+    // Fetch user info for the conversation
+    $stmt = $conn->prepare("
+        SELECT id, first_name, last_name, email 
+        FROM users 
+        WHERE id = ?
+        LIMIT 1
+    ");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $contact = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if ($contact) {
+        $contact_name = trim($contact['first_name'] . ' ' . $contact['last_name']);
+        $chat_header = $contact_name;
+    } else {
+        $contact = null;
+        $contact_name = null;
+        $chat_header = "Select a Conversation";
+    }
+} else {
+    $contact = null;
+    $contact_name = null;
+    $chat_header = "Select a Conversation";
 }
 
-// 4️⃣ Fetch user info for the conversation
-$stmt = $conn->prepare("
-    SELECT id, first_name, last_name, email 
-    FROM users 
-    WHERE id = ?
-    LIMIT 1
-");
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$contact = $stmt->get_result()->fetch_assoc();
-$stmt->close();
-if (!$contact) die("User not found.");
-$contact_name = trim($contact['first_name'] . ' ' . $contact['last_name']);
-
-// Fetch all users for conversation list (agent sees clients they chatted with)
+// Fetch all users for conversation list
 $contacts_list = [];
 $sql = "
     SELECT DISTINCT u.id, CONCAT(u.first_name,' ',u.last_name) AS name
@@ -72,31 +78,36 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// Fetch conversation messages with this user
+// Fetch messages only if a conversation is selected
 $messages = [];
-$stmt = $conn->prepare("
-    SELECT sender_id, message, created_at
-    FROM messages
-    WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
-    ORDER BY created_at ASC
-");
-$stmt->bind_param("iiii", $current_user_id, $contact['id'], $contact['id'], $current_user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $messages[] = $row;
+if ($contact) {
+    $stmt = $conn->prepare("
+        SELECT sender_id, message, created_at
+        FROM messages
+        WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+        ORDER BY created_at ASC
+    ");
+    $stmt->bind_param("iiii", $current_user_id, $contact['id'], $contact['id'], $current_user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $messages[] = $row;
+    }
+    $stmt->close();
 }
-$stmt->close();
 
+// Prepare names for messages
 $contact_names = $contacts_list;
 $contact_names[$current_user_id] = 'You';
+
+$chat_header = $user_id ? $contact_name : "Select a conversation";
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Chat with <?= htmlspecialchars($agent_name) ?></title>
+<title>Chat with <?= htmlspecialchars($contact_name) ?></title>
 <style>
 /* Your CSS remains the same */
 body{margin:0;font-family:Arial,sans-serif;background:#f0f2f5}
@@ -128,22 +139,22 @@ body{margin:0;font-family:Arial,sans-serif;background:#f0f2f5}
 <div class="chat-container">
 
     <!-- Conversations List -->
-    <div class="conversations-list">
-        <h3>Conversations</h3>
-        <?php foreach ($agents_list as $id => $name): ?>
-            <div class="conversation-item <?= ($id === $agent['id']) ? 'unread' : '' ?>" data-user-id="<?= $id ?>">
+<div class="conversations-list">
+    <h3>Conversations</h3>
+        <?php foreach ($contacts_list as $id => $name): ?>
+            <div class="conversation-item <?= ($id === $contact['id']) ? 'unread' : '' ?>" data-user-id="<?= $id ?>">
                 <?= htmlspecialchars($name) ?>
             </div>
         <?php endforeach; ?>
     </div>
 
     <!-- Chat Window -->
-    <div class="chat-window" data-user-id="<?= $agent['id'] ?>">
-        <div class="chat-header"><?= htmlspecialchars($agent_name) ?></div>
+    <div class="chat-window" data-user-id="<?= $contact['id'] ?>">
+        <div class="chat-header"><?= htmlspecialchars($chat_header) ?></div>
         <div class="messages" id="messages">
             <?php foreach ($messages as $msg):
                 $isYou = $msg['sender_id'] === $current_user_id;
-                $senderName = htmlspecialchars($agent_names[$msg['sender_id']] ?? 'Agent');
+                $senderName = htmlspecialchars($contact_names[$msg['sender_id']] ?? 'Client');
                 $timestamp = date('M d, Y H:i', strtotime($msg['created_at']));
             ?>
             <div class="message <?= $isYou ? 'you' : 'agent' ?>">
@@ -153,53 +164,72 @@ body{margin:0;font-family:Arial,sans-serif;background:#f0f2f5}
             <?php endforeach; ?>
         </div>
         <div class="chat-input">
-            <input type="text" id="messageInput" placeholder="Type your message...">
-            <button id="sendBtn">Send</button>
+            <input type="text" id="messageInput" placeholder="Type your message..." <?= $contact ? '' : 'disabled' ?>>
+            <button id="sendBtn" <?= $contact ? '' : 'disabled' ?>>Send</button>
         </div>
     </div>
 
 </div>
 
 <script>
-const sendBtn = document.getElementById('sendBtn');
-const messageInput = document.getElementById('messageInput');
-const messagesContainer = document.getElementById('messages');
-const chatWindow = document.querySelector('.chat-window');
-const receiverId = chatWindow.dataset.userId;
+document.addEventListener('DOMContentLoaded', () => {
+    const sendBtn = document.getElementById('sendBtn');
+    const messageInput = document.getElementById('messageInput');
+    const messagesContainer = document.getElementById('messages');
+    const chatWindow = document.querySelector('.chat-window');
+    const receiverId = chatWindow.dataset.userId;
 
-sendBtn.addEventListener('click', () => {
-    const message = messageInput.value.trim();
-    if (!message) return;
+    // Disable input if no conversation selected
+    const canSend = receiverId && receiverId !== "";
+    if (!canSend) {
+        sendBtn.disabled = true;
+        messageInput.disabled = true;
+    }
 
-    fetch('api/send_message.php', {
-        method:'POST',
-        headers:{'Content-Type':'application/x-www-form-urlencoded'},
-        body:`receiver_id=${receiverId}&message=${encodeURIComponent(message)}`
-    })
-    .then(res=>res.json())
-    .then(data=>{
-        if(data.success){
-            const msgDiv = document.createElement('div');
-            msgDiv.classList.add('message','you');
-            msgDiv.innerHTML = `<div class="sender">You:</div><div class="text">${data.message.text}</div>`;
-            messagesContainer.appendChild(msgDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            messageInput.value = '';
-        }else alert(data.error);
-    }).catch(err=>console.error(err));
-});
+    // Send message function
+    const sendMessage = () => {
+        const message = messageInput.value.trim();
+        if (!message || !canSend) return;
 
-messageInput.addEventListener('keypress', e => { if(e.key==='Enter') sendBtn.click(); });
+        fetch('api/send_message.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `receiver_id=${receiverId}&message=${encodeURIComponent(message)}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const msgDiv = document.createElement('div');
+                msgDiv.classList.add('message', 'you');
+                msgDiv.innerHTML = `<div class="sender">You:</div><div class="text">${data.message.text}</div>`;
+                messagesContainer.appendChild(msgDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                messageInput.value = '';
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(err => console.error(err));
+    };
 
-// Switch conversations
-document.querySelectorAll('.conversation-item').forEach(item=>{
-    item.addEventListener('click', ()=>{
-        const userId = item.dataset.userId;
-        window.location.href = `/BatEstateExplorer/public/message.php?user_id=${userId}`;
+    // Event listeners
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    // Switch conversations
+    document.querySelectorAll('.conversation-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const userId = item.dataset.userId;
+            if (userId) {
+                window.location.href = `/BatEstateExplorer/public/agent_message.php?user_id=${userId}`;
+            }
+        });
     });
 });
-
 </script>
+
 
 </body>
 </html>

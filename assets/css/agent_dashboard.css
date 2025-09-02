@@ -300,3 +300,8 @@ body {
     background-color: #3498db;
     color: white;
 }
+
+/* Hover effect */
+.message-btn:hover {
+    background-color: #0056b3;
+}
