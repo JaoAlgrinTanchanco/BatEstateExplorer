@@ -116,7 +116,8 @@ $result = $conn->query($sql);
               <i class="fas fa-envelope"></i> Message Agent
           </button>
 
-          <button class="btn btn-outline"><i class="fas fa-heart"></i> Save to Favorites</button>
+          <button id="saveFavoriteBtn" class="btn btn-outline"><i class="fas fa-heart"></i> Save to Favorites</button>
+
           <button id="leaveReviewBtn" class="btn btn-success" style="display:none;">
             <i class="fas fa-star"></i> Leave a Review
           </button>
@@ -262,18 +263,17 @@ $result = $conn->query($sql);
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 
 <script>
-const userId = <?= (int)$userId ?>;
-
 let modalSwiper;
+let currentPropertyId = null; // Track the property ID currently shown in modal
 
 document.querySelectorAll('.view-details-btn').forEach(btn => {
   btn.addEventListener('click', async () => {
     const propertyId = btn.dataset.id;
+    currentPropertyId = propertyId; // store current property
 
     try {
       const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
       const data = await res.json();
-
       if (!data.success) {
         alert(data.error || 'Failed to fetch property.');
         return;
@@ -322,24 +322,25 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
         reviewBtn.onclick = null;
       }
 
-      // Set default agent ID from property (legacy fallback)
+      // Set agent ID
       const messageBtn = document.querySelector('.message-agent-btn');
       messageBtn.dataset.agentId = prop.agent_id;
 
-      // 🔄 Fetch corrected agent ID using the new API
       try {
         const agentRes = await fetch(`/BatEstateExplorer/public/api/get_property_agent.php?property_id=${encodeURIComponent(prop.id)}`);
         const agentData = await agentRes.json();
-
         if (!agentData.error && agentData.agent_id) {
-          messageBtn.dataset.agentId = agentData.agent_id; // overwrite with fixed one
+          messageBtn.dataset.agentId = agentData.agent_id;
         }
       } catch (err) {
         console.warn("Failed to fetch corrected agent ID, using legacy one.", err);
       }
-      
+
       // Show modal
       document.getElementById('propertyModal').style.display = 'flex';
+
+      // ✅ Check if property is saved
+      checkIfSaved(currentPropertyId);
 
     } catch (err) {
       console.error(err);
@@ -349,8 +350,10 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
 });
 
 // Close modal
-document.querySelector('.modal-close').addEventListener('click', () => {
-  document.getElementById('propertyModal').style.display = 'none';
+document.querySelectorAll('.modal-close').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('propertyModal').style.display = 'none';
+  });
 });
 
 document.getElementById('propertyModal').addEventListener('click', e => {
@@ -371,7 +374,6 @@ document.getElementById('reviewForm').addEventListener('submit', async e => {
   try {
     const res = await fetch('/BatEstateExplorer/public/api/submit_review.php', { method: 'POST', body: formData });
     const data = await res.json();
-
     if (data.success) {
       alert('Review submitted successfully!');
       document.getElementById('reviewModal').style.display = 'none';
@@ -394,4 +396,55 @@ document.querySelectorAll('.message-agent-btn').forEach(btn => {
   });
 });
 
+// Save/Unsave button
+const saveBtn = document.querySelector('.modal-actions .btn-outline');
+
+function updateSaveButton(isSaved) {
+  if (isSaved) {
+    saveBtn.innerHTML = '<i class="fas fa-heart"></i> Unsave';
+    saveBtn.dataset.saved = 'true';
+  } else {
+    saveBtn.innerHTML = '<i class="fas fa-heart"></i> Save to Favorites';
+    saveBtn.dataset.saved = 'false';
+  }
+}
+
+// Check saved status
+async function checkIfSaved(propertyId) {
+  try {
+    const res = await fetch('/BatEstateExplorer/public/api/save_property.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `property_id=${encodeURIComponent(propertyId)}&action=check`
+    });
+    const data = await res.json();
+    if (data.success) updateSaveButton(data.saved);
+  } catch (err) {
+    console.error('Failed to check saved status', err);
+  }
+}
+
+// Handle save/unsave click
+saveBtn.addEventListener('click', async () => {
+  if (!currentPropertyId) return alert('Property not selected.');
+  const action = saveBtn.dataset.saved === 'true' ? 'unsave' : 'save';
+
+  try {
+    const res = await fetch('/BatEstateExplorer/public/api/save_property.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `property_id=${encodeURIComponent(currentPropertyId)}&action=${action}`
+    });
+    const data = await res.json();
+    if (data.success) {
+      updateSaveButton(data.saved);
+      alert(data.message);
+    } else {
+      alert(data.error || 'Failed to update saved status.');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Error updating saved status.');
+  }
+});
 </script>

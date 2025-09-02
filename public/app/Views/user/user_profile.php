@@ -6,6 +6,27 @@ require_once __DIR__ . '/../../../../config/database.php';
 if (!is_logged_in()) {
     header('Location: index.php');
     exit;
+
+    $userId = $_SESSION['user']['id'] ?? 0;
+    $sql = "
+        SELECT p.*, pi.image_path
+        FROM saved_properties sp
+        INNER JOIN properties p ON sp.property_id = p.id
+        LEFT JOIN property_images pi ON p.id = pi.property_id AND pi.is_primary = 1
+        WHERE sp.user_id = ?
+        ORDER BY sp.created_at DESC
+    ";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($property = $result->fetch_assoc()) {
+        // render property cards as in user_home.php
+    }
+    $stmt->close();
+
 }
 
 $current_user = get_logged_in_user($conn);
