@@ -199,99 +199,110 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
 </div>
 
 <script>
-// Tabs
+// ===== Tabs =====
 document.querySelectorAll('.tab-btn').forEach(button => {
     button.addEventListener('click', () => {
+        // Remove active from all buttons and hide all panels
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(panel => panel.style.display = 'none');
+
+        // Activate clicked tab and show its panel
         button.classList.add('active');
-        document.getElementById('tab-' + button.dataset.tab).style.display = 'block';
+        const tabPanel = document.getElementById('tab-' + button.dataset.tab);
+        if (tabPanel) tabPanel.style.display = 'block';
     });
 });
 
-// Modal
+// ===== Modal =====
 const modal = document.getElementById('propertyModal');
 const modalBody = document.getElementById('modalBody');
 const closeBtn = modal.querySelector('.close');
 
-closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+// Close modal
+closeBtn.addEventListener('click', () => modal.style.display = 'none');
 window.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
 
-// View Post (works for both tabs)
+// ===== View Property Post =====
 document.addEventListener('click', async e => {
-    if (e.target.classList.contains('btn-view')) {
-        const propertyId = e.target.dataset.id;
-        modal.style.display = 'block';
-        modalBody.innerHTML = '<p>Loading...</p>';
+    if (!e.target.classList.contains('btn-view')) return;
 
-        try {
-            const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${propertyId}`);
-            const data = await res.json();
+    const propertyId = e.target.dataset.id;
+    if (!propertyId) return;
 
-            if (!data.success) {
-                modalBody.innerHTML = `<p>${data.error || 'Failed to load property details'}</p>`;
-                return;
-            }
+    modal.style.display = 'block';
+    modalBody.innerHTML = '<p>Loading...</p>';
 
-            const prop = data.property;
-            modalBody.innerHTML = `
-                <h2>${prop.title}</h2>
-                <p><strong>Location:</strong> ${prop.location || '-'}</p>
-                <p><strong>Price:</strong> ₱${parseFloat(prop.price || 0).toLocaleString()}</p>
-                <p><strong>Bedrooms:</strong> ${prop.bedrooms || 0}</p>
-                <p><strong>Bathrooms:</strong> ${prop.bathrooms || 0}</p>
-                <p><strong>Area:</strong> ${prop.sqm || 0} sqm</p>
-                <p><strong>Lot Size:</strong> ${prop.lot_size || 0} sqm</p>
-                <p><strong>Status:</strong> ${prop.status}</p>
-                <p><strong>Date Uploaded:</strong> ${prop.date_uploaded}</p>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
-                    ${prop.images.map(img => `<img src="${img}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">`).join('')}
-                </div>
-                <p style="margin-top:10px;">${prop.description || ''}</p>
-            `;
-        } catch (err) {
-            console.error(err);
-            modalBody.innerHTML = '<p>An unexpected error occurred.</p>';
+    try {
+        const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${propertyId}`);
+        const data = await res.json();
+
+        if (!data.success || !data.property) {
+            modalBody.innerHTML = `<p>${data.error || 'Failed to load property details.'}</p>`;
+            return;
         }
+
+        const prop = data.property;
+
+        // Render property details
+        modalBody.innerHTML = `
+            <h2>${prop.title}</h2>
+            <p><strong>Location:</strong> ${prop.location || '-'}</p>
+            <p><strong>Price:</strong> ₱${parseFloat(prop.price || 0).toLocaleString()}</p>
+            <p><strong>Bedrooms:</strong> ${prop.bedrooms || 0}</p>
+            <p><strong>Bathrooms:</strong> ${prop.bathrooms || 0}</p>
+            <p><strong>Area:</strong> ${prop.sqm || 0} sqm</p>
+            <p><strong>Lot Size:</strong> ${prop.lot_size || 0} sqm</p>
+            <p><strong>Status:</strong> ${prop.status || '-'}</p>
+            <p><strong>Date Uploaded:</strong> ${prop.date_uploaded || '-'}</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                ${(prop.images || []).map(img => `
+                    <img src="${img}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">
+                `).join('')}
+            </div>
+            <p style="margin-top:10px;">${prop.description || ''}</p>
+        `;
+    } catch (err) {
+        console.error(err);
+        modalBody.innerHTML = '<p>An unexpected error occurred.</p>';
     }
 });
 
-// Actions (approve / reject / remove) → use admin_property_action.php
+// ===== Admin Actions: Approve / Reject / Remove =====
 document.addEventListener('click', async e => {
-    if (e.target.classList.contains('btn-approve') ||
-        e.target.classList.contains('btn-reject') ||
-        e.target.classList.contains('btn-remove')) {
+    if (!e.target.classList.contains('btn-approve') &&
+        !e.target.classList.contains('btn-reject') &&
+        !e.target.classList.contains('btn-remove')) return;
 
-        const id = e.target.dataset.id;
-        let action = '';
+    const propertyId = e.target.dataset.id;
+    if (!propertyId) return;
 
-        if (e.target.classList.contains('btn-approve')) action = 'approve';
-        if (e.target.classList.contains('btn-reject')) action = 'reject';
-        if (e.target.classList.contains('btn-remove')) action = 'remove';
+    let action = '';
+    if (e.target.classList.contains('btn-approve')) action = 'approve';
+    if (e.target.classList.contains('btn-reject')) action = 'reject';
+    if (e.target.classList.contains('btn-remove')) action = 'remove';
 
-        if (!id || !action) return;
+    if (!action) return;
 
-        if (!confirm(`Are you sure you want to ${action} this property?`)) return;
+    if (!confirm(`Are you sure you want to ${action} this property?`)) return;
 
-        try {
-            const formData = new FormData();
-            formData.append('property_id', id);
-            formData.append('action', action);
+    try {
+        const formData = new FormData();
+        formData.append('property_id', propertyId);
+        formData.append('action', action);
 
-            const res = await fetch('/BatEstateExplorer/public/api/admin_property_action.php', {
-                method: 'POST',
-                body: formData
-            });
+        const res = await fetch('/BatEstateExplorer/public/api/admin_property_action.php', {
+            method: 'POST',
+            body: formData
+        });
 
-            const data = await res.json();
-            alert(data.message || data.error || 'Unexpected response');
+        const data = await res.json();
+        alert(data.message || data.error || 'Unexpected response');
 
-            if (data.success) location.reload();
-        } catch (err) {
-            console.error(err);
-            alert('An error occurred while performing the action.');
-        }
+        if (data.success) location.reload();
+    } catch (err) {
+        console.error(err);
+        alert('An error occurred while performing the action.');
     }
 });
-
 </script>
+

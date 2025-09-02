@@ -322,10 +322,22 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
         reviewBtn.onclick = null;
       }
 
-      // Set agent ID for messaging
+      // Set default agent ID from property (legacy fallback)
       const messageBtn = document.querySelector('.message-agent-btn');
       messageBtn.dataset.agentId = prop.agent_id;
 
+      // 🔄 Fetch corrected agent ID using the new API
+      try {
+        const agentRes = await fetch(`/BatEstateExplorer/public/api/get_property_agent.php?property_id=${encodeURIComponent(prop.id)}`);
+        const agentData = await agentRes.json();
+
+        if (!agentData.error && agentData.agent_id) {
+          messageBtn.dataset.agentId = agentData.agent_id; // overwrite with fixed one
+        }
+      } catch (err) {
+        console.warn("Failed to fetch corrected agent ID, using legacy one.", err);
+      }
+      
       // Show modal
       document.getElementById('propertyModal').style.display = 'flex';
 
