@@ -60,21 +60,24 @@ if (!$user_id) {
     }
 }
 
-// ✅ Fetch agent info
-$stmt = $conn->prepare("
-    SELECT id, first_name, last_name, email 
-    FROM users 
-    WHERE id = ? AND user_type IN ('direct_agent','associate_agent') 
-    LIMIT 1
-");
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$agent = $result->fetch_assoc();
-$stmt->close();
+// ✅ Fetch agent info dynamically based on agent_id from URL
+if ($agent_id) {
+    $stmt = $conn->prepare("
+        SELECT id, first_name, last_name, email 
+        FROM users 
+        WHERE id = ? AND user_type IN ('direct_agent','associate_agent') 
+        LIMIT 1
+    ");
+    $stmt->bind_param("i", $agent_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $agent = $result->fetch_assoc();
+    $stmt->close();
 
-if (!$agent) die("Agent not found.");
-$agent_name = trim($agent['first_name'] . " " . $agent['last_name']);
+    if (!$agent) die("Agent not found.");
+    $agent_name = trim($agent['first_name'] . " " . $agent['last_name']);
+    $user_id = $agent['id']; // also update user_id for fetching messages
+}
 
 // ✅ Fetch all agents for conversation list (only those you’ve messaged)
 $agents_list = [];
@@ -110,7 +113,11 @@ while ($row = $result->fetch_assoc()) {
     $messages[] = $row;
 }
 $stmt->close();
+
+$agent_names = $agents_list; // already contains agent_id => name
+$agent_names[$current_user_id] = 'You'; // optional for clarity
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -167,12 +174,13 @@ body { margin:0;font-family:Arial,sans-serif; }
             <?php foreach ($messages as $msg): ?>
                 <div class="message">
                     <div class="sender">
-                        <?= $msg['sender_id'] === $current_user_id ? 'You' : htmlspecialchars($agent_name) ?>:
+                        <?= htmlspecialchars($agent_names[$msg['sender_id']] ?? 'Agent') ?>:
                     </div>
                     <div class="text"><?= htmlspecialchars(decryptMessage($msg['message'])) ?></div>
                 </div>
             <?php endforeach; ?>
         </div>
+
         <div class="chat-input">
             <input type="text" id="messageInput" placeholder="Type your message...">
             <button id="sendBtn">Send</button>
