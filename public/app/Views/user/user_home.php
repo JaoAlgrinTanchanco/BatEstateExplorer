@@ -393,4 +393,5 @@ document.querySelectorAll('.message-agent-btn').forEach(btn => {
     window.open(`/BatEstateExplorer/public/message.php?agent_id=${agentId}`, '_blank');
   });
 });
+
 </script>
