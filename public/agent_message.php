@@ -52,12 +52,12 @@ if ($user_id) {
     } else {
         $contact = null;
         $contact_name = null;
-        $chat_header = "Select a Conversation";
+        $chat_header = "No conversation selected";
     }
 } else {
     $contact = null;
     $contact_name = null;
-    $chat_header = "Select a Conversation";
+    $chat_header = "No conversation selected";
 }
 
 // Fetch all users for conversation list

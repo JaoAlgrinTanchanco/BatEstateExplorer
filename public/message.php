@@ -32,27 +32,33 @@ if ($agent_id) {
     $stmt->close();
 }
 
-// 3️⃣ Fallback: first available agent if no user_id found
+// 3️⃣ Fallback: if no user_id found, display "Select a conversation"
 if (!$user_id) {
-    $res = $conn->query("SELECT id AS user_id FROM users WHERE user_type IN ('direct_agent','associate_agent') LIMIT 1");
-    $row = $res->fetch_assoc();
-    if ($row) $user_id = (int)$row['user_id'];
-    else die("No agents available.");
+    $agent = null;           // No agent selected
+    $agent_name = "No conversation selected";
+    $messages = [];          // Empty messages
+    $receiver_disabled = true; // Flag to disable input
+} else {
+    // 4️⃣ Fetch agent info
+    $stmt = $conn->prepare("
+        SELECT id, first_name, last_name, email 
+        FROM users 
+        WHERE id = ? AND user_type IN ('direct_agent','associate_agent')
+        LIMIT 1
+    ");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $agent = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if (!$agent) {
+        $agent_name = "No conversation selected";
+        $messages = [];
+        $receiver_disabled = true;
+    } else {
+        $agent_name = trim($agent['first_name'] . ' ' . $agent['last_name']);
+        $receiver_disabled = false;
+    }
 }
-
-// 4️⃣ Fetch agent info
-$stmt = $conn->prepare("
-    SELECT id, first_name, last_name, email 
-    FROM users 
-    WHERE id = ? AND user_type IN ('direct_agent','associate_agent')
-    LIMIT 1
-");
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$agent = $stmt->get_result()->fetch_assoc();
-$stmt->close();
-if (!$agent) die("Agent not found.");
-$agent_name = trim($agent['first_name'] . ' ' . $agent['last_name']);
 
 // Fetch all agents for conversation list
 $agents_list = [];
@@ -154,9 +160,10 @@ body{margin:0;font-family:Arial,sans-serif;background:#f0f2f5}
             <?php endforeach; ?>
         </div>
         <div class="chat-input">
-            <input type="text" id="messageInput" placeholder="Type your message...">
-            <button id="sendBtn">Send</button>
+            <input type="text" id="messageInput" placeholder="Type your message..." <?= ($receiver_disabled ?? false) ? 'disabled' : '' ?>>
+            <button id="sendBtn" <?= ($receiver_disabled ?? false) ? 'disabled' : '' ?>>Send</button>
         </div>
+
     </div>
 
 </div>

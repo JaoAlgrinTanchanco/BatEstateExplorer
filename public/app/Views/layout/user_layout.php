@@ -43,6 +43,30 @@
             <div class="topbar-buttons">
                 <a href="user_dashboard.php?view=become_direct_agent">Become Direct Agent</a>
                 <a href="user_dashboard.php?view=become_associate_agent">Become Associate Agent</a>
+
+                <!-- Message Icon -->
+                <a href="http://localhost/BatEstateExplorer/public/message.php" 
+                title="Messages" 
+                target="_blank"
+                style="
+                        display:inline-flex;
+                        align-items:center;
+                        justify-content:center;
+                        width:40px;
+                        height:40px;
+                        border-radius:50%;
+                        background-color:#007bff;
+                        color:white;
+                        text-decoration:none;
+                        margin-left:10px;
+                        font-size:1.2rem;
+                        transition:background 0.2s;
+                    "
+                onmouseover="this.style.backgroundColor='#0056b3';"
+                onmouseout="this.style.backgroundColor='#007bff';"
+                >
+                    <i class="fa-solid fa-message"></i>
+                </a>
             </div>
 
             <div class="user-info-logout">
