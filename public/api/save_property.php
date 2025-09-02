@@ -1,18 +1,38 @@
 <?php
 // save_property.php
-session_start();
-require_once __DIR__ . '/../app/bootstrap.php'; // adjust path to your bootstrap
+require_once __DIR__ . '/../app/bootstrap.php'; // DB connection etc.
 
 header('Content-Type: application/json');
 
-// ✅ Get logged-in user from session
+// --- Get user from session or token ---
 $userId = $_SESSION['user']['id'] ?? null;
+
+// If no session, check user_token from POST
+if (!$userId && isset($_POST['user_token'])) {
+    $token = $_POST['user_token'];
+    // Decode token (assuming it's JSON base64 encoded; adjust if JWT)
+    $decoded = json_decode(base64_decode($token), true);
+    if (isset($decoded['user_id'])) {
+        $userId = (int)$decoded['user_id'];
+        // Optional: store in session for later
+        $_SESSION['user'] = [
+            'id' => $userId,
+            'token' => $token,
+            'type' => $decoded['user_type'] ?? ''
+        ];
+    }
+}
+
 if (!$userId) {
-    echo json_encode(['success' => false, 'error' => 'User not logged in.']);
+    echo json_encode([
+        'success' => false,
+        'error' => 'User not logged in.',
+        'session' => $_SESSION
+    ]);
     exit;
 }
 
-// ✅ Get property ID and action
+// --- Property ID & action ---
 $propertyId = isset($_POST['property_id']) ? (int)$_POST['property_id'] : null;
 $action = $_POST['action'] ?? 'save';
 
@@ -21,7 +41,7 @@ if (!$propertyId) {
     exit;
 }
 
-// ✅ Check if property exists
+// --- Check property exists ---
 $stmt = $conn->prepare("SELECT id FROM properties WHERE id = ? LIMIT 1");
 $stmt->bind_param("i", $propertyId);
 $stmt->execute();
@@ -33,7 +53,7 @@ if ($res->num_rows === 0) {
 }
 $stmt->close();
 
-// ✅ Check if property is already saved
+// --- Check if saved ---
 $stmt = $conn->prepare("SELECT id FROM saved_properties WHERE user_id = ? AND property_id = ? LIMIT 1");
 $stmt->bind_param("ii", $userId, $propertyId);
 $stmt->execute();
@@ -41,7 +61,7 @@ $res = $stmt->get_result();
 $alreadySaved = $res->num_rows > 0;
 $stmt->close();
 
-// ✅ Perform requested action
+// --- Perform action ---
 switch ($action) {
     case 'save':
         if ($alreadySaved) {
@@ -50,12 +70,9 @@ switch ($action) {
         }
         $stmt = $conn->prepare("INSERT INTO saved_properties (user_id, property_id, created_at) VALUES (?, ?, NOW())");
         $stmt->bind_param("ii", $userId, $propertyId);
-        if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'saved' => true, 'message' => 'Property saved successfully!']);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Failed to save property.']);
-        }
+        $stmt->execute();
         $stmt->close();
+        echo json_encode(['success' => true, 'saved' => true, 'message' => 'Property saved successfully!']);
         break;
 
     case 'unsave':
@@ -65,12 +82,9 @@ switch ($action) {
         }
         $stmt = $conn->prepare("DELETE FROM saved_properties WHERE user_id = ? AND property_id = ?");
         $stmt->bind_param("ii", $userId, $propertyId);
-        if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'saved' => false, 'message' => 'Property removed from saved list.']);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Failed to remove saved property.']);
-        }
+        $stmt->execute();
         $stmt->close();
+        echo json_encode(['success' => true, 'saved' => false, 'message' => 'Property removed from saved list.']);
         break;
 
     case 'check':
@@ -83,3 +97,4 @@ switch ($action) {
 }
 
 exit;
+?>

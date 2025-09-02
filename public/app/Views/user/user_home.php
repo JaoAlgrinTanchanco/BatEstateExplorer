@@ -264,21 +264,24 @@ $result = $conn->query($sql);
 
 <script>
 let modalSwiper;
-let currentPropertyId = null; // Track the property ID currently shown in modal
+let currentPropertyId = null;
+
+// Get the user token from PHP session
+const userToken = '<?= $_SESSION['user']['token'] ?? '' ?>';
 
 document.querySelectorAll('.view-details-btn').forEach(btn => {
   btn.addEventListener('click', async () => {
     const propertyId = btn.dataset.id;
-    currentPropertyId = propertyId; // store current property
+    currentPropertyId = propertyId;
 
     try {
+      // Fetch property details
       const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
       const data = await res.json();
       if (!data.success) {
         alert(data.error || 'Failed to fetch property.');
         return;
       }
-
       const prop = data.property;
 
       // Populate images
@@ -286,11 +289,7 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
       wrapper.innerHTML = '';
       const images = (prop.images && prop.images.length) ? prop.images : ['/BatEstateExplorer/assets/images/bg4.jpg'];
       images.forEach(img => {
-        wrapper.innerHTML += `
-          <div class="swiper-slide">
-            <img src="${img}" style="width:100%;border-radius:8px;">
-          </div>
-        `;
+        wrapper.innerHTML += `<div class="swiper-slide"><img src="${img}" style="width:100%;border-radius:8px;"></div>`;
       });
 
       // Init or update Swiper
@@ -322,16 +321,13 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
         reviewBtn.onclick = null;
       }
 
-      // Set agent ID
+      // Agent button
       const messageBtn = document.querySelector('.message-agent-btn');
       messageBtn.dataset.agentId = prop.agent_id;
-
       try {
         const agentRes = await fetch(`/BatEstateExplorer/public/api/get_property_agent.php?property_id=${encodeURIComponent(prop.id)}`);
         const agentData = await agentRes.json();
-        if (!agentData.error && agentData.agent_id) {
-          messageBtn.dataset.agentId = agentData.agent_id;
-        }
+        if (!agentData.error && agentData.agent_id) messageBtn.dataset.agentId = agentData.agent_id;
       } catch (err) {
         console.warn("Failed to fetch corrected agent ID, using legacy one.", err);
       }
@@ -339,7 +335,7 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
       // Show modal
       document.getElementById('propertyModal').style.display = 'flex';
 
-      // ✅ Check if property is saved
+      // ✅ Check if saved
       checkIfSaved(currentPropertyId);
 
     } catch (err) {
@@ -351,11 +347,8 @@ document.querySelectorAll('.view-details-btn').forEach(btn => {
 
 // Close modal
 document.querySelectorAll('.modal-close').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.getElementById('propertyModal').style.display = 'none';
-  });
+  btn.addEventListener('click', () => document.getElementById('propertyModal').style.display = 'none');
 });
-
 document.getElementById('propertyModal').addEventListener('click', e => {
   if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
 });
@@ -370,7 +363,6 @@ function openReviewModal(propertyId) {
 document.getElementById('reviewForm').addEventListener('submit', async e => {
   e.preventDefault();
   const formData = new FormData(e.target);
-
   try {
     const res = await fetch('/BatEstateExplorer/public/api/submit_review.php', { method: 'POST', body: formData });
     const data = await res.json();
@@ -387,7 +379,7 @@ document.getElementById('reviewForm').addEventListener('submit', async e => {
   }
 });
 
-// Message Agent button
+// Message Agent
 document.querySelectorAll('.message-agent-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const agentId = btn.dataset.agentId;
@@ -396,7 +388,7 @@ document.querySelectorAll('.message-agent-btn').forEach(btn => {
   });
 });
 
-// Save/Unsave button
+// Save/Unsave
 const saveBtn = document.querySelector('.modal-actions .btn-outline');
 
 function updateSaveButton(isSaved) {
@@ -411,16 +403,19 @@ function updateSaveButton(isSaved) {
 
 // Check saved status
 async function checkIfSaved(propertyId) {
+  console.log("Checking saved status for property:", propertyId);
   try {
     const res = await fetch('/BatEstateExplorer/public/api/save_property.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `property_id=${encodeURIComponent(propertyId)}&action=check`
+      body: `property_id=${encodeURIComponent(propertyId)}&action=check&user_token=${encodeURIComponent(userToken)}`
     });
     const data = await res.json();
+    console.log("Saved status response:", data);
     if (data.success) updateSaveButton(data.saved);
+    else console.warn("Failed to get saved status:", data);
   } catch (err) {
-    console.error('Failed to check saved status', err);
+    console.error('Error checking saved status', err);
   }
 }
 
@@ -428,14 +423,16 @@ async function checkIfSaved(propertyId) {
 saveBtn.addEventListener('click', async () => {
   if (!currentPropertyId) return alert('Property not selected.');
   const action = saveBtn.dataset.saved === 'true' ? 'unsave' : 'save';
+  console.log("Sending save request:", { propertyId: currentPropertyId, action });
 
   try {
     const res = await fetch('/BatEstateExplorer/public/api/save_property.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `property_id=${encodeURIComponent(currentPropertyId)}&action=${action}`
+      body: `property_id=${encodeURIComponent(currentPropertyId)}&action=${action}&user_token=${encodeURIComponent(userToken)}`
     });
     const data = await res.json();
+    console.log("Server response:", data);
     if (data.success) {
       updateSaveButton(data.saved);
       alert(data.message);
@@ -443,7 +440,7 @@ saveBtn.addEventListener('click', async () => {
       alert(data.error || 'Failed to update saved status.');
     }
   } catch (err) {
-    console.error(err);
+    console.error('Error updating saved status', err);
     alert('Error updating saved status.');
   }
 });
