@@ -89,3 +89,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 });
+
+// Keep Saved List in sync when a property is unsaved from the modal
+window.addEventListener("favorites:changed", (e) => {
+  const { propertyId, action } = e.detail || {};
+  if (action !== "unsave") return;
+
+  const grid = document.querySelector("#saved-list .property-grid");
+  if (!grid) return;
+
+  // Find the card by the button inside it
+  const btn = grid.querySelector(`.view-details-btn[data-id="${propertyId}"]`);
+  const card = btn ? btn.closest(".property-card") : null;
+
+  if (card) {
+    card.remove();
+  }
+
+  // If nothing left, show empty state
+  if (!grid.querySelector(".property-card")) {
+    grid.innerHTML = "<p>You have no saved properties yet.</p>";
+  }
+});
