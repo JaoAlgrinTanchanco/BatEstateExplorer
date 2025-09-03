@@ -194,3 +194,33 @@ saveBtn?.addEventListener("click", async () => {
     alert("Error updating saved status.");
   }
 });
+
+// Populate past reviews in the separate right-side card
+const reviewsContainer = document.getElementById("modalPastReviews");
+reviewsContainer.innerHTML = "";
+
+if (prop.reviews && prop.reviews.length) {
+  prop.reviews.forEach((r) => {
+    const reviewCard = document.createElement("div");
+    reviewCard.className = "review-card";
+    reviewCard.style = `
+      border:1px solid #ddd; 
+      border-radius:8px; 
+      padding:10px; 
+      margin-bottom:10px; 
+      background:#f9f9f9;
+    `;
+    
+    reviewCard.innerHTML = `
+      <div class="review-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+        <strong>${r.user_name}</strong>
+        <span>${"⭐".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</span>
+      </div>
+      <p style="margin:0;">${r.comment || ""}</p>
+      <small style="color:#666;">${new Date(r.created_at).toLocaleDateString()}</small>
+    `;
+    reviewsContainer.appendChild(reviewCard);
+  });
+} else {
+  reviewsContainer.innerHTML = "<p>No reviews yet.</p>";
+}

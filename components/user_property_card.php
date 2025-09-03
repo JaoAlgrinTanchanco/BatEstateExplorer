@@ -43,41 +43,60 @@ if (!function_exists('render_property_card')) {
 
             <!-- Property Modal -->
             <div id="propertyModal" class="modal" style="display:none;">
-              <div class="modal-content">
-                <span class="modal-close">&times;</span>
-                <div class="modal-body">
-                  <div class="modal-image">
-                    <div class="swiper modal-swiper">
-                      <div class="swiper-wrapper" id="modalImageWrapper"></div>
-                      <div class="swiper-button-next"></div>
-                      <div class="swiper-button-prev"></div>
-                      <div class="swiper-pagination"></div>
+                <div class="modal-content" style="display:flex; gap:20px; max-width:1000px; margin:auto;">
+                    <span class="modal-close">&times;</span>
+
+                    <!-- Left: Property Details -->
+                    <div class="modal-body" style="flex:2;">
+                    <div class="modal-image">
+                        <div class="swiper modal-swiper">
+                        <div class="swiper-wrapper" id="modalImageWrapper"></div>
+                        <div class="swiper-button-next"></div>
+                        <div class="swiper-button-prev"></div>
+                        <div class="swiper-pagination"></div>
+                        </div>
                     </div>
-                  </div>
-                  <div class="modal-details">
-                    <h2 id="modalTitle"></h2>
-                    <p id="modalLocation"></p>
-                    <p id="modalPrice" class="price"></p>
-                    <div class="features">
-                      <span><i class="fas fa-bed"></i> <span id="modalBedrooms"></span> Beds</span>
-                      <span><i class="fas fa-bath"></i> <span id="modalBathrooms"></span> Baths</span>
+                    <div class="modal-details">
+                        <h2 id="modalTitle"></h2>
+                        <p id="modalLocation"></p>
+                        <p id="modalPrice" class="price"></p>
+                        <div class="features">
+                        <span><i class="fas fa-bed"></i> <span id="modalBedrooms"></span> Beds</span>
+                        <span><i class="fas fa-bath"></i> <span id="modalBathrooms"></span> Baths</span>
+                        </div>
+                        <p><strong>Description:</strong></p>
+                        <p id="modalDescription"></p>
+                        <div class="modal-actions">
+                        <button class="btn btn-primary message-agent-btn">
+                            <i class="fas fa-envelope"></i> Message Agent
+                        </button>
+                        <button id="saveFavoriteBtn" class="btn btn-outline">
+                            <i class="fas fa-heart"></i> Save to Favorites
+                        </button>
+                        <button id="leaveReviewBtn" class="btn btn-success" style="display:none;">
+                            <i class="fas fa-star"></i> Leave a Review
+                        </button>
+                        </div>
                     </div>
-                    <p><strong>Description:</strong></p>
-                    <p id="modalDescription"></p>
-                    <div class="modal-actions">
-                      <button class="btn btn-primary message-agent-btn">
-                        <i class="fas fa-envelope"></i> Message Agent
-                      </button>
-                      <button id="saveFavoriteBtn" class="btn btn-outline">
-                        <i class="fas fa-heart"></i> Save to Favorites
-                      </button>
-                      <button id="leaveReviewBtn" class="btn btn-success" style="display:none;">
-                        <i class="fas fa-star"></i> Leave a Review
-                      </button>
                     </div>
-                  </div>
+
+                    <!-- Right: Past Reviews Card -->
+                    <div id="modalReviewsCard" style="
+                    flex:1;
+                    background:#fff;
+                    border-radius:12px;
+                    box-shadow:0 4px 12px rgba(0,0,0,0.15);
+                    padding:15px;
+                    max-height:600px;
+                    overflow-y:auto;
+                    ">
+                    <h3 style="margin-top:0;">Past Reviews</h3>
+                    <div id="modalPastReviews">
+                        <!-- JS will inject review cards here -->
+                    </div>
+                    </div>
+
                 </div>
-              </div>
             </div>
 
             <!-- Review Modal -->
