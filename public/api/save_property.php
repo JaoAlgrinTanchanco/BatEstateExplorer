@@ -1,24 +1,30 @@
 <?php
 // save_property.php
+session_start();
 require_once __DIR__ . '/../app/bootstrap.php'; // DB connection etc.
 
 header('Content-Type: application/json');
 
 // --- Get user from session or token ---
-$userId = $_SESSION['user']['id'] ?? null;
+$userId = $_SESSION['user']['id'] 
+    ?? $_SESSION['user_id'] 
+    ?? null;
 
 // If no session, check user_token from POST
 if (!$userId && isset($_POST['user_token'])) {
     $token = $_POST['user_token'];
-    // Decode token (assuming it's JSON base64 encoded; adjust if JWT)
+
+    // Decode token (assuming base64 JSON; adjust if JWT)
     $decoded = json_decode(base64_decode($token), true);
-    if (isset($decoded['user_id'])) {
+
+    if ($decoded && isset($decoded['user_id'])) {
         $userId = (int)$decoded['user_id'];
+
         // Optional: store in session for later
         $_SESSION['user'] = [
-            'id' => $userId,
+            'id'    => $userId,
             'token' => $token,
-            'type' => $decoded['user_type'] ?? ''
+            'type'  => $decoded['user_type'] ?? ''
         ];
     }
 }
@@ -26,7 +32,7 @@ if (!$userId && isset($_POST['user_token'])) {
 if (!$userId) {
     echo json_encode([
         'success' => false,
-        'error' => 'User not logged in.',
+        'error'   => 'User not logged in.',
         'session' => $_SESSION
     ]);
     exit;
@@ -34,7 +40,7 @@ if (!$userId) {
 
 // --- Property ID & action ---
 $propertyId = isset($_POST['property_id']) ? (int)$_POST['property_id'] : null;
-$action = $_POST['action'] ?? 'save';
+$action     = $_POST['action'] ?? 'save';
 
 if (!$propertyId) {
     echo json_encode(['success' => false, 'error' => 'No property specified.']);
@@ -46,6 +52,7 @@ $stmt = $conn->prepare("SELECT id FROM properties WHERE id = ? LIMIT 1");
 $stmt->bind_param("i", $propertyId);
 $stmt->execute();
 $res = $stmt->get_result();
+
 if ($res->num_rows === 0) {
     $stmt->close();
     echo json_encode(['success' => false, 'error' => 'Property does not exist.']);
@@ -97,4 +104,3 @@ switch ($action) {
 }
 
 exit;
-?>
