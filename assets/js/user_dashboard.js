@@ -1,12 +1,9 @@
 let modalSwiper;
 let currentPropertyId = null;
 
-// ✅ Use token from global config
+// ✅ Use token from global config injected by PHP
 const userToken = window.AppConfig?.userToken || "";
-
-if (!userToken) {
-    console.error("⚠️ User token missing! Save feature will not work.");
-}
+const currentUserId = window.AppConfig?.userId || 0;
 
 // Property details modal
 document.querySelectorAll(".view-details-btn").forEach((btn) => {
