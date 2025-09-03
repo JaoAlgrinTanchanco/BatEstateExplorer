@@ -51,9 +51,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.addEventListener("click", (e) => {
-    if (!profileDropdownMenu.contains(e.target) && e.target !== profileDotsBtn) {
-      profileDropdownMenu.classList.remove("active");
-    }
+    // Exclude profile dropdown, its button, and review cards
+    if (!profileDropdownMenu.contains(e.target) &&
+        e.target !== profileDotsBtn &&
+        !e.target.closest(".user-review-card")) {
+        profileDropdownMenu.classList.remove("active");
+      }
   });
 
   // --- Modal ---
@@ -110,4 +113,15 @@ window.addEventListener("favorites:changed", (e) => {
   if (!grid.querySelector(".property-card")) {
     grid.innerHTML = "<p>You have no saved properties yet.</p>";
   }
+});
+
+// Attach click handlers to user review cards
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".user-review-card").forEach(card => {
+        card.addEventListener("click", () => {
+            const propertyId = card.dataset.propertyId;
+            if (!propertyId) return;
+            openPropertyModal(propertyId);
+        });
+    });
 });

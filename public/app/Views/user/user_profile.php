@@ -30,6 +30,22 @@ $stmt->close();
 $message = '';
 $error = '';
 
+// Fetch user reviews
+$reviewsSql = "
+    SELECT r.*, p.title, pi.image_path 
+    FROM property_reviews r
+    INNER JOIN properties p ON r.property_id = p.id
+    LEFT JOIN property_images pi ON p.id = pi.property_id AND pi.is_primary = 1
+    WHERE r.user_id = ?
+    ORDER BY r.created_at DESC
+";
+$stmt = $conn->prepare($reviewsSql);
+$stmt->bind_param("i", $userId);
+$stmt->execute();
+$reviewsResult = $stmt->get_result();
+$userReviews = $reviewsResult->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
 // Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name = sanitize_input($conn, $_POST['first_name']);
@@ -118,9 +134,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
       </div>
 
-      <!-- Reviews -->
       <div class="tab-content" id="reviews">
-        <p>Your reviews will appear here.</p>
+          <?php if (empty($userReviews)): ?>
+              <p>You haven't left any reviews yet.</p>
+          <?php else: ?>
+              <div class="reviews-grid">
+                  <?php foreach ($userReviews as $review): ?>
+                      <div class="user-review-card" 
+                          data-property-id="<?= (int)$review['property_id'] ?>" 
+                          style="
+                              display:flex;
+                              gap:15px;
+                              align-items:flex-start;
+                              border:1px solid #eee;
+                              border-radius:8px;
+                              padding:10px;
+                              margin-bottom:10px;
+                              background:#f9f9f9;
+                              cursor:pointer;
+                          ">
+                          
+                          <!-- Property Thumbnail -->
+                          <div class="thumbnail" style="flex-shrink:0;">
+                              <img src="<?= htmlspecialchars($review['image_path'] ?: '/BatEstateExplorer/assets/images/bg4.jpg') ?>" 
+                                  alt="Property Thumbnail" 
+                                  style="width:100px;height:70px;object-fit:cover;border-radius:6px;">
+                          </div>
+                          
+                          <!-- Review Info -->
+                          <div class="review-info" style="flex:1;">
+                              <strong><?= htmlspecialchars($review['title']) ?></strong>
+                              <div class="review-stars" style="color:#f5a623;">
+                                  <?= str_repeat('⭐', (int)$review['rating']) . str_repeat('☆', 5 - (int)$review['rating']) ?>
+                              </div>
+                              <p style="margin:5px 0;"><?= htmlspecialchars($review['review_text']) ?></p>
+                              <small style="color:#666;"><?= date('M d, Y', strtotime($review['created_at'])) ?></small>
+                          </div>
+                      </div>
+                  <?php endforeach; ?>
+              </div>
+          <?php endif; ?>
       </div>
     </div>
   </div>
