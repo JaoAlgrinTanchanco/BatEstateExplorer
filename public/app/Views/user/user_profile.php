@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../../../config/database.php';
+require_once __DIR__ . '/../../../../components/user_property_card.php';
 
 // Redirect if not logged in
 if (!is_logged_in()) {
@@ -111,20 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php else: ?>
           <div class="property-grid">
             <?php foreach ($savedProperties as $property): ?>
-              <div class="property-card"
-                   data-price="<?= (int)$property['price'] ?>"
-                   data-date="<?= strtotime($property['created_at']) ?>">
-                <div class="property-image">
-                  <img src="<?= htmlspecialchars($property['image_path'] ?: '/BatEstateExplorer/assets/images/bg4.jpg') ?>" 
-                       alt="Property Image">
-                </div>
-                <div class="property-info">
-                  <h3><?= htmlspecialchars($property['title']) ?></h3>
-                  <p><?= htmlspecialchars($property['location']) ?></p>
-                  <p>₱<?= number_format($property['price']) ?></p>
-                  <button class="view-details-btn" data-id="<?= $property['id'] ?>">View Details</button>
-                </div>
-              </div>
+              <?php render_property_card($property); ?> <!-- ✅ render modular card -->
             <?php endforeach; ?>
           </div>
         <?php endif; ?>
