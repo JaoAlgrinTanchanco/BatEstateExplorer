@@ -66,6 +66,9 @@ async function openPropertyModal(propertyId) {
     // Check if saved
     checkIfSaved(currentPropertyId);
 
+    // Load past reviews
+    loadPastReviews(currentPropertyId);
+
   } catch (err) {
     console.error(err);
     alert("Failed to load property details.");
@@ -97,14 +100,23 @@ function openReviewModal(propertyId) {
 document.getElementById("reviewForm")?.addEventListener("submit", async e => {
   e.preventDefault();
   const formData = new FormData(e.target);
+
   try {
     const res = await fetch("/BatEstateExplorer/public/api/submit_review.php", { method: "POST", body: formData });
     const data = await res.json();
+
     if (data.success) {
       alert("Review submitted successfully!");
       document.getElementById("reviewModal").style.display = "none";
       e.target.reset();
-    } else alert(data.error || "Failed to submit review.");
+
+      // ✅ Reload past reviews immediately
+      if (currentPropertyId) loadPastReviews(currentPropertyId);
+
+    } else {
+      alert(data.error || "Failed to submit review.");
+    }
+
   } catch (err) {
     console.error(err);
     alert("Error submitting review.");
@@ -158,31 +170,31 @@ saveBtn?.addEventListener("click", async () => {
       updateSaveButton(data.saved);
       alert(data.message);
 
-      // 🔔 Dispatch event for other parts of the app
       window.dispatchEvent(new CustomEvent("favorites:changed", { detail: { propertyId: String(currentPropertyId), action } }));
 
-      // ✅ Handle adding the property back to the list if saved
-      const grid = document.querySelector("#saved-list .property-grid");
-      if (action === "save" && grid) {
-        // Fetch property details to render new card
-        const propRes = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(currentPropertyId)}`);
-        const propData = await propRes.json();
-        if (propData.success) {
-          const prop = propData.property;
-          const cardHTML = `
-            <div class="property-card" data-price="${prop.price}" data-date="${new Date(prop.created_at).getTime()}">
-              <div class="property-image">
-                <img src="${prop.images?.[0] || '/BatEstateExplorer/assets/images/bg4.jpg'}" alt="Property Image">
+      // Add back property to list if saved
+      if (action === "save") {
+        const grid = document.querySelector("#saved-list .property-grid");
+        if (grid) {
+          const propRes = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(currentPropertyId)}`);
+          const propData = await propRes.json();
+          if (propData.success) {
+            const prop = propData.property;
+            const cardHTML = `
+              <div class="property-card" data-price="${prop.price}" data-date="${new Date(prop.created_at).getTime()}">
+                <div class="property-image">
+                  <img src="${prop.images?.[0] || '/BatEstateExplorer/assets/images/bg4.jpg'}" alt="Property Image">
+                </div>
+                <div class="property-info">
+                  <h3>${prop.title}</h3>
+                  <p>${prop.location}</p>
+                  <p>₱${parseFloat(prop.price).toLocaleString()}</p>
+                  <button class="view-details-btn" data-id="${prop.id}">View Details</button>
+                </div>
               </div>
-              <div class="property-info">
-                <h3>${prop.title}</h3>
-                <p>${prop.location}</p>
-                <p>₱${parseFloat(prop.price).toLocaleString()}</p>
-                <button class="view-details-btn" data-id="${prop.id}">View Details</button>
-              </div>
-            </div>
-          `;
-          grid.insertAdjacentHTML("afterbegin", cardHTML);
+            `;
+            grid.insertAdjacentHTML("afterbegin", cardHTML);
+          }
         }
       }
 
@@ -195,32 +207,37 @@ saveBtn?.addEventListener("click", async () => {
   }
 });
 
-// Populate past reviews in the separate right-side card
-const reviewsContainer = document.getElementById("modalPastReviews");
-reviewsContainer.innerHTML = "";
+// --- Load Past Reviews ---
+async function loadPastReviews(propertyId) {
+  const container = document.getElementById("modalPastReviews");
+  container.innerHTML = "<p>Loading reviews...</p>";
 
-if (prop.reviews && prop.reviews.length) {
-  prop.reviews.forEach((r) => {
-    const reviewCard = document.createElement("div");
-    reviewCard.className = "review-card";
-    reviewCard.style = `
-      border:1px solid #ddd; 
-      border-radius:8px; 
-      padding:10px; 
-      margin-bottom:10px; 
-      background:#f9f9f9;
-    `;
-    
-    reviewCard.innerHTML = `
-      <div class="review-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-        <strong>${r.user_name}</strong>
-        <span>${"⭐".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</span>
-      </div>
-      <p style="margin:0;">${r.comment || ""}</p>
-      <small style="color:#666;">${new Date(r.created_at).toLocaleDateString()}</small>
-    `;
-    reviewsContainer.appendChild(reviewCard);
-  });
-} else {
-  reviewsContainer.innerHTML = "<p>No reviews yet.</p>";
+  try {
+    const res = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${encodeURIComponent(propertyId)}`);
+    const data = await res.json();
+
+    container.innerHTML = "";
+    if (!data.success || !data.reviews.length) {
+      container.innerHTML = "<p>No reviews yet.</p>";
+      return;
+    }
+
+    data.reviews.forEach(review => {
+      const div = document.createElement("div");
+      div.className = "review-card";
+      div.style = "border:1px solid #eee; border-radius:8px; padding:10px; margin-bottom:10px; background:#f9f9f9;";
+      const stars = "⭐".repeat(review.rating) + "☆".repeat(5 - review.rating);
+      div.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+          <strong>${review.user_name}</strong> <span style="color:#f5a623;">${stars}</span>
+        </div>
+        <p style="margin:0;">${review.review_text}</p>
+        <small style="color:#666;">${new Date(review.created_at).toLocaleDateString()}</small>
+      `;
+      container.appendChild(div);
+    });
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = "<p>Error loading reviews.</p>";
+  }
 }
