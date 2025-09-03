@@ -92,33 +92,31 @@
         </div>
 
              <!-- Footer -->
-<footer class="site-footer">
-    <div class="footer-container">
-        <p>&copy; <?= date('Y') ?> BatEstate Explorer. All rights reserved.</p>
-        <ul class="footer-links">
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Terms of Service</a></li>
-            <li><a href="#">Contact Us</a></li>
-        </ul>
-    </div>
-</footer>
+    <footer class="site-footer">
+        <div class="footer-container">
+            <p>&copy; <?= date('Y') ?> BatEstate Explorer. All rights reserved.</p>
+            <ul class="footer-links">
+                <li><a href="#">Privacy Policy</a></li>
+                <li><a href="#">Terms of Service</a></li>
+                <li><a href="#">Contact Us</a></li>
+            </ul>
+        </div>
+    </footer>
 </div>
 
 <!-- ✅ Global JS config for all views -->
 <script>
     window.AppConfig = {
-        userToken: <?= json_encode($_SESSION['user']['token'] ?? '') ?>,
+        userToken: "<?= $_SESSION['user']['token'] ?? '' ?>",
         userId: <?= (int)($_SESSION['user']['id'] ?? 0) ?>,
-        userType: <?= json_encode($_SESSION['user']['user_type'] ?? '') ?>
+        userType: "<?= $_SESSION['user']['user_type'] ?? '' ?>"
     };
 </script>
 
-<!-- Page-specific JS -->
+<!-- Load page-specific JS after config -->
 <?php if (!empty($pageScript)): ?>
     <script src="<?= htmlspecialchars($pageScript) ?>"></script>
 <?php endif; ?>
 
-<!-- Always load dashboard logic -->
-<script src="/BatEstateExplorer/assets/js/user_dashboard.js"></script>
 </body>
 </html>
