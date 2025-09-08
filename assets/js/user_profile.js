@@ -50,13 +50,21 @@ document.addEventListener("DOMContentLoaded", () => {
     profileDropdownMenu.classList.toggle("active");
   });
 
+  // --- Use event delegation for review cards ---
   document.addEventListener("click", (e) => {
-    // Exclude profile dropdown, its button, and review cards
-    if (!profileDropdownMenu.contains(e.target) &&
-        e.target !== profileDotsBtn &&
-        !e.target.closest(".user-review-card")) {
-        profileDropdownMenu.classList.remove("active");
-      }
+    const card = e.target.closest(".user-review-card");
+    if (!card) return;
+
+    const propertyId = card.dataset.propertyId;
+    console.log("Review card clicked! Property ID:", propertyId); // 🔹 debug
+
+    if (!propertyId) return console.warn("No property ID found on card");
+
+    const modal = document.getElementById("propertyModal");
+    if (!modal) return console.error("Property modal not found");
+
+    console.log("Opening property modal for ID:", propertyId);
+    openPropertyModal(propertyId);
   });
 
   // --- Modal ---
