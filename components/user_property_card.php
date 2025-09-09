@@ -9,25 +9,37 @@
 
 if (!function_exists('render_property_card')) {
     function render_property_card(array $property, bool $modalOnly = false) {
-        $image = htmlspecialchars($property['image_path'] ?? '/BatEstateExplorer/assets/images/bg4.jpg');
-        $title = htmlspecialchars($property['title'] ?? '');
-        $location = htmlspecialchars($property['location'] ?? '');
-        $price = number_format($property['price'] ?? 0);
-        $id = (int) ($property['id'] ?? 0);
-        $createdAt = strtotime($property['created_at'] ?? 'now');
+        $image      = htmlspecialchars($property['image_path'] ?? '/BatEstateExplorer/assets/images/bg4.jpg');
+        $title      = htmlspecialchars($property['title'] ?? '');
+        $location   = htmlspecialchars($property['location'] ?? '');
+        $price      = number_format((float)($property['price'] ?? 0), 2);
+        $id         = (int) ($property['id'] ?? 0);
+        $createdAt  = strtotime($property['created_at'] ?? 'now');
+        $bedrooms   = (int)($property['bedrooms'] ?? 0);
+        $bathrooms  = (int)($property['bathrooms'] ?? 0);
 
         // --- Full card rendering ---
         if (!$modalOnly):
             ?>
-            <div class="property-card" data-price="<?= (int)($property['price'] ?? 0) ?>" data-date="<?= $createdAt ?>">
+            <div class="property-card"
+                 data-price="<?= (int)($property['price'] ?? 0) ?>"
+                 data-date="<?= $createdAt ?>">
                 <div class="property-image">
                     <img src="<?= $image ?>" alt="Property Image">
                 </div>
-                <div class="property-info">
+                <div class="property-content">
                     <h3><?= $title ?></h3>
-                    <p><?= $location ?></p>
-                    <p>₱<?= $price ?></p>
-                    <button class="view-details-btn" data-id="<?= $id ?>">View Details</button>
+                    <p class="property-location">
+                        <i class="fas fa-map-marker-alt"></i> <?= $location ?>
+                    </p>
+                    <p class="property-price">₱<?= $price ?></p>
+                    <div class="property-features">
+                        <span><i class="fas fa-bed"></i> <?= $bedrooms ?> Beds</span>
+                        <span><i class="fas fa-bath"></i> <?= $bathrooms ?> Baths</span>
+                    </div>
+                    <button class="btn btn-outline view-details-btn" data-id="<?= $id ?>">
+                        View Details
+                    </button>
                 </div>
             </div>
         <?php
@@ -91,9 +103,23 @@ if (!function_exists('render_property_card')) {
                         overflow-y:auto;">
                         <h3 style="margin-top:0;">Past Reviews</h3>
                         <div id="modalPastReviews">
-                            <!-- JS will inject review cards here -->
+                            <?php if (!empty($property['past_reviews'])): ?>
+                                <?php foreach ($property['past_reviews'] as $review): ?>
+                                    <div class="review-card" style="margin-bottom:10px; padding:8px; border-bottom:1px solid #eee;">
+                                        <strong><?= htmlspecialchars($review['first_name'] . ' ' . $review['last_name']) ?></strong>
+                                        <div class="review-stars" style="color:#f5a623;">
+                                            <?= str_repeat('⭐', (int)$review['rating']) . str_repeat('☆', 5 - (int)$review['rating']) ?>
+                                        </div>
+                                        <p><?= htmlspecialchars($review['review_text']) ?></p>
+                                        <small style="color:#666;"><?= date('M d, Y', strtotime($review['created_at'])) ?></small>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <p>No reviews yet.</p>
+                            <?php endif; ?>
                         </div>
                     </div>
+
                 </div>
             </div>
 

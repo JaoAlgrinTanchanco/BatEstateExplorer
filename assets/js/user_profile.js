@@ -45,53 +45,28 @@ document.addEventListener("DOMContentLoaded", () => {
   const profileDotsBtn = document.getElementById("profileDotsBtn");
   const profileDropdownMenu = document.getElementById("profileDropdownMenu");
 
-  profileDotsBtn.addEventListener("click", (e) => {
+  profileDotsBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
     profileDropdownMenu.classList.toggle("active");
   });
 
-  // --- Use event delegation for review cards ---
-  document.addEventListener("click", (e) => {
-    const card = e.target.closest(".user-review-card");
-    if (!card) return;
-
-    const propertyId = card.dataset.propertyId;
-    console.log("Review card clicked! Property ID:", propertyId); // 🔹 debug
-
-    if (!propertyId) return console.warn("No property ID found on card");
-
-    const modal = document.getElementById("propertyModal");
-    if (!modal) return console.error("Property modal not found");
-
-    console.log("Opening property modal for ID:", propertyId);
-    openPropertyModal(propertyId);
-  });
-
-  // --- Modal ---
+  // --- Profile modal ---
   const editProfileBtn = document.getElementById("editProfileBtn");
   const profileModal = document.getElementById("profileModal");
   const modalCloseBtn = document.getElementById("modalCloseBtn");
 
-  if (editProfileBtn) {
-    editProfileBtn.addEventListener("click", () => {
-      profileDropdownMenu.classList.remove("active");
-      profileModal.classList.add("active");
-    });
-  }
+  editProfileBtn?.addEventListener("click", () => {
+    profileDropdownMenu.classList.remove("active");
+    profileModal.classList.add("active");
+  });
 
-  if (modalCloseBtn) {
-    modalCloseBtn.addEventListener("click", () => {
-      profileModal.classList.remove("active");
-    });
-  }
+  modalCloseBtn?.addEventListener("click", () => {
+    profileModal.classList.remove("active");
+  });
 
-  if (profileModal) {
-    profileModal.addEventListener("click", (e) => {
-      if (e.target === profileModal) {
-        profileModal.classList.remove("active");
-      }
-    });
-  }
+  profileModal?.addEventListener("click", (e) => {
+    if (e.target === profileModal) profileModal.classList.remove("active");
+  });
 
   // --- Logout ---
   window.logout = function () {
@@ -99,37 +74,4 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = "logout.php";
     }
   };
-});
-
-// Keep Saved List in sync when a property is unsaved from the modal
-window.addEventListener("favorites:changed", (e) => {
-  const { propertyId, action } = e.detail || {};
-  if (action !== "unsave") return;
-
-  const grid = document.querySelector("#saved-list .property-grid");
-  if (!grid) return;
-
-  // Find the card by the button inside it
-  const btn = grid.querySelector(`.view-details-btn[data-id="${propertyId}"]`);
-  const card = btn ? btn.closest(".property-card") : null;
-
-  if (card) {
-    card.remove();
-  }
-
-  // If nothing left, show empty state
-  if (!grid.querySelector(".property-card")) {
-    grid.innerHTML = "<p>You have no saved properties yet.</p>";
-  }
-});
-
-// Attach click handlers to user review cards
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".user-review-card").forEach(card => {
-        card.addEventListener("click", () => {
-            const propertyId = card.dataset.propertyId;
-            if (!propertyId) return;
-            openPropertyModal(propertyId);
-        });
-    });
 });

@@ -1,0 +1,259 @@
+/* ===========================
+   Property Card
+=========================== */
+.property-card {
+  flex: 0 1 400px;
+  max-width: 400px;
+  height: 515px;
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.property-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.property-image {
+  position: relative;
+  height: 250px;
+  overflow: hidden;
+}
+
+.property-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.property-card:hover .property-image img {
+  transform: scale(1.05);
+}
+
+.property-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #e74c3c;
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.property-content {
+  padding: 25px;
+}
+
+.property-content h3 {
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+.property-location {
+  color: #666;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+}
+
+.property-location i {
+  color: #e74c3c;
+  margin-right: 5px;
+}
+
+.property-price {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #27ae60;
+  margin-bottom: 20px;
+}
+
+.property-features {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.property-features span {
+  display: flex;
+  align-items: center;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.property-features i {
+  margin-right: 5px;
+  color: #3498db;
+}
+
+.btn-outline {
+  display: inline-block;
+  padding: 10px 20px;
+  border: 2px solid #3498db;
+  border-radius: 50px;
+  color: #3498db;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.btn-outline:hover {
+  background-color: #3498db;
+  color: white;
+}
+
+/* ===========================
+   Modal Styles
+=========================== */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: rgba(0,0,0,0.7);
+  padding: 50px 20px;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 15px;
+  padding: 25px;
+  max-width: 1000px;
+  margin: auto;
+  position: relative;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #666;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.modal-close:hover {
+  color: #e74c3c;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modal-image {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.modal-details h2 {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+.modal-details p {
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.modal-details .price {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #27ae60;
+  margin-bottom: 15px;
+}
+
+.modal-details .features {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.modal-details .features span {
+  display: flex;
+  align-items: center;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.modal-details .features i {
+  margin-right: 6px;
+  color: #3498db;
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.modal-actions .btn {
+  border-radius: 50px;
+  font-weight: 600;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+/* ===========================
+   Past Reviews Card
+=========================== */
+#modalReviewsCard {
+  background: #fafafa;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 15px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+#modalReviewsCard h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+#modalPastReviews .review-card {
+  border-bottom: 1px solid #eee;
+  padding: 10px 0;
+}
+
+#modalPastReviews .review-card:last-child {
+  border-bottom: none;
+}
+
+#modalPastReviews .review-card strong {
+  color: #2c3e50;
+}
+
+#modalPastReviews .review-card p {
+  color: #555;
+  margin: 5px 0;
+}
+
+/* ===========================
+   Animations
+=========================== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -32,7 +32,7 @@ $error = '';
 
 // Fetch user reviews
 $reviewsSql = "
-    SELECT r.*, p.title, pi.image_path 
+    SELECT r.*, p.title, p.location, p.price, p.bedrooms, p.bathrooms, pi.image_path 
     FROM property_reviews r
     INNER JOIN properties p ON r.property_id = p.id
     LEFT JOIN property_images pi ON p.id = pi.property_id AND pi.is_primary = 1
@@ -128,52 +128,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php else: ?>
           <div class="property-grid">
             <?php foreach ($savedProperties as $property): ?>
-              <?php render_property_card($property); ?> <!-- ✅ render modular card -->
+              <?php render_property_card($property); ?> <!-- ✅ use modular card -->
             <?php endforeach; ?>
           </div>
         <?php endif; ?>
       </div>
 
+      <!-- User Reviews -->
       <div class="tab-content" id="reviews">
-          <?php if (empty($userReviews)): ?>
-              <p>You haven't left any reviews yet.</p>
-          <?php else: ?>
-              <div class="reviews-grid">
-                  <?php foreach ($userReviews as $review): ?>
-                      <div class="user-review-card" 
-                          data-property-id="<?= (int)$review['property_id'] ?>" 
-                          style="
-                              display:flex;
-                              gap:15px;
-                              align-items:flex-start;
-                              border:1px solid #eee;
-                              border-radius:8px;
-                              padding:10px;
-                              margin-bottom:10px;
-                              background:#f9f9f9;
-                              cursor:pointer;
-                          ">
-                          
-                          <!-- Property Thumbnail -->
-                          <div class="thumbnail" style="flex-shrink:0;">
-                              <img src="<?= htmlspecialchars($review['image_path'] ?: '/BatEstateExplorer/assets/images/bg4.jpg') ?>" 
-                                  alt="Property Thumbnail" 
-                                  style="width:100px;height:70px;object-fit:cover;border-radius:6px;">
-                          </div>
-                          
-                          <!-- Review Info -->
-                          <div class="review-info" style="flex:1;">
-                              <strong><?= htmlspecialchars($review['title']) ?></strong>
-                              <div class="review-stars" style="color:#f5a623;">
-                                  <?= str_repeat('⭐', (int)$review['rating']) . str_repeat('☆', 5 - (int)$review['rating']) ?>
-                              </div>
-                              <p style="margin:5px 0;"><?= htmlspecialchars($review['review_text']) ?></p>
-                              <small style="color:#666;"><?= date('M d, Y', strtotime($review['created_at'])) ?></small>
-                          </div>
-                      </div>
-                  <?php endforeach; ?>
-              </div>
-          <?php endif; ?>
+        <?php if (empty($userReviews)): ?>
+          <p>You haven't left any reviews yet.</p>
+        <?php else: ?>
+          <div class="property-grid">
+            <?php foreach ($userReviews as $review): ?>
+              <?php 
+                // reuse property card
+                $propertyData = [
+                    'id'        => $review['property_id'],
+                    'title'     => $review['title'],
+                    'location'  => $review['location'],
+                    'price'     => $review['price'],
+                    'bedrooms'  => $review['bedrooms'],
+                    'bathrooms' => $review['bathrooms'],
+                    'image_path'=> $review['image_path'],
+                    'created_at'=> $review['created_at'],
+                ];
+                render_property_card($propertyData);
+              ?>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
       </div>
     </div>
   </div>
@@ -215,3 +199,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!-- Page-specific JS -->
 <script src="/BatEstateExplorer/assets/js/user_profile.js"></script>
+<script src="/BatEstateExplorer/assets/js/property_card_logic.js"></script>
