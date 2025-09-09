@@ -295,6 +295,18 @@ $res = $propsStmt->get_result();
                             </form>
                         </div>
                     </div>
+                    <script>
+                        function toggleSoldBy(select, propertyId) {
+                            const container = document.getElementById('soldByContainer-' + propertyId);
+                            if (!container) return; // safety
+                            if (select.value === 'sold_by') {
+                                container.style.display = 'block';
+                            } else {
+                                container.style.display = 'none';
+                                container.querySelector('input').value = '';
+                            }
+                        }
+                    </script>
 
                 <?php endforeach; ?>
             <?php else: ?>
@@ -1010,17 +1022,6 @@ $res = $propsStmt->get_result();
         confirmBtn.style.display = "none";
         spinner.style.display = "flex";
     });
-
-    function toggleSoldBy(select, propertyId) {
-    const container = document.getElementById('soldByContainer-' + propertyId);
-    if (select.value === 'sold_by') {
-        container.style.display = 'block';
-    } else {
-        container.style.display = 'none';
-        container.querySelector('input').value = '';
-    }
-}
-
 
 });
 </script>

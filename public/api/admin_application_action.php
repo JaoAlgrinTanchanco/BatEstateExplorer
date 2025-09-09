@@ -32,87 +32,98 @@ try {
     $pdo->beginTransaction();
 
     if ($action === 'approve') {
-        // Fetch the application
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE id = ?");
-        $stmt->execute([$id]);
-        $application = $stmt->fetch(PDO::FETCH_ASSOC);
+    // Fetch the application
+    $stmt = $pdo->prepare("SELECT * FROM applications WHERE id = ?");
+    $stmt->execute([$id]);
+    $application = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$application) {
-            throw new Exception('Application not found');
-        }
-
-        // Map agent_type to user_type
-        $user_type = match ($application['agent_type'] ?? '') {
-            'direct_agent' => 'direct_agent',
-            'associate_agent' => 'associate_agent',
-            default => 'user'
-        };
-
-        // Prepare integer fields
-        $company_id = (int)($application['company_id'] ?? 0);
-        $experience_years = (int)($application['experience_years'] ?? 0);
-
-        // Check if user with same email exists
-        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
-        $stmt->execute([$application['email']]);
-        $existingUser = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($existingUser) {
-            // Delete old user safely
-            $delStmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
-            $delStmt->execute([$existingUser['id']]);
-        }
-
-        // Insert new agent account
-        $insert = "
-            INSERT INTO users (
-                first_name, last_name, email, password_hash, phone, address,
-                user_type, status,
-                education, school, course, graduation_year,
-                certifications, training,
-                broker_license_path, prc_license_path, resume_path, valid_id_path, additional_docs_path,
-                company_id, broker_id, license_number, experience_years,
-                specialization, bio
-            ) VALUES (
-                :first_name, :last_name, :email, :password_hash, :phone, :address,
-                :user_type, :status,
-                :education, :school, :course, :graduation_year,
-                :certifications, :training,
-                :broker_license_path, :prc_license_path, :resume_path, :valid_id_path, :additional_docs_path,
-                :company_id, :broker_id, :license_number, :experience_years,
-                :specialization, :bio
-            )
-        ";
-
-        $stmt = $pdo->prepare($insert);
-        $stmt->execute([
-            ':first_name' => $application['first_name'] ?? '',
-            ':last_name' => $application['last_name'] ?? '',
-            ':email' => $application['email'] ?? '',
-            ':password_hash' => $application['password_hash'] ?? '',
-            ':phone' => $application['phone'] ?? '',
-            ':address' => $application['address'] ?? '',
-            ':user_type' => $user_type,
-            ':status' => 'active',
-            ':education' => $application['education'] ?? '',
-            ':school' => $application['school'] ?? '',
-            ':course' => $application['course'] ?? '',
-            ':graduation_year' => $application['graduation_year'] ?? '',
-            ':certifications' => $application['certifications'] ?? '',
-            ':training' => $application['training'] ?? '',
-            ':broker_license_path' => $application['broker_license_path'] ?? '',
-            ':prc_license_path' => $application['prc_license_path'] ?? '',
-            ':resume_path' => $application['resume_path'] ?? '',
-            ':valid_id_path' => $application['valid_id_path'] ?? '',
-            ':additional_docs_path' => $application['additional_docs_path'] ?? '',
-            ':company_id' => $company_id,
-            ':broker_id' => $application['broker_id'] ?? '',
-            ':license_number' => $application['license_number'] ?? '',
-            ':experience_years' => $experience_years,
-            ':specialization' => $application['specialization'] ?? '',
-            ':bio' => $application['bio'] ?? ''
-        ]);
+    if (!$application) {
+        throw new Exception('Application not found');
     }
+
+    // Map agent_type to user_type
+    $user_type = match ($application['agent_type'] ?? '') {
+        'direct_agent' => 'direct_agent',
+        'associate_agent' => 'associate_agent',
+        default => 'user'
+    };
+
+    // Prepare integer fields
+    $company_id = (int)($application['company_id'] ?? 0);
+    $experience_years = (int)($application['experience_years'] ?? 0);
+
+    // Insert new agent account into users
+    $stmt = $pdo->prepare("
+        INSERT INTO users (
+            first_name, last_name, email, password_hash, phone, address,
+            user_type, status,
+            education, school, course, graduation_year,
+            certifications, training,
+            broker_license_path, prc_license_path, resume_path, valid_id_path, additional_docs_path,
+            company_id, broker_id, license_number, experience_years,
+            specialization, bio
+        ) VALUES (
+            :first_name, :last_name, :email, :password_hash, :phone, :address,
+            :user_type, :status,
+            :education, :school, :course, :graduation_year,
+            :certifications, :training,
+            :broker_license_path, :prc_license_path, :resume_path, :valid_id_path, :additional_docs_path,
+            :company_id, :broker_id, :license_number, :experience_years,
+            :specialization, :bio
+        )
+    ");
+
+    $stmt->execute([
+        ':first_name' => $application['first_name'] ?? '',
+        ':last_name' => $application['last_name'] ?? '',
+        ':email' => $application['email'] ?? '',
+        ':password_hash' => $application['password_hash'] ?? '',
+        ':phone' => $application['phone'] ?? '',
+        ':address' => $application['address'] ?? '',
+        ':user_type' => $user_type,
+        ':status' => 'active',
+        ':education' => $application['education'] ?? '',
+        ':school' => $application['school'] ?? '',
+        ':course' => $application['course'] ?? '',
+        ':graduation_year' => $application['graduation_year'] ?? '',
+        ':certifications' => $application['certifications'] ?? '',
+        ':training' => $application['training'] ?? '',
+        ':broker_license_path' => $application['broker_license_path'] ?? '',
+        ':prc_license_path' => $application['prc_license_path'] ?? '',
+        ':resume_path' => $application['resume_path'] ?? '',
+        ':valid_id_path' => $application['valid_id_path'] ?? '',
+        ':additional_docs_path' => $application['additional_docs_path'] ?? '',
+        ':company_id' => $company_id,
+        ':broker_id' => $application['broker_id'] ?? '',
+        ':license_number' => $application['license_number'] ?? '',
+        ':experience_years' => $experience_years,
+        ':specialization' => $application['specialization'] ?? '',
+        ':bio' => $application['bio'] ?? ''
+    ]);
+
+    // Get the newly created user_id
+    $new_user_id = $pdo->lastInsertId();
+
+    // Insert into agents table
+    $stmt = $pdo->prepare("
+        INSERT INTO agents (
+            user_id, company_id, broker_id, license_number, experience_years, specialization, bio
+        ) VALUES (
+            :user_id, :company_id, :broker_id, :license_number, :experience_years, :specialization, :bio
+        )
+    ");
+
+    $stmt->execute([
+        ':user_id' => $new_user_id,
+        ':company_id' => $company_id,
+        ':broker_id' => $application['broker_id'] ?? '',
+        ':license_number' => $application['license_number'] ?? '',
+        ':experience_years' => $experience_years,
+        ':specialization' => $application['specialization'] ?? '',
+        ':bio' => $application['bio'] ?? ''
+    ]);
+}
+
 
     // Update application status
     $stmt = $pdo->prepare("UPDATE applications SET status = :status WHERE id = :id");

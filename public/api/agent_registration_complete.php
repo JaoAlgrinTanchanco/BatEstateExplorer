@@ -1,6 +1,7 @@
 <?php
 session_start();
 
+// ======= Connect to Database =======
 try {
     require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/config/pdo_database.php';
 } catch (Exception $e) {
@@ -8,12 +9,14 @@ try {
     exit;
 }
 
+// ======= Only POST requests =======
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: ../auth/agent_registration.php?error=" . urlencode("Invalid request method"));
     exit;
 }
 
 try {
+
     // ======= Helper Functions =======
     function sanitize($input) {
         return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
@@ -32,14 +35,8 @@ try {
 
     function handleUpload($file, $prefix, $docsDir, $imgsDir, $allowedTypes) {
         if (!$file || $file['error'] !== UPLOAD_ERR_OK) return null;
-
-        if (!in_array($file['type'], $allowedTypes)) {
-            throw new Exception("Invalid file type: {$file['name']}");
-        }
-
-        if ($file['size'] > 5 * 1024 * 1024) {
-            throw new Exception("File too large: {$file['name']}");
-        }
+        if (!in_array($file['type'], $allowedTypes)) throw new Exception("Invalid file type: {$file['name']}");
+        if ($file['size'] > 5 * 1024 * 1024) throw new Exception("File too large: {$file['name']}");
 
         $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
         $fname = $prefix . '_' . uniqid() . '.' . $ext;
@@ -48,7 +45,6 @@ try {
         if (!move_uploaded_file($file['tmp_name'], $dest)) {
             throw new Exception("Failed to save file: {$file['name']}");
         }
-
         return $dest;
     }
 
@@ -89,7 +85,6 @@ try {
     $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
     $stmt->execute([$email]);
     $existingUser = $stmt->fetch(PDO::FETCH_ASSOC);
-
     if ($existingUser && (!$user_id || $existingUser['id'] != $user_id)) {
         throw new Exception("Email already exists");
     }
@@ -165,11 +160,10 @@ try {
 
     $pdo->commit();
 
-    // ======= Redirect on Success =======
-    header("Location: ../../public/controllers/user_dashboard.php?view=profile");
+    header("Location: /BatEstateExplorer/auth/login.php");
     exit;
 
-catch (Exception $e) {
+} catch (Exception $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     header("Location: ../../auth/agent_registration.php?error=" . urlencode($e->getMessage()));
     exit;

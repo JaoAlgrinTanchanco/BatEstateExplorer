@@ -20,53 +20,53 @@ $lot_size        = floatval($_POST['lot_size'] ?? 0);
 $status          = $_POST['status'] ?? 'available';
 $existing_images = $_POST['existing_images'] ?? [];
 
-$listing_type    = $_POST['listing_type'] ?? 'owned';
-$sold_by_email   = $_POST['sold_by_email'] ?? null;
+$listing_type      = $_POST['listing_type'] ?? 'owned';
+$agent_email       = $_POST['agent_email'] ?? null;
 
 try {
     $pdo->beginTransaction();
 
-    // 🔹 Fetch current property to get creator
+    // 🔹 Fetch current property
     $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
     $stmt->execute([$property_id]);
     $property = $stmt->fetch(PDO::FETCH_ASSOC);
-
     if (!$property) throw new Exception("Property not found.");
 
-    $sold_by_agent_id = null;
+    $agent_id = null;
 
-    // 🔹 Handle "Sold By" case
-    if ($listing_type === 'sold_by' && $sold_by_email) {
-        // Find agent by email
+    // 🔹 If listing_type is 'associate_agent', find the agent by email & company
+    if ($listing_type === 'associate_agent' && $agent_email) {
         $stmtAgent = $pdo->prepare("
             SELECT a.id 
-            FROM agent a
+            FROM agents a
             JOIN users u ON u.id = a.user_id
-            WHERE u.email = ?
+            WHERE u.email = ? 
+              AND u.company_id = ?
+              AND u.user_type = 'associate_agent'
         ");
-        $stmtAgent->execute([$sold_by_email]);
+        $stmtAgent->execute([$agent_email, $property['company_id']]);
         $agent = $stmtAgent->fetch(PDO::FETCH_ASSOC);
 
-        if (!$agent) throw new Exception("Agent not found with email: $sold_by_email");
-        $sold_by_agent_id = $agent['id'];
+        if (!$agent) throw new Exception("Agent not found in your company.");
+        $agent_id = $agent['id']; // use agent.id to update property.agent_id
     }
 
-    // 1️⃣ Update property details (keep original creator)
+    // 🔹 Update property details, including agent_id if found
     $stmtUpdate = $pdo->prepare("
         UPDATE properties SET
             title = ?, description = ?, property_type = ?, location = ?, price = ?, 
             bedrooms = ?, bathrooms = ?, sqm = ?, lot_size = ?, status = ?, 
-            sold_by_agent_id = ?, updated_at = NOW()
+            agent_id = ?, updated_at = NOW()
         WHERE id = ?
     ");
     $stmtUpdate->execute([
         $title, $description, $property_type, $location, $price,
         $bedrooms, $bathrooms, $sqm, $lot_size, $status,
-        $sold_by_agent_id,
+        $agent_id,
         $property_id
     ]);
 
-    // 2️⃣ Delete removed images
+    // 🔹 Delete removed images
     $stmtCurrent = $pdo->prepare("SELECT image_path FROM property_images WHERE property_id = ?");
     $stmtCurrent->execute([$property_id]);
     $current_images = $stmtCurrent->fetchAll(PDO::FETCH_COLUMN);
@@ -81,7 +81,7 @@ try {
         }
     }
 
-    // 3️⃣ Upload new images
+    // 🔹 Upload new images
     if (isset($_FILES['new_images']) && is_array($_FILES['new_images']['tmp_name'])) {
         $upload_dir = 'C:\\xampp\\htdocs\\BatEstateExplorer\\storage\\uploads\\property_images\\';
         $file_count = min(count($_FILES['new_images']['tmp_name']), 10);
