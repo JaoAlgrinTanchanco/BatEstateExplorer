@@ -3,6 +3,8 @@ session_start();
 require_once '../config/database.php';
 require_once __DIR__ . '/../public/app/redirects.php';
 
+$error = '';
+
 // Handle AJAX login requests (for agent login from index.php and Auth Modal)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_POST['ajax']) && $_POST['ajax'] === '1') {
     $response = ['success' => false, 'message' => ''];
@@ -24,19 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_P
         $result = mysqli_stmt_get_result($stmt);
         
         if ($user = mysqli_fetch_assoc($result)) {
-            // Verify password
             if (verify_password($password, $user['password_hash'])) {
-                // If user_type is specified, check if it matches
                 if ($user_type && $user['user_type'] !== $user_type) {
                     throw new Exception('Access denied. ' . ucfirst(str_replace('_', ' ', $user_type)) . ' privileges required.');
                 }
-                
-                // Check if user is approved
                 if ($user['status'] !== 'active') {
                     throw new Exception('Your account is pending approval. Please wait for admin review.');
                 }
-                
-                // Generate token and store in session
+
                 $token = generate_token($user['id'], $user['email'], $user['user_type']);
                 $_SESSION['user_token'] = $token;
                 $_SESSION['user_id'] = $user['id'];
@@ -45,62 +42,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_P
                 $response['success'] = true;
                 $response['message'] = 'Login successful!';
                 $response['user_type'] = $user['user_type'];
-                
             } else {
-                throw new Exception('Invalid email or password.');
+                throw new Exception('Incorrect password. Please try again.');
             }
         } else {
-            throw new Exception('Invalid email or password.');
+            throw new Exception('No account found with that email.');
         }
         
     } catch (Exception $e) {
         $response['message'] = $e->getMessage();
     }
     
-    // Return JSON response
     header('Content-Type: application/json');
     echo json_encode($response);
     exit;
 }
 
-// Handle regular form login (existing functionality)
-$error = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Handle regular form login (non-AJAX)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_POST['ajax']) && $_POST['ajax'] === '0') {
     $email = sanitize_input($conn, $_POST['email']);
     $password = $_POST['password'];
-    
+
     if (empty($email) || empty($password)) {
         $error = "Please enter both email and password.";
     } else {
-        // Find user by email
         $query = "SELECT * FROM users WHERE email = ?";
         $stmt = mysqli_prepare($conn, $query);
         mysqli_stmt_bind_param($stmt, "s", $email);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
-        
+
         if ($user = mysqli_fetch_assoc($result)) {
-            // Verify password
             if (verify_password($password, $user['password_hash'])) {
-                // Check if user is approved
                 if ($user['status'] !== 'active') {
                     $error = "Your account is pending approval. Please wait for admin review.";
                 } else {
-                    // Generate token and store in session
                     $token = generate_token($user['id'], $user['email'], $user['user_type']);
                     $_SESSION['user_token'] = $token;
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['user_type'] = $user['user_type'];
-                    
-                    // Use the redirect helper for clean, simple redirects
                     redirect_by_user_type($user['user_type']);
                 }
             } else {
-                $error = "Invalid email or password.";
+                $error = "Incorrect password. Please try again.";
             }
         } else {
-            $error = "Invalid email or password.";
+            $error = "No account found with that email.";
         }
     }
 }
