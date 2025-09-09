@@ -124,25 +124,7 @@ $company_name = $company['name'] ?? 'Unknown Company';
 // Output console log for debugging
 echo "<script>console.log('Company ID: {$company_id}, Company Name: " . addslashes($company_name) . "');</script>";
 
-// Pagination setup
-$per_page = 10;
-$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
-$offset = ($page - 1) * $per_page;
-
-// Count total properties
-$countStmt = $conn->prepare("
-    SELECT COUNT(*) AS total 
-    FROM properties p
-    LEFT JOIN agents a ON p.agent_id = a.id
-    WHERE a.company_id = ?
-");
-$countStmt->bind_param("i", $company_id);
-$countStmt->execute();
-$countRes = $countStmt->get_result();
-$total_rows = $countRes->fetch_assoc()['total'] ?? 0;
-$total_pages = ceil($total_rows / $per_page);
-
-// Fetch paginated properties from the same company
+// Fetch all properties from the same company (no pagination)
 $propsStmt = $conn->prepare("
     SELECT 
         p.id, 
@@ -165,12 +147,12 @@ $propsStmt = $conn->prepare("
     LEFT JOIN users su ON sa.user_id = su.id
     WHERE a.company_id = ?
     ORDER BY p.created_at DESC
-    LIMIT ? OFFSET ?
 ");
 
-$propsStmt->bind_param("iii", $company_id, $per_page, $offset);
+$propsStmt->bind_param("i", $company_id);
 $propsStmt->execute();
 $res = $propsStmt->get_result();
+
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_profile_tab.css">
@@ -296,6 +278,18 @@ $res = $propsStmt->get_result();
                                 <!-- Add new images -->
                                 <label>Add Images</label>
                                 <input type="file" name="new_images[]" multiple>
+
+                                <label>Listing Type</label>
+                                <select name="listing_type" class="listing-type" onchange="toggleSoldBy(this, <?= $property['id'] ?>)">
+                                    <option value="owned" <?= ($ownership=='Owned')?'selected':'' ?>>Owned</option>
+                                    <option value="sold_by" <?= ($ownership!='Owned')?'selected':'' ?>>Sold By</option>
+                                </select>
+
+                                <div id="soldByContainer-<?= $property['id'] ?>" style="display: <?= ($ownership!='Owned')?'block':'none' ?>;">
+                                    <label>Agent Email</label>
+                                    <input type="email" name="sold_by_email" placeholder="Enter agent email" value="<?= ($ownership!='Owned')?$property['sold_by_email']:'' ?>">
+                                </div>
+
 
                                 <button type="submit">Update Listing</button>
                             </form>
@@ -455,84 +449,39 @@ $res = $propsStmt->get_result();
                 <h2>Company Listings: <?= htmlspecialchars($company_name) ?></h2>
                 <p>List of all properties from your company.</p>
 
-                <table border="1" cellpadding="8" cellspacing="0" width="100%">
-                    <thead>
-                        <tr>
-                            <th>Property</th>
-                            <th>Location</th>
-                            <th>Price</th>
-                            <th>Bedrooms</th>
-                            <th>Bathrooms</th>
-                            <th>Size (sqm)</th>
-                            <th>Status</th>
-                            <th>Created By</th>
-                            <th>Sold By</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php while ($row = $res->fetch_assoc()): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($row['title']); ?></td>
-                            <td><?= htmlspecialchars($row['location']); ?></td>
-                            <td>₱<?= number_format($row['price'], 2); ?></td>
-                            <td><?= (int)$row['bedrooms']; ?></td>
-                            <td><?= (int)$row['bathrooms']; ?></td>
-                            <td><?= number_format($row['sqm'], 2); ?></td>
-                            <td><?= ucfirst($row['status']); ?></td>
-                            <td><?= htmlspecialchars($row['created_by'] ?? 'N/A'); ?></td>
-                            <td><?= htmlspecialchars($row['sold_by'] ?? 'N/A'); ?></td>
-                            <td>
-                                <a href="#" 
-                                class="view-details" 
-                                data-id="<?= $row['id']; ?>" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#propertyModal">Details</a>
-                            </td>
-                        </tr>
-                        <?php endwhile; ?>
-                    </tbody>
-                </table>
-
-                <!-- Pagination -->
-                <div class="pagination">
-                    <?php if ($page > 1): ?>
-                        <a href="?view=associate_profile&page=<?= $page - 1 ?>">&laquo; Previous</a>
-                    <?php endif; ?>
-                    
-                    Page <?= $page ?> of <?= $total_pages ?>
-                    
-                    <?php if ($page < $total_pages): ?>
-                        <a href="?view=associate_profile&page=<?= $page + 1 ?>">Next &raquo;</a>
-                    <?php endif; ?>
+                <!-- Scrollable container -->
+                <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd;">
+                    <table border="1" cellpadding="8" cellspacing="0" width="100%">
+                        <thead style="position: sticky; top: 0; background: #f5f5f5; z-index: 1;">
+                            <tr>
+                                <th>Property</th>
+                                <th>Location</th>
+                                <th>Price</th>
+                                <th>Bedrooms</th>
+                                <th>Bathrooms</th>
+                                <th>Size (sqm)</th>
+                                <th>Status</th>
+                                <th>Created By</th>
+                                <th>Sold By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ($row = $res->fetch_assoc()): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($row['title']); ?></td>
+                                <td><?= htmlspecialchars($row['location']); ?></td>
+                                <td>₱<?= number_format($row['price'], 2); ?></td>
+                                <td><?= (int)$row['bedrooms']; ?></td>
+                                <td><?= (int)$row['bathrooms']; ?></td>
+                                <td><?= number_format($row['sqm'], 2); ?></td>
+                                <td><?= ucfirst($row['status']); ?></td>
+                                <td><?= htmlspecialchars($row['created_by'] ?? 'N/A'); ?></td>
+                                <td><?= htmlspecialchars($row['sold_by'] ?? 'N/A'); ?></td>
+                            </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
                 </div>
-
-                <!-- Modal (unchanged) -->
-                <!-- <div class="modal fade" id="propertyModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="propertyTitle">Property Details</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div id="propertyCarousel" class="carousel slide mb-3" data-bs-ride="carousel">
-                                    <div class="carousel-inner" id="carouselImages"></div>
-                                    <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev">
-                                        <span class="carousel-control-prev-icon"></span>
-                                    </button>
-                                    <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next">
-                                        <span class="carousel-control-next-icon"></span>
-                                    </button>
-                                </div>
-                                <ul class="list-group" id="propertyDetails"></ul>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            </div>
-                        </div>
-                    </div>
-                </div> -->
             <?php break; ?>
 
             <?php case 'review_privileges': ?>
@@ -1061,6 +1010,17 @@ $res = $propsStmt->get_result();
         confirmBtn.style.display = "none";
         spinner.style.display = "flex";
     });
+
+    function toggleSoldBy(select, propertyId) {
+    const container = document.getElementById('soldByContainer-' + propertyId);
+    if (select.value === 'sold_by') {
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+        container.querySelector('input').value = '';
+    }
+}
+
 
 });
 </script>

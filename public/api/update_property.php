@@ -7,32 +7,63 @@ session_start();
 
 if (!isset($_POST['property_id'])) die('Invalid request');
 
-$property_id   = intval($_POST['property_id']);
-$title         = $_POST['title'] ?? '';
-$description   = $_POST['description'] ?? '';
-$property_type = $_POST['property_type'] ?? '';
-$location      = $_POST['location'] ?? '';
-$price         = floatval($_POST['price'] ?? 0);
-$bedrooms      = intval($_POST['bedrooms'] ?? 0);
-$bathrooms     = intval($_POST['bathrooms'] ?? 0);
-$sqm           = floatval($_POST['sqm'] ?? 0);
-$lot_size      = floatval($_POST['lot_size'] ?? 0);
-$status        = $_POST['status'] ?? 'available';
+$property_id     = intval($_POST['property_id']);
+$title           = $_POST['title'] ?? '';
+$description     = $_POST['description'] ?? '';
+$property_type   = $_POST['property_type'] ?? '';
+$location        = $_POST['location'] ?? '';
+$price           = floatval($_POST['price'] ?? 0);
+$bedrooms        = intval($_POST['bedrooms'] ?? 0);
+$bathrooms       = intval($_POST['bathrooms'] ?? 0);
+$sqm             = floatval($_POST['sqm'] ?? 0);
+$lot_size        = floatval($_POST['lot_size'] ?? 0);
+$status          = $_POST['status'] ?? 'available';
 $existing_images = $_POST['existing_images'] ?? [];
+
+$listing_type    = $_POST['listing_type'] ?? 'owned';
+$sold_by_email   = $_POST['sold_by_email'] ?? null;
 
 try {
     $pdo->beginTransaction();
 
-    // 1️⃣ Update property details
-    $stmt = $pdo->prepare("
+    // 🔹 Fetch current property to get creator
+    $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
+    $stmt->execute([$property_id]);
+    $property = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$property) throw new Exception("Property not found.");
+
+    $sold_by_agent_id = null;
+
+    // 🔹 Handle "Sold By" case
+    if ($listing_type === 'sold_by' && $sold_by_email) {
+        // Find agent by email
+        $stmtAgent = $pdo->prepare("
+            SELECT a.id 
+            FROM agent a
+            JOIN users u ON u.id = a.user_id
+            WHERE u.email = ?
+        ");
+        $stmtAgent->execute([$sold_by_email]);
+        $agent = $stmtAgent->fetch(PDO::FETCH_ASSOC);
+
+        if (!$agent) throw new Exception("Agent not found with email: $sold_by_email");
+        $sold_by_agent_id = $agent['id'];
+    }
+
+    // 1️⃣ Update property details (keep original creator)
+    $stmtUpdate = $pdo->prepare("
         UPDATE properties SET
             title = ?, description = ?, property_type = ?, location = ?, price = ?, 
-            bedrooms = ?, bathrooms = ?, sqm = ?, lot_size = ?, status = ?, updated_at = NOW()
+            bedrooms = ?, bathrooms = ?, sqm = ?, lot_size = ?, status = ?, 
+            sold_by_agent_id = ?, updated_at = NOW()
         WHERE id = ?
     ");
-    $stmt->execute([
+    $stmtUpdate->execute([
         $title, $description, $property_type, $location, $price,
-        $bedrooms, $bathrooms, $sqm, $lot_size, $status, $property_id
+        $bedrooms, $bathrooms, $sqm, $lot_size, $status,
+        $sold_by_agent_id,
+        $property_id
     ]);
 
     // 2️⃣ Delete removed images
