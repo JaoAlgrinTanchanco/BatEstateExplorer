@@ -75,3 +75,74 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const dotsBtn = document.getElementById('profileDotsBtn');
+  const dropdownMenu = document.getElementById('profileDropdownMenu');
+
+  if (!dotsBtn || !dropdownMenu) return;
+
+  // Toggle menu
+  dotsBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // prevent closing immediately
+    dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', () => {
+    dropdownMenu.style.display = 'none';
+  });
+
+  // Menu item actions
+  document.getElementById('editProfileBtn').addEventListener('click', () => {
+    dropdownMenu.style.display = 'none';
+    document.getElementById('profileModal').style.display = 'block';
+  });
+
+  document.getElementById('becomeDirectAgent').addEventListener('click', () => {
+    dropdownMenu.style.display = 'none';
+    alert('Direct Agent feature coming soon!');
+  });
+
+  document.getElementById('becomeAssociateAgent').addEventListener('click', () => {
+    dropdownMenu.style.display = 'none';
+    alert('Associate Agent feature coming soon!');
+  });
+
+  document.getElementById('deleteAccount').addEventListener('click', () => {
+    dropdownMenu.style.display = 'none';
+    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      // Implement deletion logic here
+      alert('Account deletion not implemented yet.');
+    }
+  });
+});
+
+// delete account
+document.getElementById('deleteAccount').addEventListener('click', async () => {
+  const dropdownMenu = document.getElementById('profileDropdownMenu');
+  dropdownMenu.style.display = 'none';
+
+  if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) return;
+
+  try {
+    const res = await fetch('/BatEstateExplorer/public/api/delete_account.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert(data.message);
+      window.location.href = '/BatEstateExplorer/public/index.php';
+    } else {
+      alert('Error: ' + data.message);
+    }
+
+  } catch (err) {
+    console.error('❌ Delete account error:', err);
+    alert('Failed to delete account.');
+  }
+});

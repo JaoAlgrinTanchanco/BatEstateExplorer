@@ -910,6 +910,31 @@ body, html {
 }
 
 
+.popup-menu {
+  display: none;
+  position: absolute;
+  top: 100%; /* just below the button */
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  min-width: 200px;
+  z-index: 100;
+}
+
+.popup-menu .menu-item {
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.popup-menu .menu-item:hover {
+  background-color: #f0f0f0;
+}
 
 
 /* Responsive */

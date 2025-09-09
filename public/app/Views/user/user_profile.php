@@ -30,22 +30,6 @@ $stmt->close();
 $message = '';
 $error = '';
 
-// Fetch user reviews
-$reviewsSql = "
-    SELECT r.*, p.title, p.location, p.price, p.bedrooms, p.bathrooms, pi.image_path 
-    FROM property_reviews r
-    INNER JOIN properties p ON r.property_id = p.id
-    LEFT JOIN property_images pi ON p.id = pi.property_id AND pi.is_primary = 1
-    WHERE r.user_id = ?
-    ORDER BY r.created_at DESC
-";
-$stmt = $conn->prepare($reviewsSql);
-$stmt->bind_param("i", $userId);
-$stmt->execute();
-$reviewsResult = $stmt->get_result();
-$userReviews = $reviewsResult->fetch_all(MYSQLI_ASSOC);
-$stmt->close();
-
 // Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name = sanitize_input($conn, $_POST['first_name']);
@@ -71,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <div class="profile-container" style="margin-top: 80px;">
-  
+
   <!-- Profile Header -->
   <div class="profile-header" style="display: flex; justify-content: space-between; align-items: center;">
     <div class="profile-info" style="display: flex; align-items: center; gap: 20px;">
@@ -89,77 +73,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     </div>
 
+    <!-- 3-dot menu in profile header -->
     <div class="profile-actions">
       <button class="dots-btn" id="profileDotsBtn" title="Options">
         <i class="fa-solid fa-ellipsis"></i>
       </button>
+
+      <!-- Popup Menu -->
       <div class="popup-menu" id="profileDropdownMenu">
         <div class="menu-item" id="editProfileBtn">
           <i class="fa-solid fa-user-pen"></i><span>Edit Profile</span>
         </div>
-        <div class="menu-item" onclick="logout()">
-          <i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
+        <div class="menu-item" id="becomeDirectAgent">
+          <i class="fa-solid fa-user-tie"></i><span>Become Direct Agent</span>
+        </div>
+        <div class="menu-item" id="becomeAssociateAgent">
+          <i class="fa-solid fa-user-plus"></i><span>Become Associate Agent</span>
+        </div>
+        <div class="menu-item" id="deleteAccount">
+          <i class="fa-solid fa-trash"></i><span>Delete Account</span>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs-container">
-    <div class="tabs-header">
-      <button class="tab-btn active" data-tab="saved-list">Saved List</button>
-      <button class="tab-btn" data-tab="reviews">Reviews</button>
-    </div>
-
-    <div class="tab-controls">
-      <label for="sortSelect">Sort by:</label>
-      <select id="sortSelect">
-        <option value="date">Date</option>
-        <option value="price">Price</option>
-      </select>
-    </div>
-
-    <div class="tabs-content">
-      
-      <!-- Saved Properties -->
-      <div class="tab-content active" id="saved-list">
-        <?php if (empty($savedProperties)): ?>
-          <p>You have no saved properties yet.</p>
-        <?php else: ?>
-          <div class="property-grid">
-            <?php foreach ($savedProperties as $property): ?>
-              <?php render_property_card($property); ?> <!-- ✅ use modular card -->
-            <?php endforeach; ?>
-          </div>
-        <?php endif; ?>
+  <!-- Saved Properties List -->
+  <div class="saved-properties-section">
+    <h2>Saved Properties</h2>
+    <?php if (empty($savedProperties)): ?>
+      <p>You have no saved properties yet.</p>
+    <?php else: ?>
+      <div class="property-grid">
+        <?php foreach ($savedProperties as $property): ?>
+          <?php render_property_card($property); ?>
+        <?php endforeach; ?>
       </div>
-
-      <!-- User Reviews -->
-      <div class="tab-content" id="reviews">
-        <?php if (empty($userReviews)): ?>
-          <p>You haven't left any reviews yet.</p>
-        <?php else: ?>
-          <div class="property-grid">
-            <?php foreach ($userReviews as $review): ?>
-              <?php 
-                // reuse property card
-                $propertyData = [
-                    'id'        => $review['property_id'],
-                    'title'     => $review['title'],
-                    'location'  => $review['location'],
-                    'price'     => $review['price'],
-                    'bedrooms'  => $review['bedrooms'],
-                    'bathrooms' => $review['bathrooms'],
-                    'image_path'=> $review['image_path'],
-                    'created_at'=> $review['created_at'],
-                ];
-                render_property_card($propertyData);
-              ?>
-            <?php endforeach; ?>
-          </div>
-        <?php endif; ?>
-      </div>
-    </div>
+    <?php endif; ?>
   </div>
 </div>
 
