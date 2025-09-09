@@ -29,6 +29,8 @@ if (!in_array($action, ['approve', 'reject'])) {
 $status = ($action === 'approve') ? 'approved' : 'rejected';
 
 try {
+    $pdo->beginTransaction();
+
     if ($action === 'approve') {
         // Fetch the application
         $stmt = $pdo->prepare("SELECT * FROM applications WHERE id = ?");
@@ -36,8 +38,7 @@ try {
         $application = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$application) {
-            echo json_encode(['success' => false, 'message' => 'Application not found']);
-            exit;
+            throw new Exception('Application not found');
         }
 
         // Map agent_type to user_type
@@ -51,7 +52,18 @@ try {
         $company_id = (int)($application['company_id'] ?? 0);
         $experience_years = (int)($application['experience_years'] ?? 0);
 
-        // Build INSERT with named placeholders (no agent_type)
+        // Check if user with same email exists
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute([$application['email']]);
+        $existingUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existingUser) {
+            // Delete old user safely
+            $delStmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+            $delStmt->execute([$existingUser['id']]);
+        }
+
+        // Insert new agent account
         $insert = "
             INSERT INTO users (
                 first_name, last_name, email, password_hash, phone, address,
@@ -73,7 +85,6 @@ try {
         ";
 
         $stmt = $pdo->prepare($insert);
-
         $stmt->execute([
             ':first_name' => $application['first_name'] ?? '',
             ':last_name' => $application['last_name'] ?? '',
@@ -110,8 +121,10 @@ try {
         ':id' => $id
     ]);
 
+    $pdo->commit();
     echo json_encode(['success' => true]);
 
-} catch (PDOException $e) {
+} catch (Exception $e) {
+    $pdo->rollBack();
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
