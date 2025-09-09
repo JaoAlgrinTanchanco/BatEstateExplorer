@@ -68,8 +68,8 @@ require_once '../config/pdo_database.php';
 </head>
 <body>
     <div class="registration-container">
-        <a href="../index.php" class="back-link">
-            <i class="fas fa-arrow-left"></i> Back to Home
+        <a href="javascript:void(0)" class="back-link" id="back-link">
+            <i class="fas fa-arrow-left"></i> Back
         </a>
 
         <h1><i class="fas fa-user-tie"></i> Agent Registration</h1>
@@ -303,6 +303,21 @@ document.addEventListener('DOMContentLoaded', () => {
         userType.addEventListener('change', toggleFields);
     }
 });
+
+// Change back link text if redirected from profile
+const backLink = document.getElementById('back-link');
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('from') === 'profile') {
+    backLink.innerHTML = '<i class="fas fa-arrow-left"></i> Back to Profile';
+}
+
+// Go back to previous page when clicked
+if (backLink) {
+    backLink.addEventListener('click', () => {
+        window.history.back();
+    });
+}
+
 </script>
 
 </body>

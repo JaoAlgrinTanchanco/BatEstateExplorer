@@ -79,70 +79,117 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener('DOMContentLoaded', () => {
   const dotsBtn = document.getElementById('profileDotsBtn');
   const dropdownMenu = document.getElementById('profileDropdownMenu');
+  const profileModal = document.getElementById('profileModal');
+  const modalCloseBtn = document.getElementById('modalCloseBtn');
 
-  if (!dotsBtn || !dropdownMenu) return;
-
-  // Toggle menu
-  dotsBtn.addEventListener('click', (e) => {
-    e.stopPropagation(); // prevent closing immediately
-    dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
-  });
-
-  // Close menu when clicking outside
-  document.addEventListener('click', () => {
-    dropdownMenu.style.display = 'none';
-  });
-
-  // Menu item actions
-  document.getElementById('editProfileBtn').addEventListener('click', () => {
-    dropdownMenu.style.display = 'none';
-    document.getElementById('profileModal').style.display = 'block';
-  });
-
-  document.getElementById('becomeDirectAgent').addEventListener('click', () => {
-    dropdownMenu.style.display = 'none';
-    alert('Direct Agent feature coming soon!');
-  });
-
-  document.getElementById('becomeAssociateAgent').addEventListener('click', () => {
-    dropdownMenu.style.display = 'none';
-    alert('Associate Agent feature coming soon!');
-  });
-
-  document.getElementById('deleteAccount').addEventListener('click', () => {
-    dropdownMenu.style.display = 'none';
-    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-      // Implement deletion logic here
-      alert('Account deletion not implemented yet.');
-    }
-  });
-});
-
-// delete account
-document.getElementById('deleteAccount').addEventListener('click', async () => {
-  const dropdownMenu = document.getElementById('profileDropdownMenu');
-  dropdownMenu.style.display = 'none';
-
-  if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) return;
-
-  try {
-    const res = await fetch('/BatEstateExplorer/public/api/delete_account.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
+  if (dotsBtn && dropdownMenu) {
+    // Toggle menu
+    dotsBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // prevent closing immediately
+      dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
     });
 
-    const data = await res.json();
+    // Close menu when clicking outside
+    document.addEventListener('click', () => {
+      dropdownMenu.style.display = 'none';
+    });
 
-    if (data.success) {
-      alert(data.message);
-      window.location.href = '/BatEstateExplorer/public/index.php';
-    } else {
-      alert('Error: ' + data.message);
+    // Prevent closing when clicking inside menu
+    dropdownMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    // Menu item actions
+    document.getElementById('editProfileBtn').addEventListener('click', () => {
+      dropdownMenu.style.display = 'none';
+      profileModal.style.display = 'block';
+    });
+
+    const directBtn = document.getElementById('becomeDirectAgent');
+    if (directBtn) {
+      directBtn.addEventListener('click', () => {
+        dropdownMenu.style.display = 'none';
+      });
     }
 
-  } catch (err) {
-    console.error('❌ Delete account error:', err);
-    alert('Failed to delete account.');
+    const associateBtn = document.getElementById('becomeAssociateAgent');
+    if (associateBtn) {
+      associateBtn.addEventListener('click', () => {
+        dropdownMenu.style.display = 'none';
+      });
+    }
+  }
+
+  /** ----------------------
+   * Profile Modal Close
+   * ---------------------- */
+  if (profileModal && modalCloseBtn) {
+    // Close when clicking "X"
+    modalCloseBtn.addEventListener('click', () => {
+      profileModal.style.display = 'none';
+    });
+
+    // Close when clicking outside modal content
+    profileModal.addEventListener('click', (e) => {
+      if (e.target === profileModal) {
+        profileModal.style.display = 'none';
+      }
+    });
   }
 });
+
+
+// Delete Account Modal
+const deleteAccountBtn = document.getElementById('deleteAccount');
+const deleteModal = document.getElementById('deleteAccountModal');
+const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+const deleteLoading = document.getElementById('deleteLoading');
+const deleteModalActions = document.getElementById('deleteModalActions');
+const deleteModalMessage = document.getElementById('deleteModalMessage');
+
+if (deleteAccountBtn && deleteModal) {
+  // Show modal
+  deleteAccountBtn.addEventListener('click', () => {
+    const dropdownMenu = document.getElementById('profileDropdownMenu');
+    if (dropdownMenu) dropdownMenu.style.display = 'none';
+    deleteModal.style.display = 'flex';
+  });
+
+  // Cancel
+  cancelDeleteBtn.addEventListener('click', () => {
+    deleteModal.style.display = 'none';
+  });
+
+  // Confirm deletion
+  confirmDeleteBtn.addEventListener('click', async () => {
+    // Switch to loading state
+    deleteModalMessage.textContent = "Please wait while we delete your account...";
+    deleteModalActions.style.display = 'none';
+    deleteLoading.style.display = 'block';
+
+    try {
+      const res = await fetch('/BatEstateExplorer/public/api/delete_account.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        // Redirect after a short delay
+        setTimeout(() => {
+          window.location.href = '/BatEstateExplorer/auth/login.php';
+        }, 1000);
+      } else {
+        deleteModalMessage.textContent = "Error deleting account: " + data.message;
+        deleteLoading.style.display = 'none';
+      }
+    } catch (err) {
+      console.error('❌ Delete account error:', err);
+      deleteModalMessage.textContent = "Something went wrong. Please try again.";
+      deleteLoading.style.display = 'none';
+    }
+  });
+}

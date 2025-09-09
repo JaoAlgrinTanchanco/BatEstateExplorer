@@ -54,6 +54,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
+<style>
+  /* Saved Properties Grid */
+  .saved-properties-section {
+    margin-top: 30px;
+  }
+
+  .saved-properties-section h2 {
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+    font-weight: bold;
+  }
+
+  .property-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 15px;
+  }
+
+  .property-card {
+    height: 500px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease;
+  }
+
+  .property-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .property-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .property-card .card-body {
+    padding: 12px 15px;
+  }
+
+  .property-card .card-body h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #333;
+  }
+
+  .property-card .card-body p {
+    margin: 5px 0;
+    font-size: 0.9rem;
+    color: #666;
+  }
+</style>
+
 <div class="profile-container" style="margin-top: 80px;">
 
   <!-- Profile Header -->
@@ -84,12 +142,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="menu-item" id="editProfileBtn">
           <i class="fa-solid fa-user-pen"></i><span>Edit Profile</span>
         </div>
+        
         <div class="menu-item" id="becomeDirectAgent">
-          <i class="fa-solid fa-user-tie"></i><span>Become Direct Agent</span>
+            <i class="fa-solid fa-user-tie"></i>
+            <a href="/BatEstateExplorer/auth/agent_registration.php?type=direct_agent" style="text-decoration:none; color:inherit;">Become Direct Agent</a>
         </div>
+
         <div class="menu-item" id="becomeAssociateAgent">
-          <i class="fa-solid fa-user-plus"></i><span>Become Associate Agent</span>
+            <i class="fa-solid fa-user-plus"></i>
+            <a href="/BatEstateExplorer/auth/agent_registration.php?type=associate_agent" style="text-decoration:none; color:inherit;">Become Associate Agent</a>
         </div>
+
         <div class="menu-item" id="deleteAccount">
           <i class="fa-solid fa-trash"></i><span>Delete Account</span>
         </div>
@@ -143,6 +206,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <button type="submit">Update Profile</button>
     </form>
+  </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div id="deleteAccountModal" class="modal" style="display:none;">
+  <div class="modal-overlay"></div>
+  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+    <h2 id="deleteModalTitle">Delete Account</h2>
+    <p id="deleteModalMessage">Are you sure you want to delete your account? This action cannot be undone.</p>
+    
+    <div class="modal-actions" id="deleteModalActions">
+      <button id="cancelDeleteBtn" class="btn">Cancel</button>
+      <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+    </div>
+
+    <!-- Loading state -->
+    <div id="deleteLoading" style="display:none; text-align:center; margin-top:15px;">
+      <i class="fas fa-spinner fa-spin" style="font-size:20px; margin-right:8px;"></i>
+      <span>Deleting account...</span>
+    </div>
   </div>
 </div>
 
