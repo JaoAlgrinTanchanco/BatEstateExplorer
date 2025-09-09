@@ -30,6 +30,19 @@ $stmt->close();
 $message = '';
 $error = '';
 
+// Check if user has a pending or submitted application
+$stmt = $conn->prepare("SELECT status FROM applications WHERE user_id = ? ORDER BY created_at DESC LIMIT 1");
+$stmt->bind_param("i", $current_user['id']);
+$stmt->execute();
+$result = $stmt->get_result();
+$lastApplication = $result->fetch_assoc();
+$stmt->close();
+
+$disableAgentOptions = false;
+if ($lastApplication && $lastApplication['status'] === 'pending') {
+    $disableAgentOptions = true; // Disable if an application is pending
+}
+
 // Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name = sanitize_input($conn, $_POST['first_name']);
@@ -110,6 +123,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     font-size: 0.9rem;
     color: #666;
   }
+
+  a.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
 </style>
 
 <div class="profile-container" style="margin-top: 80px;">
@@ -145,12 +165,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <div class="menu-item" id="becomeDirectAgent">
             <i class="fa-solid fa-user-tie"></i>
-            <a href="/BatEstateExplorer/auth/agent_registration.php?type=direct_agent" style="text-decoration:none; color:inherit;">Become Direct Agent</a>
+            <a href="/BatEstateExplorer/auth/agent_registration.php?type=direct_agent" 
+              style="text-decoration:none; color:inherit;"
+              <?= $disableAgentOptions ? 'class="disabled" onclick="return false;"' : '' ?>>
+              Become Direct Agent
+            </a>
         </div>
 
         <div class="menu-item" id="becomeAssociateAgent">
             <i class="fa-solid fa-user-plus"></i>
-            <a href="/BatEstateExplorer/auth/agent_registration.php?type=associate_agent" style="text-decoration:none; color:inherit;">Become Associate Agent</a>
+            <a href="/BatEstateExplorer/auth/agent_registration.php?type=associate_agent" 
+              style="text-decoration:none; color:inherit;"
+              <?= $disableAgentOptions ? 'class="disabled" onclick="return false;"' : '' ?>>
+              Become Associate Agent
+            </a>
         </div>
 
         <div class="menu-item" id="deleteAccount">

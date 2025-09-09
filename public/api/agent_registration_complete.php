@@ -1,20 +1,17 @@
 <?php
 session_start();
-header('Content-Type: application/json');
 
 try {
     require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/config/pdo_database.php';
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'DB connection failed: '.$e->getMessage()]);
+    header("Location: ../auth/agent_registration.php?error=" . urlencode("DB connection failed: " . $e->getMessage()));
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+    header("Location: ../auth/agent_registration.php?error=" . urlencode("Invalid request method"));
     exit;
 }
-
-$response = ['success' => false, 'message' => ''];
 
 try {
     // ======= Helper Functions =======
@@ -46,7 +43,7 @@ try {
 
         $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
         $fname = $prefix . '_' . uniqid() . '.' . $ext;
-        $dest = (strpos($file['type'], 'image/') === 0) ? $imgsDir.$fname : $docsDir.$fname;
+        $dest = (strpos($file['type'], 'image/') === 0) ? $imgsDir . $fname : $docsDir . $fname;
 
         if (!move_uploaded_file($file['tmp_name'], $dest)) {
             throw new Exception("Failed to save file: {$file['name']}");
@@ -56,52 +53,52 @@ try {
     }
 
     // ======= Collect Form Inputs =======
-    $first_name  = sanitize($_POST['first_name'] ?? '');
-    $last_name   = sanitize($_POST['last_name'] ?? '');
-    $email       = sanitize($_POST['email'] ?? '');
-    $password    = $_POST['password'] ?? '';
-    $user_type   = sanitize($_POST['user_type'] ?? '');
-    $phone       = sanitize($_POST['phone'] ?? '');
-    $address     = sanitize($_POST['address'] ?? '');
-    $company_id  = !empty($_POST['company_id']) ? (int)$_POST['company_id'] : null;
+    $user_id    = $_SESSION['user_id'] ?? null;
+    $first_name = sanitize($_POST['first_name'] ?? '');
+    $last_name  = sanitize($_POST['last_name'] ?? '');
+    $email      = sanitize($_POST['email'] ?? '');
+    $password   = $_POST['password'] ?? '';
+    $user_type  = sanitize($_POST['user_type'] ?? '');
+    $phone      = sanitize($_POST['phone'] ?? '');
+    $address    = sanitize($_POST['address'] ?? '');
+    $company_id = !empty($_POST['company_id']) ? (int)$_POST['company_id'] : null;
 
-    // Professional Info
     $broker_id        = sanitize($_POST['broker_id'] ?? null);
     $prc_number       = sanitize($_POST['prc_number'] ?? null);
     $experience_years = sanitize($_POST['experience_years'] ?? null);
     $specializations  = sanitize($_POST['specializations'] ?? null);
     $experience_details = sanitize($_POST['experience_details'] ?? null);
 
-    // Education
     $education       = sanitize($_POST['education'] ?? null);
     $school          = sanitize($_POST['school'] ?? null);
     $course          = sanitize($_POST['course'] ?? null);
     $graduation_year = sanitize($_POST['graduation_year'] ?? null);
 
-    // Certifications & Training
     $certifications = sanitize($_POST['certifications'] ?? null);
     $training       = sanitize($_POST['training'] ?? null);
 
     // ======= Validation =======
-    if (empty($first_name) || empty($last_name) || empty($email) || empty($password) || empty($user_type)) {
+    if (!$first_name || !$last_name || !$email || !$password || !$user_type) {
         throw new Exception("All required fields must be filled");
     }
     if ($user_type === 'associate_agent' && !$company_id) {
         throw new Exception("Company selection is required for associate agents");
     }
 
-    // Unique email check
+    // ======= Check for Existing Email =======
     $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
     $stmt->execute([$email]);
-    if ($stmt->fetch()) {
+    $existingUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($existingUser && (!$user_id || $existingUser['id'] != $user_id)) {
         throw new Exception("Email already exists");
     }
 
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
     // ======= File Uploads =======
-    $docsDir = $_SERVER['DOCUMENT_ROOT'].'/BatEstateExplorer/storage/uploads/documents/';
-    $imgsDir = $_SERVER['DOCUMENT_ROOT'].'/BatEstateExplorer/storage/uploads/images/';
+    $docsDir = $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/storage/uploads/documents/';
+    $imgsDir = $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/storage/uploads/images/';
     if (!file_exists($docsDir)) mkdir($docsDir, 0755, true);
     if (!file_exists($imgsDir)) mkdir($imgsDir, 0755, true);
 
@@ -124,58 +121,56 @@ try {
         }
     }
 
-    // ======= Insert Into DB =======
+    // ======= Insert Application =======
     $pdo->beginTransaction();
 
-$stmt = $pdo->prepare("
-    INSERT INTO applications (
-        first_name, last_name, email, password_hash, phone, address,
-        education, school, course, graduation_year, certifications, training,
-        broker_license_path, prc_license_path, resume_path, valid_id_path, additional_docs_path,
-        agent_type, company_id, broker_id, license_number, experience_years, specialization, bio,
-        status, created_at
-    ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW()
-    )
-");
+    $stmt = $pdo->prepare("
+        INSERT INTO applications (
+            user_id, first_name, last_name, email, password_hash, phone, address,
+            education, school, course, graduation_year, certifications, training,
+            broker_license_path, prc_license_path, resume_path, valid_id_path, additional_docs_path,
+            agent_type, company_id, broker_id, license_number, experience_years, specialization, bio
+        ) VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        )
+    ");
 
-$stmt->execute([
-    $first_name,
-    $last_name,
-    $email,
-    $password_hash,
-    $phone,
-    $address,
-    $education ?? null,
-    $school ?? null,
-    $course ?? null,
-    $graduation_year ?? null,
-    $certifications ?? null,
-    $training ?? null,
-    $broker_license,
-    $prc_license,
-    $resume,
-    $valid_id,
-    $additional_docs ?? null,
-    $user_type,
-    $company_id,
-    $broker_id ?? null,
-    $prc_number ?? null,           // <-- PRC Number
-    $experience_years ?? null,
-    $specializations ?? null,      // <-- Specializations
-    $experience_details ?? null    // <-- Experience Details
-]);
+    $stmt->execute([
+        $user_id ?? null,
+        $first_name,
+        $last_name,
+        $email,
+        $password_hash,
+        $phone,
+        $address,
+        $education ?? null,
+        $school ?? null,
+        $course ?? null,
+        $graduation_year ?? null,
+        $certifications ?? null,
+        $training ?? null,
+        $broker_license,
+        $prc_license,
+        $resume,
+        $valid_id,
+        $additional_docs ?? null,
+        $user_type,
+        $company_id,
+        $broker_id ?? null,
+        $prc_number ?? null,
+        $experience_years ?? null,
+        $specializations ?? null,
+        $experience_details ?? null
+    ]);
 
-$pdo->commit();
+    $pdo->commit();
 
-    // Redirect on success
-    header("Location: http://localhost/BatEstateExplorer/index.php");
+    // ======= Redirect on Success =======
+    header("Location: ../../public/controllers/user_dashboard.php?view=profile");
     exit;
 
-} catch (Exception $e) {
+catch (Exception $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
-    $response['success'] = false;
-    $response['message'] = $e->getMessage();
-    echo json_encode($response);
+    header("Location: ../../auth/agent_registration.php?error=" . urlencode($e->getMessage()));
     exit;
 }
