@@ -124,7 +124,25 @@ $company_name = $company['name'] ?? 'Unknown Company';
 // Output console log for debugging
 echo "<script>console.log('Company ID: {$company_id}, Company Name: " . addslashes($company_name) . "');</script>";
 
-// Fetch all properties from the same company
+// Pagination setup
+$per_page = 10;
+$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $per_page;
+
+// Count total properties
+$countStmt = $conn->prepare("
+    SELECT COUNT(*) AS total 
+    FROM properties p
+    LEFT JOIN agents a ON p.agent_id = a.id
+    WHERE a.company_id = ?
+");
+$countStmt->bind_param("i", $company_id);
+$countStmt->execute();
+$countRes = $countStmt->get_result();
+$total_rows = $countRes->fetch_assoc()['total'] ?? 0;
+$total_pages = ceil($total_rows / $per_page);
+
+// Fetch paginated properties from the same company
 $propsStmt = $conn->prepare("
     SELECT 
         p.id, 
@@ -147,9 +165,10 @@ $propsStmt = $conn->prepare("
     LEFT JOIN users su ON sa.user_id = su.id
     WHERE a.company_id = ?
     ORDER BY p.created_at DESC
+    LIMIT ? OFFSET ?
 ");
 
-$propsStmt->bind_param("i", $company_id);
+$propsStmt->bind_param("iii", $company_id, $per_page, $offset);
 $propsStmt->execute();
 $res = $propsStmt->get_result();
 ?>
@@ -453,30 +472,43 @@ $res = $propsStmt->get_result();
                     </thead>
                     <tbody>
                         <?php while ($row = $res->fetch_assoc()): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($row['title']); ?></td>
-                                <td><?= htmlspecialchars($row['location']); ?></td>
-                                <td>₱<?= number_format($row['price'], 2); ?></td>
-                                <td><?= (int)$row['bedrooms']; ?></td>
-                                <td><?= (int)$row['bathrooms']; ?></td>
-                                <td><?= number_format($row['sqm'], 2); ?></td>
-                                <td><?= ucfirst($row['status']); ?></td>
-                                <td><?= htmlspecialchars($row['created_by'] ?? 'N/A'); ?></td>
-                                <td><?= htmlspecialchars($row['sold_by'] ?? 'N/A'); ?></td>
-                                <td>
-                                    <a href="#" 
-                                    class="view-details" 
-                                    data-id="<?= $row['id']; ?>" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#propertyModal">Details</a>
-                                </td>
-                            </tr>
+                        <tr>
+                            <td><?= htmlspecialchars($row['title']); ?></td>
+                            <td><?= htmlspecialchars($row['location']); ?></td>
+                            <td>₱<?= number_format($row['price'], 2); ?></td>
+                            <td><?= (int)$row['bedrooms']; ?></td>
+                            <td><?= (int)$row['bathrooms']; ?></td>
+                            <td><?= number_format($row['sqm'], 2); ?></td>
+                            <td><?= ucfirst($row['status']); ?></td>
+                            <td><?= htmlspecialchars($row['created_by'] ?? 'N/A'); ?></td>
+                            <td><?= htmlspecialchars($row['sold_by'] ?? 'N/A'); ?></td>
+                            <td>
+                                <a href="#" 
+                                class="view-details" 
+                                data-id="<?= $row['id']; ?>" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#propertyModal">Details</a>
+                            </td>
+                        </tr>
                         <?php endwhile; ?>
                     </tbody>
                 </table>
 
+                <!-- Pagination -->
+                <div class="pagination">
+                    <?php if ($page > 1): ?>
+                        <a href="?view=associate_profile&page=<?= $page - 1 ?>">&laquo; Previous</a>
+                    <?php endif; ?>
+                    
+                    Page <?= $page ?> of <?= $total_pages ?>
+                    
+                    <?php if ($page < $total_pages): ?>
+                        <a href="?view=associate_profile&page=<?= $page + 1 ?>">Next &raquo;</a>
+                    <?php endif; ?>
+                </div>
+
                 <!-- Modal (unchanged) -->
-                <div class="modal fade" id="propertyModal" tabindex="-1" aria-hidden="true">
+                <!-- <div class="modal fade" id="propertyModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
@@ -500,7 +532,7 @@ $res = $propsStmt->get_result();
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> -->
             <?php break; ?>
 
             <?php case 'review_privileges': ?>
