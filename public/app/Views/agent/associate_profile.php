@@ -475,18 +475,6 @@ $res = $propsStmt->get_result();
                     </tbody>
                 </table>
 
-                <!-- Pagination Links -->
-                <div style="margin-top:10px;">
-                    <?php if($page > 1): ?>
-                        <a href="?page=<?= $page - 1 ?>">Previous</a>
-                    <?php endif; ?>
-
-                    Page <?= $page ?> of <?= $total_pages ?>
-
-                    <?php if($page < $total_pages): ?>
-                        <a href="?page=<?= $page + 1 ?>">Next</a>
-                    <?php endif; ?>
-                </div>
                 <!-- Modal (unchanged) -->
                 <div class="modal fade" id="propertyModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-lg">
