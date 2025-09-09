@@ -86,9 +86,6 @@ if (!function_exists('render_property_card')) {
     </div>
 </div>
 
-<script>
-console.log("Property Card Rendered: ID=<?= $id ?>, Thumbnail=<?= $image ?>");
-</script>
 <?php
         endif;
 
