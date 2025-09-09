@@ -101,6 +101,57 @@ $stmt->execute();
 $res = $stmt->get_result();
 $reviews = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 $stmt->close();
+
+// Make sure $user is the logged-in user
+$logged_in_user_id = (int)($user['id'] ?? 0);
+
+// Fetch the agent record to get company_id
+$agentStmt = $conn->prepare("SELECT company_id FROM agents WHERE user_id = ?");
+$agentStmt->bind_param("i", $logged_in_user_id);
+$agentStmt->execute();
+$agentRes = $agentStmt->get_result();
+$agent = $agentRes->fetch_assoc();
+$company_id = (int)($agent['company_id'] ?? 0);
+
+// Fetch company info
+$companyStmt = $conn->prepare("SELECT name FROM companies WHERE id = ?");
+$companyStmt->bind_param("i", $company_id);
+$companyStmt->execute();
+$companyRes = $companyStmt->get_result();
+$company = $companyRes->fetch_assoc();
+$company_name = $company['name'] ?? 'Unknown Company';
+
+// Output console log for debugging
+echo "<script>console.log('Company ID: {$company_id}, Company Name: " . addslashes($company_name) . "');</script>";
+
+// Fetch all properties from the same company
+$propsStmt = $conn->prepare("
+    SELECT 
+        p.id, 
+        p.title, 
+        p.location, 
+        p.price, 
+        p.bedrooms, 
+        p.bathrooms, 
+        p.sqm, 
+        p.status, 
+        p.created_at,
+        a.id AS agent_id, 
+        CONCAT(u.first_name, ' ', u.last_name) AS created_by,
+        sa.id AS sold_agent_id, 
+        CONCAT(su.first_name, ' ', su.last_name) AS sold_by
+    FROM properties p
+    LEFT JOIN agents a ON p.agent_id = a.id
+    LEFT JOIN users u ON a.user_id = u.id
+    LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
+    LEFT JOIN users su ON sa.user_id = su.id
+    WHERE a.company_id = ?
+    ORDER BY p.created_at DESC
+");
+
+$propsStmt->bind_param("i", $company_id);
+$propsStmt->execute();
+$res = $propsStmt->get_result();
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_profile_tab.css">
@@ -382,37 +433,8 @@ $stmt->close();
         <?php break; ?>
 
         <?php case 'company_listings': ?>
-                <h2>Company Listings</h2>
+                <h2>Company Listings: <?= htmlspecialchars($company_name) ?></h2>
                 <p>List of all properties from your company.</p>
-
-                <?php
-                // Fetch all properties with agent info
-                $stmt = $conn->prepare("
-                    SELECT 
-                        p.id, 
-                        p.title,  -- use title instead of image
-                        p.location, 
-                        p.price, 
-                        p.bedrooms, 
-                        p.bathrooms, 
-                        p.sqm, 
-                        p.status, 
-                        p.created_at,
-                        a.id AS agent_id, 
-                        CONCAT(u.first_name, ' ', u.last_name) AS created_by,
-                        sa.id AS sold_agent_id, 
-                        CONCAT(su.first_name, ' ', su.last_name) AS sold_by
-                    FROM properties p
-                    LEFT JOIN agents a ON p.agent_id = a.id
-                    LEFT JOIN users u ON a.user_id = u.id
-                    LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
-                    LEFT JOIN users su ON sa.user_id = su.id
-                    ORDER BY p.created_at DESC
-                ");
-
-                $stmt->execute();
-                $res = $stmt->get_result();
-                ?>
 
                 <table border="1" cellpadding="8" cellspacing="0" width="100%">
                     <thead>
@@ -452,7 +474,20 @@ $stmt->close();
                         <?php endwhile; ?>
                     </tbody>
                 </table>
-                <!-- Modal placed at bottom of page, hidden until triggered -->
+
+                <!-- Pagination Links -->
+                <div style="margin-top:10px;">
+                    <?php if($page > 1): ?>
+                        <a href="?page=<?= $page - 1 ?>">Previous</a>
+                    <?php endif; ?>
+
+                    Page <?= $page ?> of <?= $total_pages ?>
+
+                    <?php if($page < $total_pages): ?>
+                        <a href="?page=<?= $page + 1 ?>">Next</a>
+                    <?php endif; ?>
+                </div>
+                <!-- Modal (unchanged) -->
                 <div class="modal fade" id="propertyModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
@@ -461,18 +496,15 @@ $stmt->close();
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
-                                <!-- Image slider -->
                                 <div id="propertyCarousel" class="carousel slide mb-3" data-bs-ride="carousel">
-                                <div class="carousel-inner" id="carouselImages"></div>
-                                <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev">
-                                    <span class="carousel-control-prev-icon"></span>
-                                </button>
-                                <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next">
-                                    <span class="carousel-control-next-icon"></span>
-                                </button>
+                                    <div class="carousel-inner" id="carouselImages"></div>
+                                    <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev">
+                                        <span class="carousel-control-prev-icon"></span>
+                                    </button>
+                                    <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next">
+                                        <span class="carousel-control-next-icon"></span>
+                                    </button>
                                 </div>
-
-                                <!-- Property details -->
                                 <ul class="list-group" id="propertyDetails"></ul>
                             </div>
                             <div class="modal-footer">
