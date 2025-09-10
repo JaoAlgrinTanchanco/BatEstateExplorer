@@ -1,0 +1,137 @@
+<?php
+/**
+ * Modular property card for agents.
+ * Usage:
+ *   include __DIR__ . '/agent_property_card.php';
+ *   render_agent_property_card($property);              // full card + modal
+ *   render_agent_property_card($property, true);        // only modal
+ */
+
+if (!function_exists('render_agent_property_card')) {
+    function render_agent_property_card(array $property, bool $modalOnly = false) {
+        // --- Database connection ---
+        $conn = $GLOBALS['conn'] ?? null;
+        if (!$conn) {
+            echo "<p style='color:red'>Database connection not found.</p>";
+            return;
+        }
+
+        $propertyId = (int)($property['id'] ?? 0);
+
+        // --- Fetch all images for this property ---
+        $images = ['/BatEstateExplorer/assets/images/bg4.jpg']; // default fallback
+        $stmtImg = $conn->prepare("SELECT image_path FROM property_images WHERE property_id = ? ORDER BY id ASC");
+        if ($stmtImg) {
+            $stmtImg->bind_param("i", $propertyId);
+            $stmtImg->execute();
+            $resImg = $stmtImg->get_result();
+            $images = [];
+            while ($row = $resImg->fetch_assoc()) {
+                $images[] = '/' . ltrim($row['image_path'], '/');
+            }
+            $stmtImg->close();
+        }
+        if (empty($images)) $images[] = '/BatEstateExplorer/assets/images/bg4.jpg';
+        $property['images'] = $images;
+
+        // --- Card Thumbnail: first property image or fallback ---
+        $image = htmlspecialchars($property['images'][0]);
+
+        // --- Property basic info ---
+        $title      = htmlspecialchars($property['title'] ?? '');
+        $location   = htmlspecialchars($property['location'] ?? '');
+        $price      = number_format((float)($property['price'] ?? 0), 2);
+        $id         = $propertyId;
+        $createdAt  = strtotime($property['created_at'] ?? 'now');
+        $bedrooms   = (int)($property['bedrooms'] ?? 0);
+        $bathrooms  = (int)($property['bathrooms'] ?? 0);
+
+        // --- Full card rendering ---
+        if (!$modalOnly):
+?>
+<div class="property-card"
+     data-price="<?= (int)($property['price'] ?? 0) ?>"
+     data-date="<?= $createdAt ?>"
+     data-image="<?= $image ?>">
+    <div class="property-image">
+        <img src="<?= $image ?>" alt="Property Image">
+    </div>
+    <div class="property-content">
+        <h3><?= $title ?></h3>
+        <p class="property-location"><i class="fas fa-map-marker-alt"></i> <?= $location ?></p>
+        <p class="property-price">₱<?= $price ?></p>
+        <div class="property-features">
+            <span><i class="fas fa-bed"></i> <?= $bedrooms ?> Beds</span>
+            <span><i class="fas fa-bath"></i> <?= $bathrooms ?> Baths</span>
+        </div>
+        <button class="btn btn-outline view-details-btn" data-id="<?= $id ?>">View Details</button>
+    </div>
+</div>
+<?php
+        endif;
+
+        // --- Modal (only once per page) ---
+        if (!defined('AGENT_PROPERTY_MODAL_INCLUDED')):
+            define('AGENT_PROPERTY_MODAL_INCLUDED', true);
+?>
+<!-- Swiper CSS & JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+<!-- Property Modal -->
+<div id="propertyModal" class="modal" style="display:none;">
+    <div class="modal-content" style="display:flex; gap:20px; max-width:1000px; margin:auto;">
+        <span class="modal-close">&times;</span>
+
+        <!-- Left: Property Details -->
+        <div class="modal-body" style="flex:2;">
+            <div class="modal-image">
+                <div class="swiper modal-swiper">
+                    <div class="swiper-wrapper" id="modalImageWrapper"></div>
+                    <div class="swiper-button-next"></div>
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-pagination"></div>
+                </div>
+            </div>
+            <div class="modal-details">
+                <h2 id="modalTitle"></h2>
+                <p id="modalLocation"></p>
+                <p id="modalPrice" class="price"></p>
+                <div class="features">
+                    <span><i class="fas fa-bed"></i> <span id="modalBedrooms"></span> Beds</span>
+                    <span><i class="fas fa-bath"></i> <span id="modalBathrooms"></span> Baths</span>
+                </div>
+                <p><strong>Description:</strong></p>
+                <p id="modalDescription"></p>
+                <!-- No user actions: message/save/review -->
+            </div>
+        </div>
+
+        <!-- Right: Past Reviews (optional for agents, can keep read-only) -->
+        <div id="modalReviewsCard" style="
+            flex:1;
+            background:#fff;
+            border-radius:12px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.15);
+            padding:15px;
+            max-height:600px;
+            overflow-y:auto;">
+            <h3 style="margin-top:0;">Past Reviews</h3>
+            <div id="modalPastReviews">
+                <p>Reviews will load here when modal opens.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Inline JS for Property Modal -->
+<script>
+<?php echo file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/assets/js/property_card_logic.js'); ?>
+</script>
+
+<?php
+        endif;
+    }
+}
+?>
