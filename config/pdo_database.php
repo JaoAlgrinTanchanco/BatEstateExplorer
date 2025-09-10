@@ -1,79 +1,60 @@
 <?php
-// PDO Database configuration for BatEstate
-$host = 'localhost';
-$dbname = 'batestate';
-$username = 'root';
-$password = '';
+session_start();
+require_once '../config/pdo_database.php'; // make sure this points to your PDO config
 
-try {
-    $pdo = new PDO(
-        "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
-        $username,
-        $password,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, // throw exceptions on errors
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, // fetch assoc arrays
-            PDO::ATTR_EMULATE_PREPARES => false, // use native prepared statements
-        ]
-    );
-} catch (PDOException $e) {
-    die("Database connection failed: " . $e->getMessage());
-}
+$message = '';
 
-// Function to sanitize input (optional with PDO)
-function sanitize_input($data) {
-    return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
-}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['email'])) {
+    $email = trim($_POST['email']);
 
-// Function to hash password
-function hash_password($password) {
-    return password_hash($password, PASSWORD_DEFAULT);
-}
+    // Check if email exists in DB
+    $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+    $stmt->execute([$email]);
+    $user = $stmt->fetch();
 
-// Function to verify password
-function verify_password($password, $hash) {
-    return password_verify($password, $hash);
-}
+    if ($user) {
+        // Generate 6-digit OTP
+        $otp = rand(100000, 999999);
 
-// Function to generate JWT-like session token
-function generate_token($user_id, $email, $user_type) {
-    $payload = [
-        'user_id' => $user_id,
-        'email' => $email,
-        'user_type' => $user_type,
-        'exp' => time() + (24 * 60 * 60) // 24 hours
-    ];
-    return base64_encode(json_encode($payload));
-}
+        // Store OTP and expiry in session (10 minutes)
+        $_SESSION['reset_email'] = $email;
+        $_SESSION['reset_otp'] = $otp;
+        $_SESSION['otp_expires'] = time() + 600;
 
-// Function to decode token
-function decode_token($token) {
-    $decoded = json_decode(base64_decode($token), true);
-    if ($decoded && isset($decoded['exp']) && $decoded['exp'] > time()) {
-        return $decoded;
+        // For local testing: display OTP instead of sending email
+        $message = "OTP for $email: <strong>$otp</strong> (Valid for 10 minutes)";
+        
+        // Uncomment this to redirect to OTP verification page
+        // header('Location: verify_otp.php');
+        // exit;
+    } else {
+        $message = "No account found with this email.";
     }
-    return false;
 }
+?>
 
-// Function to check if user is logged in
-function is_logged_in() {
-    return isset($_SESSION['user_token']) && decode_token($_SESSION['user_token']);
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Forgot Password</title>
+<style>
+body { font-family: Arial; background: #f4f4f4; padding: 50px; }
+form { background: #fff; padding: 20px; border-radius: 8px; max-width: 400px; margin: auto; }
+input[type=email] { width: 100%; padding: 10px; margin: 10px 0; }
+button { padding: 10px 20px; }
+.message { color: red; }
+</style>
+</head>
+<body>
 
-// Function to check if user is admin
-function is_admin() {
-    if (!is_logged_in()) return false;
-    $token_data = decode_token($_SESSION['user_token']);
-    return $token_data && $token_data['user_type'] === 'admin';
-}
+<h2>Forgot Password</h2>
+<?php if($message) echo "<p class='message'>$message</p>"; ?>
+<form method="POST" action="">
+    <label>Email Address</label>
+    <input type="email" name="email" placeholder="Enter your account email" required>
+    <button type="submit">Send OTP</button>
+</form>
 
-// Function to get current user data
-function get_logged_in_user($pdo) {
-    if (!is_logged_in()) return null;
-    $token_data = decode_token($_SESSION['user_token']);
-    if (!$token_data) return null;
-
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-    $stmt->execute([$token_data['user_id']]);
-    return $stmt->fetch();
-}
+</body>
+</html>
