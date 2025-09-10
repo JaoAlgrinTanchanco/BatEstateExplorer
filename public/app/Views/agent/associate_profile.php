@@ -182,7 +182,7 @@ $res = $propsStmt->get_result();
         switch ($tab):
             case 'my_listings': 
         ?>
-            <h2>My Listings (Associate)</h2>
+            <h2>My Listings</h2>
 
             <div class="overview-container">
             <?php if (!empty($listings)): ?>

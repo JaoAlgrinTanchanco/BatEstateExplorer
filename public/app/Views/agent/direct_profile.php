@@ -214,16 +214,12 @@ if ($agent_id) {
                                     <label>Bathrooms</label>
                                     <input type="number" name="bathrooms" value="<?= $property['bathrooms'] ?>">
 
-                                    <label>Square Meters (sqm)</label>
-                                    <input type="number" step="0.01" name="sqm" value="<?= $property['sqm'] ?>">
-
-                                    <label>Lot Size</label>
+                                    <label>Lot Size(sqm)</label>
                                     <input type="number" step="0.01" name="lot_size" value="<?= $property['lot_size'] ?>">
 
                                     <label>Status</label>
-                                    <select name="status">
+                                    <select name="status" disabled>
                                         <option value="available" <?= $property['status']=='available'?'selected':'' ?>>Available</option>
-                                        <option value="sold" <?= $property['status']=='sold'?'selected':'' ?>>Sold</option>
                                         <option value="pending" <?= $property['status']=='pending'?'selected':'' ?>>Pending</option>
                                     </select>
 
@@ -273,21 +269,46 @@ if ($agent_id) {
                             <!-- Location -->
                             <label for="location"><strong>Location</strong></label>
                             <select id="location" name="location" required>
-                                <option value="">-- Select Location --</option>
-                                <?php 
-                                $locations = ["Lipa City", "Batangas City", "Tanauan City", "Balayan", "Santo Tomas"];
-                                foreach ($locations as $loc): ?>
-                                    <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
-                                <?php endforeach; ?>
+                                <option value="">Select Location</option>
+                                <option value="Agoncillo">Agoncillo</option>
+                                <option value="Alitagtag">Alitagtag</option>
+                                <option value="Balayan">Balayan</option>
+                                <option value="Balete">Balete</option>
+                                <option value="Batangas City">Batangas City</option>
+                                <option value="Bauan">Bauan</option>
+                                <option value="Calaca">Calaca</option>
+                                <option value="Calatagan">Calatagan</option>
+                                <option value="Cuenca">Cuenca</option>
+                                <option value="Ibaan">Ibaan</option>
+                                <option value="Laurel">Laurel</option>
+                                <option value="Lemery">Lemery</option>
+                                <option value="Lian">Lian</option>
+                                <option value="Lipa City">Lipa City</option>
+                                <option value="Lobo">Lobo</option>
+                                <option value="Mabini">Mabini</option>
+                                <option value="Malvar">Malvar</option>
+                                <option value="Mataasnakahoy">Mataasnakahoy</option>
+                                <option value="Nasugbu">Nasugbu</option>
+                                <option value="Padre Garcia">Padre Garcia</option>
+                                <option value="Rosario">Rosario</option>
+                                <option value="San Jose">San Jose</option>
+                                <option value="San Juan">San Juan</option>
+                                <option value="San Luis">San Luis</option>
+                                <option value="San Nicolas">San Nicolas</option>
+                                <option value="San Pascual">San Pascual</option>
+                                <option value="Santa Teresita">Santa Teresita</option>
+                                <option value="Santo Tomas">Santo Tomas</option>
+                                <option value="Taal">Taal</option>
+                                <option value="Talisay">Talisay</option>
+                                <option value="Tanauan City">Tanauan City</option>
+                                <option value="Taysan">Taysan</option>
+                                <option value="Tingloy">Tingloy</option>
+                                <option value="Tuy">Tuy</option>
                             </select>
 
                             <!-- Price -->
                             <label for="price"><strong>Price (₱)</strong></label>
                             <input type="number" id="price" name="price" min="0" step="0.01" required>
-
-                            <!-- Floor Area -->
-                            <label for="sqm"><strong>Floor Area (sqm)</strong></label>
-                            <input type="number" id="sqm" name="sqm" min="0" step="0.01">
 
                             <!-- Lot Size -->
                             <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
@@ -303,21 +324,11 @@ if ($agent_id) {
 
                             <!-- Bedrooms -->
                             <label for="bedrooms"><strong>Bedrooms</strong></label>
-                            <select id="bedrooms" name="bedrooms">
-                                <option value="">-- Select Bedrooms --</option>
-                                <?php for ($i = 0; $i <= 10; $i++): ?>
-                                    <option value="<?= $i ?>"><?= $i ?></option>
-                                <?php endfor; ?>
-                            </select>
+                            <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
 
                             <!-- Bathrooms -->
                             <label for="bathrooms"><strong>Bathrooms</strong></label>
-                            <select id="bathrooms" name="bathrooms">
-                                <option value="">-- Select Bathrooms --</option>
-                                <?php for ($i = 0; $i <= 10; $i++): ?>
-                                    <option value="<?= $i ?>"><?= $i ?></option>
-                                <?php endfor; ?>
-                            </select>
+                            <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
 
                             <!-- Description -->
                             <label for="description"><strong>Description</strong></label>
@@ -338,6 +349,29 @@ if ($agent_id) {
                         </form>
                     </div>
                 </div>
+                <script>
+                    const propertyType = document.getElementById('property_type');
+                    const bedrooms = document.getElementById('bedrooms');
+                    const bathrooms = document.getElementById('bathrooms');
+
+                    function toggleRooms() {
+                        if (propertyType.value.toLowerCase() === 'lot') {
+                            bedrooms.disabled = true;
+                            bathrooms.disabled = true;
+                            bedrooms.value = '';
+                            bathrooms.value = '';
+                        } else {
+                            bedrooms.disabled = false;
+                            bathrooms.disabled = false;
+                        }
+                    }
+
+                    // Listen for changes
+                    propertyType.addEventListener('change', toggleRooms);
+
+                    // Initialize on page load
+                    toggleRooms();
+                </script>
         <?php break; ?>
 
         <?php case 'analytics': ?>
