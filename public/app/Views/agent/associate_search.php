@@ -1,15 +1,14 @@
 <?php
-// user_search.php
 require_once __DIR__ . '/../../../../config/database.php';
 require_once __DIR__ . '/../../../../components/agent_property_card.php';
 
-// Determine request type (AJAX vs normal page load)
+// Detect AJAX
 $isAjax = (
     !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
 ) || (!empty($_POST['ajax']) && $_POST['ajax'] === '1');
 
-// Get filter values from request
+// Get filter values
 $request = $isAjax ? $_POST : $_GET;
 $location      = $request['location'] ?? '';
 $property_type = $request['property_type'] ?? '';
@@ -28,51 +27,35 @@ $sql = "SELECT p.*, pi.image_path
 $params = [];
 $types = "";
 
-// Filters
-if ($location !== '') {
-    $sql .= " AND p.location = ?";
-    $params[] = $location;
-    $types .= "s";
-}
-if ($property_type !== '') {
-    $sql .= " AND p.property_type = ?";
-    $params[] = $property_type;
-    $types .= "s";
-}
+// Apply filters only if set
+if ($location !== '') { $sql .= " AND p.location = ?"; $params[] = $location; $types .= "s"; }
+if ($property_type !== '') { $sql .= " AND p.property_type = ?"; $params[] = $property_type; $types .= "s"; }
+if ($bedrooms !== '') { $sql .= " AND p.bedrooms >= ?"; $params[] = (int)$bedrooms; $types .= "i"; }
+if ($bathrooms !== '') { $sql .= " AND p.bathrooms >= ?"; $params[] = (int)$bathrooms; $types .= "i"; }
+
+// Price filter
 if ($price_range !== '') {
     if ($price_range === '5000000+') {
         $sql .= " AND p.price >= 5000000";
-    } else {
-        $parts = explode('-', $price_range);
-        if (count($parts) === 2) {
-            $sql .= " AND p.price BETWEEN ? AND ?";
-            $params[] = (float) trim($parts[0]);
-            $params[] = (float) trim($parts[1]);
-            $types .= "dd";
-        }
+    } elseif (strpos($price_range, '-') !== false) {
+        [$min, $max] = array_map('floatval', explode('-', $price_range));
+        $sql .= " AND p.price BETWEEN ? AND ?";
+        $params[] = $min;
+        $params[] = $max;
+        $types .= "dd";
     }
 }
-if ($bedrooms !== '') {
-    $sql .= " AND p.bedrooms >= ?";
-    $params[] = (int) $bedrooms;
-    $types .= "i";
-}
-if ($bathrooms !== '') {
-    $sql .= " AND p.bathrooms >= ?";
-    $params[] = (int) $bathrooms;
-    $types .= "i";
-}
+
+// Size filter
 if ($size !== '') {
     if ($size === '200+') {
         $sql .= " AND p.sqm >= 200";
-    } else {
-        $parts = explode('-', $size);
-        if (count($parts) === 2) {
-            $sql .= " AND p.sqm BETWEEN ? AND ?";
-            $params[] = (float) trim($parts[0]);
-            $params[] = (float) trim($parts[1]);
-            $types .= "dd";
-        }
+    } elseif (strpos($size, '-') !== false) {
+        [$min, $max] = array_map('floatval', explode('-', $size));
+        $sql .= " AND p.sqm BETWEEN ? AND ?";
+        $params[] = $min;
+        $params[] = $max;
+        $types .= "dd";
     }
 }
 
@@ -80,190 +63,154 @@ $sql .= " ORDER BY p.created_at DESC";
 
 // Prepare statement
 $stmt = $conn->prepare($sql);
-if ($stmt === false) {
-    echo "<p>Server error (prepare failed).</p>";
-    exit;
-}
+if ($stmt === false) { echo "<p>Server error.</p>"; exit; }
 
-// Bind parameters if any
+// Bind parameters
 if (!empty($params)) {
     $bind_names = [$types];
-    foreach ($params as $key => &$value) {
-        $bind_names[] = &$value;
-    }
+    foreach ($params as &$val) $bind_names[] = &$val;
     call_user_func_array([$stmt, 'bind_param'], $bind_names);
 }
 
-// Execute query
+// Execute
 $stmt->execute();
 $result = $stmt->get_result();
 $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
-
-// --- DO NOT close the connection here ---
-// $stmt->close();
-// $conn->close();
-
-// Now we can safely render cards
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_search.css">
 
-<!-- Keep this part inside the same file for initial load -->
 <div class="search-container">
     <div class="search">
         <div class="search-form">
-            <!-- Location -->
-            <button type="button" class="search-field" data-field="location">
-                <span class="label">Location</span>
-                <span class="value" data-default="All Locations"><?= $location !== '' ? htmlspecialchars($location) : 'All Locations' ?></span>
-                <select name="location" id="location">
-                    <option value="" <?= $location === '' ? 'selected' : '' ?>>All Locations</option>
-                    <option value="Batangas City" <?= $location === 'Batangas City' ? 'selected' : '' ?>>Batangas City</option>
-                    <option value="Lipa City" <?= $location === 'Lipa City' ? 'selected' : '' ?>>Lipa City</option>
-                    <option value="Tanauan City" <?= $location === 'Tanauan City' ? 'selected' : '' ?>>Tanauan City</option>
-                </select>
-            </button>
+            <?php
+            $filters = [
+                'location' => ['label'=>'Location', 'options'=>[''=>'All Locations','Batangas City'=>'Batangas City','Lipa City'=>'Lipa City','Tanauan City'=>'Tanauan City']],
+                'property_type' => ['label'=>'Property Type', 'options'=>[''=>'All Types','Property'=>'Property']],
+                'price_range' => ['label'=>'Price Range', 'options'=>[''=>'Any Price','0-1000000'=>'₱0 - ₱1M','1000000-5000000'=>'₱1M - ₱5M','5000000+'=>'₱5M+']],
+                'bedrooms' => ['label'=>'Bedrooms', 'options'=>[''=>'Any','1'=>'1+','2'=>'2+','3'=>'3+','4'=>'4+']],
+                'bathrooms' => ['label'=>'Bathrooms', 'options'=>[''=>'Any','1'=>'1+','2'=>'2+','3'=>'3+','4'=>'4+']],
+                'size' => ['label'=>'Size (sqm)', 'options'=>[''=>'Any Size','0-50'=>'Up to 50 sqm','50-100'=>'50-100 sqm','100-200'=>'100-200 sqm','200+'=>'200+ sqm']]
+            ];
 
-            <!-- Property Type -->
-            <button type="button" class="search-field" data-field="property_type">
-                <span class="label">Property Type</span>
-                <span class="value" data-default="All Types"><?= $property_type !== '' ? htmlspecialchars($property_type) : 'All Types' ?></span>
-                <select name="property_type" id="property_type">
-                    <option value="" <?= $property_type === '' ? 'selected' : '' ?>>All Types</option>
-                    <option value="house" <?= $property_type === 'house' ? 'selected' : '' ?>>House</option>
-                    <option value="condo" <?= $property_type === 'condo' ? 'selected' : '' ?>>Condominium</option>
-                    <option value="land" <?= $property_type === 'land' ? 'selected' : '' ?>>Land</option>
-                </select>
-            </button>
+            foreach ($filters as $id => $data):
+            ?>
+                <button type="button" class="search-field" data-field="<?= $id ?>">
+                    <span class="label"><?= $data['label'] ?></span>
+                    <span class="value" data-default="<?= reset($data['options']) ?>"><?= ${$id} !== '' ? htmlspecialchars(${$id}) : reset($data['options']) ?></span>
+                    <select name="<?= $id ?>" id="<?= $id ?>">
+                        <?php foreach($data['options'] as $val => $text): ?>
+                            <option value="<?= $val ?>" <?= ${$id} === $val ? 'selected' : '' ?>><?= $text ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </button>
+            <?php endforeach; ?>
 
-            <!-- Price Range -->
-            <button type="button" class="search-field" data-field="price_range">
-                <span class="label">Price Range</span>
-                <span class="value" data-default="Any Price"><?= $price_range !== '' ? htmlspecialchars($price_range) : 'Any Price' ?></span>
-                <select name="price_range" id="price_range">
-                    <option value="" <?= $price_range === '' ? 'selected' : '' ?>>Any Price</option>
-                    <option value="0-1000000" <?= $price_range === '0-1000000' ? 'selected' : '' ?>>Under ₱1M</option>
-                    <option value="1000000-5000000" <?= $price_range === '1000000-5000000' ? 'selected' : '' ?>>₱1M - ₱5M</option>
-                    <option value="5000000+" <?= $price_range === '5000000+' ? 'selected' : '' ?>>₱5M+</option>
-                </select>
-            </button>
-
-            <!-- Bedrooms -->
-            <button type="button" class="search-field" data-field="bedrooms">
-                <span class="label">Bedrooms</span>
-                <span class="value" data-default="Any"><?= $bedrooms !== '' ? htmlspecialchars($bedrooms) . '+' : 'Any' ?></span>
-                <select name="bedrooms" id="bedrooms">
-                    <option value="" <?= $bedrooms === '' ? 'selected' : '' ?>>Any</option>
-                    <option value="1" <?= $bedrooms === '1' ? 'selected' : '' ?>>1+</option>
-                    <option value="2" <?= $bedrooms === '2' ? 'selected' : '' ?>>2+</option>
-                    <option value="3" <?= $bedrooms === '3' ? 'selected' : '' ?>>3+</option>
-                    <option value="4" <?= $bedrooms === '4' ? 'selected' : '' ?>>4+</option>
-                </select>
-            </button>
-
-            <!-- Bathrooms -->
-            <button type="button" class="search-field" data-field="bathrooms">
-                <span class="label">Bathrooms</span>
-                <span class="value" data-default="Any"><?= $bathrooms !== '' ? htmlspecialchars($bathrooms) . '+' : 'Any' ?></span>
-                <select name="bathrooms" id="bathrooms">
-                    <option value="" <?= $bathrooms === '' ? 'selected' : '' ?>>Any</option>
-                    <option value="1" <?= $bathrooms === '1' ? 'selected' : '' ?>>1+</option>
-                    <option value="2" <?= $bathrooms === '2' ? 'selected' : '' ?>>2+</option>
-                    <option value="3" <?= $bathrooms === '3' ? 'selected' : '' ?>>3+</option>
-                    <option value="4" <?= $bathrooms === '4' ? 'selected' : '' ?>>4+</option>
-                </select>
-            </button>
-
-            <!-- Size -->
-            <button type="button" class="search-field" data-field="size">
-                <span class="label">Size (sqm)</span>
-                <span class="value" data-default="Any Size"><?= $size !== '' ? htmlspecialchars($size) : 'Any Size' ?></span>
-                <select name="size" id="size">
-                    <option value="" <?= $size === '' ? 'selected' : '' ?>>Any Size</option>
-                    <option value="0-50" <?= $size === '0-50' ? 'selected' : '' ?>>Up to 50 sqm</option>
-                    <option value="50-100" <?= $size === '50-100' ? 'selected' : '' ?>>50 - 100 sqm</option>
-                    <option value="100-200" <?= $size === '100-200' ? 'selected' : '' ?>>100 - 200 sqm</option>
-                    <option value="200+" <?= $size === '200+' ? 'selected' : '' ?>>200+ sqm</option>
-                </select>
-            </button>
-
-            <!-- Submit -->
             <button id="searchForm1" class="user-search-submit" aria-label="Search">
                 <i class="fa-solid fa-magnifying-glass"></i>
             </button>
         </div>
     </div>
 
-
     <div class="properties-grid" id="propertiesGrid">
         <?php if (!empty($properties)): ?>
-            <?php foreach ($properties as $property): ?>
-                <?php render_agent_property_card($property); ?>
-            <?php endforeach; ?>
+            <?php foreach ($properties as $property):
+                $property['data_type'] = $property['property_type'];
+                $property['data_size'] = $property['sqm'];
+                render_agent_property_card($property);
+            endforeach; ?>
         <?php else: ?>
             <p>No properties available at the moment.</p>
         <?php endif; ?>
     </div>
 
-    <?php
-    // Render the modal only once
-    render_agent_property_card([], true);
-    ?>
+    <?php render_agent_property_card([], true); ?>
+</div>
 
-
-<!-- Swiper CSS & JS -->
-<link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css"/>
-<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 <script src="/BatEstateExplorer/assets/js/agent_property_card_logic.js"></script>
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Update the displayed value when a select changes
-    document.querySelectorAll('.search-field select').forEach(function (selectEl) {
+
+    // Update select labels
+    document.querySelectorAll('.search-field select').forEach(selectEl => {
         const valueSpan = selectEl.closest('.search-field').querySelector('.value');
-
-        // Set initial display
-        valueSpan.textContent = selectEl.value === "" 
-            ? valueSpan.dataset.default 
-            : selectEl.options[selectEl.selectedIndex].text;
-
-        // Update on change
-        selectEl.addEventListener('change', function () {
-            const span = this.closest('.search-field').querySelector('.value');
-            span.textContent = this.value === "" 
-                ? span.dataset.default 
-                : this.options[this.selectedIndex].text;
-        });
+        const update = () => {
+            valueSpan.textContent = selectEl.value === "" ? valueSpan.dataset.default : selectEl.options[selectEl.selectedIndex].text;
+        };
+        update();
+        selectEl.addEventListener('change', update);
     });
 
-    // Handle search button click
-    const searchBtn = document.getElementById('searchForm1');
-    if (searchBtn) {
-        searchBtn.addEventListener('click', () => {
-            const params = ['location', 'property_type', 'price_range', 'bedrooms', 'bathrooms', 'size']
-                .reduce((obj, id) => {
-                    obj[id] = document.getElementById(id).value;
-                    return obj;
-                }, {});
+    // Front-end filter function
+    const filterProperties = () => {
+        const location = document.getElementById('location').value.toLowerCase();
+        const property_type = document.getElementById('property_type').value.toLowerCase();
+        const price_range = document.getElementById('price_range').value;
+        const bedrooms = document.getElementById('bedrooms').value;
+        const bathrooms = document.getElementById('bathrooms').value;
+        const size = document.getElementById('size').value;
 
-            const query = new URLSearchParams(params).toString();
+        document.querySelectorAll('#propertiesGrid .property-card').forEach(card => {
+            let show = true;
 
-            // Fetch filtered data (API handles it)
-            fetch('/BatEstateExplorer/public/api/get_properties.php?' + query)
-                .then(res => {
-                    if (!res.ok) throw new Error('Network response was not OK');
-                    return res.json();
-                })
-                .then(data => {
-                    const grid = document.getElementById('propertiesGrid');
-                    if (!data.properties || data.properties.length === 0) {
-                        grid.innerHTML = '<p>No properties available at the moment.</p>';
-                    } else {
-                        console.log('Properties fetched:', data.properties.length);
-                    }
-                })
-                .catch(err => console.error('Fetch error:', err));
+            const cardLocation = card.querySelector('.property-location')?.textContent.toLowerCase() || '';
+            const cardPrice = parseFloat((card.querySelector('.property-price')?.textContent || '0').replace(/[₱,]/g,'')) || 0;
+            const cardBedrooms = parseInt(card.querySelector('.property-features span:first-child')?.textContent) || 0;
+            const cardBathrooms = parseInt(card.querySelector('.property-features span:nth-child(2)')?.textContent) || 0;
+            const cardSize = parseInt(card.dataset.size) || 0;
+            const cardType = (card.dataset.type || '').toLowerCase();
+
+            // Location filter
+            if(location && !cardLocation.includes(location)) show = false;
+
+            // Type filter
+            if(property_type && cardType !== property_type) show = false;
+
+            // Price filter
+            if(price_range){
+                if(price_range.includes('-')){
+                    let [min,max] = price_range.split('-').map(Number);
+                    if(cardPrice < min || cardPrice > max) show = false;
+                } else if(price_range.endsWith('+')){
+                    let min = parseInt(price_range);
+                    if(cardPrice < min) show = false;
+                }
+            }
+
+            // Bedrooms
+            if(bedrooms && cardBedrooms < parseInt(bedrooms)) show = false;
+
+            // Bathrooms
+            if(bathrooms && cardBathrooms < parseInt(bathrooms)) show = false;
+
+            // Size
+            if(size){
+                if(size.includes('-')){
+                    let [min,max] = size.split('-').map(Number);
+                    if(cardSize < min || cardSize > max) show = false;
+                } else if(size.endsWith('+')){
+                    let min = parseInt(size);
+                    if(cardSize < min) show = false;
+                }
+            }
+
+            card.style.display = show ? '' : 'none';
         });
-    }
+
+        // Show message if no cards visible
+        const anyVisible = [...document.querySelectorAll('#propertiesGrid .property-card')].some(c=>c.style.display !== 'none');
+        const grid = document.getElementById('propertiesGrid');
+        if(!anyVisible){
+            grid.querySelector('.no-results') 
+                ? grid.querySelector('.no-results').style.display = ''
+                : grid.insertAdjacentHTML('beforeend','<p class="no-results">No properties match your filters.</p>');
+        } else {
+            const msg = grid.querySelector('.no-results');
+            if(msg) msg.style.display = 'none';
+        }
+    };
+
+    // Bind filter on click
+    document.getElementById('searchForm1').addEventListener('click', filterProperties);
 });
 </script>
