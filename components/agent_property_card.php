@@ -49,10 +49,17 @@ if (!function_exists('render_agent_property_card')) {
         // --- Full card rendering ---
         if (!$modalOnly):
 ?>
+<!-- beginning of card (replace existing .property-card div) -->
 <div class="property-card"
-     data-price="<?= (int)($property['price'] ?? 0) ?>"
+     data-id="<?= (int)$id ?>"
+     data-price="<?= (float)($property['price'] ?? 0) ?>"
      data-date="<?= $createdAt ?>"
-     data-image="<?= $image ?>">
+     data-image="<?= $image ?>"
+     data-size="<?= htmlspecialchars($property['data_size'] ?? ($property['sqm'] ?? 0)) ?>"
+     data-type="<?= htmlspecialchars(strtolower($property['data_type'] ?? ($property['property_type'] ?? ''))) ?>"
+     data-bedrooms="<?= (int)($property['bedrooms'] ?? 0) ?>"
+     data-bathrooms="<?= (int)($property['bathrooms'] ?? 0) ?>">
+
     <div class="property-image">
         <img src="<?= $image ?>" alt="Property Image">
     </div>
@@ -61,12 +68,14 @@ if (!function_exists('render_agent_property_card')) {
         <p class="property-location"><i class="fas fa-map-marker-alt"></i> <?= $location ?></p>
         <p class="property-price">₱<?= $price ?></p>
         <div class="property-features">
-            <span><i class="fas fa-bed"></i> <?= $bedrooms ?> Beds</span>
-            <span><i class="fas fa-bath"></i> <?= $bathrooms ?> Baths</span>
+            <span class="feat-bed"><i class="fas fa-bed"></i> <?= $bedrooms ?> Beds</span>
+            <span class="feat-bath"><i class="fas fa-bath"></i> <?= $bathrooms ?> Baths</span>
         </div>
         <button class="btn btn-outline view-details-btn" data-id="<?= $id ?>">View Details</button>
     </div>
 </div>
+<!-- end of card -->
+
 <?php
         endif;
 

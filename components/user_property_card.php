@@ -68,7 +68,13 @@ if (!function_exists('render_property_card')) {
         if (!$modalOnly):
 ?>
 <div class="property-card"
+     data-id="<?= $id ?>"
+     data-location="<?= strtolower($location) ?>"
+     data-type="<?= htmlspecialchars($property['property_type'] ?? '') ?>"
      data-price="<?= (int)($property['price'] ?? 0) ?>"
+     data-bedrooms="<?= $bedrooms ?>"
+     data-bathrooms="<?= $bathrooms ?>"
+     data-size="<?= (int)($property['sqm'] ?? 0) ?>"
      data-date="<?= $createdAt ?>"
      data-image="<?= $image ?>">
     <div class="property-image">

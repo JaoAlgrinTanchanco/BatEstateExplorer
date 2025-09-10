@@ -1,17 +1,13 @@
-// agent_property_card_logic.js
 (() => {
   let modalSwiper = null;
   let currentPropertyId = null;
 
-  // --- Open Property Modal ---
   async function openPropertyModal(propertyId) {
     currentPropertyId = propertyId;
-
     try {
       const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
       const data = await res.json();
       if (!data.success) return alert(data.error || "Failed to fetch property.");
-
       const prop = data.property;
 
       // Populate images
@@ -23,12 +19,15 @@
       });
 
       // Init/update Swiper
-      if (modalSwiper) modalSwiper.update();
-      else modalSwiper = new Swiper(".modal-swiper", {
-        loop: images.length > 1,
-        navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
-        pagination: { el: ".swiper-pagination", clickable: true }
-      });
+      if (modalSwiper) {
+        modalSwiper.update();
+      } else {
+        modalSwiper = new Swiper(".modal-swiper", {
+          loop: images.length > 1,
+          navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
+          pagination: { el: ".swiper-pagination", clickable: true }
+        });
+      }
 
       // Fill details
       document.getElementById("modalTitle").textContent = prop.title;
@@ -40,31 +39,29 @@
 
       // Show modal
       document.getElementById("propertyModal").style.display = "flex";
-
     } catch (err) {
       console.error(err);
       alert("Failed to load property details.");
     }
   }
 
-  // --- Event delegation for property cards ---
-  document.querySelectorAll(".view-details-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+  // Use event delegation for view-details buttons
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-details-btn');
+    if (btn) {
       openPropertyModal(btn.dataset.id);
-    });
-  });
-
-  // --- Modal close ---
-  document.querySelectorAll(".modal-close").forEach(btn => {
-    btn.addEventListener("click", () => {
+    }
+    // modal close
+    const closeBtn = e.target.closest('.modal-close');
+    if (closeBtn) {
       document.getElementById("propertyModal").style.display = "none";
-    });
-  });
-  document.getElementById("propertyModal")?.addEventListener("click", e => {
-    if (e.target === e.currentTarget) e.currentTarget.style.display = "none";
+    }
+    // click outside modal content to close
+    if (e.target.id === 'propertyModal') {
+      e.target.style.display = 'none';
+    }
   });
 
-  // Expose globally if needed
+  // expose for debug if needed
   window.openPropertyModal = openPropertyModal;
-
 })();
