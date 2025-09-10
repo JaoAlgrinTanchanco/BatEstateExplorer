@@ -582,6 +582,29 @@ if ($agent_id) {
                         <div class="info-row"><strong>Created At:</strong> <span><?= htmlspecialchars($user['created_at'] ?? '-') ?></span></div>
                         <div class="info-row"><strong>Last Updated:</strong> <span><?= htmlspecialchars($user['updated_at'] ?? '-') ?></span></div>
                     </div>
+
+                    <!-- Danger Zone -->
+                    <div class="overview-card danger-zone">
+                        <h3>Danger Zone</h3>
+                        <button type="button" id="openDeleteModal" class="delete-btn">Delete Account</button>
+                    </div>
+
+                    <!-- Modal (placed at the end of body, outside any container) -->
+                    <div id="deleteModal" class="modal" style="display:none;">
+                        <div class="modal-content">
+                            <h4>Confirm Account Deletion</h4>
+                            <p>Are you sure you want to delete this account? This action cannot be undone.</p>
+                            <form id="deleteAgentForm" method="POST" action="/BatEstateExplorer/public/api/delete_agent.php">
+                                <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
+                                <button type="submit" id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
+                                <button type="button" id="cancelDeleteBtn">Cancel</button>
+                                <div id="deleteSpinner" class="spinner" style="display:none;">
+                                    <div class="loader"></div>
+                                    <span>Deleting account...</span>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>  
                 
                 <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php" style="display:none;">
@@ -832,6 +855,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     initPropertyTypeToggles();
+
+    // Open modal
+    document.getElementById('openDeleteModal').addEventListener('click', () => {
+        document.getElementById('deleteModal').style.display = 'flex';
+    });
+
+    // Cancel deletion
+    document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+        document.getElementById('deleteModal').style.display = 'none';
+    });
+
+    // Optional: show spinner on form submit
+    document.getElementById('deleteAgentForm').addEventListener('submit', () => {
+        document.getElementById('deleteSpinner').style.display = 'flex';
+    });
+
 });
 
 </script>

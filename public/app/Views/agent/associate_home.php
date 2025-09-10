@@ -26,7 +26,7 @@ if (!isset($conn)) {
 
 $sql = "SELECT id, title, location, price, bedrooms, bathrooms, created_at 
         FROM properties 
-        WHERE status = 'available'
+        WHERE status IN ('available', 'sold')
         ORDER BY created_at DESC";
 $result = $conn->query($sql);
 
