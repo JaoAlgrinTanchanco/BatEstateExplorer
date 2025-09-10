@@ -60,5 +60,7 @@
   </div>
 
   <script src="/BatEstateExplorer/assets/js/admin_dashboard.js"></script>
+  <?php include __DIR__ . "/../../../components/notification.php"; ?>
+
 </body>
 </html>

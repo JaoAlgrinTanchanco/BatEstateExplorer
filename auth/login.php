@@ -25,10 +25,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_P
                 if ($user['status'] !== 'active') {
                     $error = "Your account is pending approval. Please wait for admin review.";
                 } else {
+                    // Set login session values
                     $token = generate_token($user['id'], $user['email'], $user['user_type']);
                     $_SESSION['user_token'] = $token;
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['user_type'] = $user['user_type'];
+
+                    // ✅ Send notification to centralized system
+                    $_SESSION['notification'] = [
+                        'type' => 'success',
+                        'message' => 'Logged in successfully!'
+                    ];
+
+                    // Redirect by user type
                     redirect_by_user_type($user['user_type']);
                 }
             } else {
@@ -48,7 +57,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_P
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login - BatEstate</title>
 <link rel="stylesheet" href="../assets/css/login.css">
-
 </head>
 <body>
 <div class="login-wrapper">
@@ -68,7 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_P
 
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" autocomplete="username" required value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+                <input type="email" id="email" name="email" autocomplete="username" required 
+                       value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
             </div>
 
             <div class="form-group password-wrapper">
@@ -95,7 +104,7 @@ const togglePasswordText = document.querySelector('#togglePasswordText');
 const password = document.querySelector('#password');
 
 togglePasswordText.addEventListener('click', () => {
-    if(password.type === 'password'){
+    if (password.type === 'password') {
         password.type = 'text';
         togglePasswordText.textContent = 'Hide';
     } else {
