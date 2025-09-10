@@ -1,7 +1,7 @@
-// user_search.js
 (() => {
   const propertiesGrid = document.getElementById('propertiesGrid');
   const filters = ['location', 'property_type', 'price_range', 'bedrooms', 'bathrooms', 'size'];
+  const resetBtn = document.getElementById('searchForm1');
 
   // Helper: get current filter values
   function getFilterValues() {
@@ -58,6 +58,20 @@
       fetchProperties();
     });
   });
+
+  // --- Reset filters on button click ---
+  if (resetBtn) {
+    // change icon to "reset" (example: refresh icon)
+    resetBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i>';
+    resetBtn.addEventListener('click', () => {
+      filters.forEach(f => {
+        const el = document.getElementById(f);
+        if (el) el.value = '';
+        if (el) updateLabel(el);
+      });
+      fetchProperties();
+    });
+  }
 
   // Optional: trigger fetch on page load to ensure correct filter state
   fetchProperties();

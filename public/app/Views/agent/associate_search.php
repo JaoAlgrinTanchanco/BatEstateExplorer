@@ -131,21 +131,27 @@ $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    // Update select labels and auto-filter when changed
-    document.querySelectorAll('.search-field select').forEach(selectEl => {
+    // --- Selects & labels ---
+    const filters = ['location', 'property_type', 'price_range', 'bedrooms', 'bathrooms', 'size'];
+    const searchBtn = document.getElementById('searchForm1');
+
+    filters.forEach(f => {
+        const selectEl = document.getElementById(f);
+        if (!selectEl) return;
         const valueSpan = selectEl.closest('.search-field').querySelector('.value');
+
         const updateLabel = () => {
             valueSpan.textContent = selectEl.value === "" ? valueSpan.dataset.default : selectEl.options[selectEl.selectedIndex].text;
         };
         updateLabel();
-        // Update label + run filter immediately on change for instant filtering
+
         selectEl.addEventListener('change', () => {
             updateLabel();
             filterProperties();
         });
     });
 
-    // Filter function (reads reliable data-* attributes)
+    // --- Filter function ---
     const filterProperties = () => {
         const location = (document.getElementById('location')?.value || '').toLowerCase();
         const property_type = (document.getElementById('property_type')?.value || '').toLowerCase();
@@ -159,8 +165,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         cards.forEach(card => {
             let show = true;
-
-            // Read safe values from dataset
             const cardLocation = (card.querySelector('.property-location')?.textContent || '').toLowerCase();
             const cardPrice = parseFloat(card.dataset.price || 0) || 0;
             const cardBedrooms = parseInt(card.dataset.bedrooms || '0', 10) || 0;
@@ -168,13 +172,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const cardSize = parseFloat(card.dataset.size || 0) || 0;
             const cardType = (card.dataset.type || '').toLowerCase();
 
-            // Location filter (substring match)
             if (location && !cardLocation.includes(location)) show = false;
-
-            // Type filter (exact)
             if (property_type && cardType !== property_type) show = false;
 
-            // Price filter
             if (price_range) {
                 if (price_range.includes('-')) {
                     let [min, max] = price_range.split('-').map(Number);
@@ -185,13 +185,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
-            // Bedrooms
             if (bedrooms && cardBedrooms < parseInt(bedrooms, 10)) show = false;
-
-            // Bathrooms
             if (bathrooms && cardBathrooms < parseInt(bathrooms, 10)) show = false;
 
-            // Size (sqm)
             if (size) {
                 if (size.includes('-')) {
                     let [min, max] = size.split('-').map(Number);
@@ -206,7 +202,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (show) anyVisible = true;
         });
 
-        // Show/hide "no-results" message
         const grid = document.getElementById('propertiesGrid');
         let msg = grid.querySelector('.no-results');
         if (!anyVisible) {
@@ -223,16 +218,23 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    // Bind filter to the Search button as well (in case user clicks it)
-    const searchBtn = document.getElementById('searchForm1');
+    // --- Reset button functionality ---
     if (searchBtn) {
+        // Change icon to refresh/rotate
+        searchBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i>';
         searchBtn.addEventListener('click', (e) => {
             e.preventDefault();
+            filters.forEach(f => {
+                const selectEl = document.getElementById(f);
+                if (selectEl) selectEl.value = '';
+                const valueSpan = selectEl.closest('.search-field').querySelector('.value');
+                if (valueSpan) valueSpan.textContent = valueSpan.dataset.default;
+            });
             filterProperties();
         });
     }
 
-    // Run initial filter once (in case page loads with selects pre-chosen)
+    // Run initial filter on page load
     filterProperties();
 });
 </script>
