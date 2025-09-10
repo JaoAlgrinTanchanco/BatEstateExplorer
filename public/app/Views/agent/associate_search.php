@@ -1,98 +1,76 @@
 <?php
 // user_search.php
 require_once __DIR__ . '/../../../../config/database.php';
-// Decide whether this request is AJAX (fetch from JS) or normal page load
+require_once __DIR__ . '/../../../../components/agent_property_card.php';
+
+// Determine request type (AJAX vs normal page load)
 $isAjax = (
     !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
-) || (!empty($_POST['ajax']) && $_POST['ajax'] == '1');
+) || (!empty($_POST['ajax']) && $_POST['ajax'] === '1');
 
-// Accept incoming values (AJAX will send POST, normal page can use GET)
-if ($isAjax) {
-    $location = $_POST['location'] ?? '';
-    $property_type = $_POST['property_type'] ?? '';
-    $price_range = $_POST['price_range'] ?? '';
-    $bedrooms = $_POST['bedrooms'] ?? '';
-    $bathrooms = $_POST['bathrooms'] ?? '';
-    $size = $_POST['size'] ?? '';
-} else {
-    $location = $_GET['location'] ?? '';
-    $property_type = $_GET['property_type'] ?? '';
-    $price_range = $_GET['price_range'] ?? '';
-    $bedrooms = $_GET['bedrooms'] ?? '';
-    $bathrooms = $_GET['bathrooms'] ?? '';
-    $size = $_GET['size'] ?? '';
-}
+// Get filter values from request
+$request = $isAjax ? $_POST : $_GET;
+$location      = $request['location'] ?? '';
+$property_type = $request['property_type'] ?? '';
+$price_range   = $request['price_range'] ?? '';
+$bedrooms      = $request['bedrooms'] ?? '';
+$bathrooms     = $request['bathrooms'] ?? '';
+$size          = $request['size'] ?? '';
 
-// Build query and params
-$sql = "
-    SELECT p.*, pi.image_path
-    FROM properties p
-    LEFT JOIN property_images pi 
-        ON p.id = pi.property_id AND pi.is_primary = 1
-    WHERE 1=1
-";
+// Build SQL query
+$sql = "SELECT p.*, pi.image_path
+        FROM properties p
+        LEFT JOIN property_images pi 
+          ON p.id = pi.property_id AND pi.is_primary = 1
+        WHERE 1=1";
+
 $params = [];
 $types = "";
 
-// Location
+// Filters
 if ($location !== '') {
     $sql .= " AND p.location = ?";
     $params[] = $location;
     $types .= "s";
 }
-
-// Property type
 if ($property_type !== '') {
     $sql .= " AND p.property_type = ?";
     $params[] = $property_type;
     $types .= "s";
 }
-
-// Price range
 if ($price_range !== '') {
     if ($price_range === '5000000+') {
         $sql .= " AND p.price >= 5000000";
     } else {
-        // safe explode
         $parts = explode('-', $price_range);
         if (count($parts) === 2) {
-            $min = (float) $parts[0];
-            $max = (float) $parts[1];
             $sql .= " AND p.price BETWEEN ? AND ?";
-            $params[] = $min;
-            $params[] = $max;
+            $params[] = (float) trim($parts[0]);
+            $params[] = (float) trim($parts[1]);
             $types .= "dd";
         }
     }
 }
-
-// Bedrooms (>=)
 if ($bedrooms !== '') {
     $sql .= " AND p.bedrooms >= ?";
-    $params[] = (int)$bedrooms;
+    $params[] = (int) $bedrooms;
     $types .= "i";
 }
-
-// Bathrooms (>=)
 if ($bathrooms !== '') {
     $sql .= " AND p.bathrooms >= ?";
-    $params[] = (int)$bathrooms;
+    $params[] = (int) $bathrooms;
     $types .= "i";
 }
-
-// Size (sqm)
 if ($size !== '') {
     if ($size === '200+') {
         $sql .= " AND p.sqm >= 200";
     } else {
         $parts = explode('-', $size);
         if (count($parts) === 2) {
-            $min_sqm = (float) $parts[0];
-            $max_sqm = (float) $parts[1];
             $sql .= " AND p.sqm BETWEEN ? AND ?";
-            $params[] = $min_sqm;
-            $params[] = $max_sqm;
+            $params[] = (float) trim($parts[0]);
+            $params[] = (float) trim($parts[1]);
             $types .= "dd";
         }
     }
@@ -100,37 +78,35 @@ if ($size !== '') {
 
 $sql .= " ORDER BY p.created_at DESC";
 
-// Prepare and execute safely
+// Prepare statement
 $stmt = $conn->prepare($sql);
 if ($stmt === false) {
-    // prepare failed — for debugging you might want to log $conn->error
-    if ($isAjax) {
-        echo "<p>Server error (prepare failed).</p>";
-        exit;
-    } else {
-        echo "<p>Server error.</p>";
-    }
+    echo "<p>Server error (prepare failed).</p>";
+    exit;
 }
 
+// Bind parameters if any
 if (!empty($params)) {
-    // mysqli bind_param needs references
-    $bind_names = [];
-    $bind_names[] = $types;
-    for ($i = 0; $i < count($params); $i++) {
-        // ensure values are variables (not expressions) and passed by reference
-        $bind_names[] = &$params[$i];
+    $bind_names = [$types];
+    foreach ($params as $key => &$value) {
+        $bind_names[] = &$value;
     }
     call_user_func_array([$stmt, 'bind_param'], $bind_names);
 }
 
+// Execute query
 $stmt->execute();
 $result = $stmt->get_result();
 $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
-$stmt->close();
-$conn->close();
 
+// --- DO NOT close the connection here ---
+// $stmt->close();
+// $conn->close();
 
+// Now we can safely render cards
 ?>
+
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_search.css">
 
 <!-- Keep this part inside the same file for initial load -->
 <div class="search-container">
@@ -222,502 +198,27 @@ $conn->close();
     <div class="properties-grid" id="propertiesGrid">
         <?php if (!empty($properties)): ?>
             <?php foreach ($properties as $property): ?>
-                <div class="property-card">
-                    <div class="property-image">
-                        <?php if (!empty($property['image_path'])): ?>
-                            <img src="<?= htmlspecialchars($property['image_path']) ?>" alt="<?= htmlspecialchars($property['title']) ?>">
-                        <?php else: ?>
-                            <img src="/BatEstateExplorer/assets/images/bg4.jpg" alt="Default Image">
-                        <?php endif; ?>
-                    </div>
-                    <div class="property-content">
-                        <h3><?= htmlspecialchars($property['title']) ?></h3>
-                        <p class="property-location"><i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($property['location']) ?></p>
-                        <p class="property-price">₱<?= number_format($property['price'], 2) ?></p>
-                        <div class="property-features">
-                            <span><i class="fas fa-bed"></i> <?= (int)$property['bedrooms'] ?> Beds</span>
-                            <span><i class="fas fa-bath"></i> <?= (int)$property['bathrooms'] ?> Baths</span>
-                        </div>
-                        <a href="property_details.php?id=<?= (int)$property['id'] ?>" class="btn btn-outline">View Details</a>
-                    </div>
-                </div>
+                <?php render_agent_property_card($property); ?>
             <?php endforeach; ?>
         <?php else: ?>
             <p>No properties available at the moment.</p>
         <?php endif; ?>
     </div>
-</div>
 
-<!-- Modal Structure -->
-<div id="propertyModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <span class="modal-close">&times;</span>
-    <div class="modal-body">
-      <!-- Image Carousel -->
-      <div class="modal-image">
-        <div class="swiper modal-swiper">
-          <div class="swiper-wrapper" id="modalImageWrapper"></div>
-          <div class="swiper-button-next"></div>
-          <div class="swiper-button-prev"></div>
-          <div class="swiper-pagination"></div>
-        </div>
-      </div>
-
-      <!-- Details -->
-      <div class="modal-details">
-        <h2 id="modalTitle"></h2>
-        <p id="modalLocation"></p>
-        <p id="modalPrice" class="price"></p>
-        <div class="features">
-          <span><i class="fas fa-bed"></i> <span id="modalBedrooms"></span> Beds</span>
-          <span><i class="fas fa-bath"></i> <span id="modalBathrooms"></span> Baths</span>
-        </div>
-        <p><strong>Description:</strong></p>
-        <p id="modalDescription"></p>
-
-        <div class="modal-actions">
-          <button class="btn btn-primary"><i class="fas fa-envelope"></i> Message Agent</button>
-          <button class="btn btn-outline"><i class="fas fa-heart"></i> Save to Favorites</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<style>
-/* --- Search Container Layout --- */
-.search-container {
-  position: relative;
-  width: 100%;
-  min-height: calc(100vh - 120px); /* subtract header/footer if any */
-  display: grid;
-  grid-template-rows: auto 1fr; /* search bar then results */
-  align-items: start;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-.search {
-  padding-top: 60px;
-  padding-bottom: 60px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* --- Search Form --- */
-.search-form {
-  width: 100%;
-  max-width: 60rem;
-  background-color: #fff;
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  gap: 0;
-  border: 1px solid #dfdfdf;
-  border-radius: 40px;
-  overflow: hidden;
-}
-
-/* Search Fields */
-.search-field {
-  flex: 1 1 0;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 12px 24px;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  border-right: 1px solid #eee;
-  position: relative;
-  font-size: 14px;
-  color: #222;
-  transition: background-color 0.3s ease;
-  user-select: none;
-}
-
-.search-field:last-of-type {
-  border-right: none;
-}
-
-.search-field .label {
-  font-weight: 600;
-  font-size: 10px;
-  text-transform: uppercase;
-  color: #717171;
-  letter-spacing: 0.05em;
-  margin-bottom: 4px;
-}
-
-.search-field .value {
-  font-weight: 700;
-  font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Hide native select */
-.search-field select {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.search-field:hover {
-  background-color: #f7f7f7;
-}
-
-/* Submit Button */
-.user-search-submit {
-  background-color: #ff385c;
-  border: none;
-  border-radius: 50%;
-  width: 55px;
-  height: 55px;
-  margin-left: 12px;
-  color: white;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: background-color 0.3s ease;
-  flex-shrink: 0;
-}
-
-.search-submit:hover {
-  background-color: #e03150;
-}
-
-.search-submit i {
-  font-size: 18px;
-}
-
-/* --- Results Grid --- */
-.result {
-  display: flex;  
-  flex-wrap: wrap; 
-  gap: 20px;
-  width: 100%;
-  height: auto;
-  box-sizing: border-box;
-}
-
-/* --- Modal Styles --- */
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999999;
-  animation: fadeIn 0.3s ease;
-  padding: 10px;
-}
-
-.modal-content {
-  background: #fff;
-  max-width: 900px;
-  width: 90%;
-  border-radius: 12px;
-  padding: 20px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-body {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.modal-image {
-  flex: 1 1 45%;
-}
-
-.modal-image img {
-  width: 100%;
-  height: auto;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-.modal-details {
-  flex: 1 1 55%;
-}
-
-.modal-close {
-  font-size: 26px;
-  cursor: pointer;
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  background: none;
-  border: none;
-  color: #666;
-}
-
-.modal-close:hover {
-  color: #000;
-}
-
-.features span {
-  display: inline-block;
-  margin-right: 12px;
-  font-size: 14px;
-}
-
-.price {
-  font-size: 20px;
-  color: #28a745;
-  margin: 8px 0;
-  font-weight: bold;
-}
-
-.modal-actions {
-  margin-top: 15px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.btn {
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.btn-primary {
-  background: #007bff;
-  color: #fff;
-  border: none;
-}
-
-.btn-outline {
-  border: 1px solid #ccc;
-  background: white;
-}
-//card
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 15px;
-}
-
-.properties-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  
-  gap: 30px;
-  margin-bottom: 40px;
-}
-
-.property-card {
-  flex: 0 1 400px;
-  max-width: 400px;
-  height: 515px;
-  background: white;
-  border-radius: 15px;
-  overflow: hidden;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-/* Remove margin from property-card since gap on flex container handles spacing */
-
-.property-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-}
-
-.property-image {
-    position: relative;
-    height: 250px;
-    overflow: hidden;
-}
-
-.property-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-}
-
-.property-card:hover .property-image img {
-    transform: scale(1.05);
-}
-
-.property-badge {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: #e74c3c;
-    color: white;
-    padding: 5px 15px;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.property-content {
-    padding: 25px;
-}
-
-.property-content h3 {
-    font-size: 1.4rem;
-    margin-bottom: 10px;
-    color: #2c3e50;
-}
-
-.property-location {
-    color: #666;
-    margin-bottom: 15px;
-    font-size: 0.95rem;
-}
-
-.property-location i {
-    color: #e74c3c;
-    margin-right: 5px;
-}
-
-.property-price {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #27ae60;
-    margin-bottom: 20px;
-}
-
-.property-features {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 25px;
-    flex-wrap: wrap;
-}
-
-.property-features span {
-    display: flex;
-    align-items: center;
-    color: #666;
-    font-size: 0.9rem;
-}
-
-.property-features i {
-    margin-right: 5px;
-    color: #3498db;
-}
-
-.btn-outline {
-    display: inline-block;
-    padding: 10px 20px;
-    border: 2px solid #3498db;
-    border-radius: 50px;
-    color: #3498db;
-    text-decoration: none;
-    font-weight: 600;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.btn-outline:hover {
-    background-color: #3498db;
-    color: white;
-}
-
-
-/* --- Animations --- */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* --- Responsive --- */
-@media (max-width: 600px) {
-  .search-form {
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px;
-  }
-
-  .search-field {
-    border-right: none !important;
-    border-radius: 12px;
-    padding: 14px 16px;
-  }
-
-  .search-submit {
-    width: 100%;
-    border-radius: 12px;
-  }
-
-  .modal-body {
-    flex-direction: column;
-  }
-}
-</style>
+    <?php
+    // Render the modal only once
+    render_agent_property_card([], true);
+    ?>
 
 
 <!-- Swiper CSS & JS -->
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css"/>
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+<script src="/BatEstateExplorer/assets/js/agent_property_card_logic.js"></script>
 
 <script>
-    document.getElementById('searchForm1').addEventListener('click', () => {
-  // Collect filter values
-  const params = ['location', 'property_type', 'price_range', 'bedrooms', 'bathrooms', 'size']
-    .reduce((obj, id) => {
-      obj[id] = document.getElementById(id).value;
-      return obj;
-    }, {});
-
-  const query = new URLSearchParams(params).toString();
-
-  fetch('/BatEstateExplorer/public/api/get_properties.php?' + query)
-  .then(res => {
-    if (!res.ok) throw new Error('Network response was not OK');
-    return res.json();
-  })
-  .then(data => {
-    const grid = document.getElementById('propertiesGrid');
-    if (!data.properties || data.properties.length === 0) {
-      grid.innerHTML = '<p>No properties available at the moment.</p>';
-      return;
-    }
-    grid.innerHTML = data.properties.map(property => `
-      <div class="property-card">
-        <div class="property-image">
-          <img src="${property.image_path ? property.image_path : '/BatEstateExplorer/assets/images/bg4.jpg'}" alt="${property.title}">
-        </div>
-        <div class="property-content">
-          <h3>${property.title}</h3>
-          <p class="property-location"><i class="fas fa-map-marker-alt"></i> ${property.location}</p>
-          <p class="property-price">₱${Number(property.price).toFixed(2)}</p>
-          <div class="property-features">
-            <span><i class="fas fa-bed"></i> ${property.bedrooms} Beds</span>
-            <span><i class="fas fa-bath"></i> ${property.bathrooms} Baths</span>
-          </div>
-          <a href="property_details.php?id=${property.id}" class="btn btn-outline">View Details</a>
-        </div>
-      </div>
-    `).join('');
-  })
-  .catch(err => {
-    console.error('Fetch error:', err);
-  });
-
-
-});
-
-
 document.addEventListener('DOMContentLoaded', function () {
+    // Update the displayed value when a select changes
     document.querySelectorAll('.search-field select').forEach(function (selectEl) {
         const valueSpan = selectEl.closest('.search-field').querySelector('.value');
 
@@ -727,75 +228,42 @@ document.addEventListener('DOMContentLoaded', function () {
             : selectEl.options[selectEl.selectedIndex].text;
 
         // Update on change
-        selectEl.addEventListener('change', function (e) {
-            e.stopPropagation(); // prevent button click events
+        selectEl.addEventListener('change', function () {
             const span = this.closest('.search-field').querySelector('.value');
             span.textContent = this.value === "" 
                 ? span.dataset.default 
                 : this.options[this.selectedIndex].text;
         });
     });
-});
 
-let modalSwiper;
+    // Handle search button click
+    const searchBtn = document.getElementById('searchForm1');
+    if (searchBtn) {
+        searchBtn.addEventListener('click', () => {
+            const params = ['location', 'property_type', 'price_range', 'bedrooms', 'bathrooms', 'size']
+                .reduce((obj, id) => {
+                    obj[id] = document.getElementById(id).value;
+                    return obj;
+                }, {});
 
-document.querySelectorAll('.view-details-btn').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const id = btn.dataset.id;
-    try {
-      const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(id)}`);
-      const data = await res.json();
+            const query = new URLSearchParams(params).toString();
 
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      // Build image slides
-      const wrapper = document.getElementById('modalImageWrapper');
-      wrapper.innerHTML = '';
-      (data.images && data.images.length ? data.images : [data.image_path]).forEach(img => {
-        wrapper.innerHTML += `
-          <div class="swiper-slide">
-            <img src="${img || '/BatEstateExplorer/assets/images/bg4.jpg'}" style="width:100%;border-radius:8px;">
-          </div>
-        `;
-      });
-
-      // Init or update Swiper
-      if (modalSwiper) {
-        modalSwiper.update();
-      } else {
-        modalSwiper = new Swiper('.modal-swiper', {
-          loop: (data.images && data.images.length > 1),
-          navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
-          pagination: { el: '.swiper-pagination', clickable: true },
+            // Fetch filtered data (API handles it)
+            fetch('/BatEstateExplorer/public/api/get_properties.php?' + query)
+                .then(res => {
+                    if (!res.ok) throw new Error('Network response was not OK');
+                    return res.json();
+                })
+                .then(data => {
+                    const grid = document.getElementById('propertiesGrid');
+                    if (!data.properties || data.properties.length === 0) {
+                        grid.innerHTML = '<p>No properties available at the moment.</p>';
+                    } else {
+                        console.log('Properties fetched:', data.properties.length);
+                    }
+                })
+                .catch(err => console.error('Fetch error:', err));
         });
-      }
-
-      // Fill details
-      document.getElementById('modalTitle').textContent = data.title;
-      document.getElementById('modalLocation').textContent = `📍 ${data.location}`;
-      document.getElementById('modalPrice').textContent = `₱${parseFloat(data.price).toLocaleString()}`;
-      document.getElementById('modalBedrooms').textContent = data.bedrooms;
-      document.getElementById('modalBathrooms').textContent = data.bathrooms;
-      document.getElementById('modalDescription').textContent = data.description || 'No description available.';
-
-      document.getElementById('propertyModal').style.display = 'flex';
-    } catch (err) {
-      console.error(err);
-      alert('Failed to load property details.');
     }
-  });
-});
-
-document.querySelector('.modal-close').addEventListener('click', () => {
-  document.getElementById('propertyModal').style.display = 'none';
-});
-
-document.getElementById('propertyModal').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) {
-    e.currentTarget.style.display = 'none';
-  }
 });
 </script>
