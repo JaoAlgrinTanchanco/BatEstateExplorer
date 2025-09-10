@@ -222,6 +222,10 @@ $res = $propsStmt->get_result();
                         </div>
                     </div>
 
+                    <?php 
+                        // Determine listing type from DB
+                        $listingTypeSelected = !empty($property['sold_by_agent_id']) ? 'sold_by' : 'owned';
+                    ?>
                     <!-- Edit Modal -->
                     <div id="editModal-<?= $property['id'] ?>" class="edit-modal">
                         <div class="modal-content">
@@ -247,7 +251,6 @@ $res = $propsStmt->get_result();
                                 <label>Location</label>
                                 <select name="location" class="location" required>
                                     <option value="">Select Location</option>
-                                    <!-- Add all locations like before -->
                                     <option value="Lipa City" <?= $property['location']=='Lipa City'?'selected':'' ?>>Lipa City</option>
                                     <!-- ...other options... -->
                                 </select>
@@ -264,6 +267,13 @@ $res = $propsStmt->get_result();
                                 <label>Lot Size (sqm)</label>
                                 <input type="number" step="0.01" name="lot_size" value="<?= $property['lot_size'] ?>">
 
+                                <!-- Status -->
+                                <label>Status</label>
+                                <select name="status">
+                                    <option value="available" <?= ($property['status']=='available')?'selected':'' ?>>Available</option>
+                                    <option value="unavailable" <?= ($property['status']=='unavailable')?'selected':'' ?>>Unavailable</option>
+                                </select>
+
                                 <!-- Existing images -->
                                 <div class="image-slider">
                                     <?php foreach ($property['images'] as $img): ?>
@@ -279,19 +289,19 @@ $res = $propsStmt->get_result();
                                 <label>Add Images</label>
                                 <input type="file" name="new_images[]" multiple>
 
+                                <!-- Listing Type -->
                                 <label>Listing Type</label>
                                 <select name="listing_type" class="listing-type" onchange="toggleSoldBy(this, <?= $property['id'] ?>)">
-                                    <option value="owned" <?= ($ownership=='Owned')?'selected':'' ?>>Owned</option>
-                                    <option value="sold_by" <?= ($ownership!='Owned')?'selected':'' ?>>Sold By</option>
+                                    <option value="owned" <?= ($listingTypeSelected=='owned')?'selected':'' ?>>Owned</option>
+                                    <option value="sold_by" <?= ($listingTypeSelected=='sold_by')?'selected':'' ?>>Sold By</option>
                                 </select>
 
-                                <div id="soldByContainer-<?= $property['id'] ?>" style="display: <?= ($ownership!='Owned')?'block':'none' ?>;">
+                                <div id="soldByContainer-<?= $property['id'] ?>" style="display: <?= ($listingTypeSelected=='sold_by')?'block':'none' ?>;">
                                     <label>Agent Email</label>
-                                    <input type="email" name="sold_by_email" placeholder="Enter agent email" value="<?= ($ownership!='Owned')?$property['sold_by_email']:'' ?>">
+                                    <input type="email" name="sold_by_email" placeholder="Enter agent email" value="<?= ($listingTypeSelected=='sold_by')?$property['sold_by_email']:'' ?>">
                                 </div>
 
-
-                                <button type="submit">Update Listing</button>
+                                <button type="button" onclick="confirmEdit(<?= $property['id'] ?>)">Update Listing</button>
                             </form>
                         </div>
                     </div>
@@ -304,6 +314,16 @@ $res = $propsStmt->get_result();
                             } else {
                                 container.style.display = 'none';
                                 container.querySelector('input').value = '';
+                            }
+                        }
+                        function confirmEdit(propertyId) {
+                            const form = document.getElementById('editForm-' + propertyId);
+                            if (!form) return;
+
+                            // Show a browser confirmation
+                            const confirmed = confirm("Are you sure you want to update this listing?");
+                            if (confirmed) {
+                                form.submit();
                             }
                         }
                     </script>

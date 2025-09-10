@@ -7,21 +7,21 @@ session_start();
 
 if (!isset($_POST['property_id'])) die('Invalid request');
 
-$property_id     = intval($_POST['property_id']);
-$title           = $_POST['title'] ?? '';
-$description     = $_POST['description'] ?? '';
-$property_type   = $_POST['property_type'] ?? '';
-$location        = $_POST['location'] ?? '';
-$price           = floatval($_POST['price'] ?? 0);
-$bedrooms        = intval($_POST['bedrooms'] ?? 0);
-$bathrooms       = intval($_POST['bathrooms'] ?? 0);
-$sqm             = floatval($_POST['sqm'] ?? 0);
-$lot_size        = floatval($_POST['lot_size'] ?? 0);
-$status          = $_POST['status'] ?? 'available';
-$existing_images = $_POST['existing_images'] ?? [];
-
+$property_id       = intval($_POST['property_id']);
+$title             = $_POST['title'] ?? '';
+$description       = $_POST['description'] ?? '';
+$property_type     = $_POST['property_type'] ?? '';
+$location          = $_POST['location'] ?? '';
+$price             = floatval($_POST['price'] ?? 0);
+$bedrooms          = intval($_POST['bedrooms'] ?? 0);
+$bathrooms         = intval($_POST['bathrooms'] ?? 0);
+$sqm               = floatval($_POST['sqm'] ?? 0);
+$lot_size          = floatval($_POST['lot_size'] ?? 0);
+$status            = $_POST['status'] ?? 'available';
+$existing_images   = $_POST['existing_images'] ?? [];
 $listing_type      = $_POST['listing_type'] ?? 'owned';
-$agent_email       = $_POST['agent_email'] ?? null;
+$sold_by_email     = $_POST['sold_by_email'] ?? null; // email of agent who sold
+$sold_by_agent_id  = null;
 
 try {
     $pdo->beginTransaction();
@@ -32,41 +32,43 @@ try {
     $property = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$property) throw new Exception("Property not found.");
 
-    $agent_id = null;
-
-    // 🔹 If listing_type is 'associate_agent', find the agent by email & company
-    if ($listing_type === 'associate_agent' && $agent_email) {
+    // 🔹 Find agent ID if listing_type is 'sold_by'
+    $sold_by_agent_id = null;
+    if ($listing_type === 'sold_by' && !empty($sold_by_email)) {
         $stmtAgent = $pdo->prepare("
             SELECT a.id 
             FROM agents a
             JOIN users u ON u.id = a.user_id
             WHERE u.email = ? 
-              AND u.company_id = ?
-              AND u.user_type = 'associate_agent'
+            AND u.user_type = 'associate_agent'
+            LIMIT 1
         ");
-        $stmtAgent->execute([$agent_email, $property['company_id']]);
+        $stmtAgent->execute([$sold_by_email]);
         $agent = $stmtAgent->fetch(PDO::FETCH_ASSOC);
 
-        if (!$agent) throw new Exception("Agent not found in your company.");
-        $agent_id = $agent['id']; // use agent.id to update property.agent_id
+        if ($agent) {
+            $sold_by_agent_id = $agent['id'];
+        } else {
+            throw new Exception("Selling agent not found.");
+        }
     }
 
-    // 🔹 Update property details, including agent_id if found
+    // 🔹 Update property details (keep original status intact)
     $stmtUpdate = $pdo->prepare("
         UPDATE properties SET
             title = ?, description = ?, property_type = ?, location = ?, price = ?, 
             bedrooms = ?, bathrooms = ?, sqm = ?, lot_size = ?, status = ?, 
-            agent_id = ?, updated_at = NOW()
+            sold_by_agent_id = ?, updated_at = NOW()
         WHERE id = ?
     ");
     $stmtUpdate->execute([
         $title, $description, $property_type, $location, $price,
-        $bedrooms, $bathrooms, $sqm, $lot_size, $status,
-        $agent_id,
+        $bedrooms, $bathrooms, $sqm, $lot_size, $status,  // status remains unchanged
+        $sold_by_agent_id,
         $property_id
     ]);
 
-    // 🔹 Delete removed images
+    // 🔹 Handle images (delete and upload) same as before
     $stmtCurrent = $pdo->prepare("SELECT image_path FROM property_images WHERE property_id = ?");
     $stmtCurrent->execute([$property_id]);
     $current_images = $stmtCurrent->fetchAll(PDO::FETCH_COLUMN);
@@ -81,7 +83,6 @@ try {
         }
     }
 
-    // 🔹 Upload new images
     if (isset($_FILES['new_images']) && is_array($_FILES['new_images']['tmp_name'])) {
         $upload_dir = 'C:\\xampp\\htdocs\\BatEstateExplorer\\storage\\uploads\\property_images\\';
         $file_count = min(count($_FILES['new_images']['tmp_name']), 10);
@@ -108,11 +109,24 @@ try {
     }
 
     $pdo->commit();
+
+    // 🔹 Fetch updated property to include sold_by_agent_id & images
+    $stmtProp = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
+    $stmtProp->execute([$property_id]);
+    $updated_property = $stmtProp->fetch(PDO::FETCH_ASSOC);
+
+    $stmtImages = $pdo->prepare("SELECT image_path FROM property_images WHERE property_id = ?");
+    $stmtImages->execute([$property_id]);
+    $updated_property['images'] = $stmtImages->fetchAll(PDO::FETCH_COLUMN);
+
+    // 🔹 Redirect after successful edit
     $_SESSION['flash_success'] = 'Property updated successfully.';
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=my_listings");
+    exit;
+
 } catch (Exception $e) {
     $pdo->rollBack();
     $_SESSION['flash_error'] = 'Failed to update property: ' . $e->getMessage();
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=my_listings");
+    exit;
 }
-
-header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=my_listings");
-exit;
