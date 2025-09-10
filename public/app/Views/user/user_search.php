@@ -23,7 +23,7 @@ $sql = "SELECT p.*, pi.image_path
 $params = [];
 $types = "";
 
-// Apply filters (same as before)
+// Apply filters
 if ($location !== '') { $sql .= " AND p.location = ?"; $params[] = $location; $types .= "s"; }
 if ($property_type !== '') { $sql .= " AND p.property_type = ?"; $params[] = $property_type; $types .= "s"; }
 if ($price_range !== '') {
@@ -65,6 +65,30 @@ $stmt->execute();
 $result = $stmt->get_result();
 $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 $stmt->close();
+
+// --- If AJAX, return only the property cards HTML ---
+if ($isAjax) {
+    if (!empty($properties)) {
+        foreach ($properties as $property) {
+            // Prepare images for render_property_card
+            $stmtImg = $conn->prepare("SELECT image_path FROM property_images WHERE property_id = ? ORDER BY id ASC");
+            $stmtImg->bind_param("i", $property['id']);
+            $stmtImg->execute();
+            $resImg = $stmtImg->get_result();
+            $images = [];
+            while ($row = $resImg->fetch_assoc()) $images[] = '/' . ltrim($row['image_path'], '/');
+            $stmtImg->close();
+            if (empty($images)) $images[] = '/BatEstateExplorer/assets/images/bg4.jpg';
+            $property['images'] = $images;
+
+            render_property_card($property);
+        }
+    } else {
+        echo '<p>No properties match your filters.</p>';
+    }
+    $conn->close();
+    exit; // stop further output
+}
 ?>
 
 <!-- === Search Form === -->
