@@ -31,17 +31,21 @@ if ($agent) {
     $agent_id = (int)$agent['id'];
 
     // 🔹 Fetch all properties for this agent
-    $stmt = $conn->prepare("
-        SELECT *
-        FROM properties
-        WHERE agent_id = ? OR sold_by_agent_id = ?
-        ORDER BY created_at DESC
+    $propsStmt = $conn->prepare("
+        SELECT 
+            p.*,
+            sa.id AS sold_by_agent_id,
+            su.email AS sold_by_email
+        FROM properties p
+        LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
+        LEFT JOIN users su ON sa.user_id = su.id
+        WHERE p.agent_id = ? OR p.sold_by_agent_id = ?
+        ORDER BY p.created_at DESC
     ");
-    $stmt->bind_param("ii", $agent_id, $agent_id);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $properties = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-    $stmt->close();
+    $propsStmt->bind_param("ii", $agent_id, $agent_id);
+    $propsStmt->execute();
+    $res = $propsStmt->get_result();
+    $listings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 
     // 🔹 Attach primary image to each property
     $stmtImg = $conn->prepare("
@@ -51,14 +55,13 @@ if ($agent) {
         ORDER BY is_primary DESC, id ASC
         LIMIT 1
     ");
-    foreach ($properties as $property) {
+    foreach ($listings as &$property) {  // note the & to modify in place
         $stmtImg->bind_param("i", $property['id']);
         $stmtImg->execute();
         $resImg = $stmtImg->get_result();
         $image = $resImg && $resImg->num_rows ? $resImg->fetch_assoc() : null;
 
         $property['images'] = $image ? [$image] : [];
-        $listings[] = $property;
     }
     $stmtImg->close();
 }
@@ -205,7 +208,12 @@ $res = $propsStmt->get_result();
                         <div class="info-row"><strong>Bedrooms:</strong> <span><?= htmlspecialchars($property['bedrooms']) ?></span></div>
                         <div class="info-row"><strong>Bathrooms:</strong> <span><?= htmlspecialchars($property['bathrooms']) ?></span></div>
                         <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($property['status']) ?></span></div>
-                        <div class="info-row"><strong>Listing Type:</strong> <span><?= $ownership ?></span></div>
+                        <?php
+                        $listingTypeSelected = !empty($property['sold_by_agent_id']) ? 'sold_by' : 'owned';
+                        $ownershipLabel = $listingTypeSelected === 'sold_by' ? "Sold by: {$property['sold_by_email']}" : "Owned";
+                        ?>
+                        <div class="info-row"><strong>Listing Type:</strong> <span><?= $ownershipLabel ?></span></div>
+
                         
                         <div class="info-row actions">
                             <!-- Associates can edit -->
@@ -222,10 +230,6 @@ $res = $propsStmt->get_result();
                         </div>
                     </div>
 
-                    <?php 
-                        // Determine listing type from DB
-                        $listingTypeSelected = !empty($property['sold_by_agent_id']) ? 'sold_by' : 'owned';
-                    ?>
                     <!-- Edit Modal -->
                     <div id="editModal-<?= $property['id'] ?>" class="edit-modal">
                         <div class="modal-content">
@@ -269,9 +273,9 @@ $res = $propsStmt->get_result();
 
                                 <!-- Status -->
                                 <label>Status</label>
-                                <select name="status">
-                                    <option value="available" <?= ($property['status']=='available')?'selected':'' ?>>Available</option>
-                                    <option value="unavailable" <?= ($property['status']=='unavailable')?'selected':'' ?>>Unavailable</option>
+                                <select name="status" disabled>
+                                    <option value="available" <?= ($property['status'] == 'available') ? 'selected' : '' ?>>Available</option>
+                                    <option value="sold" <?= ($property['status'] == 'sold') ? 'selected' : '' ?>>Sold</option>
                                 </select>
 
                                 <!-- Existing images -->

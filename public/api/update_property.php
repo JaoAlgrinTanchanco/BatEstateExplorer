@@ -20,7 +20,7 @@ $lot_size          = floatval($_POST['lot_size'] ?? 0);
 $status            = $_POST['status'] ?? 'available';
 $existing_images   = $_POST['existing_images'] ?? [];
 $listing_type      = $_POST['listing_type'] ?? 'owned';
-$sold_by_email     = $_POST['sold_by_email'] ?? null; // email of agent who sold
+$sold_by_email     = $_POST['sold_by_email'] ?? null;
 $sold_by_agent_id  = null;
 
 try {
@@ -33,10 +33,9 @@ try {
     if (!$property) throw new Exception("Property not found.");
 
     // 🔹 Find agent ID if listing_type is 'sold_by'
-    $sold_by_agent_id = null;
     if ($listing_type === 'sold_by' && !empty($sold_by_email)) {
         $stmtAgent = $pdo->prepare("
-            SELECT a.id 
+            SELECT a.id, u.email 
             FROM agents a
             JOIN users u ON u.id = a.user_id
             WHERE u.email = ? 
@@ -48,27 +47,52 @@ try {
 
         if ($agent) {
             $sold_by_agent_id = $agent['id'];
+            $status = 'sold'; // ✅ Automatically set to sold
         } else {
             throw new Exception("Selling agent not found.");
         }
+    } else {
+        // Ensure status is valid ENUM
+        $allowed_status = ['pending','available','rejected','sold'];
+        if (!in_array($status, $allowed_status)) {
+            $status = 'pending';
+        }
     }
 
-    // 🔹 Update property details (keep original status intact)
+    // 🔹 Update property details
     $stmtUpdate = $pdo->prepare("
         UPDATE properties SET
-            title = ?, description = ?, property_type = ?, location = ?, price = ?, 
-            bedrooms = ?, bathrooms = ?, sqm = ?, lot_size = ?, status = ?, 
-            sold_by_agent_id = ?, updated_at = NOW()
+            title = ?, 
+            description = ?, 
+            property_type = ?, 
+            location = ?, 
+            price = ?, 
+            bedrooms = ?, 
+            bathrooms = ?, 
+            sqm = ?, 
+            lot_size = ?, 
+            status = ?, 
+            sold_by_agent_id = ?, 
+            updated_at = NOW()
         WHERE id = ?
     ");
+
     $stmtUpdate->execute([
-        $title, $description, $property_type, $location, $price,
-        $bedrooms, $bathrooms, $sqm, $lot_size, $status,  // status remains unchanged
+        $title, 
+        $description, 
+        $property_type, 
+        $location, 
+        $price,
+        $bedrooms, 
+        $bathrooms, 
+        $sqm, 
+        $lot_size, 
+        $status,
         $sold_by_agent_id,
         $property_id
     ]);
 
-    // 🔹 Handle images (delete and upload) same as before
+    // 🔹 Handle images
     $stmtCurrent = $pdo->prepare("SELECT image_path FROM property_images WHERE property_id = ?");
     $stmtCurrent->execute([$property_id]);
     $current_images = $stmtCurrent->fetchAll(PDO::FETCH_COLUMN);
@@ -110,16 +134,6 @@ try {
 
     $pdo->commit();
 
-    // 🔹 Fetch updated property to include sold_by_agent_id & images
-    $stmtProp = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
-    $stmtProp->execute([$property_id]);
-    $updated_property = $stmtProp->fetch(PDO::FETCH_ASSOC);
-
-    $stmtImages = $pdo->prepare("SELECT image_path FROM property_images WHERE property_id = ?");
-    $stmtImages->execute([$property_id]);
-    $updated_property['images'] = $stmtImages->fetchAll(PDO::FETCH_COLUMN);
-
-    // 🔹 Redirect after successful edit
     $_SESSION['flash_success'] = 'Property updated successfully.';
     header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=my_listings");
     exit;
