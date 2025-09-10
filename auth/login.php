@@ -5,61 +5,9 @@ require_once __DIR__ . '/../public/app/redirects.php';
 
 $error = '';
 
-// Handle AJAX login requests (for agent login from index.php and Auth Modal)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_POST['ajax']) && $_POST['ajax'] === '1') {
-    $response = ['success' => false, 'message' => ''];
-    
-    try {
-        $email = sanitize_input($conn, $_POST['email']);
-        $password = $_POST['password'];
-        $user_type = isset($_POST['user_type']) ? sanitize_input($conn, $_POST['user_type']) : null;
-        
-        if (empty($email) || empty($password)) {
-            throw new Exception('Please enter both email and password.');
-        }
-        
-        // Find user by email
-        $query = "SELECT * FROM users WHERE email = ?";
-        $stmt = mysqli_prepare($conn, $query);
-        mysqli_stmt_bind_param($stmt, "s", $email);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-        
-        if ($user = mysqli_fetch_assoc($result)) {
-            if (verify_password($password, $user['password_hash'])) {
-                if ($user_type && $user['user_type'] !== $user_type) {
-                    throw new Exception('Access denied. ' . ucfirst(str_replace('_', ' ', $user_type)) . ' privileges required.');
-                }
-                if ($user['status'] !== 'active') {
-                    throw new Exception('Your account is pending approval. Please wait for admin review.');
-                }
-
-                $token = generate_token($user['id'], $user['email'], $user['user_type']);
-                $_SESSION['user_token'] = $token;
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_type'] = $user['user_type'];
-                
-                $response['success'] = true;
-                $response['message'] = 'Login successful!';
-                $response['user_type'] = $user['user_type'];
-            } else {
-                throw new Exception('Incorrect password. Please try again.');
-            }
-        } else {
-            throw new Exception('No account found with that email.');
-        }
-        
-    } catch (Exception $e) {
-        $response['message'] = $e->getMessage();
-    }
-    
-    header('Content-Type: application/json');
-    echo json_encode($response);
-    exit;
-}
-
-// Handle regular form login (non-AJAX)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_POST['ajax']) && $_POST['ajax'] === '0') {
+// Handle AJAX and regular login requests (unchanged)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_POST['ajax'])) {
+    $ajax = $_POST['ajax'];
     $email = sanitize_input($conn, $_POST['email']);
     $password = $_POST['password'];
 
@@ -96,46 +44,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_P
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - BatEstate</title>
-    <link rel="stylesheet" href="../assets/css/login.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - BatEstate</title>
+<link rel="stylesheet" href="../assets/css/login.css">
+
 </head>
 <body>
-    <div class="login-wrapper">
-        <div class="login-container">
-            <div class="header">
-                <img src="../assets/images/Vector 1.png" alt="BatEstate Logo" class="logo">
-                <h1>BatEstate Explorer</h1>
-                <p>Welcome Back</p>
+<div class="login-wrapper">
+    <div class="login-container">
+        <div class="header">
+            <img src="../assets/images/Vector 1.png" alt="BatEstate Logo" class="logo">
+            <h1>BatEstate Explorer</h1>
+            <p>Welcome Back</p>
+        </div>
+
+        <?php if ($error): ?>
+            <div class="error"><?php echo $error; ?></div>
+        <?php endif; ?>
+
+        <form method="POST" action="">
+            <input type="hidden" name="ajax" value="0">
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" autocomplete="username" required value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
             </div>
 
-            <?php if ($error): ?>
-                <div class="error"><?php echo $error; ?></div>
-            <?php endif; ?>
-            
-            <form method="POST" action="">
-                <input type="hidden" name="ajax" value="0">
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" autocomplete="username" required value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" autocomplete="current-password" required>
-                </div>
-                
-                <button type="submit" class="submit-btn">Login</button>
-            </form>
-            
-            <div class="links">
-                <a href="../index.php">Back to Home</a>
-                <span class="divider">|</span>
-                <a href="signup.php">Create Account</a>
+            <div class="form-group password-wrapper">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
+                <span id="togglePasswordText" class="toggle-password-text">Show</span>
             </div>
+
+            <button type="submit" class="submit-btn">Login</button>
+        </form>
+
+        <div class="links">
+            <a href="../index.php">Back to Home</a>
+            <span class="divider">|</span>
+            <a href="change_pass.php">Forgot Password?</a>
+            <span class="divider">|</span>
+            <a href="signup.php">Create Account</a>
         </div>
     </div>
-</body>
+</div>
 
-</html> 
+<script>
+const togglePasswordText = document.querySelector('#togglePasswordText');
+const password = document.querySelector('#password');
+
+togglePasswordText.addEventListener('click', () => {
+    if(password.type === 'password'){
+        password.type = 'text';
+        togglePasswordText.textContent = 'Hide';
+    } else {
+        password.type = 'password';
+        togglePasswordText.textContent = 'Show';
+    }
+});
+</script>
+</body>
+</html>
