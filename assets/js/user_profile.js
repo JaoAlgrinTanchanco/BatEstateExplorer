@@ -1,4 +1,21 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // --- Notification helper ---
+  function notify(type, message) {
+    let container = document.querySelector(".notification-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.className = "notification-container";
+      document.body.appendChild(container);
+    }
+
+    const notif = document.createElement("div");
+    notif.className = `notification ${type}`;
+    notif.textContent = message;
+    container.appendChild(notif);
+
+    setTimeout(() => notif.remove(), 4000);
+  }
+
   // --- Tabs ---
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabContents = document.querySelectorAll(".tab-content");
@@ -11,7 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const tab = btn.dataset.tab;
       tabContents.forEach((tc) => tc.classList.toggle("active", tc.id === tab));
-
       if (sortSelect) sortSelect.value = "date";
     });
   });
@@ -23,19 +39,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!container) return;
 
     const cards = Array.from(container.querySelectorAll(".property-card"));
-
     cards.sort((a, b) => {
-      if (sortBy === "price") {
-        return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
-      } else {
-        return parseInt(b.dataset.date) - parseInt(a.dataset.date);
-      }
+      if (sortBy === "price") return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
+      return parseInt(b.dataset.date) - parseInt(a.dataset.date);
     });
-
     cards.forEach((card) => container.appendChild(card));
   });
 
-  // --- Profile Dropdown ---
+  // --- Profile Dropdown (three-dot) ---
   const profileDotsBtn = document.getElementById("profileDotsBtn");
   const profileDropdownMenu = document.getElementById("profileDropdownMenu");
 
@@ -44,7 +55,10 @@ document.addEventListener("DOMContentLoaded", () => {
     profileDropdownMenu?.classList.toggle("active");
   });
 
-  document.addEventListener("click", () => profileDropdownMenu?.classList.remove("active"));
+  document.addEventListener("click", () => {
+    profileDropdownMenu?.classList.remove("active"); // ✅ Correct, no assignment
+  });
+
   profileDropdownMenu?.addEventListener("click", (e) => e.stopPropagation());
 
   // --- Profile Modal ---
@@ -62,91 +76,80 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target === profileModal) profileModal?.classList.remove("active");
   });
 
-  // --- Delete Account ---
-  const deleteAccountBtn = document.getElementById('deleteAccount');
-  const deleteModal = document.getElementById('deleteAccountModal');
-  const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-  const deleteLoading = document.getElementById('deleteLoading');
-  const deleteModalActions = document.getElementById('deleteModalActions');
-  const deleteModalMessage = document.getElementById('deleteModalMessage');
+  // --- Delete Account Modal ---
+  const deleteAccountBtn = document.getElementById("deleteAccount");
+  const deleteModal = document.getElementById("deleteAccountModal");
+  const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+  const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+  const deleteLoading = document.getElementById("deleteLoading");
+  const deleteModalActions = document.getElementById("deleteModalActions");
+  const deleteModalMessage = document.getElementById("deleteModalMessage");
 
-  deleteAccountBtn?.addEventListener('click', () => {
+  deleteAccountBtn?.addEventListener("click", () => {
     profileDropdownMenu?.classList.remove("active");
-    deleteModal.style.display = 'flex';
+    deleteModal.style.display = "flex";
   });
 
-  cancelDeleteBtn?.addEventListener('click', () => {
-    deleteModal.style.display = 'none';
-  });
+  cancelDeleteBtn?.addEventListener("click", () => (deleteModal.style.display = "none"));
 
-  confirmDeleteBtn?.addEventListener('click', async () => {
+  confirmDeleteBtn?.addEventListener("click", async () => {
     deleteModalMessage.textContent = "Deleting your account...";
-    deleteModalActions.style.display = 'none';
-    deleteLoading.style.display = 'block';
+    deleteModalActions.style.display = "none";
+    deleteLoading.style.display = "block";
 
     try {
-      const res = await fetch('/BatEstateExplorer/public/api/delete_account.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
+      const res = await fetch("/BatEstateExplorer/public/api/delete_account.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
       });
-
       const data = await res.json();
-
       if (data.success) {
-        notify('success', "Account deleted successfully. Redirecting...");
-        setTimeout(() => window.location.href = '/BatEstateExplorer/auth/login.php', 1200);
+        notify("success", "Account deleted successfully. Redirecting...");
+        setTimeout(() => (window.location.href = "/BatEstateExplorer/auth/login.php"), 1200);
       } else {
-        notify('error', data.message || "Failed to delete account.");
-        deleteLoading.style.display = 'none';
-        deleteModalActions.style.display = 'flex';
+        notify("error", data.message || "Failed to delete account.");
+        deleteLoading.style.display = "none";
+        deleteModalActions.style.display = "flex";
       }
     } catch (err) {
-      console.error('❌ Delete account error:', err);
-      notify('error', "Something went wrong. Please try again.");
-      deleteLoading.style.display = 'none';
-      deleteModalActions.style.display = 'flex';
+      console.error(err);
+      notify("error", "Something went wrong. Please try again.");
+      deleteLoading.style.display = "none";
+      deleteModalActions.style.display = "flex";
     }
   });
 
-  // --- Show server-side error if present ---
+  // --- Server-side error display ---
   const profileError = document.getElementById("profileError");
   if (profileError) {
-    notify('error', profileError.textContent);
+    notify("error", profileError.textContent);
     profileError.remove();
   }
 
-  // --- Property Modal Handling (X button and overlay) ---
+  // --- Close modals on outside click or Escape ---
   document.addEventListener("click", (e) => {
-    // Close any modal when X is clicked
+    const modals = ["propertyModal", "reviewModal", "profileModal", "deleteAccountModal"];
+    modals.forEach((id) => {
+      const modal = document.getElementById(id);
+      if (modal && e.target === modal) modal.style.display = "none";
+    });
+
     const closeBtn = e.target.closest(".modal-close");
     if (closeBtn) {
       const modal = closeBtn.closest(".modal");
       if (modal) modal.style.display = "none";
     }
-
-    // Close property modal by clicking outside content
-    const propertyModal = document.getElementById("propertyModal");
-    if (propertyModal && e.target === propertyModal) {
-      propertyModal.style.display = "none";
-    }
-
-    // Close review modal by clicking outside content
-    const reviewModal = document.getElementById("reviewModal");
-    if (reviewModal && e.target === reviewModal) {
-      reviewModal.style.display = "none";
-    }
   });
 
-  // --- Optional: Escape key closes modals ---
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      document.getElementById("propertyModal")?.style.display = "none";
-      document.getElementById("reviewModal")?.style.display = "none";
-      profileModal?.classList.remove("active");
-      deleteModal.style.display = "none";
+      ["propertyModal", "reviewModal", "deleteAccountModal"].forEach((id) => {
+        const modal = document.getElementById(id);
+        if (modal) modal.style.display = "none";
+      });
+
+      if (profileModal) profileModal.classList.remove("active");
     }
   });
-
 });
