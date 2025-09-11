@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  
   // --- Tabs ---
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabContents = document.querySelectorAll(".tab-content");
@@ -111,11 +110,43 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-// --- Show server-side error if present ---
-const profileError = document.getElementById("profileError");
-if (profileError) {
-  notify('error', profileError.textContent);
-  profileError.remove();
-}
+  // --- Show server-side error if present ---
+  const profileError = document.getElementById("profileError");
+  if (profileError) {
+    notify('error', profileError.textContent);
+    profileError.remove();
+  }
+
+  // --- Property Modal Handling (X button and overlay) ---
+  document.addEventListener("click", (e) => {
+    // Close any modal when X is clicked
+    const closeBtn = e.target.closest(".modal-close");
+    if (closeBtn) {
+      const modal = closeBtn.closest(".modal");
+      if (modal) modal.style.display = "none";
+    }
+
+    // Close property modal by clicking outside content
+    const propertyModal = document.getElementById("propertyModal");
+    if (propertyModal && e.target === propertyModal) {
+      propertyModal.style.display = "none";
+    }
+
+    // Close review modal by clicking outside content
+    const reviewModal = document.getElementById("reviewModal");
+    if (reviewModal && e.target === reviewModal) {
+      reviewModal.style.display = "none";
+    }
+  });
+
+  // --- Optional: Escape key closes modals ---
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      document.getElementById("propertyModal")?.style.display = "none";
+      document.getElementById("reviewModal")?.style.display = "none";
+      profileModal?.classList.remove("active");
+      deleteModal.style.display = "none";
+    }
+  });
 
 });
