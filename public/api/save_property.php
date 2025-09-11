@@ -84,7 +84,7 @@ switch ($action) {
 
     case 'unsave':
         if (!$alreadySaved) {
-            echo json_encode(['success' => true, 'saved' => false, 'message' => 'Property not saved.']);
+            echo json_encode(['success' => true, 'saved' => false, 'message' => 'Property removed from saved list.']);
             exit;
         }
         $stmt = $conn->prepare("DELETE FROM saved_properties WHERE user_id = ? AND property_id = ?");
