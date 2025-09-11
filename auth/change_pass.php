@@ -18,7 +18,11 @@ try {
         ]
     );
 } catch (PDOException $e) {
-    die("Database connection failed: " . $e->getMessage());
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => "Database connection failed: " . $e->getMessage()
+    ];
+    die(header("Location: change_pass.php"));
 }
 
 // PHPMailer
@@ -26,7 +30,6 @@ require_once '../vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-$message = '';
 $step = $_SESSION['step'] ?? 1;
 
 // Reset step if GET reset
@@ -39,7 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['reset'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['back'])) {
     if ($step > 1) {
         $_SESSION['step'] = --$step;
-        $message = '';
     }
 }
 
@@ -83,9 +85,15 @@ if ($step === 1 && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['email
         $step = 2;
 
         $result = send_otp($email, $otp);
-        $message = $result === true ? "OTP sent to your email." : "Mailer Error: $result";
+        $_SESSION['notification'] = [
+            'type' => $result === true ? 'success' : 'error',
+            'message' => $result === true ? "OTP sent to your email." : "Mailer Error: $result"
+        ];
     } else {
-        $message = "No account found with this email.";
+        $_SESSION['notification'] = [
+            'type' => 'error',
+            'message' => "No account found with this email."
+        ];
     }
 }
 
@@ -96,16 +104,25 @@ if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($input_otp == $_SESSION['reset_otp'] && time() <= $_SESSION['otp_expires']) {
             $_SESSION['step'] = 3;
             $step = 3;
-            $message = "OTP verified. You can now reset your password.";
+            $_SESSION['notification'] = [
+                'type' => 'success',
+                'message' => "OTP verified. You can now reset your password."
+            ];
         } else {
-            $message = "Invalid or expired OTP.";
+            $_SESSION['notification'] = [
+                'type' => 'error',
+                'message' => "Invalid or expired OTP."
+            ];
         }
     } elseif (!empty($_POST['resend'])) {
         $otp = rand(100000, 999999);
         $_SESSION['reset_otp'] = $otp;
         $_SESSION['otp_expires'] = time() + 300;
         $result = send_otp($_SESSION['reset_email'], $otp);
-        $message = $result === true ? "OTP resent to your email." : "Mailer Error: $result";
+        $_SESSION['notification'] = [
+            'type' => $result === true ? 'success' : 'error',
+            'message' => $result === true ? "OTP resent to your email." : "Mailer Error: $result"
+        ];
     }
 }
 
@@ -116,7 +133,10 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['new_p
     $stmt->execute([$new_password, $_SESSION['reset_user_id']]);
 
     unset($_SESSION['reset_email'], $_SESSION['reset_user_id'], $_SESSION['reset_otp'], $_SESSION['otp_expires'], $_SESSION['step']);
-    $message = "Password reset successfully! <a href='login.php'>Login</a>";
+    $_SESSION['notification'] = [
+        'type' => 'success',
+        'message' => "Password reset successfully!"
+    ];
     $step = 1;
 }
 ?>
@@ -126,16 +146,13 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['new_p
 <head>
 <meta charset="UTF-8">
 <title>Change Password</title>
+<!-- <link rel="stylesheet" href="../assets/css/signup.css"> -->
 <style>
-body { font-family: Arial; background: #f4f4f4; padding: 50px; }
 form { background: #fff; padding: 20px; border-radius: 8px; max-width: 400px; margin: auto; }
 input { width: 100%; padding: 10px; margin: 10px 0; }
 button { padding: 10px 20px; margin-right: 10px; }
-.message { color: red; margin-bottom: 10px; }
-.timer { color: green; font-weight: bold; }
 </style>
 <script>
-// OTP countdown timer with resend button
 function startTimer(duration, display, resendBtn) {
     let timer = duration;
     let countdown = setInterval(function() {
@@ -165,7 +182,14 @@ window.onload = function () {
 <body>
 
 <h2>Change Password</h2>
-<?php if($message) echo "<p class='message'>$message</p>"; ?>
+<!-- Back to Sign Up link -->
+<p style="text-align: center; margin-bottom: 20px;">
+    <a href="login.php" style="text-decoration: none; color: #111; font-weight: bold;">
+        &larr; Back to Sign In
+    </a>
+</p>
+<!-- Centralized Notification -->
+<?php include __DIR__ . '/../components/notification.php'; ?>
 
 <?php if($step === 1): ?>
 <form method="POST">
@@ -175,7 +199,7 @@ window.onload = function () {
 </form>
 
 <?php elseif($step === 2): ?>
-<p>OTP sent to your email. Expires in <span id="timer" class="timer"></span></p>
+<p>OTP sent to your email. Expires in <span id="timer"></span></p>
 <form method="POST">
     <label>Enter OTP</label>
     <input type="text" name="otp" placeholder="6-digit OTP" required>
@@ -184,7 +208,6 @@ window.onload = function () {
 <form method="POST">
     <button type="submit" name="resend" value="1" id="resendBtn">Resend OTP</button>
 </form>
-<!-- Back button outside forms -->
 <form method="POST" style="margin-top:10px;">
     <button type="submit" name="back" value="1">Back</button>
 </form>
@@ -195,7 +218,6 @@ window.onload = function () {
     <input type="password" name="new_password" placeholder="Enter new password" required>
     <button type="submit">Reset Password</button>
 </form>
-<!-- Back button outside form -->
 <form method="POST" style="margin-top:10px;">
     <button type="submit" name="back" value="1">Back</button>
 </form>
