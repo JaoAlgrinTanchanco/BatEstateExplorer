@@ -66,7 +66,7 @@ foreach($fields as $f) {
     $old_inputs[$f] = sanitize($_POST[$f] ?? '');
 }
 
-// Also save company_id as integer
+// Save company_id as integer
 $old_inputs['company_id'] = !empty($_POST['company_id']) ? (int)$_POST['company_id'] : null;
 
 try {
@@ -81,12 +81,32 @@ try {
         throw new Exception("Company selection is required for associate agents.");
     }
 
-    // ======= Check Email Exists =======
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+    // ======= Check Email Duplication Rules =======
+    $stmt = $pdo->prepare("SELECT id, user_type FROM users WHERE email = ?");
     $stmt->execute([$old_inputs['email']]);
     $existingUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
     if ($existingUser) {
-        throw new Exception("Email already exists.");
+        $existingType = $existingUser['user_type'];
+        $newType = $old_inputs['user_type'];
+
+        if ($existingType === 'user' && ($newType === 'direct_agent' || $newType === 'associate_agent')) {
+            // OK
+        } elseif ($existingType === 'direct_agent' && $newType === 'associate_agent') {
+            throw new Exception("Direct agents cannot convert to associate agents.");
+        } elseif ($existingType === 'associate_agent' && $newType === 'direct_agent') {
+            throw new Exception("Associate agents cannot convert to direct agents.");
+        } else {
+            throw new Exception("Email already exists with the same or incompatible role.");
+        }
+    }
+
+    // ======= Check Existing Pending Application =======
+    $stmt = $pdo->prepare("SELECT id FROM applications WHERE email = ? AND status = 'pending'");
+    $stmt->execute([$old_inputs['email']]);
+    $existingApplication = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($existingApplication) {
+        throw new Exception("You already submitted an application. Please wait for approval.");
     }
 
     // ======= Password Hash =======
@@ -124,9 +144,9 @@ try {
             user_id, first_name, last_name, email, password_hash, phone, address,
             education, school, course, graduation_year, certifications, training,
             broker_license_path, prc_license_path, resume_path, valid_id_path,
-            agent_type, company_id, broker_id, license_number, experience_years, specialization, bio
+            agent_type, company_id, broker_id, license_number, experience_years, specialization, bio, status
         ) VALUES (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending'
         )
     ");
 
@@ -163,15 +183,15 @@ try {
         'type' => 'success',
         'message' => 'Submitted successfully! Awaiting approval.'
     ];
-    header("Location: ../../auth/login.php");
+
+    // ======= Redirect to Agent Registration =======
+    header("Location: ../../auth/agent_registration.php");
     exit;
 
 } catch (Exception $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
 
-    // Save old inputs so the form is not cleared
     $_SESSION['old_inputs'] = $old_inputs;
-
     $_SESSION['notification'] = [
         'type' => 'error',
         'message' => $e->getMessage()

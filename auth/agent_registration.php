@@ -16,10 +16,6 @@ if ($user_id) {
 $old = $_SESSION['old_inputs'] ?? [];
 unset($_SESSION['old_inputs']);
 
-// Get notification message
-$notification = $_SESSION['notification'] ?? null;
-unset($_SESSION['notification']);
-
 // Get agent type from URL (direct_agent or associate_agent)
 $agent_type_param = $_GET['type'] ?? ($old['user_type'] ?? '');
 ?>
@@ -30,47 +26,21 @@ $agent_type_param = $_GET['type'] ?? ($old['user_type'] ?? '');
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Agent Registration - BatEstate Explorer</title>
 <link rel="stylesheet" href="../assets/css/hero.css">
+<link rel="stylesheet" href="../assets/css/agent_registration.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<style>
-.registration-container {
-    max-width: 850px;
-    margin: 40px auto;
-    padding: 25px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.12);
-}
-.form-group { margin-bottom: 20px; }
-.form-group label { font-weight: 600; margin-bottom: 6px; display: block; color: #333; }
-.form-group input, .form-group select, .form-group textarea {
-    width: 100%; padding: 12px; font-size: 15px; border: 2px solid #e1e5e9; border-radius: 6px; transition: 0.3s;
-}
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #007bff; outline: none; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.submit-btn { background: #007bff; color: #fff; padding: 15px 30px; font-size: 18px; border: none; border-radius: 6px; cursor: pointer; transition: 0.3s; }
-.submit-btn:hover { background: #0056b3; }
-.back-link { display: inline-block; margin-bottom: 20px; color: #007bff; text-decoration: none; }
-.back-link:hover { text-decoration: underline; }
-.notification { padding: 12px 20px; margin-bottom: 20px; border-radius: 6px; }
-.notification.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-.notification.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-</style>
+
 </head>
 <body>
+<?php include '../components/notification.php'; ?>
+
 <div class="registration-container">
 
-    <a href="../index.php" class="back-link">
-        <i class="fas fa-arrow-left"></i> Back to Home
+    <a href="javascript:history.back()" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back
     </a>
 
     <h1><i class="fas fa-user-tie"></i> Agent Registration</h1>
     <p>Join our network of professional real estate agents and start your journey with BatEstate Explorer.</p>
-
-    <?php if($notification): ?>
-        <div class="notification <?= $notification['type'] === 'success' ? 'success' : 'error' ?>">
-            <?= htmlspecialchars($notification['message']) ?>
-        </div>
-    <?php endif; ?>
 
     <form action="../public/api/agent_registration_complete.php" method="POST" enctype="multipart/form-data">
         <!-- Personal Info -->
