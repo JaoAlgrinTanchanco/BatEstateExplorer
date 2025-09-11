@@ -1,13 +1,15 @@
 <?php
-// signup_user.php: Handles AJAX signup
-header('Content-Type: application/json');
+// signup_user.php: Handles normal form signup with notifications
+session_start();
 require_once __DIR__ . '/../config/database.php';
 
-$response = ['success' => false, 'message' => ''];
-
+// Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    $response['message'] = 'Invalid request method.';
-    echo json_encode($response);
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Invalid request method.'
+    ];
+    header('Location: signup.php'); // fixed path
     exit;
 }
 
@@ -16,23 +18,43 @@ $first_name = isset($_POST['first_name']) ? trim($_POST['first_name']) : '';
 $last_name  = isset($_POST['last_name']) ? trim($_POST['last_name']) : '';
 $email      = isset($_POST['email']) ? trim($_POST['email']) : '';
 $password   = isset($_POST['password']) ? $_POST['password'] : '';
+$confirm    = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
 $phone      = isset($_POST['phone']) ? trim($_POST['phone']) : '';
 
-if (!$first_name || !$last_name || !$email || !$password) {
-    $response['message'] = 'All required fields must be filled.';
-    echo json_encode($response);
+// Validation
+if (!$first_name || !$last_name || !$email || !$password || !$confirm) {
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'All required fields must be filled.'
+    ];
+    header('Location: signup.php'); // fixed path
     exit;
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    $response['message'] = 'Invalid email address.';
-    echo json_encode($response);
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Invalid email address.'
+    ];
+    header('Location: signup.php'); // fixed path
+    exit;
+}
+
+if ($password !== $confirm) {
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Passwords do not match.'
+    ];
+    header('Location: signup.php'); // fixed path
     exit;
 }
 
 if (strlen($password) < 6) {
-    $response['message'] = 'Password must be at least 6 characters.';
-    echo json_encode($response);
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Password must be at least 6 characters.'
+    ];
+    header('Location: signup.php'); // fixed path
     exit;
 }
 
@@ -42,8 +64,11 @@ mysqli_stmt_bind_param($stmt, 's', $email);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 if (mysqli_num_rows($result) > 0) {
-    $response['message'] = 'Email already exists.';
-    echo json_encode($response);
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Email already exists.'
+    ];
+    header('Location: signup.php'); // fixed path
     exit;
 }
 
@@ -54,16 +79,23 @@ $password_hash = password_hash($password, PASSWORD_DEFAULT);
 $stmt = mysqli_prepare($conn, 'INSERT INTO users 
     (email, password_hash, first_name, last_name, phone, user_type, status) 
     VALUES (?, ?, ?, ?, ?, ?, ?)');
-$user_type = 'user';   // ✅ default user type
-$status = 'active';    // ✅ default status
+$user_type = 'user';
+$status    = 'active';
 mysqli_stmt_bind_param($stmt, 'sssssss', $email, $password_hash, $first_name, $last_name, $phone, $user_type, $status);
 
 if (!mysqli_stmt_execute($stmt)) {
-    $response['message'] = 'Database error: ' . mysqli_stmt_error($stmt);
-    echo json_encode($response);
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Database error: ' . mysqli_stmt_error($stmt)
+    ];
+    header('Location: signup.php'); // fixed path
     exit;
 }
 
-$response['success'] = true;
-$response['message'] = 'Account created successfully!';
-echo json_encode($response);
+// Success: set notification and redirect to login
+$_SESSION['notification'] = [
+    'type' => 'success',
+    'message' => 'Account created successfully! You can now login.'
+];
+header('Location: login.php'); // fixed path
+exit;

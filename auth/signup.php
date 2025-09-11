@@ -1,3 +1,7 @@
+<?php
+session_start();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -64,52 +68,25 @@
                 </div>
             </form>
 
-            <!-- Only errors will show here -->
-            <div id="responseMessage" style="margin-top: 1rem; font-weight: bold;"></div>
-            
             <div class="login-link stagger-item">
                 Already have an account? <a href="login.php">Sign in here</a>
             </div>
         </div>
     </div>
 
-    <!-- AJAX Script -->
+    <!-- ✅ Centralized Notification -->
+    <?php include __DIR__ . "/../components/notification.php"; ?>
+
+    <!-- Optional: client-side password match check -->
     <script>
-        document.getElementById("signupForm").addEventListener("submit", async function(e) {
-            e.preventDefault();
-
+        document.getElementById("signupForm").addEventListener("submit", function(e) {
             const form = e.target;
-            const formData = new FormData(form);
+            const password = form.password.value;
+            const confirm = form.confirm_password.value;
 
-            // Password match validation
-            if (formData.get("password") !== formData.get("confirm_password")) {
-                document.getElementById("responseMessage").textContent = "Passwords do not match.";
-                document.getElementById("responseMessage").style.color = "red";
-                return;
-            }
-
-            try {
-                const response = await fetch(form.action, {
-                    method: "POST",
-                    body: formData
-                });
-
-                const result = await response.json();
-                const messageBox = document.getElementById("responseMessage");
-
-                if (result.success) {
-                    // ✅ Success: just reset form silently
-                    messageBox.textContent = "";
-                    form.reset();
-                } else {
-                    // ❌ Show error message
-                    messageBox.textContent = result.message;
-                    messageBox.style.color = "red";
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                document.getElementById("responseMessage").textContent = "Something went wrong.";
-                document.getElementById("responseMessage").style.color = "red";
+            if (password !== confirm) {
+                e.preventDefault();
+                alert("Passwords do not match."); // optional quick feedback
             }
         });
     </script>
