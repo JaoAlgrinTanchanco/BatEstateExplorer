@@ -177,7 +177,7 @@ if (!function_exists('render_property_card')) {
             </select>
             <label>Your Review:</label>
             <textarea name="review_text" rows="4" required></textarea>
-            <input type="hidden" name="property_id" id="reviewPropertyId">
+            <input type="hidden" name="property_id" id="reviewPropertyIsd">
             <button type="submit" class="btn btn-success">Submit</button>
         </form>
     </div>
