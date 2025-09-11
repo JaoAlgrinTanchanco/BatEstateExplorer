@@ -5,91 +5,92 @@ session_start();
 try {
     require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/config/pdo_database.php';
 } catch (Exception $e) {
-    header("Location: ../auth/agent_registration.php?error=" . urlencode("DB connection failed: " . $e->getMessage()));
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => "DB connection failed: " . $e->getMessage()
+    ];
+    header("Location: ../auth/agent_registration.php");
     exit;
 }
 
 // ======= Only POST requests =======
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: ../auth/agent_registration.php?error=" . urlencode("Invalid request method"));
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => "Invalid request method."
+    ];
+    header("Location: ../auth/agent_registration.php");
     exit;
 }
 
+// ======= Helper Functions =======
+function sanitize($input) {
+    return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+}
+
+function getNestedFile($files, $key) {
+    if (!isset($files['name'][$key])) return null;
+    return [
+        'name'     => $files['name'][$key],
+        'type'     => $files['type'][$key],
+        'tmp_name' => $files['tmp_name'][$key],
+        'error'    => $files['error'][$key],
+        'size'     => $files['size'][$key]
+    ];
+}
+
+function handleUpload($file, $prefix, $docsDir, $imgsDir, $allowedTypes) {
+    if (!$file || $file['error'] !== UPLOAD_ERR_OK) return null;
+    if (!in_array($file['type'], $allowedTypes)) throw new Exception("Invalid file type: {$file['name']}");
+    if ($file['size'] > 5 * 1024 * 1024) throw new Exception("File too large: {$file['name']}");
+
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $fname = $prefix . '_' . uniqid() . '.' . $ext;
+    $dest = (strpos($file['type'], 'image/') === 0) ? $imgsDir . $fname : $docsDir . $fname;
+
+    if (!move_uploaded_file($file['tmp_name'], $dest)) {
+        throw new Exception("Failed to save file: {$file['name']}");
+    }
+    return $dest;
+}
+
+// ======= Collect Form Inputs =======
+$fields = [
+    'first_name','last_name','email','password','user_type','phone','address',
+    'company_id','broker_id','prc_number','experience_years','specializations','experience_details',
+    'education','school','course','graduation_year','certifications','training'
+];
+
+$old_inputs = [];
+foreach($fields as $f) {
+    $old_inputs[$f] = sanitize($_POST[$f] ?? '');
+}
+
+// Also save company_id as integer
+$old_inputs['company_id'] = !empty($_POST['company_id']) ? (int)$_POST['company_id'] : null;
+
 try {
-
-    // ======= Helper Functions =======
-    function sanitize($input) {
-        return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
-    }
-
-    function getNestedFile($files, $key) {
-        if (!isset($files['name'][$key])) return null;
-        return [
-            'name'     => $files['name'][$key],
-            'type'     => $files['type'][$key],
-            'tmp_name' => $files['tmp_name'][$key],
-            'error'    => $files['error'][$key],
-            'size'     => $files['size'][$key]
-        ];
-    }
-
-    function handleUpload($file, $prefix, $docsDir, $imgsDir, $allowedTypes) {
-        if (!$file || $file['error'] !== UPLOAD_ERR_OK) return null;
-        if (!in_array($file['type'], $allowedTypes)) throw new Exception("Invalid file type: {$file['name']}");
-        if ($file['size'] > 5 * 1024 * 1024) throw new Exception("File too large: {$file['name']}");
-
-        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $fname = $prefix . '_' . uniqid() . '.' . $ext;
-        $dest = (strpos($file['type'], 'image/') === 0) ? $imgsDir . $fname : $docsDir . $fname;
-
-        if (!move_uploaded_file($file['tmp_name'], $dest)) {
-            throw new Exception("Failed to save file: {$file['name']}");
-        }
-        return $dest;
-    }
-
-    // ======= Collect Form Inputs =======
-    $user_id    = $_SESSION['user_id'] ?? null;
-    $first_name = sanitize($_POST['first_name'] ?? '');
-    $last_name  = sanitize($_POST['last_name'] ?? '');
-    $email      = sanitize($_POST['email'] ?? '');
-    $password   = $_POST['password'] ?? '';
-    $user_type  = sanitize($_POST['user_type'] ?? '');
-    $phone      = sanitize($_POST['phone'] ?? '');
-    $address    = sanitize($_POST['address'] ?? '');
-    $company_id = !empty($_POST['company_id']) ? (int)$_POST['company_id'] : null;
-
-    $broker_id        = sanitize($_POST['broker_id'] ?? null);
-    $prc_number       = sanitize($_POST['prc_number'] ?? null);
-    $experience_years = sanitize($_POST['experience_years'] ?? null);
-    $specializations  = sanitize($_POST['specializations'] ?? null);
-    $experience_details = sanitize($_POST['experience_details'] ?? null);
-
-    $education       = sanitize($_POST['education'] ?? null);
-    $school          = sanitize($_POST['school'] ?? null);
-    $course          = sanitize($_POST['course'] ?? null);
-    $graduation_year = sanitize($_POST['graduation_year'] ?? null);
-
-    $certifications = sanitize($_POST['certifications'] ?? null);
-    $training       = sanitize($_POST['training'] ?? null);
-
     // ======= Validation =======
-    if (!$first_name || !$last_name || !$email || !$password || !$user_type) {
-        throw new Exception("All required fields must be filled");
+    $required = ['first_name','last_name','email','password','user_type'];
+    foreach($required as $r) {
+        if (empty($old_inputs[$r])) {
+            throw new Exception("All required fields must be filled.");
+        }
     }
-    if ($user_type === 'associate_agent' && !$company_id) {
-        throw new Exception("Company selection is required for associate agents");
+    if ($old_inputs['user_type'] === 'associate_agent' && !$old_inputs['company_id']) {
+        throw new Exception("Company selection is required for associate agents.");
     }
 
-    // ======= Check for Existing Email =======
+    // ======= Check Email Exists =======
     $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
-    $stmt->execute([$email]);
+    $stmt->execute([$old_inputs['email']]);
     $existingUser = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($existingUser && (!$user_id || $existingUser['id'] != $user_id)) {
-        throw new Exception("Email already exists");
+    if ($existingUser) {
+        throw new Exception("Email already exists.");
     }
 
-    $password_hash = password_hash($password, PASSWORD_DEFAULT);
+    // ======= Password Hash =======
+    $password_hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
     // ======= File Uploads =======
     $docsDir = $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/storage/uploads/documents/';
@@ -105,66 +106,76 @@ try {
     ];
 
     $broker_license = $prc_license = $resume = $valid_id = null;
-    if ($user_type === 'direct_agent') {
+    if ($old_inputs['user_type'] === 'direct_agent') {
         $broker_license = handleUpload(getNestedFile($_FILES['documents'], 'broker_license'), 'broker_license', $docsDir, $imgsDir, $allowedTypes);
         $prc_license    = handleUpload(getNestedFile($_FILES['documents'], 'prc_license'), 'prc_license', $docsDir, $imgsDir, $allowedTypes);
         $resume         = handleUpload(getNestedFile($_FILES['documents'], 'resume'), 'resume', $docsDir, $imgsDir, $allowedTypes);
         $valid_id       = handleUpload(getNestedFile($_FILES['documents'], 'valid_id'), 'valid_id', $docsDir, $imgsDir, $allowedTypes);
 
         if (!$broker_license || !$prc_license || !$resume || !$valid_id) {
-            throw new Exception("All required documents must be uploaded for Direct Agents");
+            throw new Exception("All required documents must be uploaded for Direct Agents.");
         }
     }
 
     // ======= Insert Application =======
     $pdo->beginTransaction();
-
     $stmt = $pdo->prepare("
         INSERT INTO applications (
             user_id, first_name, last_name, email, password_hash, phone, address,
             education, school, course, graduation_year, certifications, training,
-            broker_license_path, prc_license_path, resume_path, valid_id_path, additional_docs_path,
+            broker_license_path, prc_license_path, resume_path, valid_id_path,
             agent_type, company_id, broker_id, license_number, experience_years, specialization, bio
         ) VALUES (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
     ");
 
     $stmt->execute([
-        $user_id ?? null,
-        $first_name,
-        $last_name,
-        $email,
+        $_SESSION['user_id'] ?? null,
+        $old_inputs['first_name'],
+        $old_inputs['last_name'],
+        $old_inputs['email'],
         $password_hash,
-        $phone,
-        $address,
-        $education ?? null,
-        $school ?? null,
-        $course ?? null,
-        $graduation_year ?? null,
-        $certifications ?? null,
-        $training ?? null,
+        $old_inputs['phone'],
+        $old_inputs['address'],
+        $old_inputs['education'] ?: null,
+        $old_inputs['school'] ?: null,
+        $old_inputs['course'] ?: null,
+        $old_inputs['graduation_year'] ?: null,
+        $old_inputs['certifications'] ?: null,
+        $old_inputs['training'] ?: null,
         $broker_license,
         $prc_license,
         $resume,
         $valid_id,
-        $additional_docs ?? null,
-        $user_type,
-        $company_id,
-        $broker_id ?? null,
-        $prc_number ?? null,
-        $experience_years ?? null,
-        $specializations ?? null,
-        $experience_details ?? null
+        $old_inputs['user_type'],
+        $old_inputs['company_id'],
+        $old_inputs['broker_id'] ?: null,
+        $old_inputs['prc_number'] ?: null,
+        $old_inputs['experience_years'] ?: null,
+        $old_inputs['specializations'] ?: null,
+        $old_inputs['experience_details'] ?: null
     ]);
-
     $pdo->commit();
 
-    header("Location: /BatEstateExplorer/auth/login.php");
+    // ======= Success Notification =======
+    $_SESSION['notification'] = [
+        'type' => 'success',
+        'message' => 'Submitted successfully! Awaiting approval.'
+    ];
+    header("Location: ../../auth/login.php");
     exit;
 
 } catch (Exception $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
-    header("Location: ../../auth/agent_registration.php?error=" . urlencode($e->getMessage()));
+
+    // Save old inputs so the form is not cleared
+    $_SESSION['old_inputs'] = $old_inputs;
+
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => $e->getMessage()
+    ];
+    header("Location: ../../auth/agent_registration.php");
     exit;
 }
