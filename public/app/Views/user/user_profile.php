@@ -27,9 +27,6 @@ $savedResult = $stmt->get_result();
 $savedProperties = $savedResult->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-$message = '';
-$error = '';
-
 // Check if user has a pending or submitted application
 $stmt = $conn->prepare("SELECT status FROM applications WHERE user_id = ? ORDER BY created_at DESC LIMIT 1");
 $stmt->bind_param("i", $current_user['id']);
@@ -40,7 +37,7 @@ $stmt->close();
 
 $disableAgentOptions = false;
 if ($lastApplication && $lastApplication['status'] === 'pending') {
-    $disableAgentOptions = true; // Disable if an application is pending
+    $disableAgentOptions = true;
 }
 
 // Handle profile update
@@ -70,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $stmt->close();
 
-    // 🔑 Redirect back to the dashboard profile tab
+    // Redirect back to profile tab
     header("Location: /BatEstateExplorer/public/controllers/user_dashboard.php?view=profile");
     exit;
 }
@@ -193,16 +190,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!-- Page-specific JS -->
 <script src="/BatEstateExplorer/assets/js/user_profile.js"></script>
-<script src="/BatEstateExplorer/assets/js/property_card_logic.js"></script>
 
-<!-- Centralized notifications for profile update -->
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    <?php if ($message): ?>
-        notify('success', <?= json_encode($message) ?>);
-    <?php endif; ?>
-    <?php if ($error): ?>
-        notify('error', <?= json_encode($error) ?>);
-    <?php endif; ?>
-});
-</script>

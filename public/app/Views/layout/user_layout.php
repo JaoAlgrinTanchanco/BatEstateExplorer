@@ -105,6 +105,8 @@
     </footer>
 </div>
 
+<script src="/BatEstateExplorer/assets/js/property_card_logic.js"></script>
+
 <!-- ✅ Global JS config for all views -->
 <script>
     window.AppConfig = {

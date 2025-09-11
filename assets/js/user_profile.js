@@ -111,8 +111,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  if (profileError) {
-    notify('error', profileError.textContent);
-    profileError.remove();
-  }
+// --- Show server-side error if present ---
+const profileError = document.getElementById("profileError");
+if (profileError) {
+  notify('error', profileError.textContent);
+  profileError.remove();
+}
+
 });

@@ -203,4 +203,3 @@ if ($isAjax) {
 <?php $conn->close(); ?>
 
 <script src="/BatEstateExplorer/assets/js/user_search.js"></script>
-<script src="/BatEstateExplorer/assets/js/property_card_logic.js"></script>

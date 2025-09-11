@@ -71,4 +71,4 @@ $result = $conn->query($sql);
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css"/>
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 <script src="/BatEstateExplorer/assets/js/user_home.js"></script>
-<script src="/BatEstateExplorer/assets/js/property_card_logic.js"></script>
+

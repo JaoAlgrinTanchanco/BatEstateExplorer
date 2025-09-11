@@ -8,24 +8,44 @@
 
   // --- Centralized notification helper ---
   function notify(type, message) {
-    // remove previous notifications
-    const existing = document.querySelector(".central-notification");
-    if (existing) existing.remove();
+    // Ensure notification container exists
+    let container = document.querySelector('.notification-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'notification-container';
+      document.body.appendChild(container);
+    }
 
-    const div = document.createElement("div");
-    div.className = `central-notification ${type}`;
-    div.innerHTML = message;
-    div.style.position = "fixed";
-    div.style.top = "20px";
-    div.style.right = "20px";
-    div.style.padding = "15px 20px";
-    div.style.borderRadius = "8px";
-    div.style.zIndex = 9999;
-    div.style.color = "#fff";
-    div.style.background = type === "success" ? "#28a745" : "#dc3545";
-    document.body.appendChild(div);
+    const notif = document.createElement('div');
+    notif.className = `notification ${type}`;
 
-    setTimeout(() => div.remove(), 4000);
+    // Icon depending on type
+    const icon = type === 'success'
+      ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="#fff" d="M9 16.17 4.83 12l-1.42 1.41L9 19l12-12-1.41-1.41z"/></svg>'
+      : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="#fff" d="m13 13h-2v-6h2zm0 4h-2v-2h2z"/></svg>';
+
+    notif.innerHTML = `
+      <div class="notification__icon">${icon}</div>
+      <div class="notification__title">${message}</div>
+      <div class="notification__close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+          <path fill="#fff" d="m15.8 5.3-1.2-1.2-4.6 4.7-4.6-4.7-1.2 1.2 4.7 4.7-4.7 4.6 1.2 1.2 4.6-4.6 4.6 4.6 1.2-1.2-4.6-4.6z"/>
+        </svg>
+      </div>
+    `;
+
+    container.appendChild(notif);
+
+    // Close button
+    notif.querySelector('.notification__close').addEventListener('click', () => fadeOutNotif(notif));
+
+    // Auto-dismiss
+    setTimeout(() => fadeOutNotif(notif), 5000);
+
+    function fadeOutNotif(el) {
+      el.classList.add('fade-out');
+      setTimeout(() => el.remove(), 500);
+    }
   }
 
   async function openPropertyModal(propertyId) {
@@ -133,7 +153,11 @@
 
   function initSaveButton() {
     saveBtn = document.querySelector(".modal-actions .btn-outline");
-    saveBtn?.addEventListener("click", handleSaveClick);
+    if (!saveBtn) return;
+
+    // Prevent duplicate event binding
+    saveBtn.removeEventListener("click", handleSaveClick);
+    saveBtn.addEventListener("click", handleSaveClick);
   }
 
   function updateSaveButton(isSaved) {
