@@ -118,7 +118,7 @@
 <?php if (!empty($pageScript)): ?>
     <script src="<?= htmlspecialchars($pageScript) ?>"></script>
 <?php endif; ?>
-<?php include __DIR__ . "/../../../components/notification.php"; ?>
+<?php include __DIR__ . "/../../../../components/notification.php"; ?>
 
 </body>
 </html>

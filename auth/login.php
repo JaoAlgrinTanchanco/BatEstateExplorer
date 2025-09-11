@@ -3,51 +3,67 @@ session_start();
 require_once '../config/database.php';
 require_once __DIR__ . '/../public/app/redirects.php';
 
-$error = '';
-
-// Handle AJAX and regular login requests (unchanged)
+// Handle AJAX and regular login requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_POST['ajax'])) {
-    $ajax = $_POST['ajax'];
     $email = sanitize_input($conn, $_POST['email']);
     $password = $_POST['password'];
 
     if (empty($email) || empty($password)) {
-        $error = "Please enter both email and password.";
-    } else {
-        $query = "SELECT * FROM users WHERE email = ?";
-        $stmt = mysqli_prepare($conn, $query);
-        mysqli_stmt_bind_param($stmt, "s", $email);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
+        $_SESSION['notification'] = [
+            'type' => 'error',
+            'message' => 'Please enter both email and password.'
+        ];
+        header("Location: login.php"); // <-- redirect clears POST
+        exit;
+    }
 
-        if ($user = mysqli_fetch_assoc($result)) {
-            if (verify_password($password, $user['password_hash'])) {
-                if ($user['status'] !== 'active') {
-                    $error = "Your account is pending approval. Please wait for admin review.";
-                } else {
-                    // Set login session values
-                    $token = generate_token($user['id'], $user['email'], $user['user_type']);
-                    $_SESSION['user_token'] = $token;
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['user_type'] = $user['user_type'];
+    $stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE email = ?");
+    mysqli_stmt_bind_param($stmt, "s", $email);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
 
-                    // ✅ Send notification to centralized system
-                    $_SESSION['notification'] = [
-                        'type' => 'success',
-                        'message' => 'Logged in successfully!'
-                    ];
-
-                    // Redirect by user type
-                    redirect_by_user_type($user['user_type']);
-                }
-            } else {
-                $error = "Incorrect password. Please try again.";
+    if ($user = mysqli_fetch_assoc($result)) {
+        if (verify_password($password, $user['password_hash'])) {
+            if ($user['status'] !== 'active') {
+                $_SESSION['notification'] = [
+                    'type' => 'error',
+                    'message' => 'Your account is pending approval. Please wait for admin review.'
+                ];
+                header("Location: login.php");
+                exit;
             }
+
+            // Successful login
+            $_SESSION['user_token'] = generate_token($user['id'], $user['email'], $user['user_type']);
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_type'] = $user['user_type'];
+
+            $_SESSION['notification'] = [
+                'type' => 'success',
+                'message' => 'Logged in successfully!'
+            ];
+
+            redirect_by_user_type($user['user_type']); // already redirects
+            exit;
+
         } else {
-            $error = "No account found with that email.";
+            $_SESSION['notification'] = [
+                'type' => 'error',
+                'message' => 'Incorrect password. Please try again.'
+            ];
+            header("Location: login.php");
+            exit;
         }
+    } else {
+        $_SESSION['notification'] = [
+            'type' => 'error',
+            'message' => 'No account found with that email.'
+        ];
+        header("Location: login.php");
+        exit;
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -66,10 +82,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_P
             <h1>BatEstate Explorer</h1>
             <p>Welcome Back</p>
         </div>
-
-        <?php if ($error): ?>
-            <div class="error"><?php echo $error; ?></div>
-        <?php endif; ?>
 
         <form method="POST" action="">
             <input type="hidden" name="ajax" value="0">
@@ -98,6 +110,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_P
         </div>
     </div>
 </div>
+
+<?php include __DIR__ . "/../components/notification.php"; ?>
 
 <script>
 const togglePasswordText = document.querySelector('#togglePasswordText');
