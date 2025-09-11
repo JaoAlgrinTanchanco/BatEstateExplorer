@@ -199,6 +199,40 @@ body::before {
   text-decoration: underline;
 }
 
+.links {
+    text-align: center;
+    /* margin-top: 1.5rem; */
+    font-size: 0.9rem;
+}
+.links a {
+    color: #111;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+.links a:hover {
+    color: #000;
+    text-decoration: underline;
+}
+.divider {
+    margin: 0 0.5rem;
+    color: #555;
+}
+
+/* Show/Hide toggle aligned right with spacing */
+.toggle-password {
+    display: flex;           /* use flex to align to end */
+    justify-content: flex-end; /* push text to right */
+    margin: 0 0 1.5rem 0;   /* bottom spacing */
+    font-size: 0.9rem;
+    color: #111;
+    cursor: pointer;
+    user-select: none;
+}
+.toggle-password:hover {
+    color: #000;
+}
+
 /* Initial state for staggered items */
 .stagger-item {
   opacity: 0;

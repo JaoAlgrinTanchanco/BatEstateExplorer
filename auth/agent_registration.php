@@ -59,8 +59,8 @@ $agent_type_param = $_GET['type'] ?? ($old['user_type'] ?? '');
 <body>
 <div class="registration-container">
 
-    <a href="javascript:void(0)" class="back-link" id="back-link">
-        <i class="fas fa-arrow-left"></i> Back
+    <a href="../index.php" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back to Home
     </a>
 
     <h1><i class="fas fa-user-tie"></i> Agent Registration</h1>
@@ -290,14 +290,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     toggleFields();
     userType.addEventListener('change', toggleFields);
-
-    // Back link
-    const backLink = document.getElementById('back-link');
-    const urlParams = new URLSearchParams(window.location.search);
-    if(urlParams.get('from') === 'profile'){
-        backLink.innerHTML = '<i class="fas fa-arrow-left"></i> Back to Profile';
-    }
-    backLink.addEventListener('click', ()=> window.history.back());
 });
 </script>
 </body>
