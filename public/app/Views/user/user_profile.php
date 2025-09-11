@@ -44,7 +44,6 @@ if ($lastApplication && $lastApplication['status'] === 'pending') {
 }
 
 // Handle profile update
-// Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name = sanitize_input($conn, $_POST['first_name']);
     $last_name  = sanitize_input($conn, $_POST['last_name']);
@@ -63,7 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'type' => 'success',
             'message' => 'Profile updated successfully!'
         ];
-        $current_user = get_logged_in_user($conn); // Refresh
     } else {
         $_SESSION['notification'] = [
             'type' => 'error',
@@ -71,73 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
     }
     $stmt->close();
-}
 
+    // 🔑 Redirect back to the dashboard profile tab
+    header("Location: /BatEstateExplorer/public/controllers/user_dashboard.php?view=profile");
+    exit;
+}
 ?>
-
-<style>
-/* Saved Properties Grid */
-.saved-properties-section {
-    margin-top: 30px;
-}
-
-.saved-properties-section h2 {
-    margin-bottom: 15px;
-    font-size: 1.4rem;
-    font-weight: bold;
-}
-
-.property-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
-    margin-top: 15px;
-}
-
-.property-card {
-    height: 500px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    transition: transform 0.2s ease;
-}
-
-.property-card:hover {
-    transform: translateY(-5px);
-}
-
-.property-card img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    display: block;
-}
-
-.property-card .card-body {
-    padding: 12px 15px;
-}
-
-.property-card .card-body h3 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: bold;
-    color: #333;
-}
-
-.property-card .card-body p {
-    margin: 5px 0;
-    font-size: 0.9rem;
-    color: #666;
-}
-
-a.disabled {
-    pointer-events: none;
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-</style>
 
 <div class="profile-container" style="margin-top: 80px;">
 
