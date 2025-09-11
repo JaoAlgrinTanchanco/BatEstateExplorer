@@ -6,23 +6,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   tabButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
-      // Switch active tab button
       tabButtons.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
 
-      // Show selected tab
       const tab = btn.dataset.tab;
-      tabContents.forEach((tc) =>
-        tc.classList.toggle("active", tc.id === tab)
-      );
+      tabContents.forEach((tc) => tc.classList.toggle("active", tc.id === tab));
 
-      // Reset sort when switching tabs
-      sortSelect.value = "date";
+      if (sortSelect) sortSelect.value = "date";
     });
   });
 
   // --- Sorting ---
-  sortSelect.addEventListener("change", () => {
+  sortSelect?.addEventListener("change", () => {
     const sortBy = sortSelect.value;
     const container = document.querySelector("#saved-list .property-grid");
     if (!container) return;
@@ -33,138 +28,60 @@ document.addEventListener("DOMContentLoaded", () => {
       if (sortBy === "price") {
         return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
       } else {
-        return parseInt(b.dataset.date) - parseInt(a.dataset.date); // newest first
+        return parseInt(b.dataset.date) - parseInt(a.dataset.date);
       }
     });
 
-    // Re-append in sorted order
     cards.forEach((card) => container.appendChild(card));
   });
 
-  // --- Profile dropdown ---
+  // --- Profile Dropdown ---
   const profileDotsBtn = document.getElementById("profileDotsBtn");
   const profileDropdownMenu = document.getElementById("profileDropdownMenu");
 
   profileDotsBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
-    profileDropdownMenu.classList.toggle("active");
+    profileDropdownMenu?.classList.toggle("active");
   });
 
-  // --- Profile modal ---
+  document.addEventListener("click", () => profileDropdownMenu?.classList.remove("active"));
+  profileDropdownMenu?.addEventListener("click", (e) => e.stopPropagation());
+
+  // --- Profile Modal ---
   const editProfileBtn = document.getElementById("editProfileBtn");
   const profileModal = document.getElementById("profileModal");
   const modalCloseBtn = document.getElementById("modalCloseBtn");
 
   editProfileBtn?.addEventListener("click", () => {
-    profileDropdownMenu.classList.remove("active");
-    profileModal.classList.add("active");
+    profileDropdownMenu?.classList.remove("active");
+    profileModal?.classList.add("active");
   });
 
-  modalCloseBtn?.addEventListener("click", () => {
-    profileModal.classList.remove("active");
-  });
-
+  modalCloseBtn?.addEventListener("click", () => profileModal?.classList.remove("active"));
   profileModal?.addEventListener("click", (e) => {
-    if (e.target === profileModal) profileModal.classList.remove("active");
+    if (e.target === profileModal) profileModal?.classList.remove("active");
   });
 
-  // --- Logout ---
-  window.logout = function () {
-    if (confirm("Are you sure you want to logout?")) {
-      window.location.href = "logout.php";
-    }
-  };
-});
+  // --- Delete Account ---
+  const deleteAccountBtn = document.getElementById('deleteAccount');
+  const deleteModal = document.getElementById('deleteAccountModal');
+  const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+  const deleteLoading = document.getElementById('deleteLoading');
+  const deleteModalActions = document.getElementById('deleteModalActions');
+  const deleteModalMessage = document.getElementById('deleteModalMessage');
 
-document.addEventListener('DOMContentLoaded', () => {
-  const dotsBtn = document.getElementById('profileDotsBtn');
-  const dropdownMenu = document.getElementById('profileDropdownMenu');
-  const profileModal = document.getElementById('profileModal');
-  const modalCloseBtn = document.getElementById('modalCloseBtn');
-
-  if (dotsBtn && dropdownMenu) {
-    // Toggle menu
-    dotsBtn.addEventListener('click', (e) => {
-      e.stopPropagation(); // prevent closing immediately
-      dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
-    });
-
-    // Close menu when clicking outside
-    document.addEventListener('click', () => {
-      dropdownMenu.style.display = 'none';
-    });
-
-    // Prevent closing when clicking inside menu
-    dropdownMenu.addEventListener('click', (e) => {
-      e.stopPropagation();
-    });
-
-    // Menu item actions
-    document.getElementById('editProfileBtn').addEventListener('click', () => {
-      dropdownMenu.style.display = 'none';
-      profileModal.style.display = 'block';
-    });
-
-    const directBtn = document.getElementById('becomeDirectAgent');
-    if (directBtn) {
-      directBtn.addEventListener('click', () => {
-        dropdownMenu.style.display = 'none';
-      });
-    }
-
-    const associateBtn = document.getElementById('becomeAssociateAgent');
-    if (associateBtn) {
-      associateBtn.addEventListener('click', () => {
-        dropdownMenu.style.display = 'none';
-      });
-    }
-  }
-
-  /** ----------------------
-   * Profile Modal Close
-   * ---------------------- */
-  if (profileModal && modalCloseBtn) {
-    // Close when clicking "X"
-    modalCloseBtn.addEventListener('click', () => {
-      profileModal.style.display = 'none';
-    });
-
-    // Close when clicking outside modal content
-    profileModal.addEventListener('click', (e) => {
-      if (e.target === profileModal) {
-        profileModal.style.display = 'none';
-      }
-    });
-  }
-});
-
-
-// Delete Account Modal
-const deleteAccountBtn = document.getElementById('deleteAccount');
-const deleteModal = document.getElementById('deleteAccountModal');
-const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-const deleteLoading = document.getElementById('deleteLoading');
-const deleteModalActions = document.getElementById('deleteModalActions');
-const deleteModalMessage = document.getElementById('deleteModalMessage');
-
-if (deleteAccountBtn && deleteModal) {
-  // Show modal
-  deleteAccountBtn.addEventListener('click', () => {
-    const dropdownMenu = document.getElementById('profileDropdownMenu');
-    if (dropdownMenu) dropdownMenu.style.display = 'none';
+  deleteAccountBtn?.addEventListener('click', () => {
+    profileDropdownMenu?.classList.remove("active");
     deleteModal.style.display = 'flex';
   });
 
-  // Cancel
-  cancelDeleteBtn.addEventListener('click', () => {
+  cancelDeleteBtn?.addEventListener('click', () => {
     deleteModal.style.display = 'none';
   });
 
-  // Confirm deletion
-  confirmDeleteBtn.addEventListener('click', async () => {
-    // Switch to loading state
-    deleteModalMessage.textContent = "Please wait while we delete your account...";
+  confirmDeleteBtn?.addEventListener('click', async () => {
+    deleteModalMessage.textContent = "Deleting your account...";
     deleteModalActions.style.display = 'none';
     deleteLoading.style.display = 'block';
 
@@ -178,18 +95,32 @@ if (deleteAccountBtn && deleteModal) {
       const data = await res.json();
 
       if (data.success) {
-        // Redirect after a short delay
-        setTimeout(() => {
-          window.location.href = '/BatEstateExplorer/auth/login.php';
-        }, 1000);
+        notify('success', "Account deleted successfully. Redirecting...");
+        setTimeout(() => window.location.href = '/BatEstateExplorer/auth/login.php', 1200);
       } else {
-        deleteModalMessage.textContent = "Error deleting account: " + data.message;
+        notify('error', data.message || "Failed to delete account.");
         deleteLoading.style.display = 'none';
+        deleteModalActions.style.display = 'flex';
       }
     } catch (err) {
       console.error('❌ Delete account error:', err);
-      deleteModalMessage.textContent = "Something went wrong. Please try again.";
+      notify('error', "Something went wrong. Please try again.");
       deleteLoading.style.display = 'none';
+      deleteModalActions.style.display = 'flex';
     }
   });
-}
+
+  // --- Centralized flash notifications for profile update ---
+  const profileMessage = document.querySelector('.message-success');
+  const profileError = document.querySelector('.message-error');
+
+  if (profileMessage) {
+    notify('success', profileMessage.textContent);
+    profileMessage.remove();
+  }
+
+  if (profileError) {
+    notify('error', profileError.textContent);
+    profileError.remove();
+  }
+});

@@ -68,25 +68,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <style>
-  /* Saved Properties Grid */
-  .saved-properties-section {
+/* Saved Properties Grid */
+.saved-properties-section {
     margin-top: 30px;
-  }
+}
 
-  .saved-properties-section h2 {
+.saved-properties-section h2 {
     margin-bottom: 15px;
     font-size: 1.4rem;
     font-weight: bold;
-  }
+}
 
-  .property-grid {
+.property-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
     margin-top: 15px;
-  }
+}
 
-  .property-card {
+.property-card {
     height: 500px;
     background: #fff;
     border: 1px solid #ddd;
@@ -94,42 +94,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     overflow: hidden;
     box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     transition: transform 0.2s ease;
-  }
+}
 
-  .property-card:hover {
+.property-card:hover {
     transform: translateY(-5px);
-  }
+}
 
-  .property-card img {
+.property-card img {
     width: 100%;
     height: 180px;
     object-fit: cover;
     display: block;
-  }
+}
 
-  .property-card .card-body {
+.property-card .card-body {
     padding: 12px 15px;
-  }
+}
 
-  .property-card .card-body h3 {
+.property-card .card-body h3 {
     margin: 0;
     font-size: 1rem;
     font-weight: bold;
     color: #333;
-  }
+}
 
-  .property-card .card-body p {
+.property-card .card-body p {
     margin: 5px 0;
     font-size: 0.9rem;
     color: #666;
-  }
+}
 
-  a.disabled {
+a.disabled {
     pointer-events: none;
     opacity: 0.5;
     cursor: not-allowed;
-  }
-
+}
 </style>
 
 <div class="profile-container" style="margin-top: 80px;">
@@ -151,34 +150,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     </div>
 
-    <!-- 3-dot menu in profile header -->
+    <!-- 3-dot menu -->
     <div class="profile-actions">
       <button class="dots-btn" id="profileDotsBtn" title="Options">
         <i class="fa-solid fa-ellipsis"></i>
       </button>
 
-      <!-- Popup Menu -->
       <div class="popup-menu" id="profileDropdownMenu">
         <div class="menu-item" id="editProfileBtn">
           <i class="fa-solid fa-user-pen"></i><span>Edit Profile</span>
         </div>
         
         <div class="menu-item" id="becomeDirectAgent">
-            <i class="fa-solid fa-user-tie"></i>
-            <a href="/BatEstateExplorer/auth/agent_registration.php?type=direct_agent" 
-              style="text-decoration:none; color:inherit;"
-              <?= $disableAgentOptions ? 'class="disabled" onclick="return false;"' : '' ?>>
-              Become Direct Agent
-            </a>
+          <i class="fa-solid fa-user-tie"></i>
+          <a href="/BatEstateExplorer/auth/agent_registration.php?type=direct_agent" 
+             style="text-decoration:none; color:inherit;"
+             <?= $disableAgentOptions ? 'class="disabled" onclick="return false;"' : '' ?>>
+             Become Direct Agent
+          </a>
         </div>
 
         <div class="menu-item" id="becomeAssociateAgent">
-            <i class="fa-solid fa-user-plus"></i>
-            <a href="/BatEstateExplorer/auth/agent_registration.php?type=associate_agent" 
-              style="text-decoration:none; color:inherit;"
-              <?= $disableAgentOptions ? 'class="disabled" onclick="return false;"' : '' ?>>
-              Become Associate Agent
-            </a>
+          <i class="fa-solid fa-user-plus"></i>
+          <a href="/BatEstateExplorer/auth/agent_registration.php?type=associate_agent" 
+             style="text-decoration:none; color:inherit;"
+             <?= $disableAgentOptions ? 'class="disabled" onclick="return false;"' : '' ?>>
+             Become Associate Agent
+          </a>
         </div>
 
         <div class="menu-item" id="deleteAccount">
@@ -188,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
   </div>
 
-  <!-- Saved Properties List -->
+  <!-- Saved Properties -->
   <div class="saved-properties-section">
     <h2>Saved Properties</h2>
     <?php if (empty($savedProperties)): ?>
@@ -202,14 +200,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
   </div>
 </div>
-
-<!-- Flash Messages -->
-<?php if ($message): ?>
-  <div class="message-success"><?= htmlspecialchars($message) ?></div>
-<?php endif; ?>
-<?php if ($error): ?>
-  <div class="message-error"><?= htmlspecialchars($error) ?></div>
-<?php endif; ?>
 
 <!-- Profile Update Modal -->
 <div id="profileModal" class="modal">
@@ -249,7 +239,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
     </div>
 
-    <!-- Loading state -->
     <div id="deleteLoading" style="display:none; text-align:center; margin-top:15px;">
       <i class="fas fa-spinner fa-spin" style="font-size:20px; margin-right:8px;"></i>
       <span>Deleting account...</span>
@@ -260,3 +249,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!-- Page-specific JS -->
 <script src="/BatEstateExplorer/assets/js/user_profile.js"></script>
 <script src="/BatEstateExplorer/assets/js/property_card_logic.js"></script>
+
+<!-- Centralized notifications for profile update -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    <?php if ($message): ?>
+        notify('success', <?= json_encode($message) ?>);
+    <?php endif; ?>
+    <?php if ($error): ?>
+        notify('error', <?= json_encode($error) ?>);
+    <?php endif; ?>
+});
+</script>
