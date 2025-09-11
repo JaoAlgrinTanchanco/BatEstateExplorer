@@ -110,15 +110,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --- Centralized flash notifications for profile update ---
-  const profileMessage = document.querySelector('.message-success');
-  const profileError = document.querySelector('.message-error');
-
-  if (profileMessage) {
-    notify('success', profileMessage.textContent);
-    profileMessage.remove();
-  }
-
   if (profileError) {
     notify('error', profileError.textContent);
     profileError.remove();

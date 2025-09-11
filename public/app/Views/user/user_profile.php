@@ -44,6 +44,7 @@ if ($lastApplication && $lastApplication['status'] === 'pending') {
 }
 
 // Handle profile update
+// Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name = sanitize_input($conn, $_POST['first_name']);
     $last_name  = sanitize_input($conn, $_POST['last_name']);
@@ -58,13 +59,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->bind_param('ssssi', $first_name, $last_name, $phone, $address, $current_user['id']);
 
     if ($stmt->execute()) {
-        $message = "Profile updated successfully!";
+        $_SESSION['notification'] = [
+            'type' => 'success',
+            'message' => 'Profile updated successfully!'
+        ];
         $current_user = get_logged_in_user($conn); // Refresh
     } else {
-        $error = "Error updating profile.";
+        $_SESSION['notification'] = [
+            'type' => 'error',
+            'message' => 'Error updating profile.'
+        ];
     }
     $stmt->close();
 }
+
 ?>
 
 <style>
