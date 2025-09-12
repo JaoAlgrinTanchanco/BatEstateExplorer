@@ -237,8 +237,11 @@ $agent_type_param = $_GET['type'] ?? ($old['user_type'] ?? '');
 </form>
 </div>
 
-<!-- AJAX Script -->
-<div id="notification" style="display:none;"></div>
+<?php include '../components/notification.php'; ?>
+
+<!-- AJAX Notification Container -->
+<div id="ajax-notification-container" class="notification-container"></div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const userType = document.getElementById('user_type');
@@ -246,8 +249,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const companyField = document.getElementById('company-field');
     const companySelect = document.getElementById('company_id');
     const form = document.getElementById('agentRegistrationForm');
-    const notification = document.getElementById('notification');
+    const ajaxContainer = document.getElementById('ajax-notification-container');
 
+    // Toggle fields based on agent type
     function toggleFields() {
         const type = userType.value;
         if(type === 'direct_agent') {
@@ -271,35 +275,54 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleFields();
     userType.addEventListener('change', toggleFields);
 
+    // Helper to show AJAX notifications
+    window.showAjaxNotification = (message, type='success') => {
+        if(!ajaxContainer) return;
+        const notif = document.createElement('div');
+        notif.className = `notification ${type}`;
+        notif.innerHTML = `
+            <div class="notification__icon"></div>
+            <div class="notification__title">${message}</div>
+            <div class="notification__close">&times;</div>
+        `;
+        ajaxContainer.appendChild(notif);
+
+        // Auto dismiss
+        setTimeout(() => notif.remove(), 5000);
+        // Close button
+        notif.querySelector('.notification__close').addEventListener('click', () => notif.remove());
+    };
+
+    // Handle form submission via AJAX
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(form);
+        formData.append('ajax', 1); // ensure PHP treats it as AJAX
 
         try {
             const res = await fetch('../public/api/agent_registration_complete.php', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             });
+
             const data = await res.json();
 
-            notification.textContent = data.message;
-            notification.className = '';
-            notification.classList.add(data.status === 'success' ? 'success' : 'error');
-            notification.style.display = 'block';
-            setTimeout(() => notification.style.display = 'none', 5000);
+            // Show notification
+            window.showAjaxNotification(data.message || 'No message from server.', data.status);
 
             if(data.status === 'success') {
                 form.reset();
                 toggleFields();
             }
         } catch(err) {
-            notification.textContent = 'An error occurred. Please try again.';
-            notification.className = 'error';
-            notification.style.display = 'block';
-            setTimeout(() => notification.style.display = 'none', 5000);
+            window.showAjaxNotification('An error occurred. Please try again.', 'error');
         }
     });
 });
 </script>
+
 </body>
 </html>
