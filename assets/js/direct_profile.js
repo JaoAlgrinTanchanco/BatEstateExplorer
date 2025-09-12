@@ -25,18 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
         notif.style.cursor = 'pointer';
         notif.style.opacity = '1';
         notif.style.transition = 'opacity 0.5s';
-
         notif.style.backgroundColor = type === 'success' ? '#28a745' 
-                                : type === 'error' ? '#dc3545' 
-                                : '#333';
-
+                                    : type === 'error' ? '#dc3545' 
+                                    : '#333';
         notif.textContent = message;
-
         notif.addEventListener('click', () => fadeOut(notif));
-
         container.appendChild(notif);
-
-        // Auto fade
         setTimeout(() => fadeOut(notif), 5000);
 
         function fadeOut(el) {
@@ -62,26 +56,21 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedFiles.forEach((file, index) => {
                 const wrap = document.createElement('div');
                 wrap.className = 'img-wrap';
-
                 const img = document.createElement('img');
                 img.className = 'thumb';
                 wrap.appendChild(img);
-
                 const removeBtn = document.createElement('button');
                 removeBtn.type = 'button';
                 removeBtn.className = 'remove-img';
                 removeBtn.innerHTML = '&times;';
                 wrap.appendChild(removeBtn);
-
                 removeBtn.addEventListener('click', () => {
                     selectedFiles.splice(index, 1);
                     renderPreviews();
                 });
-
                 const reader = new FileReader();
                 reader.onload = e => img.src = e.target.result;
                 reader.readAsDataURL(file);
-
                 preview.appendChild(wrap);
             });
         };
@@ -90,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!fileList) return;
             const incoming = Array.from(fileList).filter(f => f.type.startsWith('image/'));
             const existingSigs = new Set(selectedFiles.map(fileSignature));
-
             for (const f of incoming) {
                 if (selectedFiles.length >= MAX_FILES) break;
                 if (!existingSigs.has(fileSignature(f))) {
@@ -101,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderPreviews();
         };
 
-        // Drag/drop handlers
         ['dragenter','dragover','dragleave','drop'].forEach(evt => {
             dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
         });
@@ -111,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
             dropArea.classList.remove('drag-over');
             addFiles(e.dataTransfer.files);
         });
-
         dropArea.addEventListener('click', () => fileInput.click());
         dropArea.addEventListener('keydown', e => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -129,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const fd = new FormData(form);
             selectedFiles.forEach(f => fd.append('images[]', f));
-
             fetch(form.action, { method: 'POST', body: fd })
                 .then(res => res.text())
                 .then(data => {
@@ -147,8 +132,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ===== Modal Handling =====
-    window.openModal = id => document.getElementById(`editModal-${id}`)?.style.display = 'block';
-    window.closeModal = id => document.getElementById(`editModal-${id}`)?.style.display = 'none';
+    window.openModal = id => {
+        const modal = document.getElementById(`editModal-${id}`);
+        if (modal) modal.style.display = 'block';
+    };
+    window.closeModal = id => {
+        const modal = document.getElementById(`editModal-${id}`);
+        if (modal) modal.style.display = 'none';
+    };
     window.onclick = event => {
         document.querySelectorAll('.edit-modal').forEach(modal => {
             if (event.target === modal) modal.style.display = 'none';
@@ -156,102 +147,66 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ===== Remove Image from Slider =====
-    window.removeImage = btn => btn.closest('.slider-item')?.remove();
+    window.removeImage = btn => {
+        const sliderItem = btn.closest('.slider-item');
+        if (sliderItem) sliderItem.remove();
+    };
 
     // ===== Disable Bedrooms/Bathrooms for "Lot" =====
-    const initPropertyTypeToggles = () => {
-        document.querySelectorAll('.edit-modal').forEach(modal => {
-            const propertyType = modal.querySelector('select[name="property_type"]');
-            const bedrooms = modal.querySelector('input[name="bedrooms"]');
-            const bathrooms = modal.querySelector('input[name="bathrooms"]');
-            if (!propertyType || !bedrooms || !bathrooms) return;
+    const propertyTypeMain = document.getElementById('property_type');
+    const bedroomsMain = document.getElementById('bedrooms');
+    const bathroomsMain = document.getElementById('bathrooms');
 
-            const toggleRooms = () => {
-                const isLot = propertyType.value === 'Lot';
-                bedrooms.disabled = isLot;
-                bathrooms.disabled = isLot;
-                if (isLot) { bedrooms.value = 0; bathrooms.value = 0; }
-            };
-
-            toggleRooms();
-            propertyType.addEventListener('change', toggleRooms);
-        });
-    };
-    initPropertyTypeToggles();
-
-    // ===== Delete Modal =====
-    document.getElementById('openDeleteModal')?.addEventListener('click', () => {
-        document.getElementById('deleteModal')?.style.display = 'flex';
-    });
-    document.getElementById('cancelDeleteBtn')?.addEventListener('click', () => {
-        document.getElementById('deleteModal')?.style.display = 'none';
-    });
-    document.getElementById('deleteAgentForm')?.addEventListener('submit', () => {
-        document.getElementById('deleteSpinner')?.style.display = 'flex';
-    });
-
-    // ===== Property Type Toggle =====
-    function initPropertyTypeToggles() {
-        // Modal forms
-        document.querySelectorAll('.edit-modal').forEach(modal => {
-            const propertyType = modal.querySelector('select[name="property_type"]');
-            const bedrooms = modal.querySelector('input[name="bedrooms"]');
-            const bathrooms = modal.querySelector('input[name="bathrooms"]');
-            if (!propertyType || !bedrooms || !bathrooms) return;
-
-            const toggleRooms = () => {
-                const isLot = propertyType.value.toLowerCase() === 'lot';
-                bedrooms.disabled = isLot;
-                bathrooms.disabled = isLot;
-                if (isLot) {
-                    bedrooms.value = 0;
-                    bathrooms.value = 0;
-                }
-            };
-
-            toggleRooms();
-            propertyType.addEventListener('change', toggleRooms);
-        });
-
-        // Main form
-        const mainType = document.getElementById('property_type');
-        const mainBedrooms = document.getElementById('bedrooms');
-        const mainBathrooms = document.getElementById('bathrooms');
-        if (mainType && mainBedrooms && mainBathrooms) {
-            const toggleMainRooms = () => {
-                const isLot = mainType.value.toLowerCase() === 'lot';
-                mainBedrooms.disabled = isLot;
-                mainBathrooms.disabled = isLot;
-                if (isLot) {
-                    mainBedrooms.value = 0;
-                    mainBathrooms.value = 0;
-                }
-            };
-            toggleMainRooms();
-            mainType.addEventListener('change', toggleMainRooms);
-        }
+    function toggleRooms() {
+        if (!propertyTypeMain || !bedroomsMain || !bathroomsMain) return;
+        const isLot = propertyTypeMain.value === 'Lot';
+        bedroomsMain.disabled = isLot;
+        bathroomsMain.disabled = isLot;
+        bedroomsMain.value = isLot ? 0 : '';
+        bathroomsMain.value = isLot ? 0 : '';
+    }
+    if (propertyTypeMain) {
+        propertyTypeMain.addEventListener('change', toggleRooms);
+        toggleRooms();
     }
 
-    // Initialize on DOMContentLoaded
-    document.addEventListener('DOMContentLoaded', () => {
-        initPropertyTypeToggles();
-    });
+    // ===== Delete Modal =====
+    const openDeleteModal = document.getElementById('openDeleteModal');
+    if (openDeleteModal) {
+        openDeleteModal.addEventListener('click', () => {
+            const deleteModal = document.getElementById('deleteModal');
+            if (deleteModal) deleteModal.style.display = 'flex';
+        });
+    }
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', () => {
+            const deleteModal = document.getElementById('deleteModal');
+            if (deleteModal) deleteModal.style.display = 'none';
+        });
+    }
+    const deleteAgentForm = document.getElementById('deleteAgentForm');
+    if (deleteAgentForm) {
+        deleteAgentForm.addEventListener('submit', () => {
+            const deleteSpinner = document.getElementById('deleteSpinner');
+            if (deleteSpinner) deleteSpinner.style.display = 'flex';
+        });
+    }
 });
 
 // ===== Client Search & Privilege =====
 let selectedPropertyId = null;
-
 function searchClient() {
     const email = document.getElementById('searchEmail')?.value.trim();
     if (!email) return notify('error', 'Please enter an email');
-
     fetch(`/BatEstateExplorer/public/api/give_privilege.php?email=${encodeURIComponent(email)}`)
         .then(res => res.json())
         .then(data => {
             if (data.error) return notify('error', data.error);
             const nameEmailEl = document.getElementById('userNameEmail');
             if (nameEmailEl) nameEmailEl.textContent = `${data.name || ''} (${data.email})`;
-            document.getElementById('privilegeModal')?.style.display = 'block';
+            const modal = document.getElementById('privilegeModal');
+            if (modal) modal.style.display = 'block';
             window.currentEmail = data.email;
         })
         .catch(err => {
@@ -259,21 +214,18 @@ function searchClient() {
             notify('error', 'Failed to search client.');
         });
 }
-
 function selectProperty(card, propertyId) {
     document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
     card?.classList.add('selected');
     selectedPropertyId = propertyId;
 }
-
 function closePrivilegeModal() {
-    document.getElementById('privilegeModal')?.style.display = 'none';
+    const modal = document.getElementById('privilegeModal');
+    if (modal) modal.style.display = 'none';
     selectedPropertyId = null;
 }
-
 function givePrivilege() {
     if (!selectedPropertyId) return notify('error', 'Please select a property first.');
-
     fetch('/BatEstateExplorer/public/api/give_privilege.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
