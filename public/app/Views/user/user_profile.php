@@ -191,3 +191,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!-- Page-specific JS -->
 <script src="/BatEstateExplorer/assets/js/user_profile.js"></script>
 
+<script>
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted || window.performance && window.performance.getEntriesByType("navigation")[0].type === "back_forward") {
+        // Force reload from server
+        window.location.reload();
+    }
+});
+</script>
