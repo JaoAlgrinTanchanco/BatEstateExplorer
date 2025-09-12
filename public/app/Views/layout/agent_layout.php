@@ -90,7 +90,6 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
 </main>
 <script src="/BatEstateExplorer/assets/js/agents.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<?php include __DIR__ . "/../../../components/notification.php"; ?>
 
 </body>
 </html>
