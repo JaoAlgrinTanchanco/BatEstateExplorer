@@ -5,21 +5,21 @@ session_start();
 try {
     require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/config/pdo_database.php';
 } catch (Exception $e) {
-    $_SESSION['notification'] = [
-        'type' => 'error',
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'error',
         'message' => "DB connection failed: " . $e->getMessage()
-    ];
-    header("Location: ../auth/agent_registration.php");
+    ]);
     exit;
 }
 
 // ======= Only POST requests =======
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    $_SESSION['notification'] = [
-        'type' => 'error',
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'error',
         'message' => "Invalid request method."
-    ];
-    header("Location: ../auth/agent_registration.php");
+    ]);
     exit;
 }
 
@@ -70,6 +70,8 @@ foreach($fields as $f) {
 $old_inputs['company_id'] = !empty($_POST['company_id']) ? (int)$_POST['company_id'] : null;
 
 try {
+    header('Content-Type: application/json');
+
     // ======= Validation =======
     $required = ['first_name','last_name','email','password','user_type'];
     foreach($required as $r) {
@@ -178,24 +180,19 @@ try {
     ]);
     $pdo->commit();
 
-    // ======= Success Notification =======
-    $_SESSION['notification'] = [
-        'type' => 'success',
+    // ======= Success =======
+    echo json_encode([
+        'status' => 'success',
         'message' => 'Submitted successfully! Awaiting approval.'
-    ];
-
-    // ======= Redirect to Agent Registration =======
-    header("Location: ../../auth/agent_registration.php");
+    ]);
     exit;
 
 } catch (Exception $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
 
-    $_SESSION['old_inputs'] = $old_inputs;
-    $_SESSION['notification'] = [
-        'type' => 'error',
+    echo json_encode([
+        'status' => 'error',
         'message' => $e->getMessage()
-    ];
-    header("Location: ../../auth/agent_registration.php");
+    ]);
     exit;
 }
