@@ -1,4 +1,50 @@
 document.addEventListener('DOMContentLoaded', () => {
+
+    // ===== Notification Helper =====
+    function notify(type, message) {
+        const container = document.getElementById('notificationContainer') 
+                        || (() => {
+                            const div = document.createElement('div');
+                            div.id = 'notificationContainer';
+                            div.style.position = 'fixed';
+                            div.style.top = '20px';
+                            div.style.right = '20px';
+                            div.style.zIndex = '9999';
+                            document.body.appendChild(div);
+                            return div;
+                        })();
+
+        const notif = document.createElement('div');
+        notif.className = `notification ${type}`;
+        notif.style.padding = '10px 20px';
+        notif.style.marginBottom = '10px';
+        notif.style.borderRadius = '6px';
+        notif.style.color = '#fff';
+        notif.style.fontWeight = '500';
+        notif.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+        notif.style.cursor = 'pointer';
+        notif.style.opacity = '1';
+        notif.style.transition = 'opacity 0.5s';
+
+        notif.style.backgroundColor = type === 'success' ? '#28a745' 
+                                : type === 'error' ? '#dc3545' 
+                                : '#333';
+
+        notif.textContent = message;
+
+        notif.addEventListener('click', () => fadeOut(notif));
+
+        container.appendChild(notif);
+
+        // Auto fade
+        setTimeout(() => fadeOut(notif), 5000);
+
+        function fadeOut(el) {
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 500);
+        }
+    }
+
     // ===== Drag & Drop Image Upload =====
     const dropArea  = document.getElementById('imageUploadArea');
     const fileInput = document.getElementById('images');
@@ -66,7 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
             addFiles(e.dataTransfer.files);
         });
 
-        // Click & keyboard file picker
         dropArea.addEventListener('click', () => fileInput.click());
         dropArea.addEventListener('keydown', e => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -79,35 +124,31 @@ document.addEventListener('DOMContentLoaded', () => {
             fileInput.value = '';
         });
 
-        // Form submission
+        // ===== Form Submission =====
         form.addEventListener('submit', e => {
-        e.preventDefault();
-        const fd = new FormData(form);
-        selectedFiles.forEach(f => fd.append('images[]', f));
+            e.preventDefault();
+            const fd = new FormData(form);
+            selectedFiles.forEach(f => fd.append('images[]', f));
 
-        fetch(form.action, { method: 'POST', body: fd })
-            .then(res => res.text())
-            .then(data => {
-                console.log('Server response:', data);
-                notify('success', 'Listing saved!');
-                form.reset();
-                selectedFiles = [];
-                renderPreviews();
-            })
-            .catch(err => {
-                console.error('Upload error:', err);
-                notify('error', 'Failed to save listing.');
-            });
+            fetch(form.action, { method: 'POST', body: fd })
+                .then(res => res.text())
+                .then(data => {
+                    console.log('Server response:', data);
+                    notify('success', 'Listing saved!');
+                    form.reset();
+                    selectedFiles = [];
+                    renderPreviews();
+                })
+                .catch(err => {
+                    console.error('Upload error:', err);
+                    notify('error', 'Failed to save listing.');
+                });
         });
     }
 
     // ===== Modal Handling =====
-    window.openModal = id => {
-        document.getElementById(`editModal-${id}`).style.display = 'block';
-    };
-    window.closeModal = id => {
-        document.getElementById(`editModal-${id}`).style.display = 'none';
-    };
+    window.openModal = id => document.getElementById(`editModal-${id}`)?.style.display = 'block';
+    window.closeModal = id => document.getElementById(`editModal-${id}`)?.style.display = 'none';
     window.onclick = event => {
         document.querySelectorAll('.edit-modal').forEach(modal => {
             if (event.target === modal) modal.style.display = 'none';
@@ -115,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ===== Remove Image from Slider =====
-    window.removeImage = btn => btn.closest('.slider-item').remove();
+    window.removeImage = btn => btn.closest('.slider-item')?.remove();
 
     // ===== Disable Bedrooms/Bathrooms for "Lot" =====
     const initPropertyTypeToggles = () => {
@@ -123,11 +164,43 @@ document.addEventListener('DOMContentLoaded', () => {
             const propertyType = modal.querySelector('select[name="property_type"]');
             const bedrooms = modal.querySelector('input[name="bedrooms"]');
             const bathrooms = modal.querySelector('input[name="bathrooms"]');
-
             if (!propertyType || !bedrooms || !bathrooms) return;
 
             const toggleRooms = () => {
                 const isLot = propertyType.value === 'Lot';
+                bedrooms.disabled = isLot;
+                bathrooms.disabled = isLot;
+                if (isLot) { bedrooms.value = 0; bathrooms.value = 0; }
+            };
+
+            toggleRooms();
+            propertyType.addEventListener('change', toggleRooms);
+        });
+    };
+    initPropertyTypeToggles();
+
+    // ===== Delete Modal =====
+    document.getElementById('openDeleteModal')?.addEventListener('click', () => {
+        document.getElementById('deleteModal')?.style.display = 'flex';
+    });
+    document.getElementById('cancelDeleteBtn')?.addEventListener('click', () => {
+        document.getElementById('deleteModal')?.style.display = 'none';
+    });
+    document.getElementById('deleteAgentForm')?.addEventListener('submit', () => {
+        document.getElementById('deleteSpinner')?.style.display = 'flex';
+    });
+
+    // ===== Property Type Toggle =====
+    function initPropertyTypeToggles() {
+        // Modal forms
+        document.querySelectorAll('.edit-modal').forEach(modal => {
+            const propertyType = modal.querySelector('select[name="property_type"]');
+            const bedrooms = modal.querySelector('input[name="bedrooms"]');
+            const bathrooms = modal.querySelector('input[name="bathrooms"]');
+            if (!propertyType || !bedrooms || !bathrooms) return;
+
+            const toggleRooms = () => {
+                const isLot = propertyType.value.toLowerCase() === 'lot';
                 bedrooms.disabled = isLot;
                 bathrooms.disabled = isLot;
                 if (isLot) {
@@ -139,99 +212,84 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleRooms();
             propertyType.addEventListener('change', toggleRooms);
         });
-    };
 
-    initPropertyTypeToggles();
+        // Main form
+        const mainType = document.getElementById('property_type');
+        const mainBedrooms = document.getElementById('bedrooms');
+        const mainBathrooms = document.getElementById('bathrooms');
+        if (mainType && mainBedrooms && mainBathrooms) {
+            const toggleMainRooms = () => {
+                const isLot = mainType.value.toLowerCase() === 'lot';
+                mainBedrooms.disabled = isLot;
+                mainBathrooms.disabled = isLot;
+                if (isLot) {
+                    mainBedrooms.value = 0;
+                    mainBathrooms.value = 0;
+                }
+            };
+            toggleMainRooms();
+            mainType.addEventListener('change', toggleMainRooms);
+        }
+    }
 
-    // Open modal
-    document.getElementById('openDeleteModal').addEventListener('click', () => {
-        document.getElementById('deleteModal').style.display = 'flex';
+    // Initialize on DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', () => {
+        initPropertyTypeToggles();
     });
-
-    // Cancel deletion
-    document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
-        document.getElementById('deleteModal').style.display = 'none';
-    });
-
-    // Optional: show spinner on form submit
-    document.getElementById('deleteAgentForm').addEventListener('submit', () => {
-        document.getElementById('deleteSpinner').style.display = 'flex';
-    });
-
 });
 
+// ===== Client Search & Privilege =====
 let selectedPropertyId = null;
 
-                function searchClient() {
-                    const email = document.getElementById('searchEmail').value.trim();
-                    if (!email) return alert('Please enter an email');
+function searchClient() {
+    const email = document.getElementById('searchEmail')?.value.trim();
+    if (!email) return notify('error', 'Please enter an email');
 
-                    fetch(`/BatEstateExplorer/public/api/give_privilege.php?email=${encodeURIComponent(email)}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.error) {
-                                alert(data.error);
-                                return;
-                            }
+    fetch(`/BatEstateExplorer/public/api/give_privilege.php?email=${encodeURIComponent(email)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) return notify('error', data.error);
+            const nameEmailEl = document.getElementById('userNameEmail');
+            if (nameEmailEl) nameEmailEl.textContent = `${data.name || ''} (${data.email})`;
+            document.getElementById('privilegeModal')?.style.display = 'block';
+            window.currentEmail = data.email;
+        })
+        .catch(err => {
+            console.error('Search client error:', err);
+            notify('error', 'Failed to search client.');
+        });
+}
 
-                            document.getElementById('userNameEmail').textContent =
-                                `${data.name || ''} (${data.email})`;
+function selectProperty(card, propertyId) {
+    document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
+    card?.classList.add('selected');
+    selectedPropertyId = propertyId;
+}
 
-                            document.getElementById('privilegeModal').style.display = 'block';
-                            window.currentEmail = data.email; // store globally
-                        })
-                        .catch(err => console.error('Search client error:', err));
-                }
+function closePrivilegeModal() {
+    document.getElementById('privilegeModal')?.style.display = 'none';
+    selectedPropertyId = null;
+}
 
-                function selectProperty(card, propertyId) {
-                    document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
-                    card.classList.add('selected');
-                    selectedPropertyId = propertyId;
-                }
+function givePrivilege() {
+    if (!selectedPropertyId) return notify('error', 'Please select a property first.');
 
-                function closePrivilegeModal() {
-                    document.getElementById('privilegeModal').style.display = 'none';
-                    selectedPropertyId = null;
-                }
-
-                function givePrivilege() {
-                    if (!selectedPropertyId) return alert('Please select a property first.');
-
-                    fetch('/BatEstateExplorer/public/api/give_privilege.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: `email=${encodeURIComponent(window.currentEmail)}&property_id=${encodeURIComponent(selectedPropertyId)}`
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('Privilege granted successfully!');
-                            closePrivilegeModal();
-                        } else {
-                            alert(data.error || 'Something went wrong.');
-                        }
-                    })
-                    .catch(err => console.error('Give privilege error:', err));
-                }
-
-                const propertyType = document.getElementById('property_type');
-                    const bedrooms = document.getElementById('bedrooms');
-                    const bathrooms = document.getElementById('bathrooms');
-
-                    function toggleRooms() {
-                        if (propertyType.value.toLowerCase() === 'lot') {
-                            bedrooms.disabled = true;
-                            bathrooms.disabled = true;
-                            bedrooms.value = '';
-                            bathrooms.value = '';
-                        } else {
-                            bedrooms.disabled = false;
-                            bathrooms.disabled = false;
-                        }
-                    }
-
-                    // Listen for changes
-                    propertyType.addEventListener('change', toggleRooms);
-
-                    // Initialize on page load
-                    toggleRooms();
+    fetch('/BatEstateExplorer/public/api/give_privilege.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `email=${encodeURIComponent(window.currentEmail)}&property_id=${encodeURIComponent(selectedPropertyId)}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            notify('success', 'Privilege granted successfully!');
+            closePrivilegeModal();
+        } else {
+            notify('error', data.error || 'Something went wrong.');
+        }
+    })
+    .catch(err => {
+        console.error('Give privilege error:', err);
+        notify('error', 'Failed to grant privilege.');
+    });
+}

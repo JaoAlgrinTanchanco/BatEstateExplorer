@@ -7,7 +7,7 @@ $user_data = get_logged_in_user($pdo);
 if (!$user_data) {
     $_SESSION['notification'] = [
         'type' => 'error',
-        'message' => 'You must be logged in to add a property.'
+        'message' => 'No logged in user detected.'
     ];
     header("Location: ../../auth/login.php");
     exit;
@@ -17,13 +17,13 @@ if (!$user_data) {
 if ($user_data['user_type'] !== 'direct_agent') {
     $_SESSION['notification'] = [
         'type' => 'error',
-        'message' => 'Access denied: only direct agents can add listings.'
+        'message' => 'Access denied: only direct agents can save listings.'
     ];
     header("Location: ../../index.php");
     exit;
 }
 
-// ✅ Get or create agent.id from agents table
+// Get or create agent.id
 $stmt = $pdo->prepare("SELECT id FROM agents WHERE user_id = ?");
 $stmt->execute([$user_data['id']]);
 $agent = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -50,7 +50,7 @@ $property_type = $_POST['property_type'] ?? '';
 try {
     $pdo->beginTransaction();
 
-    // ✅ Insert property using agent_id
+    // Insert property
     $stmt = $pdo->prepare("
         INSERT INTO properties
         (title, description, property_type, location, price, bedrooms, bathrooms, sqm, lot_size, agent_id, status, created_at)
@@ -74,21 +74,16 @@ try {
             $name  = $_FILES['images']['name'][$i];
             $error = $_FILES['images']['error'][$i];
 
-            if ($error !== UPLOAD_ERR_OK) {
-                continue;
-            }
+            if ($error !== UPLOAD_ERR_OK) continue;
 
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
-                continue;
-            }
+            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) continue;
 
             $newFileName = uniqid() . '.' . $ext;
             $destination = $upload_dir . $newFileName;
 
             if (move_uploaded_file($tmp, $destination)) {
                 $relativePath = 'storage/uploads/property_images/' . $newFileName;
-
                 $stmtImg = $pdo->prepare("INSERT INTO property_images (property_id, image_path) VALUES (?, ?)");
                 $stmtImg->execute([$property_id, $relativePath]);
             }
@@ -97,20 +92,20 @@ try {
 
     $pdo->commit();
 
-    // ✅ Notification for agent
     $_SESSION['notification'] = [
         'type' => 'success',
-        'message' => 'Your property has been submitted and is pending admin approval.'
+        'message' => 'Property submitted successfully and is pending admin approval.'
     ];
-    header("Location: ../agent_dashboard.php");
+    // Redirect to the full URL
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=add_listing");
     exit;
 
-} catch (Exception $e) {
-    $pdo->rollBack();
-    $_SESSION['notification'] = [
-        'type' => 'error',
-        'message' => 'Something went wrong: ' . $e->getMessage()
-    ];
-    header("Location: ../agent_dashboard.php");
-    exit;
-}
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        $_SESSION['notification'] = [
+            'type' => 'error',
+            'message' => 'Error saving property: ' . $e->getMessage()
+        ];
+        header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=add_listing");
+        exit;
+    }
