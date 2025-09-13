@@ -431,7 +431,6 @@ if ($agent_id) {
 
         <?php break; ?>
 
-
         <?php case 'analytics': ?>
                 <h2>Performance Analytics</h2>
 
@@ -525,7 +524,23 @@ if ($agent_id) {
             if ($fullName === '') $fullName = 'Agent';
         ?>
             <h2>Profile Overview</h2>
+
             <div class="overview-container">
+                <!-- Flash Notifications -->
+                <?php if (!empty($_SESSION['flash_success'])): ?>
+                    <div class="notification success">
+                        <?= htmlspecialchars($_SESSION['flash_success']) ?>
+                    </div>
+                    <?php unset($_SESSION['flash_success']); ?>
+                <?php endif; ?>
+
+                <?php if (!empty($_SESSION['flash_error'])): ?>
+                    <div class="notification error">
+                        <?= htmlspecialchars($_SESSION['flash_error']) ?>
+                    </div>
+                    <?php unset($_SESSION['flash_error']); ?>
+                <?php endif; ?>
+
                 <div class="profile-view">
                     <button id="editProfileBtn">Edit Profile</button>
 
@@ -599,7 +614,7 @@ if ($agent_id) {
                         <button type="button" id="openDeleteModal" class="delete-btn">Delete Account</button>
                     </div>
 
-                    <!-- Modal (placed at the end of body, outside any container) -->
+                    <!-- Delete Modal -->
                     <div id="deleteModal" class="modal" style="display:none;">
                         <div class="modal-content">
                             <h4>Confirm Account Deletion</h4>
@@ -616,7 +631,8 @@ if ($agent_id) {
                         </div>
                     </div>
                 </div>  
-                
+
+                <!-- Edit Form -->
                 <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php" style="display:none;">
                     <label>First Name</label>
                     <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" required>
@@ -639,9 +655,8 @@ if ($agent_id) {
                     <button type="submit">Save Changes</button>
                     <button type="button" id="cancelEditBtn">Cancel</button>
                 </form>
-
-                <div id="profileMessage"></div>
             </div>
+
         <?php endswitch; ?>
     </section>
 </div>

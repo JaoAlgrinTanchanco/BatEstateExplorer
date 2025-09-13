@@ -6,24 +6,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userId = intval($_POST['user_id'] ?? 0);
 
     if ($userId > 0) {
-        // Delete agent account
         $query = "DELETE FROM users WHERE id = ?";
         $stmt = mysqli_prepare($conn, $query);
         mysqli_stmt_bind_param($stmt, "i", $userId);
-        
+
         if (mysqli_stmt_execute($stmt)) {
-            // Destroy session
+            // Flash message before destroying session
+            $_SESSION['flash_success'] = 'Account deleted successfully.';
+
+            // Clear session
             session_unset();
             session_destroy();
 
-            // Redirect to login page
+            // Redirect to login with query message
             header("Location: /BatEstateExplorer/auth/login.php?message=Account+deleted+successfully");
             exit;
         } else {
-            die("Error deleting account. Please try again.");
+            $_SESSION['flash_error'] = 'Error deleting account. Please try again.';
+            header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview");
+            exit;
         }
     } else {
-        die("Invalid user ID.");
+        $_SESSION['flash_error'] = 'Invalid user ID.';
+        header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview");
+        exit;
     }
 }
 ?>

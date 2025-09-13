@@ -6,11 +6,11 @@ require_login();
 $userId = $_SESSION['user_id'] ?? null;
 if (!$userId) {
     $_SESSION['flash_error'] = 'User not logged in.';
-    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile');
+    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview');
     exit;
 }
 
-// Fetch user
+// Fetch current user
 $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
@@ -19,33 +19,31 @@ $stmt->close();
 
 if (!$user) {
     $_SESSION['flash_error'] = 'User not found.';
-    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile');
+    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview');
     exit;
 }
 
 // Collect POST data
-$firstName = trim($_POST['first_name'] ?? '');
-$lastName = trim($_POST['last_name'] ?? '');
-$phone = trim($_POST['phone'] ?? '');
-$email = trim($_POST['email'] ?? '');
+$firstName   = trim($_POST['first_name'] ?? '');
+$lastName    = trim($_POST['last_name'] ?? '');
+$phone       = trim($_POST['phone'] ?? '');
+$email       = trim($_POST['email'] ?? '');
 $currentPass = $_POST['current_password'] ?? '';
-$newPass = $_POST['new_password'] ?? '';
-$address = trim($_POST['address'] ?? '');
-$status = $user['status'];
-$userType = $user['user_type']; // preserve current user_type
+$newPass     = $_POST['new_password'] ?? '';
+$address     = trim($_POST['address'] ?? '');
 
 if (!$firstName || !$lastName || !$email) {
     $_SESSION['flash_error'] = 'First name, last name, and email are required.';
-    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile');
+    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview');
     exit;
 }
 
-// Handle password
+// Handle password update
 $hashedPass = $user['password_hash'];
 if (!empty($newPass)) {
     if (!$currentPass || !password_verify($currentPass, $user['password_hash'])) {
         $_SESSION['flash_error'] = 'Current password is incorrect.';
-        header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile');
+        header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview');
         exit;
     }
     $hashedPass = password_hash($newPass, PASSWORD_DEFAULT);
@@ -57,7 +55,8 @@ $stmt->bind_param("si", $email, $userId);
 $stmt->execute();
 if ($stmt->get_result()->num_rows > 0) {
     $_SESSION['flash_error'] = 'Email already in use.';
-    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile');
+    $stmt->close();
+    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview');
     exit;
 }
 $stmt->close();
@@ -65,16 +64,19 @@ $stmt->close();
 // Update user
 $stmt = $conn->prepare("
     UPDATE users SET
-        first_name = ?, last_name = ?, phone = ?, email = ?, password_hash = ?,
-        address = ?, user_type = ?, status = ?, updated_at = NOW()
+        first_name = ?, 
+        last_name = ?, 
+        phone = ?, 
+        email = ?, 
+        password_hash = ?,
+        address = ?, 
+        updated_at = NOW()
     WHERE id = ?
 ");
-
 $stmt->bind_param(
-    "ssssssssi",
+    "ssssssi",
     $firstName, $lastName, $phone, $email, $hashedPass,
-    $address, $userType, $status,
-    $userId
+    $address, $userId
 );
 
 if ($stmt->execute()) {
@@ -86,7 +88,6 @@ if ($stmt->execute()) {
 $stmt->close();
 $conn->close();
 
-// Redirect back to profile page
-header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile');
+header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview');
 exit;
 ?>
