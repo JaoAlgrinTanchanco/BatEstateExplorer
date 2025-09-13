@@ -300,24 +300,7 @@ if ($agent_id) {
                             </form>
                         </div>
                     </div>
-                    <script>
-                        function markImageForRemoval(button, imagePath) {
-                            // Mark image visually
-                            button.closest('.image-item').style.opacity = '0.5';
 
-                            // Append hidden input to form
-                            const hiddenInput = document.createElement('input');
-                            hiddenInput.type = 'hidden';
-                            hiddenInput.name = 'remove_images[]';
-                            hiddenInput.value = imagePath;
-
-                            const container = button.closest('form').querySelector('[id^="removeImages-"]');
-                            container.appendChild(hiddenInput);
-
-                            // Disable button to avoid duplicates
-                            button.disabled = true;
-                        }
-                    </script>
                 <?php endforeach; ?>
             <?php else: ?>
                 <div class="overview-card">

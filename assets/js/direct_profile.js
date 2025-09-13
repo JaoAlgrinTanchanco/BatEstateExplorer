@@ -245,3 +245,19 @@ function givePrivilege() {
         notify('error', 'Failed to grant privilege.');
     });
 }
+function markImageForRemoval(button, imagePath) {
+    // Mark image visually
+    button.closest('.image-item').style.opacity = '0.5';
+
+    // Append hidden input to form
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'remove_images[]';
+    hiddenInput.value = imagePath;
+
+    const container = button.closest('form').querySelector('[id^="removeImages-"]');
+    container.appendChild(hiddenInput);
+
+    // Disable button to avoid duplicates
+    button.disabled = true;
+}
