@@ -5,7 +5,14 @@ ini_set('display_errors', 1);
 require_once __DIR__ . '/../../config/pdo_database.php';
 session_start();
 
-if (!isset($_POST['property_id'])) die('Invalid request');
+if (!isset($_POST['property_id'])) {
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Invalid request.'
+    ];
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=my_listings");
+    exit;
+}
 
 $property_id       = intval($_POST['property_id']);
 $title             = $_POST['title'] ?? '';
@@ -30,7 +37,9 @@ try {
     $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
     $stmt->execute([$property_id]);
     $property = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$property) throw new Exception("Property not found.");
+    if (!$property) {
+        throw new Exception("Property not found.");
+    }
 
     // 🔹 Find agent ID if listing_type is 'sold_by'
     if ($listing_type === 'sold_by' && !empty($sold_by_email)) {
@@ -39,7 +48,7 @@ try {
             FROM agents a
             JOIN users u ON u.id = a.user_id
             WHERE u.email = ? 
-            AND u.user_type = 'associate_agent'
+              AND u.user_type = 'associate_agent'
             LIMIT 1
         ");
         $stmtAgent->execute([$sold_by_email]);
@@ -134,13 +143,22 @@ try {
 
     $pdo->commit();
 
-    $_SESSION['flash_success'] = 'Property updated successfully.';
+    // ✅ Success notification
+    $_SESSION['notification'] = [
+        'type' => 'success',
+        'message' => 'Property updated successfully.'
+    ];
     header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=my_listings");
     exit;
 
 } catch (Exception $e) {
     $pdo->rollBack();
-    $_SESSION['flash_error'] = 'Failed to update property: ' . $e->getMessage();
+
+    // ❌ Error notification
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Failed to update property: ' . $e->getMessage()
+    ];
     header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=my_listings");
     exit;
 }

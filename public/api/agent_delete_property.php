@@ -12,19 +12,31 @@ if ($is_logged_in) {
     $current_user = get_logged_in_user($conn);
 }
 if (!$is_logged_in || !$current_user) {
-    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&error=unauthorized");
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Unauthorized access.'
+    ];
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings");
     exit;
 }
 
 // Only direct or associate agents can use this
 if (!in_array($current_user['user_type'], ['direct_agent', 'associate_agent'])) {
-    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&error=forbidden");
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Forbidden action.'
+    ];
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings");
     exit;
 }
 
 $property_id = intval($_POST['property_id'] ?? 0);
 if (!$property_id) {
-    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&error=invalid_id");
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Invalid property ID.'
+    ];
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings");
     exit;
 }
 
@@ -38,7 +50,11 @@ $agent = $result->fetch_assoc();
 $stmt->close();
 
 if (!$agent) {
-    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&error=agent_not_found");
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Agent not found.'
+    ];
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings");
     exit;
 }
 
@@ -54,7 +70,11 @@ $property = $result->fetch_assoc();
 $stmt->close();
 
 if (!$property) {
-    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&error=not_rejected");
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Property must be rejected before it can be deleted.'
+    ];
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings");
     exit;
 }
 
@@ -64,9 +84,17 @@ $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $property_id);
 
 if ($stmt->execute()) {
-    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&success=deleted");
-    exit;
+    $_SESSION['notification'] = [
+        'type' => 'success',
+        'message' => 'Property deleted successfully.'
+    ];
 } else {
-    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings&error=delete_failed");
-    exit;
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Failed to delete property.'
+    ];
 }
+
+$stmt->close();
+header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings");
+exit;
