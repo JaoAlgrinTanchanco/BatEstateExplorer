@@ -1,8 +1,8 @@
 <?php
 if (!isset($user)) die('Access denied.');
 
+// 🔹 Use the centralized notification system
 require_once __DIR__ . '/../../../../components/notification.php';
-
 
 // Detect active tab
 $tab = $_GET['tab'] ?? 'overview';
@@ -32,7 +32,6 @@ $total_reviews = 0;
 $reviews = [];
 
 // Fetch agent's properties
-$listings = [];
 if ($agent_id) {
     // Fetch properties
     $stmt = $conn->prepare("
@@ -53,7 +52,6 @@ if ($agent_id) {
             FROM property_images
             WHERE property_id = ?
             ORDER BY is_primary DESC, id ASC
-            LIMIT 1
         ");
         $stmtImg->bind_param("i", $property['id']);
         $stmtImg->execute();
@@ -100,8 +98,8 @@ if ($agent_id) {
         $stmt->close();
     }
 }
-
 ?>
+
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_profile_tab.css">
 
@@ -122,10 +120,7 @@ if ($agent_id) {
 
     <!-- Content Section -->
     <section class="dashboard-content">
-        <?php 
-        switch ($tab):
-            case 'my_listings': 
-        ?>
+        <?php switch ($tab): case 'my_listings': ?>
             <h2>My Listings</h2>
 
             <div class="overview-container">
@@ -154,88 +149,175 @@ if ($agent_id) {
                         <div class="info-row"><strong>Type:</strong> <span><?= $ownership ?></span></div>
                         
                         <div class="info-row actions">
-                            <?php if ($property['status'] === 'rejected'): ?>
-                                <!-- Delete only if rejected -->
-                                <form method="POST" action="/BatEstateExplorer/public/api/agent_delete_property.php" style="display:inline;">
-                                    <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
-                                    <button type="submit" class="btn-delete" 
-                                            onclick="return confirm('Are you sure you want to delete this rejected listing?')">
-                                        Delete
-                                    </button>
-                                </form>
-                            <?php else: ?>
-                                <!-- Edit only if not rejected -->
-                                <a href="javascript:void(0)" class="btn-edit" onclick="openModal(<?= $property['id'] ?>)">Edit</a>
-                            <?php endif; ?>
-                        </div>
+                        <!-- Edit always available -->
+                        <a href="javascript:void(0)" class="btn-edit" onclick="openModal(<?= $property['id'] ?>)">Edit</a>
+
+                        <!-- Voluntary delete link (always visible) -->
+                        <a href="/BatEstateExplorer/public/api/agent_delete_property.php?property_id=<?= $property['id'] ?>&redirect=1" 
+                        class="btn-delete" 
+                        onclick="return confirm('Are you sure you want to delete this listing? This action cannot be undone.');">
+                        Delete
+                        </a>
+
+                        <!-- Delete button only if rejected -->
+                        <?php if ($property['status'] === 'rejected'): ?>
+                            <form method="POST" action="/BatEstateExplorer/public/api/agent_delete_property.php" style="display:inline;">
+                                <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
+                                <input type="hidden" name="redirect" value="1">
+                                <button type="submit" class="btn-delete" 
+                                        onclick="return confirm('Are you sure you want to delete this rejected listing?')">
+                                    Delete (Rejected)
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
 
                     </div>
                     <!-- Edit Modal -->
-                        <div id="editModal-<?= $property['id'] ?>" class="edit-modal">
-                            <div class="modal-content">
-                                <span class="close" onclick="closeModal(<?= $property['id'] ?>)">&times;</span>
-                                
-                                <h2>Edit Listing: <?= htmlspecialchars($property['title']) ?></h2>
-                                
-                                <form id="editForm-<?= $property['id'] ?>" method="POST" action="/BatEstateExplorer/public/api/update_property.php" enctype="multipart/form-data">
-                                    <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
+                    <div id="editModal-<?= $property['id'] ?>" class="edit-modal">
+                        <div class="modal-content">
+                            <!-- Close Button -->
+                            <span class="close" onclick="closeModal(<?= $property['id'] ?>)">&times;</span>
 
-                                    <label>Title</label>
-                                    <input type="text" name="title" value="<?= htmlspecialchars($property['title']) ?>" required>
+                            <h2>Edit Listing: <?= htmlspecialchars($property['title']) ?></h2>
 
-                                    <label>Description</label>
-                                    <textarea name="description"><?= htmlspecialchars($property['description']) ?></textarea>
+                            <form id="editForm-<?= $property['id'] ?>" 
+                                method="POST" 
+                                action="/BatEstateExplorer/public/api/update_property.php" 
+                                enctype="multipart/form-data">
 
-                                    <label>Property Type</label>
-                                    <select name="property_type" required>
-                                        <option value="Lot" <?= $property['property_type']=='Lot'?'selected':'' ?>>Lot</option>
-                                        <option value="Property" <?= $property['property_type']=='Property'?'selected':'' ?>>Property</option>
-                                    </select>
+                                <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
 
-                                    <label>Location</label>
-                                    <select name="location" required>
-                                        <option value="Lipa City" <?= $property['location']=='Lipa City'?'selected':'' ?>>Lipa City</option>
-                                        <option value="Batangas" <?= $property['location']=='Batangas'?'selected':'' ?>>Batangas</option>
-                                        <!-- Add more options -->
-                                    </select>
+                                <!-- Title -->
+                                <label for="title-<?= $property['id'] ?>"><strong>Title</strong></label>
+                                <input id="title-<?= $property['id'] ?>" 
+                                    type="text" 
+                                    name="title" 
+                                    value="<?= htmlspecialchars($property['title']) ?>" 
+                                    required>
 
-                                    <label>Price</label>
-                                    <input type="number" step="0.01" name="price" value="<?= $property['price'] ?>" required>
+                                <!-- Description -->
+                                <label for="description-<?= $property['id'] ?>"><strong>Description</strong></label>
+                                <textarea id="description-<?= $property['id'] ?>" 
+                                        name="description" 
+                                        rows="4"><?= htmlspecialchars($property['description']) ?></textarea>
 
-                                    <label>Bedrooms</label>
-                                    <input type="number" name="bedrooms" value="<?= $property['bedrooms'] ?>">
+                                <!-- Property Type -->
+                                <label for="propertyType-<?= $property['id'] ?>"><strong>Property Type</strong></label>
+                                <select id="propertyType-<?= $property['id'] ?>" name="property_type" required>
+                                    <option value="Lot" <?= $property['property_type']=='Lot'?'selected':'' ?>>Lot</option>
+                                    <option value="Property" <?= $property['property_type']=='Property'?'selected':'' ?>>Property</option>
+                                </select>
 
-                                    <label>Bathrooms</label>
-                                    <input type="number" name="bathrooms" value="<?= $property['bathrooms'] ?>">
+                                <!-- Location -->
+                                <label for="location-<?= $property['id'] ?>"><strong>Location</strong></label>
+                                <select id="location-<?= $property['id'] ?>" name="location" required>
+                                    <option value="Lipa City" <?= $property['location']=='Lipa City'?'selected':'' ?>>Lipa City</option>
+                                    <option value="Batangas" <?= $property['location']=='Batangas'?'selected':'' ?>>Batangas</option>
+                                    <!-- Add other towns/cities as needed -->
+                                </select>
 
-                                    <label>Lot Size(sqm)</label>
-                                    <input type="number" step="0.01" name="lot_size" value="<?= $property['lot_size'] ?>">
+                                <!-- Price -->
+                                <label for="price-<?= $property['id'] ?>"><strong>Price (₱)</strong></label>
+                                <input id="price-<?= $property['id'] ?>" 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="price" 
+                                    value="<?= $property['price'] ?>" 
+                                    required>
 
-                                    <label>Status</label>
-                                    <select name="status" disabled>
-                                        <option value="available" <?= $property['status']=='available'?'selected':'' ?>>Available</option>
-                                        <option value="pending" <?= $property['status']=='pending'?'selected':'' ?>>Pending</option>
-                                    </select>
+                                <!-- Bedrooms -->
+                                <label for="bedrooms-<?= $property['id'] ?>"><strong>Bedrooms</strong></label>
+                                <input id="bedrooms-<?= $property['id'] ?>" 
+                                    type="number" 
+                                    name="bedrooms" 
+                                    value="<?= $property['bedrooms'] ?>">
 
-                                    <!-- Existing images -->
-                                    <div class="image-slider">
+                                <!-- Bathrooms -->
+                                <label for="bathrooms-<?= $property['id'] ?>"><strong>Bathrooms</strong></label>
+                                <input id="bathrooms-<?= $property['id'] ?>" 
+                                    type="number" 
+                                    name="bathrooms" 
+                                    value="<?= $property['bathrooms'] ?>">
+
+                                <!-- Lot Size -->
+                                <label for="lotSize-<?= $property['id'] ?>"><strong>Lot Size (sqm)</strong></label>
+                                <input id="lotSize-<?= $property['id'] ?>" 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="lot_size" 
+                                    value="<?= $property['lot_size'] ?>">
+
+                                <!-- Status -->
+                                <label for="status-<?= $property['id'] ?>"><strong>Status</strong></label>
+                                <select id="status-<?= $property['id'] ?>" name="status" disabled>
+                                    <option value="available" <?= $property['status']=='available'?'selected':'' ?>>Available</option>
+                                    <option value="pending" <?= $property['status']=='pending'?'selected':'' ?>>Pending</option>
+                                </select>
+
+                                <!-- Existing Images -->
+                                <label><strong>Existing Images</strong></label>
+                                <div class="image-gallery">
+                                    <?php if (!empty($property['images'])): ?>
                                         <?php foreach ($property['images'] as $img): ?>
-                                            <div class="slider-item">
+                                            <div class="image-item">
                                                 <img src="/BatEstateExplorer/<?= $img['image_path'] ?>" alt="Property Image">
+                                                
+                                                <!-- Keep track of current images -->
                                                 <input type="hidden" name="existing_images[]" value="<?= $img['image_path'] ?>">
-                                                <button type="button" onclick="removeImage(this)">Remove</button>
+
+                                                <!-- Mark Primary -->
+                                                <label class="primary-label">
+                                                    <input type="radio" 
+                                                        name="primary_image" 
+                                                        value="<?= $img['image_path'] ?>" 
+                                                        <?= isset($img['is_primary']) && $img['is_primary'] ? 'checked' : '' ?>>
+                                                    Primary
+                                                </label>
+
+                                                <!-- Remove button -->
+                                                <button type="button" class="remove-img-btn" onclick="markImageForRemoval(this, '<?= $img['image_path'] ?>')">Remove</button>
                                             </div>
                                         <?php endforeach; ?>
-                                    </div>
+                                    <?php else: ?>
+                                        <p>No images uploaded yet.</p>
+                                    <?php endif; ?>
+                                </div>
 
-                                    <!-- Add new images -->
-                                    <label>Add Images</label>
-                                    <input type="file" name="new_images[]" multiple>
+                                <!-- Hidden container for removals -->
+                                <div id="removeImages-<?= $property['id'] ?>"></div>
 
-                                    <button type="submit">Update Listing</button>
-                                </form>
-                            </div>
+                                <!-- Upload New Images -->
+                                <label for="newImages-<?= $property['id'] ?>"><strong>Add New Images</strong></label>
+                                <input id="newImages-<?= $property['id'] ?>" 
+                                    type="file" 
+                                    name="new_images[]" 
+                                    multiple 
+                                    accept="image/*">
+
+                                <!-- Submit -->
+                                <button type="submit" class="btn-save">Update Listing</button>
+                            </form>
                         </div>
+                    </div>
+                    <script>
+                        function markImageForRemoval(button, imagePath) {
+                            // Mark image visually
+                            button.closest('.image-item').style.opacity = '0.5';
+
+                            // Append hidden input to form
+                            const hiddenInput = document.createElement('input');
+                            hiddenInput.type = 'hidden';
+                            hiddenInput.name = 'remove_images[]';
+                            hiddenInput.value = imagePath;
+
+                            const container = button.closest('form').querySelector('[id^="removeImages-"]');
+                            container.appendChild(hiddenInput);
+
+                            // Disable button to avoid duplicates
+                            button.disabled = true;
+                        }
+                    </script>
                 <?php endforeach; ?>
             <?php else: ?>
                 <div class="overview-card">
@@ -247,104 +329,108 @@ if ($agent_id) {
         <?php break; ?>
 
         <?php case 'add_listing': ?>
-                <h2>Add New Listing</h2>
+            <h2>Add New Listing</h2>
 
-                <div class="overview-container">
-                    <div class="overview-card">
-                        <form id="addListingForm" 
-                            action="/BatEstateExplorer/public/api/direct_save_listing.php" 
-                            method="POST" 
-                            enctype="multipart/form-data">
+            <!-- 🔹 Centralized Notification Component -->
+            <?php require_once __DIR__ . '/../../../../components/notification.php'; ?>
 
-                            <!-- Property Name -->
-                            <label for="title"><strong>Property Name</strong></label>
-                            <input type="text" id="title" name="title" required>
+            <div class="overview-container">
+                <div class="overview-card">
+                    <form id="addListingForm" 
+                        action="/BatEstateExplorer/public/api/direct_save_listing.php" 
+                        method="POST" 
+                        enctype="multipart/form-data">
 
-                            <!-- Location -->
-                            <label for="location"><strong>Location</strong></label>
-                            <select id="location" name="location" required>
-                                <option value="">Select Location</option>
-                                <option value="Agoncillo">Agoncillo</option>
-                                <option value="Alitagtag">Alitagtag</option>
-                                <option value="Balayan">Balayan</option>
-                                <option value="Balete">Balete</option>
-                                <option value="Batangas City">Batangas City</option>
-                                <option value="Bauan">Bauan</option>
-                                <option value="Calaca">Calaca</option>
-                                <option value="Calatagan">Calatagan</option>
-                                <option value="Cuenca">Cuenca</option>
-                                <option value="Ibaan">Ibaan</option>
-                                <option value="Laurel">Laurel</option>
-                                <option value="Lemery">Lemery</option>
-                                <option value="Lian">Lian</option>
-                                <option value="Lipa City">Lipa City</option>
-                                <option value="Lobo">Lobo</option>
-                                <option value="Mabini">Mabini</option>
-                                <option value="Malvar">Malvar</option>
-                                <option value="Mataasnakahoy">Mataasnakahoy</option>
-                                <option value="Nasugbu">Nasugbu</option>
-                                <option value="Padre Garcia">Padre Garcia</option>
-                                <option value="Rosario">Rosario</option>
-                                <option value="San Jose">San Jose</option>
-                                <option value="San Juan">San Juan</option>
-                                <option value="San Luis">San Luis</option>
-                                <option value="San Nicolas">San Nicolas</option>
-                                <option value="San Pascual">San Pascual</option>
-                                <option value="Santa Teresita">Santa Teresita</option>
-                                <option value="Santo Tomas">Santo Tomas</option>
-                                <option value="Taal">Taal</option>
-                                <option value="Talisay">Talisay</option>
-                                <option value="Tanauan City">Tanauan City</option>
-                                <option value="Taysan">Taysan</option>
-                                <option value="Tingloy">Tingloy</option>
-                                <option value="Tuy">Tuy</option>
-                            </select>
+                        <!-- Property Name -->
+                        <label for="title"><strong>Property Name</strong></label>
+                        <input type="text" id="title" name="title" required>
 
-                            <!-- Price -->
-                            <label for="price"><strong>Price (₱)</strong></label>
-                            <input type="number" id="price" name="price" min="0" step="0.01" required>
+                        <!-- Location -->
+                        <label for="location"><strong>Location</strong></label>
+                        <select id="location" name="location" required>
+                            <option value="">Select Location</option>
+                            <option value="Agoncillo">Agoncillo</option>
+                            <option value="Alitagtag">Alitagtag</option>
+                            <option value="Balayan">Balayan</option>
+                            <option value="Balete">Balete</option>
+                            <option value="Batangas City">Batangas City</option>
+                            <option value="Bauan">Bauan</option>
+                            <option value="Calaca">Calaca</option>
+                            <option value="Calatagan">Calatagan</option>
+                            <option value="Cuenca">Cuenca</option>
+                            <option value="Ibaan">Ibaan</option>
+                            <option value="Laurel">Laurel</option>
+                            <option value="Lemery">Lemery</option>
+                            <option value="Lian">Lian</option>
+                            <option value="Lipa City">Lipa City</option>
+                            <option value="Lobo">Lobo</option>
+                            <option value="Mabini">Mabini</option>
+                            <option value="Malvar">Malvar</option>
+                            <option value="Mataasnakahoy">Mataasnakahoy</option>
+                            <option value="Nasugbu">Nasugbu</option>
+                            <option value="Padre Garcia">Padre Garcia</option>
+                            <option value="Rosario">Rosario</option>
+                            <option value="San Jose">San Jose</option>
+                            <option value="San Juan">San Juan</option>
+                            <option value="San Luis">San Luis</option>
+                            <option value="San Nicolas">San Nicolas</option>
+                            <option value="San Pascual">San Pascual</option>
+                            <option value="Santa Teresita">Santa Teresita</option>
+                            <option value="Santo Tomas">Santo Tomas</option>
+                            <option value="Taal">Taal</option>
+                            <option value="Talisay">Talisay</option>
+                            <option value="Tanauan City">Tanauan City</option>
+                            <option value="Taysan">Taysan</option>
+                            <option value="Tingloy">Tingloy</option>
+                            <option value="Tuy">Tuy</option>
+                        </select>
 
-                            <!-- Lot Size -->
-                            <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
-                            <input type="number" id="lot_size" name="lot_size" min="0" step="0.01">
+                        <!-- Price -->
+                        <label for="price"><strong>Price (₱)</strong></label>
+                        <input type="number" id="price" name="price" min="0" step="0.01" required>
 
-                            <!-- Property Type -->
-                            <label for="property_type"><strong>Property Type</strong></label>
-                            <select id="property_type" name="property_type" required>
-                                <option value="">-- Select Type --</option>
-                                <option value="Property">Property</option>
-                                <option value="Lot">Lot</option>
-                            </select>
+                        <!-- Lot Size -->
+                        <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
+                        <input type="number" id="lot_size" name="lot_size" min="0" step="0.01">
 
-                            <!-- Bedrooms -->
-                            <label for="bedrooms"><strong>Bedrooms</strong></label>
-                            <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
+                        <!-- Property Type -->
+                        <label for="property_type"><strong>Property Type</strong></label>
+                        <select id="property_type" name="property_type" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="Property">Property</option>
+                            <option value="Lot">Lot</option>
+                        </select>
 
-                            <!-- Bathrooms -->
-                            <label for="bathrooms"><strong>Bathrooms</strong></label>
-                            <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
+                        <!-- Bedrooms -->
+                        <label for="bedrooms"><strong>Bedrooms</strong></label>
+                        <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
 
-                            <!-- Description -->
-                            <label for="description"><strong>Description</strong></label>
-                            <textarea id="description" name="description" rows="4" required></textarea>
+                        <!-- Bathrooms -->
+                        <label for="bathrooms"><strong>Bathrooms</strong></label>
+                        <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
 
-                            <!-- Image Upload -->
-                            <label for="images"><strong>Property Images</strong></label>
-                            <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
-                                <p>Drag & drop images here or click to browse</p>
-                                <input type="file" id="images" accept="image/*" multiple style="display:none;">
-                            </div>
+                        <!-- Description -->
+                        <label for="description"><strong>Description</strong></label>
+                        <textarea id="description" name="description" rows="4" required></textarea>
 
-                            <!-- Preview Area -->
-                            <div id="imagePreview" class="image-preview" aria-live="polite"></div>
+                        <!-- Image Upload -->
+                        <label for="images"><strong>Property Images</strong></label>
+                        <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
+                            <p>Drag & drop images here or click to browse</p>
+                            <input type="file" id="images" accept="image/*" multiple style="display:none;">
+                        </div>
 
-                            <!-- Submit -->
-                            <button type="submit" class="btn-submit">Save Listing</button>
-                        </form>
-                    </div>
+                        <!-- Preview Area -->
+                        <div id="imagePreview" class="image-preview" aria-live="polite"></div>
+
+                        <!-- Submit -->
+                        <button type="submit" class="btn-submit">Save Listing</button>
+                    </form>
                 </div>
+            </div>
 
         <?php break; ?>
+
 
         <?php case 'analytics': ?>
                 <h2>Performance Analytics</h2>

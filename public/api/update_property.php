@@ -24,8 +24,9 @@ $bedrooms          = intval($_POST['bedrooms'] ?? 0);
 $bathrooms         = intval($_POST['bathrooms'] ?? 0);
 $sqm               = floatval($_POST['sqm'] ?? 0);
 $lot_size          = floatval($_POST['lot_size'] ?? 0);
-$status            = $_POST['status'] ?? 'available';
 $existing_images   = $_POST['existing_images'] ?? [];
+$remove_images     = $_POST['remove_images'] ?? [];
+$primary_image     = $_POST['primary_image'] ?? null;
 $listing_type      = $_POST['listing_type'] ?? 'owned';
 $sold_by_email     = $_POST['sold_by_email'] ?? null;
 $sold_by_agent_id  = null;
@@ -41,10 +42,13 @@ try {
         throw new Exception("Property not found.");
     }
 
-    // 🔹 Find agent ID if listing_type is 'sold_by'
+    // ✅ Preserve current status unless overridden by backend
+    $status = $property['status'];
+
+    // 🔹 If listing marked as sold by another agent
     if ($listing_type === 'sold_by' && !empty($sold_by_email)) {
         $stmtAgent = $pdo->prepare("
-            SELECT a.id, u.email 
+            SELECT a.id 
             FROM agents a
             JOIN users u ON u.id = a.user_id
             WHERE u.email = ? 
@@ -56,19 +60,13 @@ try {
 
         if ($agent) {
             $sold_by_agent_id = $agent['id'];
-            $status = 'sold'; // ✅ Automatically set to sold
+            $status = 'sold'; // ✅ Force to sold
         } else {
             throw new Exception("Selling agent not found.");
         }
-    } else {
-        // Ensure status is valid ENUM
-        $allowed_status = ['pending','available','rejected','sold'];
-        if (!in_array($status, $allowed_status)) {
-            $status = 'pending';
-        }
     }
 
-    // 🔹 Update property details
+    // 🔹 Update property details (status not touched unless sold_by)
     $stmtUpdate = $pdo->prepare("
         UPDATE properties SET
             title = ?, 
@@ -101,21 +99,18 @@ try {
         $property_id
     ]);
 
-    // 🔹 Handle images
-    $stmtCurrent = $pdo->prepare("SELECT image_path FROM property_images WHERE property_id = ?");
-    $stmtCurrent->execute([$property_id]);
-    $current_images = $stmtCurrent->fetchAll(PDO::FETCH_COLUMN);
-    $stmtCurrent->closeCursor();
-
-    foreach ($current_images as $img_path) {
-        if (!in_array($img_path, $existing_images)) {
+    // 🔹 Handle removals
+    if (!empty($remove_images)) {
+        foreach ($remove_images as $img_path) {
             $full_path = __DIR__ . '/../../' . $img_path;
             if (file_exists($full_path)) unlink($full_path);
+
             $stmtDel = $pdo->prepare("DELETE FROM property_images WHERE property_id = ? AND image_path = ?");
             $stmtDel->execute([$property_id, $img_path]);
         }
     }
 
+    // 🔹 Upload new images
     if (isset($_FILES['new_images']) && is_array($_FILES['new_images']['tmp_name'])) {
         $upload_dir = 'C:\\xampp\\htdocs\\BatEstateExplorer\\storage\\uploads\\property_images\\';
         $file_count = min(count($_FILES['new_images']['tmp_name']), 10);
@@ -141,6 +136,15 @@ try {
         }
     }
 
+    // 🔹 Update primary image
+    if ($primary_image) {
+        $stmtReset = $pdo->prepare("UPDATE property_images SET is_primary = 0 WHERE property_id = ?");
+        $stmtReset->execute([$property_id]);
+
+        $stmtPrimary = $pdo->prepare("UPDATE property_images SET is_primary = 1 WHERE property_id = ? AND image_path = ?");
+        $stmtPrimary->execute([$property_id, $primary_image]);
+    }
+
     $pdo->commit();
 
     // ✅ Success notification
@@ -148,17 +152,17 @@ try {
         'type' => 'success',
         'message' => 'Property updated successfully.'
     ];
-    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=my_listings");
+    header("Location: http://localhost/BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings");
     exit;
 
-} catch (Exception $e) {
-    $pdo->rollBack();
+    } catch (Exception $e) {
+        $pdo->rollBack();
 
-    // ❌ Error notification
-    $_SESSION['notification'] = [
-        'type' => 'error',
-        'message' => 'Failed to update property: ' . $e->getMessage()
-    ];
-    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=my_listings");
-    exit;
-}
+        // ❌ Error notification
+        $_SESSION['notification'] = [
+            'type' => 'error',
+            'message' => 'Failed to update property: ' . $e->getMessage()
+        ];
+        header("Location: http://localhost/BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings");
+        exit;
+    }
