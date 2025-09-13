@@ -11,25 +11,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_bind_param($stmt, "i", $userId);
 
         if (mysqli_stmt_execute($stmt)) {
-            // Flash message before destroying session
-            $_SESSION['flash_success'] = 'Account deleted successfully.';
+            // Set notification BEFORE destroying session
+            $_SESSION['notification'] = [
+                'type' => 'success',
+                'message' => 'Account deleted successfully.'
+            ];
 
-            // Clear session
+            // Destroy session
             session_unset();
             session_destroy();
 
-            // Redirect to login with query message
-            header("Location: /BatEstateExplorer/auth/login.php?message=Account+deleted+successfully");
+            // Redirect to login page (notification will show if login page includes the component)
+            header("Location: /BatEstateExplorer/auth/login.php");
             exit;
         } else {
-            $_SESSION['flash_error'] = 'Error deleting account. Please try again.';
-            header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview");
+            $_SESSION['notification'] = [
+                'type' => 'error',
+                'message' => 'Error deleting account. Please try again.'
+            ];
+            header("Location: /BatEstateExplorer/public/direct_profile.php?tab=overview");
             exit;
         }
     } else {
-        $_SESSION['flash_error'] = 'Invalid user ID.';
-        header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview");
+        $_SESSION['notification'] = [
+            'type' => 'error',
+            'message' => 'Invalid user ID.'
+        ];
+        header("Location: /BatEstateExplorer/public/direct_profile.php?tab=overview");
         exit;
     }
 }
-?>

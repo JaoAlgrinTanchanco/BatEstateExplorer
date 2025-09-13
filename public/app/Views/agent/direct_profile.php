@@ -524,23 +524,7 @@ if ($agent_id) {
             if ($fullName === '') $fullName = 'Agent';
         ?>
             <h2>Profile Overview</h2>
-
             <div class="overview-container">
-                <!-- Flash Notifications -->
-                <?php if (!empty($_SESSION['flash_success'])): ?>
-                    <div class="notification success">
-                        <?= htmlspecialchars($_SESSION['flash_success']) ?>
-                    </div>
-                    <?php unset($_SESSION['flash_success']); ?>
-                <?php endif; ?>
-
-                <?php if (!empty($_SESSION['flash_error'])): ?>
-                    <div class="notification error">
-                        <?= htmlspecialchars($_SESSION['flash_error']) ?>
-                    </div>
-                    <?php unset($_SESSION['flash_error']); ?>
-                <?php endif; ?>
-
                 <div class="profile-view">
                     <button id="editProfileBtn">Edit Profile</button>
 
@@ -614,7 +598,7 @@ if ($agent_id) {
                         <button type="button" id="openDeleteModal" class="delete-btn">Delete Account</button>
                     </div>
 
-                    <!-- Delete Modal -->
+                    <!-- Modal (placed at the end of body, outside any container) -->
                     <div id="deleteModal" class="modal" style="display:none;">
                         <div class="modal-content">
                             <h4>Confirm Account Deletion</h4>
@@ -631,8 +615,7 @@ if ($agent_id) {
                         </div>
                     </div>
                 </div>  
-
-                <!-- Edit Form -->
+                
                 <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php" style="display:none;">
                     <label>First Name</label>
                     <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" required>
@@ -646,17 +629,12 @@ if ($agent_id) {
                     <label>Email</label>
                     <input type="email" name="email" value="<?= htmlspecialchars($user['email']) ?>" autocomplete="email" required>
 
-                    <label>Current Password</label>
-                    <input type="password" name="current_password" placeholder="Enter current password" autocomplete="current-password" required>
-
-                    <label>New Password</label>
-                    <input type="password" name="new_password" placeholder="Leave blank to keep current" autocomplete="new-password">
-
                     <button type="submit">Save Changes</button>
                     <button type="button" id="cancelEditBtn">Cancel</button>
                 </form>
-            </div>
 
+                <div id="profileMessage"></div>
+            </div>
         <?php endswitch; ?>
     </section>
 </div>
