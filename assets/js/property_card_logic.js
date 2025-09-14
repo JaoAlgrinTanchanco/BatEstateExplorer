@@ -6,7 +6,7 @@
   const userToken = window.AppConfig?.userToken || "";
   const currentUserId = window.AppConfig?.userId || 0;
 
-  // --- Notification helper ---
+  // ===== Notification helper =====
   function notify(type, message) {
     let container = document.querySelector('.notification-container');
     if (!container) {
@@ -41,14 +41,13 @@
     }
   }
 
-  // --- Card hover auto-swipe (only for card images) ---
+  // ===== Card hover auto-swipe =====
   document.querySelectorAll('.property-card').forEach(card => {
     const images = JSON.parse(card.dataset.images || '[]');
     if (images.length < 2) return;
 
     const imgEl = card.querySelector('.property-image img');
-    let index = 0;
-    let interval = null;
+    let index = 0, interval = null;
 
     card.addEventListener('mouseenter', () => {
       interval = setInterval(() => {
@@ -64,7 +63,7 @@
     });
   });
 
-  // --- Open Property Modal ---
+  // ===== Open Property Modal =====
   async function openPropertyModal(propertyId) {
     currentPropertyId = propertyId;
     const wrapper = document.getElementById("modalImageWrapper");
@@ -79,26 +78,19 @@
       const images = prop.images.length ? prop.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
 
       // Load Swiper slides
-      wrapper.innerHTML = images.map(img => `
-        <div class="swiper-slide">
-          <img src="${img}" style="width:100%;border-radius:8px;">
-        </div>
-      `).join('');
+      wrapper.innerHTML = images.map(img => `<div class="swiper-slide"><img src="${img}" style="width:100%;border-radius:8px;"></div>`).join('');
 
-      // Destroy old Swiper if exists
-      if (modalSwiper) {
-        modalSwiper.destroy(true, true);
-        modalSwiper = null;
-      }
+      // Destroy old Swiper
+      if (modalSwiper) { modalSwiper.destroy(true, true); modalSwiper = null; }
 
-      // Initialize modal Swiper
-      modalSwiper = new Swiper(".modal-swiper", {
+      // Initialize modal Swiper (unique selectors)
+      modalSwiper = new Swiper(".modal-swiper-container", {
         loop: images.length > 1,
         navigation: {
-          nextEl: ".modal-swiper .swiper-button-next",
-          prevEl: ".modal-swiper .swiper-button-prev"
+          nextEl: ".modal-swiper-next",
+          prevEl: ".modal-swiper-prev"
         },
-        pagination: { el: ".modal-swiper .swiper-pagination", clickable: true },
+        pagination: { el: ".modal-swiper-pagination", clickable: true },
         autoplay: { delay: 4000, disableOnInteraction: false },
       });
 
@@ -110,16 +102,14 @@
       document.getElementById("modalBathrooms").textContent = prop.bathrooms;
       document.getElementById("modalDescription").textContent = prop.description || "No description available.";
 
-      // Load past reviews
-      reviewContainer.innerHTML = (prop.past_reviews && prop.past_reviews.length)
-        ? prop.past_reviews.map(r => `
-            <div class="review-card" style="margin-bottom:10px;">
-              <strong>${r.first_name} ${r.last_name}</strong>
-              <span style="float:right;">${r.rating}⭐</span>
-              <p>${r.review_text}</p>
-              <small>${new Date(r.created_at).toLocaleDateString()}</small>
-            </div>
-          `).join('')
+      // Past reviews
+      reviewContainer.innerHTML = (prop.past_reviews?.length)
+        ? prop.past_reviews.map(r => `<div class="review-card" style="margin-bottom:10px;">
+            <strong>${r.first_name} ${r.last_name}</strong>
+            <span style="float:right;">${r.rating}⭐</span>
+            <p>${r.review_text}</p>
+            <small>${new Date(r.created_at).toLocaleDateString()}</small>
+          </div>`).join('')
         : `<p>No reviews yet.</p>`;
 
       // Leave review button
@@ -149,13 +139,13 @@
     }
   }
 
-  // --- Review modal ---
+  // ===== Review modal =====
   function openReviewModal(propertyId) {
     document.getElementById("reviewPropertyId").value = propertyId;
     document.getElementById("reviewModal").style.display = "flex";
   }
 
-  // --- Save / Unsave ---
+  // ===== Save / Unsave =====
   function initSaveButton() {
     saveBtn = document.getElementById("saveFavoriteBtn");
     if (!saveBtn) return;
@@ -200,7 +190,7 @@
     } catch (err) { console.error(err); notify("error", "Error updating saved status."); }
   }
 
-  // --- Submit review ---
+  // ===== Submit review =====
   document.getElementById("reviewForm")?.addEventListener("submit", async e => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -215,7 +205,7 @@
     } catch (err) { console.error(err); notify("error", "Error submitting review."); }
   });
 
-  // --- Message agent ---
+  // ===== Message agent =====
   document.addEventListener("click", e => {
     const btn = e.target.closest(".message-agent-btn");
     if (btn) {
@@ -225,18 +215,15 @@
     }
   });
 
-  // --- Open property modal from card ---
+  // ===== Open property modal from card =====
   document.addEventListener("click", e => {
     const btn = e.target.closest(".view-details-btn");
     if (btn) openPropertyModal(btn.dataset.id);
   });
 
-  // --- Close modal ---
+  // ===== Close modal =====
   document.querySelectorAll(".modal-close").forEach(btn => {
     btn.addEventListener("click", () => btn.closest(".modal").style.display = "none");
-  });
-  document.getElementById("propertyModal")?.addEventListener("click", e => {
-    if (e.target === e.currentTarget) e.currentTarget.style.display = "none";
   });
 
   window.openPropertyModal = openPropertyModal;

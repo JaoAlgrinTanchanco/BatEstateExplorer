@@ -102,11 +102,11 @@ if (!function_exists('render_property_card')) {
         <span class="modal-close">&times;</span>
         <div class="modal-body" style="flex:2;">
             <div class="modal-image">
-                <div class="swiper modal-swiper">
+                <div class="modal-swiper-container">
                     <div class="swiper-wrapper" id="modalImageWrapper"></div>
-                    <div class="swiper-button-next"></div>
-                    <div class="swiper-button-prev"></div>
-                    <div class="swiper-pagination"></div>
+                    <div class="modal-swiper-button-next"></div>
+                    <div class="modal-swiper-button-prev"></div>
+                    <div class="modal-swiper-pagination"></div>
                 </div>
             </div>
             <div class="modal-details">

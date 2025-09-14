@@ -1,15 +1,6 @@
 <?php
-/**
- * Modular property card for agents.
- * Usage:
- *   include __DIR__ . '/agent_property_card.php';
- *   render_agent_property_card($property);              // full card + modal
- *   render_agent_property_card($property, true);        // only modal
- */
-
 if (!function_exists('render_agent_property_card')) {
     function render_agent_property_card(array $property, bool $modalOnly = false) {
-        // --- Database connection ---
         $conn = $GLOBALS['conn'] ?? null;
         if (!$conn) {
             echo "<p style='color:red'>Database connection not found.</p>";
@@ -18,8 +9,8 @@ if (!function_exists('render_agent_property_card')) {
 
         $propertyId = (int)($property['id'] ?? 0);
 
-        // --- Fetch all images for this property ---
-        $images = ['/BatEstateExplorer/assets/images/bg4.jpg']; // default fallback
+        // --- Fetch property images ---
+        $images = ['/BatEstateExplorer/assets/images/bg4.jpg'];
         $stmtImg = $conn->prepare("SELECT image_path FROM property_images WHERE property_id = ? ORDER BY id ASC");
         if ($stmtImg) {
             $stmtImg->bind_param("i", $propertyId);
@@ -34,60 +25,73 @@ if (!function_exists('render_agent_property_card')) {
         if (empty($images)) $images[] = '/BatEstateExplorer/assets/images/bg4.jpg';
         $property['images'] = $images;
 
-        // --- Card Thumbnail: first property image or fallback ---
+        // --- Fetch past reviews ---
+        $property['past_reviews'] = [];
+        $reviewsSql = "
+            SELECT r.*, u.first_name, u.last_name
+            FROM property_reviews r
+            INNER JOIN users u ON r.user_id = u.id
+            WHERE r.property_id = ?
+            ORDER BY r.created_at DESC
+        ";
+        $stmt = $conn->prepare($reviewsSql);
+        if ($stmt) {
+            $stmt->bind_param("i", $propertyId);
+            $stmt->execute();
+            $resReviews = $stmt->get_result();
+            $property['past_reviews'] = $resReviews->fetch_all(MYSQLI_ASSOC);
+            $stmt->close();
+        }
+
+        // --- Sanitize fields ---
         $image = htmlspecialchars($property['images'][0]);
+        $title = htmlspecialchars($property['title'] ?? '');
+        $location = htmlspecialchars($property['location'] ?? '');
+        $price = number_format((float)($property['price'] ?? 0), 2);
+        $bedrooms = (int)($property['bedrooms'] ?? 0);
+        $bathrooms = (int)($property['bathrooms'] ?? 0);
+        $createdAt = strtotime($property['created_at'] ?? 'now');
 
-        // --- Property basic info ---
-        $title      = htmlspecialchars($property['title'] ?? '');
-        $location   = htmlspecialchars($property['location'] ?? '');
-        $price      = number_format((float)($property['price'] ?? 0), 2);
-        $id         = $propertyId;
-        $createdAt  = strtotime($property['created_at'] ?? 'now');
-        $bedrooms   = (int)($property['bedrooms'] ?? 0);
-        $bathrooms  = (int)($property['bathrooms'] ?? 0);
-
-        // --- Full card rendering ---
+        // --- Render card ---
         if (!$modalOnly):
 ?>
-<!-- beginning of card (replace existing .property-card div) -->
 <div class="property-card"
-     data-id="<?= (int)$id ?>"
-     data-price="<?= (float)($property['price'] ?? 0) ?>"
+     data-id="<?= $propertyId ?>"
+     data-images='<?= json_encode($property['images']) ?>'
+     data-location="<?= strtolower($location) ?>"
+     data-type="<?= htmlspecialchars($property['property_type'] ?? '') ?>"
+     data-price="<?= (int)($property['price'] ?? 0) ?>"
+     data-bedrooms="<?= $bedrooms ?>"
+     data-bathrooms="<?= $bathrooms ?>"
+     data-size="<?= (int)($property['sqm'] ?? 0) ?>"
      data-date="<?= $createdAt ?>"
-     data-image="<?= $image ?>"
-     data-size="<?= htmlspecialchars($property['data_size'] ?? ($property['sqm'] ?? 0)) ?>"
-     data-type="<?= htmlspecialchars(strtolower($property['data_type'] ?? ($property['property_type'] ?? ''))) ?>"
-     data-bedrooms="<?= (int)($property['bedrooms'] ?? 0) ?>"
-     data-bathrooms="<?= (int)($property['bathrooms'] ?? 0) ?>">
+     data-image="<?= $image ?>">
 
-    <div class="property-image">
-        <img src="<?= $image ?>" alt="Property Image">
+    <div class="property-image" style="position:relative; overflow:hidden;">
+        <img src="<?= $image ?>" alt="Property Image" style="width:100%; transition:opacity 0.5s ease;">
     </div>
+
     <div class="property-content">
         <h3><?= $title ?></h3>
         <p class="property-location"><i class="fas fa-map-marker-alt"></i> <?= $location ?></p>
         <p class="property-price">₱<?= $price ?></p>
         <div class="property-features">
-            <span class="feat-bed"><i class="fas fa-bed"></i> <?= $bedrooms ?> Beds</span>
-            <span class="feat-bath"><i class="fas fa-bath"></i> <?= $bathrooms ?> Baths</span>
+            <span><i class="fas fa-bed"></i> <?= $bedrooms ?> Beds</span>
+            <span><i class="fas fa-bath"></i> <?= $bathrooms ?> Baths</span>
         </div>
-        <button class="btn btn-outline view-details-btn" data-id="<?= $id ?>">View Details</button>
+        <button class="btn btn-outline view-details-btn" data-id="<?= $propertyId ?>">View Details</button>
     </div>
 </div>
-<!-- end of card -->
-
 <?php
         endif;
 
-        // --- Modal (only once per page) ---
+        // --- Include modal only once ---
         if (!defined('AGENT_PROPERTY_MODAL_INCLUDED')):
             define('AGENT_PROPERTY_MODAL_INCLUDED', true);
 ?>
-<!-- Swiper CSS & JS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
-<!-- Property Modal -->
 <div id="propertyModal" class="modal" style="display:none;">
     <div class="modal-content" style="display:flex; gap:20px; max-width:1000px; margin:auto;">
         <span class="modal-close">&times;</span>
@@ -95,11 +99,11 @@ if (!function_exists('render_agent_property_card')) {
         <!-- Left: Property Details -->
         <div class="modal-body" style="flex:2;">
             <div class="modal-image">
-                <div class="swiper modal-swiper">
+                <div class="modal-swiper-container">
                     <div class="swiper-wrapper" id="modalImageWrapper"></div>
-                    <div class="swiper-button-next"></div>
-                    <div class="swiper-button-prev"></div>
-                    <div class="swiper-pagination"></div>
+                    <div class="modal-swiper-button-next"></div>
+                    <div class="modal-swiper-button-prev"></div>
+                    <div class="modal-swiper-pagination"></div>
                 </div>
             </div>
             <div class="modal-details">
@@ -112,11 +116,11 @@ if (!function_exists('render_agent_property_card')) {
                 </div>
                 <p><strong>Description:</strong></p>
                 <p id="modalDescription"></p>
-                <!-- No user actions: message/save/review -->
+                <!-- No action buttons for agents -->
             </div>
         </div>
 
-        <!-- Right: Past Reviews (optional for agents, can keep read-only) -->
+        <!-- Right: Past Reviews (read-only) -->
         <div id="modalReviewsCard" style="
             flex:1;
             background:#fff;
@@ -133,8 +137,6 @@ if (!function_exists('render_agent_property_card')) {
 
     </div>
 </div>
-
-
 <?php
         endif;
     }
