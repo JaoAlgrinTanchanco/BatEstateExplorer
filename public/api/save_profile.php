@@ -1,7 +1,6 @@
 <?php
 session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
-require_login();
 
 $userId = $_SESSION['user_id'] ?? null;
 if (!$userId) {
@@ -9,8 +8,7 @@ if (!$userId) {
         'type' => 'error',
         'message' => 'User not logged in.'
     ];
-    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview');
-    exit;
+    redirectWithAgentType('overview');
 }
 
 // Fetch user
@@ -25,8 +23,7 @@ if (!$user) {
         'type' => 'error',
         'message' => 'User not found.'
     ];
-    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview');
-    exit;
+    redirectWithAgentType('overview');
 }
 
 // Collect POST data
@@ -43,8 +40,7 @@ if (!$firstName || !$lastName || !$email) {
         'type' => 'error',
         'message' => 'First name, last name, and email are required.'
     ];
-    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview');
-    exit;
+    redirectWithAgentType('overview');
 }
 
 // Check email uniqueness
@@ -56,8 +52,7 @@ if ($stmt->get_result()->num_rows > 0) {
         'type' => 'error',
         'message' => 'Email already in use.'
     ];
-    header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview');
-    exit;
+    redirectWithAgentType('overview');
 }
 $stmt->close();
 
@@ -91,5 +86,31 @@ $stmt->close();
 $conn->close();
 
 // Redirect back to profile overview tab
-header('Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=overview');
-exit;
+redirectWithAgentType('overview');
+
+
+// ==========================
+// Helper: Redirect by agent type
+// ==========================
+function redirectWithAgentType($tab = 'overview') {
+    global $conn;
+
+    $userId = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
+    $agentType = 'direct';
+
+    if ($userId) {
+        $stmt = $conn->prepare("SELECT company_id FROM agents WHERE user_id = ? LIMIT 1");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+
+        if ($row && !empty($row['company_id']) && $row['company_id'] > 0) {
+            $agentType = 'associate';
+        }
+    }
+
+    $view = $agentType === 'associate' ? 'associate_profile' : 'direct_profile';
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab={$tab}");
+    exit;
+}

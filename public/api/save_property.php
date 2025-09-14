@@ -38,12 +38,29 @@ if (!$userId) {
     exit;
 }
 
+// --- Detect agent type for redirect ---
+$agentType = 'direct'; // default
+$stmt = $conn->prepare("SELECT company_id FROM agents WHERE user_id = ? LIMIT 1");
+$stmt->bind_param("i", $userId);
+$stmt->execute();
+$res = $stmt->get_result();
+if ($row = $res->fetch_assoc()) {
+    if (!empty($row['company_id']) && $row['company_id'] > 0) {
+        $agentType = 'associate';
+    }
+}
+$stmt->close();
+
 // --- Property ID & action ---
 $propertyId = isset($_POST['property_id']) ? (int)$_POST['property_id'] : null;
 $action     = $_POST['action'] ?? 'save';
 
 if (!$propertyId) {
-    echo json_encode(['success' => false, 'error' => 'No property specified.']);
+    echo json_encode([
+        'success' => false,
+        'error'   => 'No property specified.',
+        'redirect'=> buildRedirect($agentType, 'my_listings')
+    ]);
     exit;
 }
 
@@ -55,7 +72,11 @@ $res = $stmt->get_result();
 
 if ($res->num_rows === 0) {
     $stmt->close();
-    echo json_encode(['success' => false, 'error' => 'Property does not exist.']);
+    echo json_encode([
+        'success' => false,
+        'error'   => 'Property does not exist.',
+        'redirect'=> buildRedirect($agentType, 'my_listings')
+    ]);
     exit;
 }
 $stmt->close();
@@ -72,35 +93,71 @@ $stmt->close();
 switch ($action) {
     case 'save':
         if ($alreadySaved) {
-            echo json_encode(['success' => true, 'saved' => true, 'message' => 'Property already saved.']);
+            echo json_encode([
+                'success' => true,
+                'saved'   => true,
+                'message' => 'Property already saved.',
+                'redirect'=> buildRedirect($agentType, 'saved')
+            ]);
             exit;
         }
         $stmt = $conn->prepare("INSERT INTO saved_properties (user_id, property_id, created_at) VALUES (?, ?, NOW())");
         $stmt->bind_param("ii", $userId, $propertyId);
         $stmt->execute();
         $stmt->close();
-        echo json_encode(['success' => true, 'saved' => true, 'message' => 'Property saved successfully!']);
+        echo json_encode([
+            'success' => true,
+            'saved'   => true,
+            'message' => 'Property saved successfully!',
+            'redirect'=> buildRedirect($agentType, 'saved')
+        ]);
         break;
 
     case 'unsave':
         if (!$alreadySaved) {
-            echo json_encode(['success' => true, 'saved' => false, 'message' => 'Property removed from saved list.']);
+            echo json_encode([
+                'success' => true,
+                'saved'   => false,
+                'message' => 'Property removed from saved list.',
+                'redirect'=> buildRedirect($agentType, 'saved')
+            ]);
             exit;
         }
         $stmt = $conn->prepare("DELETE FROM saved_properties WHERE user_id = ? AND property_id = ?");
         $stmt->bind_param("ii", $userId, $propertyId);
         $stmt->execute();
         $stmt->close();
-        echo json_encode(['success' => true, 'saved' => false, 'message' => 'Property removed from saved list.']);
+        echo json_encode([
+            'success' => true,
+            'saved'   => false,
+            'message' => 'Property removed from saved list.',
+            'redirect'=> buildRedirect($agentType, 'saved')
+        ]);
         break;
 
     case 'check':
-        echo json_encode(['success' => true, 'saved' => $alreadySaved]);
+        echo json_encode([
+            'success' => true,
+            'saved'   => $alreadySaved,
+            'redirect'=> buildRedirect($agentType, 'saved')
+        ]);
         break;
 
     default:
-        echo json_encode(['success' => false, 'error' => 'Invalid action.']);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Invalid action.',
+            'redirect'=> buildRedirect($agentType, 'saved')
+        ]);
         break;
 }
 
 exit;
+
+// ================================
+// Helpers
+// ================================
+function buildRedirect($agentType, $tab = 'my_listings') {
+    $view = $agentType === 'associate' ? 'associate_profile' : 'direct_profile';
+    return "http://localhost/BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab={$tab}";
+}

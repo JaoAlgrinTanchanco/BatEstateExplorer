@@ -10,7 +10,7 @@ if (!isset($_POST['property_id'])) {
         'type' => 'error',
         'message' => 'Invalid request.'
     ];
-    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=my_listings");
+    redirectWithAgentType('my_listings');
     exit;
 }
 
@@ -42,7 +42,7 @@ try {
         throw new Exception("Property not found.");
     }
 
-    // ✅ Preserve current status unless overridden by backend
+    // ✅ Preserve current status unless overridden
     $status = $property['status'];
 
     // 🔹 If listing marked as sold by another agent
@@ -66,7 +66,7 @@ try {
         }
     }
 
-    // 🔹 Update property details (status not touched unless sold_by)
+    // 🔹 Update property details
     $stmtUpdate = $pdo->prepare("
         UPDATE properties SET
             title = ?, 
@@ -152,17 +152,40 @@ try {
         'type' => 'success',
         'message' => 'Property updated successfully.'
     ];
-    header("Location: http://localhost/BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings");
+    redirectWithAgentType('my_listings');
     exit;
 
-    } catch (Exception $e) {
-        $pdo->rollBack();
+} catch (Exception $e) {
+    $pdo->rollBack();
 
-        // ❌ Error notification
-        $_SESSION['notification'] = [
-            'type' => 'error',
-            'message' => 'Failed to update property: ' . $e->getMessage()
-        ];
-        header("Location: http://localhost/BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings");
-        exit;
+    // ❌ Error notification
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Failed to update property: ' . $e->getMessage()
+    ];
+    redirectWithAgentType('my_listings');
+    exit;
+}
+
+// ==========================
+// Helper: Redirect by agent type
+// ==========================
+function redirectWithAgentType($tab = 'my_listings') {
+    global $pdo;
+
+    $userId = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
+    $agentType = 'direct';
+
+    if ($userId) {
+        $stmt = $pdo->prepare("SELECT company_id FROM agents WHERE user_id = ? LIMIT 1");
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && !empty($row['company_id']) && $row['company_id'] > 0) {
+            $agentType = 'associate';
+        }
     }
+
+    $view = $agentType === 'associate' ? 'associate_profile' : 'direct_profile';
+    header("Location: http://localhost/BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab={$tab}");
+    exit;
+}

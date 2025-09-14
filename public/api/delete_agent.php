@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_bind_param($stmt, "i", $userId);
 
         if (mysqli_stmt_execute($stmt)) {
-            // Set notification BEFORE destroying session
+            // ✅ Set success notification BEFORE destroying session
             $_SESSION['notification'] = [
                 'type' => 'success',
                 'message' => 'Account deleted successfully.'
@@ -21,23 +21,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_unset();
             session_destroy();
 
-            // Redirect to login page (notification will show if login page includes the component)
+            // Redirect to login page (notification shows if login includes component)
             header("Location: /BatEstateExplorer/auth/login.php");
             exit;
+
         } else {
+            // ❌ Error notification
             $_SESSION['notification'] = [
                 'type' => 'error',
                 'message' => 'Error deleting account. Please try again.'
             ];
-            header("Location: /BatEstateExplorer/public/direct_profile.php?tab=overview");
-            exit;
+            redirectWithAgentType('overview');
         }
     } else {
         $_SESSION['notification'] = [
             'type' => 'error',
             'message' => 'Invalid user ID.'
         ];
-        header("Location: /BatEstateExplorer/public/direct_profile.php?tab=overview");
-        exit;
+        redirectWithAgentType('overview');
     }
+}
+
+// ==========================
+// Helper: Redirect by agent type
+// ==========================
+function redirectWithAgentType($tab = 'overview') {
+    global $conn;
+
+    $userId = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
+    $agentType = 'direct';
+
+    if ($userId) {
+        $stmt = $conn->prepare("SELECT company_id FROM agents WHERE user_id = ? LIMIT 1");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+
+        if ($row && !empty($row['company_id']) && $row['company_id'] > 0) {
+            $agentType = 'associate';
+        }
+    }
+
+    $view = $agentType === 'associate' ? 'associate_profile' : 'direct_profile';
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab={$tab}");
+    exit;
 }
