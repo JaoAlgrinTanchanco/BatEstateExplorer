@@ -5,10 +5,17 @@
 // Get dashboard statistics
 $stats = [];
 $queries = [
-    'total_properties' => "SELECT COUNT(*) as count FROM properties WHERE status = 'active'",
+    'total_properties' => "SELECT COUNT(*) as count FROM properties WHERE status = 'available'",
     'pending_applications' => "SELECT COUNT(*) as count FROM applications WHERE status = 'pending'",
-    'total_agents' => "SELECT COUNT(*) as count FROM users WHERE user_type IN ('direct_agent', 'associate_agent') AND status = 'active'",
-    'total_clients' => "SELECT COUNT(*) as count FROM users WHERE user_type = 'client' AND status = 'active'"
+    'total_agents' => "SELECT COUNT(*) as count 
+                       FROM users 
+                       WHERE user_type IN ('direct_agent', 'associate_agent') 
+                         AND status = 'active'",
+    'total_clients' => "SELECT COUNT(*) as count 
+                        FROM users 
+                        WHERE user_type = 'user' 
+                          AND status = 'active' 
+                          AND JSON_LENGTH(privileges) > 0"
 ];
 
 foreach ($queries as $key => $query) {
@@ -121,7 +128,19 @@ if ($result) {
     <div class="recent-card">
         <div class="recent-card-header">
             <h2><i class="fa-solid fa-clock-rotate-left"></i> Recent Applications</h2>
+            <div class="dropdown">
+                <button class="dropdown-toggle">
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
+                <ul class="dropdown-menu">
+                    <li data-status="approved">Remove Approved Applications</li>
+                    <li data-status="rejected">Remove Rejected Applications</li>
+                    <li data-status="pending">Remove Pending Applications</li>
+                    <li data-status="all" class="danger-option">Clear All Applications</li>
+                </ul>
+            </div>
         </div>
+
         <div class="recent-card-body">
             <div class="applications-list">
                 <?php if (empty($recent_applications)): ?>
@@ -168,8 +187,102 @@ if ($result) {
     </div>
 </div>
 
+<div id="confirmModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <h3 id="modalTitle">Confirm Action</h3>
+    <p id="modalMessage">Are you sure you want to remove these applications?</p>
+    <div class="modal-actions">
+      <button id="cancelBtn" class="btn btn-secondary">Cancel</button>
+      <button id="confirmBtn" class="btn btn-danger">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const dropdowns = document.querySelectorAll('.dropdown');
+        const modal = document.getElementById('confirmModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        let selectedStatus = null;
+
+        // ===== Handle dropdown toggle =====
+        dropdowns.forEach(dropdown => {
+            const toggle = dropdown.querySelector('.dropdown-toggle');
+            const menu = dropdown.querySelector('.dropdown-menu');
+
+            // Ensure menu is hidden on load
+            menu.style.display = 'none';
+
+            toggle.addEventListener('click', e => {
+                e.stopPropagation();
+
+                // Close all other dropdowns
+                dropdowns.forEach(d => {
+                    const otherMenu = d.querySelector('.dropdown-menu');
+                    if (otherMenu !== menu) otherMenu.style.display = 'none';
+                });
+
+                // Toggle current dropdown
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            });
+        });
+
+        // ===== Close dropdown when clicking outside =====
+        document.addEventListener('click', () => {
+            dropdowns.forEach(d => d.querySelector('.dropdown-menu').style.display = 'none');
+        });
+
+        // ===== Handle dropdown item click =====
+        document.querySelectorAll('.dropdown-menu li').forEach(item => {
+            item.addEventListener('click', e => {
+                e.stopPropagation();
+                selectedStatus = item.dataset.status;
+
+                if (selectedStatus === 'all') {
+                    modalTitle.textContent = "Confirm Deletion";
+                    modalMessage.textContent = "Are you sure you want to delete ALL applications? This cannot be undone.";
+                } else {
+                    modalTitle.textContent = "Confirm Deletion";
+                    modalMessage.textContent = `Are you sure you want to remove all ${selectedStatus} applications?`;
+                }
+
+                // Show modal
+                modal.style.display = 'flex';
+
+                // Close dropdown
+                item.closest('.dropdown-menu').style.display = 'none';
+            });
+        });
+
+        // ===== Modal actions =====
+        cancelBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            selectedStatus = null;
+        });
+
+        confirmBtn.addEventListener('click', () => {
+            if (!selectedStatus) return;
+
+            fetch("/BatEstateExplorer/public/api/delete_applications.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: "status=" + encodeURIComponent(selectedStatus)
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) location.reload();
+            })
+            .catch(() => alert("Something went wrong."));
+
+            modal.style.display = 'none';
+        });
+    });
+
     window.addEventListener('resize', () => {
         Object.values(Chart.instances).forEach(chart => chart.resize());
         // Also fix grid overflow
