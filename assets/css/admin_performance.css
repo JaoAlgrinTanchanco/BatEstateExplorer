@@ -1,0 +1,105 @@
+/* ===========================
+   Admin Performance Page CSS
+   =========================== */
+
+/* ===== Content Body & Header ===== */
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e5e7eb;
+    font-family: 'Inter', sans-serif;
+}
+
+.content-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.content-header .user-info {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+/* ===== Metrics Summary ===== */
+.metrics-summary {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin: 1.5rem;
+}
+
+.metric-box {
+    flex: 1 1 250px;
+    background: #fff;
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.metric-title {
+    font-size: 0.85rem;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.metric-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.metric-highlight {
+    color: #2563eb; /* highlight top agent */
+}
+
+.metric-property {
+    color: #10b981; /* highlight top property */
+}
+
+/* ===== Chart Sections ===== */
+.chart-section {
+    background: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    margin: 1.5rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.chart-section h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.75rem;
+}
+
+/* ===== No Data Messages ===== */
+.no-data {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #6b7280;
+    padding: 1rem;
+    border: 1px dashed #d1d5db;
+    border-radius: 8px;
+    background: #f3f4f6;
+}
+
+/* ===== Chart Canvas Styling ===== */
+canvas {
+    width: 100% !important;
+    max-width: 100%;
+    height: auto !important;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .metrics-summary {
+        flex-direction: column;
+    }
+}

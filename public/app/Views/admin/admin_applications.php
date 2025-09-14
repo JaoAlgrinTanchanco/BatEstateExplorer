@@ -37,6 +37,8 @@ if ($conn) {
 
 ?>
 
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_applications.css" />
+
 <header class="content-header">
     <h1>Admin Applications</h1>
     <div class="user-info">

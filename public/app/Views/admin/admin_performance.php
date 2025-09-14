@@ -79,6 +79,8 @@ if ($result) {
 }
 ?>
 
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_performance.css" />
+
 <!-- Main Content HTML -->
 <header class="content-header">
     <h1>Performance</h1>

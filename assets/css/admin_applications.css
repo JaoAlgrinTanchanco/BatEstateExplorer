@@ -1,0 +1,192 @@
+/* admin_application.css */
+
+/* ===== Reset & Base ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', Arial, sans-serif;
+}
+
+body {
+    background: #f5f6f8;
+    color: #111827;
+    line-height: 1.5;
+}
+
+/* ===== Header ===== */
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+}
+
+.content-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.user-info span {
+    font-size: 0.95rem;
+    color: #6b7280;
+}
+
+/* ===== Applications Header ===== */
+.applications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.sort-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sort-row select {
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    cursor: pointer;
+}
+
+/* ===== Application Cards ===== */
+.application-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+}
+
+.application-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.application-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.application-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.applicant-info {
+    flex: 1;
+}
+
+.applicant-name {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.applicant-details {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* ===== Status Tags ===== */
+.application-status {
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.status-pending { background: #fbbf24; color: #fff; }
+.status-approved { background: #22c55e; color: #fff; }
+.status-rejected { background: #ef4444; color: #fff; }
+
+/* ===== Application Content Fields ===== */
+.application-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.application-field {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+}
+
+.field-label {
+    font-weight: 500;
+    color: #374151;
+}
+
+.field-value {
+    color: #6b7280;
+}
+
+/* ===== Action Buttons ===== */
+.application-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.application-actions button {
+    padding: 0.45rem 0.8rem;
+    border-radius: 6px;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.view-btn { background: #3b82f6; color: #fff; }
+.view-btn:hover { background: #2563eb; }
+
+.approve-btn { background: #22c55e; color: #fff; }
+.approve-btn:hover { background: #16a34a; }
+
+.reject-btn { background: #ef4444; color: #fff; }
+.reject-btn:hover { background: #b91c1c; }
+
+/* ===== No Applications ===== */
+.no-applications {
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.95rem;
+    color: #6b7280;
+}
+
+/* ===== Modal ===== */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%

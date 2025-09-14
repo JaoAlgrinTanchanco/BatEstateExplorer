@@ -1,0 +1,205 @@
+/* admin_associate_agents.css */
+
+/* ===== Reset & basics ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', Arial, sans-serif;
+}
+
+body {
+    background: #f5f6f8;
+    color: #111827;
+    line-height: 1.5;
+}
+
+/* ===== Header ===== */
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+}
+
+.content-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.user-info span {
+    font-size: 0.95rem;
+    color: #6b7280;
+}
+
+/* ===== Sort Row ===== */
+.sort-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.sort-by label {
+    margin-right: 0.5rem;
+    font-weight: 500;
+}
+
+.sort-by select {
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+/* ===== Agent Cards ===== */
+.direct-agent-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.direct-agent-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.direct-agent-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.direct-agent-avatar {
+    font-size: 2rem;
+    color: #6b7280;
+    flex-shrink: 0;
+}
+
+.direct-agent-info {
+    flex: 1;
+}
+
+.direct-agent-name {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.direct-agent-details {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* ===== Agent Actions ===== */
+.direct-agent-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.btn {
+    padding: 0.45rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s ease;
+}
+
+.btn-view {
+    background: #3b82f6;
+    color: #fff;
+}
+
+.btn-view:hover {
+    background: #2563eb;
+}
+
+.btn-remove {
+    background: #ef4444;
+    color: #fff;
+}
+
+.btn-remove:hover {
+    background: #b91c1c;
+}
+
+/* ===== No Agents ===== */
+.no-agents {
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.95rem;
+    color: #6b7280;
+}
+
+/* ===== Modal ===== */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.modal-header h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.modal-header .close {
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+.modal-body {
+    margin-bottom: 1rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.cancel-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    background: #e5e7eb;
+    color: #111827;
+    cursor: pointer;
+}
+
+.cancel-btn:hover {
+    background: #d1d5db;
+}

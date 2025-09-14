@@ -24,6 +24,8 @@ if (!$is_logged_in || !$is_admin) {
 // (You can fetch report data here later per tab as needed)
 ?>
 
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_reports.css" />
+
     <!-- Main Content -->
 
     <header class="content-header">

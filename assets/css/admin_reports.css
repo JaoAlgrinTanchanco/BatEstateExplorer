@@ -1,0 +1,119 @@
+/* admin_report.css */
+
+/* ===== Reset & Base ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', Arial, sans-serif;
+}
+
+body {
+    background: #f5f6f8;
+    color: #111827;
+    line-height: 1.5;
+}
+
+/* ===== Header ===== */
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+}
+
+.content-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.user-info span {
+    font-size: 0.95rem;
+    color: #6b7280;
+}
+
+/* ===== Sort Row ===== */
+.sort-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.sort-row select {
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    cursor: pointer;
+}
+
+/* ===== Tabs ===== */
+.tab-bar {
+    display: flex;
+    gap: 1rem;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 1.5rem;
+}
+
+.tab {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.tab:hover {
+    background: #e5e7eb;
+}
+
+.tab.active {
+    background: #fff;
+    color: #111827;
+    border-bottom: 2px solid #3b82f6;
+}
+
+/* ===== Report Sections ===== */
+.report-container {
+    display: none;
+    background: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    margin-bottom: 1.5rem;
+}
+
+.report-container.active {
+    display: block;
+}
+
+.no-reports {
+    text-align: center;
+    font-size: 0.95rem;
+    color: #6b7280;
+    padding: 2rem 0;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+    .content-header,
+    .sort-row,
+    .report-container {
+        padding: 1rem;
+    }
+
+    .tab-bar {
+        flex-wrap: wrap;
+    }
+
+    .tab {
+        flex: 1 1 auto;
+        text-align: center;
+    }
+}

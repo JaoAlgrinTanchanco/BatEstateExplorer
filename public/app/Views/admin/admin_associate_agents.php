@@ -18,6 +18,8 @@ while ($row = $result->fetch_assoc()) {
 $stmt->close();
 ?>
 
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_associate_agents.css" />
+
 <header class="content-header">
   <h1>Associate Agents</h1>
   <div class="user-info">
