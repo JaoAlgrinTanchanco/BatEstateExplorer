@@ -10,17 +10,12 @@ $userId = $_SESSION['user']['id']
     ?? $_SESSION['user_id'] 
     ?? null;
 
-// If no session, check user_token from POST
 if (!$userId && isset($_POST['user_token'])) {
     $token = $_POST['user_token'];
-
-    // Decode token (assuming base64 JSON; adjust if JWT)
     $decoded = json_decode(base64_decode($token), true);
 
     if ($decoded && isset($decoded['user_id'])) {
         $userId = (int)$decoded['user_id'];
-
-        // Optional: store in session for later
         $_SESSION['user'] = [
             'id'    => $userId,
             'token' => $token,
@@ -38,14 +33,14 @@ if (!$userId) {
     exit;
 }
 
-// --- Detect agent type for redirect ---
+// --- Detect agent type using users.user_type ---
 $agentType = 'direct'; // default
-$stmt = $conn->prepare("SELECT company_id FROM agents WHERE user_id = ? LIMIT 1");
+$stmt = $conn->prepare("SELECT user_type FROM users WHERE id = ? LIMIT 1");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
 $res = $stmt->get_result();
 if ($row = $res->fetch_assoc()) {
-    if (!empty($row['company_id']) && $row['company_id'] > 0) {
+    if ($row['user_type'] === 'associate_agent') {
         $agentType = 'associate';
     }
 }

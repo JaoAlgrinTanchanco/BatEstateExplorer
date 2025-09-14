@@ -11,7 +11,6 @@ if (!isset($_POST['property_id'])) {
         'message' => 'Invalid request.'
     ];
     redirectWithAgentType('my_listings');
-    exit;
 }
 
 $property_id       = intval($_POST['property_id']);
@@ -42,7 +41,7 @@ try {
         throw new Exception("Property not found.");
     }
 
-    // ✅ Preserve current status unless overridden
+    // ✅ Preserve current status unless overridden by backend
     $status = $property['status'];
 
     // 🔹 If listing marked as sold by another agent
@@ -66,7 +65,7 @@ try {
         }
     }
 
-    // 🔹 Update property details
+    // 🔹 Update property details (status not touched unless sold_by)
     $stmtUpdate = $pdo->prepare("
         UPDATE properties SET
             title = ?, 
@@ -153,7 +152,6 @@ try {
         'message' => 'Property updated successfully.'
     ];
     redirectWithAgentType('my_listings');
-    exit;
 
 } catch (Exception $e) {
     $pdo->rollBack();
@@ -164,28 +162,38 @@ try {
         'message' => 'Failed to update property: ' . $e->getMessage()
     ];
     redirectWithAgentType('my_listings');
-    exit;
 }
 
 // ==========================
-// Helper: Redirect by agent type
+// Helper: Redirect by user_type
 // ==========================
 function redirectWithAgentType($tab = 'my_listings') {
     global $pdo;
 
-    $userId = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
-    $agentType = 'direct';
+    $userId = $_SESSION['user_id'] ?? null;
+    $userType = 'direct_agent'; // default
 
     if ($userId) {
-        $stmt = $pdo->prepare("SELECT company_id FROM agents WHERE user_id = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT user_type FROM users WHERE id = ? LIMIT 1");
         $stmt->execute([$userId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row && !empty($row['company_id']) && $row['company_id'] > 0) {
-            $agentType = 'associate';
+
+        if ($row && !empty($row['user_type'])) {
+            $userType = $row['user_type'];
         }
     }
 
-    $view = $agentType === 'associate' ? 'associate_profile' : 'direct_profile';
-    header("Location: http://localhost/BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab={$tab}");
+    // Map user_type → correct dashboard view
+    switch ($userType) {
+        case 'associate_agent':
+            $view = 'associate_profile';
+            break;
+        case 'direct_agent':
+        default:
+            $view = 'direct_profile';
+            break;
+    }
+
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab={$tab}");
     exit;
 }

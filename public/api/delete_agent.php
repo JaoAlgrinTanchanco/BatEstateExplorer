@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ==========================
-// Helper: Redirect by agent type
+// Helper: Redirect by agent type (using users.user_type)
 // ==========================
 function redirectWithAgentType($tab = 'overview') {
     global $conn;
@@ -52,15 +52,16 @@ function redirectWithAgentType($tab = 'overview') {
     $agentType = 'direct';
 
     if ($userId) {
-        $stmt = $conn->prepare("SELECT company_id FROM agents WHERE user_id = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT user_type FROM users WHERE id = ? LIMIT 1");
         $stmt->bind_param("i", $userId);
         $stmt->execute();
         $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-
-        if ($row && !empty($row['company_id']) && $row['company_id'] > 0) {
-            $agentType = 'associate';
+        if ($row = $result->fetch_assoc()) {
+            if ($row['user_type'] === 'associate_agent') {
+                $agentType = 'associate';
+            }
         }
+        $stmt->close();
     }
 
     $view = $agentType === 'associate' ? 'associate_profile' : 'direct_profile';

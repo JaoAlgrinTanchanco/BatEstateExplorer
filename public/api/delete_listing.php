@@ -6,7 +6,10 @@ $property_id = (int)($_POST['property_id'] ?? $_GET['id'] ?? 0);
 
 // 🛑 Validate property ID
 if (!$property_id) {
-    $_SESSION['flash_error'] = "Invalid property ID.";
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Invalid property ID.'
+    ];
     redirectAfterDelete($conn);
     exit;
 }
@@ -58,30 +61,33 @@ $stmt->close();
 // ================================
 // Redirect dynamically
 // ================================
+$_SESSION['notification'] = [
+    'type' => 'success',
+    'message' => 'Property deleted successfully.'
+];
 redirectAfterDelete($conn);
 
 function redirectAfterDelete($conn) {
-    // Detect current agent from session
     $userId = $_SESSION['user_id'] ?? null;
 
     if (!$userId) {
-        header("Location: http://localhost/BatEstateExplorer/public/login.php");
+        header("Location: /BatEstateExplorer/public/login.php");
         exit;
     }
 
-    $stmt = $conn->prepare("SELECT company_id FROM agents WHERE user_id = ?");
+    // ✅ Check user_type from users table
+    $stmt = $conn->prepare("SELECT user_type FROM users WHERE id = ? LIMIT 1");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $res = $stmt->get_result();
-    $agent = $res->fetch_assoc();
+    $user = $res->fetch_assoc();
     $stmt->close();
 
-    if ($agent && $agent['company_id'] > 0) {
-        // Associate agent
-        header("Location: http://localhost/BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=my_listings");
-    } else {
-        // Direct agent
-        header("Location: http://localhost/BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=my_listings");
+    $view = 'direct_profile'; // default
+    if ($user && $user['user_type'] === 'associate_agent') {
+        $view = 'associate_profile';
     }
+
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab=my_listings");
     exit;
 }
