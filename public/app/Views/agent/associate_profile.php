@@ -633,17 +633,6 @@ if ($company_id > 0) {
                         <div class="info-row"><strong>Training:</strong> <span><?= htmlspecialchars($user['training'] ?? '-') ?></span></div>
                     </div>
 
-                    <!-- Professional Details -->
-                    <div class="overview-card">
-                        <h3>Professional Details</h3>
-                        <div class="info-row"><strong>Agent Type:</strong> <span><?= htmlspecialchars($user['agent_type'] ?? '-') ?></span></div>
-                        <div class="info-row"><strong>Broker ID:</strong> <span><?= htmlspecialchars($user['broker_id'] ?? '-') ?></span></div>
-                        <div class="info-row"><strong>License Number:</strong> <span><?= htmlspecialchars($user['license_number'] ?? '-') ?></span></div>
-                        <div class="info-row"><strong>Years of Experience:</strong> <span><?= htmlspecialchars($user['experience_years'] ?? '-') ?></span></div>
-                        <div class="info-row"><strong>Specialization:</strong> <span><?= htmlspecialchars($user['specialization'] ?? '-') ?></span></div>
-                        <div class="info-row"><strong>Bio:</strong> <span><?= nl2br(htmlspecialchars($user['bio'] ?? '-')) ?></span></div>
-                    </div>
-
                     <!-- Documents -->
                     <div class="overview-card">
                         <h3>Documents</h3>
@@ -712,12 +701,6 @@ if ($company_id > 0) {
 
                     <label>Email</label>
                     <input type="email" name="email" value="<?= htmlspecialchars($user['email']) ?>" autocomplete="email" required>
-
-                    <label>Current Password</label>
-                    <input type="password" name="current_password" placeholder="Enter current password" autocomplete="current-password" required>
-
-                    <label>New Password</label>
-                    <input type="password" name="new_password" placeholder="Leave blank to keep current" autocomplete="new-password">
 
                     <button type="submit">Save Changes</button>
                     <button type="button" id="cancelEditBtn">Cancel</button>
