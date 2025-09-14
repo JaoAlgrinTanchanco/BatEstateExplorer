@@ -1,7 +1,7 @@
 <?php
-if (!isset($user)) {
-    die('Access denied.');
-}
+if (!isset($user)) {die('Access denied.');}
+
+require_once __DIR__ . '/../../../../components/notification.php';
 
 // 🔹 Show session flash messages (deprecated since you're moving to centralized notifications, 
 // but leaving here for fallback)
@@ -270,8 +270,19 @@ if ($company_id > 0) {
                                 <label>Location</label>
                                 <select name="location" class="location" required>
                                     <option value="">Select Location</option>
-                                    <option value="Lipa City" <?= $property['location']=='Lipa City'?'selected':'' ?>>Lipa City</option>
-                                    <!-- ...other options... -->
+                                    <?php
+                                    $locations = [
+                                        "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
+                                        "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
+                                        "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
+                                        "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
+                                    ];
+
+                                    foreach ($locations as $loc): ?>
+                                        <option value="<?= $loc ?>" <?= $property['location'] == $loc ? 'selected' : '' ?>>
+                                            <?= $loc ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
 
                                 <label>Price</label>
