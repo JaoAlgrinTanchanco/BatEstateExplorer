@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // ===== Helper: Toggle Bedrooms/Bathrooms for "Lot" =====
+    /* ================================
+       Helper: Toggle Bedrooms/Bathrooms
+       ================================ */
     const toggleRooms = (typeSelect, bedroomsInput, bathroomsInput) => {
         const isLot = typeSelect.value === 'Lot';
         bedroomsInput.disabled = isLot;
@@ -11,7 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // ===== Drag & Drop Image Upload =====
+    /* ================================
+       Drag & Drop Image Upload
+       ================================ */
     const initImageUpload = ({ dropAreaId, fileInputId, previewId, formId, maxFiles = 10 }) => {
         const dropArea  = document.getElementById(dropAreaId);
         const fileInput = document.getElementById(fileInputId);
@@ -44,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 wrap.appendChild(removeBtn);
 
                 const reader = new FileReader();
-                reader.onload = e => img.src = e.target.result;
+                reader.onload = e => (img.src = e.target.result);
                 reader.readAsDataURL(file);
 
                 preview.appendChild(wrap);
@@ -66,8 +70,12 @@ document.addEventListener('DOMContentLoaded', () => {
             renderPreviews();
         };
 
-        ['dragenter','dragover','dragleave','drop'].forEach(evt =>
-            dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); })
+        // Drag & Drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt =>
+            dropArea.addEventListener(evt, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            })
         );
         dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
         dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
@@ -75,18 +83,23 @@ document.addEventListener('DOMContentLoaded', () => {
             dropArea.classList.remove('drag-over');
             addFiles(e.dataTransfer.files);
         });
+
+        // Click / Keyboard
         dropArea.addEventListener('click', () => fileInput.click());
         dropArea.addEventListener('keydown', e => {
-            if (['Enter',' '].includes(e.key)) {
+            if (['Enter', ' '].includes(e.key)) {
                 e.preventDefault();
                 fileInput.click();
             }
         });
+
+        // File input
         fileInput.addEventListener('change', () => {
             addFiles(fileInput.files);
             fileInput.value = '';
         });
 
+        // Form submit
         form.addEventListener('submit', e => {
             e.preventDefault();
             const fd = new FormData(form);
@@ -113,56 +126,69 @@ document.addEventListener('DOMContentLoaded', () => {
         maxFiles: 10
     });
 
-    // ===== Modal Handling =====
-    window.openModal = id => document.getElementById(`editModal-${id}`).style.display = 'block';
+    /* ================================
+       Modal Handling (Edit Listing)
+       ================================ */
+    window.openModal  = id => document.getElementById(`editModal-${id}`).style.display = 'block';
     window.closeModal = id => document.getElementById(`editModal-${id}`).style.display = 'none';
+
     window.onclick = event => {
         document.querySelectorAll('.edit-modal').forEach(modal => {
             if (event.target === modal) modal.style.display = 'none';
         });
     };
 
-    // ===== Remove Image from Slider =====
+    /* ================================
+       Remove Image from Slider
+       ================================ */
     window.removeImage = btn => btn.closest('.slider-item').remove();
 
-    // ===== Init Bedrooms/Bathrooms Toggle for Edit Modals =====
+    /* ================================
+       Init Bedrooms/Bathrooms Toggle
+       ================================ */
+    // For edit modals
     document.querySelectorAll('.edit-modal').forEach(modal => {
         const typeSelect = modal.querySelector('select[name="property_type"]');
-        const bedrooms = modal.querySelector('input[name="bedrooms"]');
-        const bathrooms = modal.querySelector('input[name="bathrooms"]');
+        const bedrooms   = modal.querySelector('input[name="bedrooms"]');
+        const bathrooms  = modal.querySelector('input[name="bathrooms"]');
         if (!typeSelect || !bedrooms || !bathrooms) return;
         toggleRooms(typeSelect, bedrooms, bathrooms);
         typeSelect.addEventListener('change', () => toggleRooms(typeSelect, bedrooms, bathrooms));
     });
 
-    // ===== Init Bedrooms/Bathrooms Toggle for Add Listing =====
-    const addType = document.getElementById('property_type');
-    const addBeds = document.getElementById('bedrooms');
+    // For add listing
+    const addType  = document.getElementById('property_type');
+    const addBeds  = document.getElementById('bedrooms');
     const addBaths = document.getElementById('bathrooms');
     if (addType && addBeds && addBaths) {
         toggleRooms(addType, addBeds, addBaths);
         addType.addEventListener('change', () => toggleRooms(addType, addBeds, addBaths));
     }
 
-    // ===== Company Listing Modal =====
+    /* ================================
+       Company Listing Modal
+       ================================ */
     const propertyModal = document.getElementById('propertyModal');
     document.querySelectorAll('.view-details').forEach(link => {
         link.addEventListener('click', e => {
             e.preventDefault();
             const propertyId = link.dataset.id;
+
             fetch(`/BatEstateExplorer/public/api/get_company_listings.php?id=${propertyId}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.error) { alert(data.error); return; }
+                    if (data.error) return alert(data.error);
 
+                    // Title
                     document.getElementById('propertyTitle').textContent = data.title || 'N/A';
 
+                    // Carousel
                     const carousel = document.getElementById('carouselImages');
                     carousel.innerHTML = '';
                     if (data.images?.length) {
                         data.images.forEach((img, idx) => {
                             carousel.innerHTML += `
-                                <div class="carousel-item ${idx===0?'active':''}">
+                                <div class="carousel-item ${idx === 0 ? 'active' : ''}">
                                     <img src="storage/uploads/property_images/${img}" class="d-block w-100">
                                 </div>`;
                         });
@@ -170,6 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         carousel.innerHTML = '<div class="carousel-item active"><p>No images</p></div>';
                     }
 
+                    // Details
                     const details = document.getElementById('propertyDetails');
                     details.innerHTML = `
                         <li class="list-group-item"><b>Location:</b> ${data.location}</li>
@@ -186,31 +213,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const openBtn = document.getElementById("openDeleteModal");
-    const modal = document.getElementById("deleteModal");
+    /* ================================
+       Delete Agent Modal
+       ================================ */
+    const openBtn   = document.getElementById("openDeleteModal");
+    const modal     = document.getElementById("deleteModal");
     const cancelBtn = document.getElementById("cancelDeleteBtn");
     const deleteForm = document.getElementById("deleteAgentForm");
     const confirmBtn = document.getElementById("confirmDeleteBtn");
-    const spinner = document.getElementById("deleteSpinner");
+    const spinner    = document.getElementById("deleteSpinner");
 
-    openBtn.addEventListener("click", () => {
-        modal.style.display = "flex";
-    });
+    openBtn.addEventListener("click", () => modal.style.display = "flex");
+    cancelBtn.addEventListener("click", () => modal.style.display = "none");
 
-    cancelBtn.addEventListener("click", () => {
-        modal.style.display = "none";
-    });
-
-    deleteForm.addEventListener("submit", function() {
+    deleteForm.addEventListener("submit", () => {
         confirmBtn.style.display = "none";
         spinner.style.display = "flex";
     });
 
-});
+}); // DOMContentLoaded ends
 
+
+/* ================================
+   Outside DOMContentLoaded Helpers
+   ================================ */
 function toggleSoldBy(select, propertyId) {
     const container = document.getElementById('soldByContainer-' + propertyId);
-    if (!container) return; // safety
+    if (!container) return;
     if (select.value === 'sold_by') {
         container.style.display = 'block';
     } else {
@@ -218,71 +247,82 @@ function toggleSoldBy(select, propertyId) {
         container.querySelector('input').value = '';
     }
 }
+
 function confirmEdit(propertyId) {
     const form = document.getElementById('editForm-' + propertyId);
     if (!form) return;
-
-    // Show a browser confirmation
-    const confirmed = confirm("Are you sure you want to update this listing?");
-    if (confirmed) {
-        form.submit();
-    }
+    if (confirm("Are you sure you want to update this listing?")) form.submit();
 }
 
-// Global variables
-                    let selectedPropertyId = null;
-                    window.currentEmail = null;
+/* ================================
+   Privilege Management
+   ================================ */
+let selectedPropertyId = null;
+window.currentEmail = null;
 
-                    // Search client by email
-                    window.searchClient = function() {
-                        const email = document.getElementById('searchEmail').value.trim();
-                        if (!email) return alert('Please enter an email');
+window.searchClient = function() {
+    const email = document.getElementById('searchEmail').value.trim();
+    if (!email) return alert('Please enter an email');
 
-                        fetch(`/BatEstateExplorer/public/api/give_privilege.php?email=${encodeURIComponent(email)}`)
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.error) return alert(data.error);
+    fetch(`/BatEstateExplorer/public/api/give_privilege.php?email=${encodeURIComponent(email)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) return alert(data.error);
 
-                                document.getElementById('userNameEmail').textContent =
-                                    `${data.name || ''} (${data.email})`;
+            document.getElementById('userNameEmail').textContent =
+                `${data.name || ''} (${data.email})`;
 
-                                document.getElementById('privilegeModal').style.display = 'block';
-                                window.currentEmail = data.email;
-                            })
-                            .catch(err => console.error('Search client error:', err));
-                    };
+            document.getElementById('privilegeModal').style.display = 'block';
+            window.currentEmail = data.email;
+        })
+        .catch(err => console.error('Search client error:', err));
+};
 
-                    // Select a property card
-                    window.selectProperty = function(card, propertyId) {
-                        document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
-                        card.classList.add('selected');
-                        selectedPropertyId = propertyId;
-                    };
+window.selectProperty = function(card, propertyId) {
+    document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedPropertyId = propertyId;
+};
 
-                    // Close privilege modal
-                    window.closePrivilegeModal = function() {
-                        document.getElementById('privilegeModal').style.display = 'none';
-                        selectedPropertyId = null;
-                    };
+window.closePrivilegeModal = function() {
+    document.getElementById('privilegeModal').style.display = 'none';
+    selectedPropertyId = null;
+};
 
-                    // Give privilege to selected client for selected property
-                    window.givePrivilege = function() {
-                        if (!selectedPropertyId) return alert('Please select a property first.');
-                        if (!window.currentEmail) return alert('No client selected.');
+window.givePrivilege = function() {
+    if (!selectedPropertyId) return alert('Please select a property first.');
+    if (!window.currentEmail) return alert('No client selected.');
 
-                        fetch('/BatEstateExplorer/public/api/give_privilege.php', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            body: `email=${encodeURIComponent(window.currentEmail)}&property_id=${encodeURIComponent(selectedPropertyId)}`
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success) {
-                                alert('Privilege granted successfully!');
-                                closePrivilegeModal();
-                            } else {
-                                alert(data.error || 'Something went wrong.');
-                            }
-                        })
-                        .catch(err => console.error('Give privilege error:', err));
-                    };
+    fetch('/BatEstateExplorer/public/api/give_privilege.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `email=${encodeURIComponent(window.currentEmail)}&property_id=${encodeURIComponent(selectedPropertyId)}`
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('Privilege granted successfully!');
+                closePrivilegeModal();
+            } else {
+                alert(data.error || 'Something went wrong.');
+            }
+        })
+        .catch(err => console.error('Give privilege error:', err));
+};
+
+/* ================================
+   Mark Image for Removal
+   ================================ */
+function markImageForRemoval(button, imagePath) {
+    button.closest('.image-item').style.opacity = '0.5';
+
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'remove_images[]';
+    hiddenInput.value = imagePath;
+
+    const container = button.closest('form').querySelector('[id^="removeImages-"]');
+    container.appendChild(hiddenInput);
+
+    button.disabled = true; // avoid duplicates
+}

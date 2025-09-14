@@ -69,9 +69,9 @@ if ($agent) {
     $listings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     $propsStmt->close();
 
-    // 🔹 Attach primary image to each property
+    // 🔹 Attach ALL images (not just primary) to each property
     $stmtImg = $conn->prepare("
-        SELECT image_path 
+        SELECT image_path, is_primary
         FROM property_images 
         WHERE property_id = ? 
         ORDER BY is_primary DESC, id ASC
@@ -80,9 +80,10 @@ if ($agent) {
         $stmtImg->bind_param("i", $property['id']);
         $stmtImg->execute();
         $resImg = $stmtImg->get_result();
-        $image  = $resImg && $resImg->num_rows ? $resImg->fetch_assoc() : null;
 
-        $property['images'] = $image ? [$image] : [];
+        $property['images'] = $resImg && $resImg->num_rows 
+            ? $resImg->fetch_all(MYSQLI_ASSOC) 
+            : [];
     }
     $stmtImg->close();
 
@@ -292,20 +293,48 @@ if ($company_id > 0) {
                                     <option value="sold" <?= ($property['status'] == 'sold') ? 'selected' : '' ?>>Sold</option>
                                 </select>
 
-                                <!-- Existing images -->
-                                <div class="image-slider">
-                                    <?php foreach ($property['images'] as $img): ?>
-                                        <div class="slider-item">
-                                            <img src="/BatEstateExplorer/<?= $img['image_path'] ?>" alt="Property Image">
-                                            <input type="hidden" name="existing_images[]" value="<?= $img['image_path'] ?>">
-                                            <button type="button" onclick="removeImage(this)">Remove</button>
-                                        </div>
-                                    <?php endforeach; ?>
+                                <!-- Existing Images -->
+                                <label><strong>Existing Images</strong></label>
+                                <div class="image-gallery">
+                                    <?php if (!empty($property['images'])): ?>
+                                        <?php foreach ($property['images'] as $img): ?>
+                                            <div class="image-item">
+                                                <img src="/BatEstateExplorer/<?= $img['image_path'] ?>" alt="Property Image">
+
+                                                <!-- Keep track of current images -->
+                                                <input type="hidden" name="existing_images[]" value="<?= $img['image_path'] ?>">
+
+                                                <!-- Mark Primary -->
+                                                <label class="primary-label">
+                                                    <input type="radio" 
+                                                        name="primary_image" 
+                                                        value="<?= $img['image_path'] ?>" 
+                                                        <?= isset($img['is_primary']) && $img['is_primary'] ? 'checked' : '' ?>>
+                                                    Primary
+                                                </label>
+
+                                                <!-- Remove button -->
+                                                <button type="button" class="remove-img-btn" 
+                                                        onclick="markImageForRemoval(this, '<?= $img['image_path'] ?>')">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <p>No images uploaded yet.</p>
+                                    <?php endif; ?>
                                 </div>
 
-                                <!-- Add new images -->
-                                <label>Add Images</label>
-                                <input type="file" name="new_images[]" multiple>
+                                <!-- Hidden container for removals -->
+                                <div id="removeImages-<?= $property['id'] ?>"></div>
+
+                                <!-- Upload New Images -->
+                                <label for="newImages-<?= $property['id'] ?>"><strong>Add New Images</strong></label>
+                                <input id="newImages-<?= $property['id'] ?>" 
+                                    type="file" 
+                                    name="new_images[]" 
+                                    multiple 
+                                    accept="image/*">
 
                                 <!-- Listing Type -->
                                 <label>Listing Type</label>
@@ -316,14 +345,14 @@ if ($company_id > 0) {
 
                                 <div id="soldByContainer-<?= $property['id'] ?>" style="display: <?= ($listingTypeSelected=='sold_by')?'block':'none' ?>;">
                                     <label>Agent Email</label>
-                                    <input type="email" name="sold_by_email" placeholder="Enter agent email" value="<?= ($listingTypeSelected=='sold_by')?$property['sold_by_email']:'' ?>">
+                                    <input type="email" name="sold_by_email" placeholder="Enter agent email" 
+                                        value="<?= ($listingTypeSelected=='sold_by')?$property['sold_by_email']:'' ?>">
                                 </div>
 
                                 <button type="button" onclick="confirmEdit(<?= $property['id'] ?>)">Update Listing</button>
                             </form>
                         </div>
                     </div>
-
                 <?php endforeach; ?>
             <?php else: ?>
                 <div class="overview-card">
