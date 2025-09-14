@@ -137,6 +137,10 @@ if (!function_exists('render_agent_property_card')) {
 
     </div>
 </div>
+<script>
+<?php echo file_get_contents($_SERVER['DOCUMENT_ROOT'].'/BatEstateExplorer/assets/js/property_card_logic.js'); ?>
+</script>
+
 <?php
         endif;
     }

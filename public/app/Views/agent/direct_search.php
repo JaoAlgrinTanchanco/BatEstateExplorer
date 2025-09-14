@@ -80,12 +80,63 @@ $stmt->close();
         <div class="search-form">
             <?php
             $filters = [
-                'location' => ['label'=>'Location','options'=>[''=>'All Locations','Batangas City'=>'Batangas City','Lipa City'=>'Lipa City','Tanauan City'=>'Tanauan City']],
-                'property_type' => ['label'=>'Property Type','options'=>[''=>'All Types','house'=>'House','condo'=>'Condominium','land'=>'Land']],
-                'price_range' => ['label'=>'Price Range','options'=>[''=>'Any Price','0-1000000'=>'Under ₱1M','1000000-5000000'=>'₱1M - ₱5M','5000000+'=>'₱5M+']],
-                'bedrooms' => ['label'=>'Bedrooms','options'=>[''=>'Any','1'=>'1+','2'=>'2+','3'=>'3+','4'=>'4+']],
-                'bathrooms'=> ['label'=>'Bathrooms','options'=>[''=>'Any','1'=>'1+','2'=>'2+','3'=>'3+','4'=>'4+']],
-                'size' => ['label'=>'Size (sqm)','options'=>[''=>'Any Size','0-50'=>'Up to 50 sqm','50-100'=>'50-100 sqm','100-200'=>'100-200 sqm','200+'=>'200+ sqm']]
+                'location' => [
+                    'label' => 'Location',
+                    'options' => [
+                        '' => 'All Locations',
+                        'Agoncillo' => 'Agoncillo',
+                        'Alitagtag' => 'Alitagtag',
+                        'Balayan' => 'Balayan',
+                        'Balete' => 'Balete',
+                        'Batangas City' => 'Batangas City',
+                        'Bauan' => 'Bauan',
+                        'Calaca' => 'Calaca',
+                        'Calatagan' => 'Calatagan',
+                        'Cuenca' => 'Cuenca',
+                        'Ibaan' => 'Ibaan',
+                        'Laurel' => 'Laurel',
+                        'Lemery' => 'Lemery',
+                        'Lian' => 'Lian',
+                        'Lipa City' => 'Lipa City',
+                        'Lobo' => 'Lobo',
+                        'Mabini' => 'Mabini',
+                        'Malvar' => 'Malvar',
+                        'Mataasnakahoy' => 'Mataasnakahoy',
+                        'Nasugbu' => 'Nasugbu',
+                        'Padre Garcia' => 'Padre Garcia',
+                        'Rosario' => 'Rosario',
+                        'San Jose' => 'San Jose',
+                        'San Juan' => 'San Juan',
+                        'San Luis' => 'San Luis',
+                        'San Nicolas' => 'San Nicolas',
+                        'San Pascual' => 'San Pascual',
+                        'Santa Teresita' => 'Santa Teresita',
+                        'Santo Tomas' => 'Santo Tomas',
+                        'Taal' => 'Taal',
+                        'Talisay' => 'Talisay',
+                        'Tanauan City' => 'Tanauan City',
+                        'Taysan' => 'Taysan',
+                        'Tingloy' => 'Tingloy',
+                        'Tuy' => 'Tuy'
+                    ]
+                ],
+
+                'property_type' => ['label'=>'Property Type', 'options'=>[''=>'Property','Lot'=>'Property']],
+                'price_range' => [
+                    'label' => 'Price Range',
+                    'options' => [
+                        '' => 'Any Price',
+                        '0-500000' => '₱0 - ₱500K',          // Small lots, starter homes
+                        '500000-1500000' => '₱500K - ₱1.5M', // Affordable houses
+                        '1500000-3000000' => '₱1.5M - ₱3M',  // Standard residential
+                        '3000000-5000000' => '₱3M - ₱5M',    // Bigger homes, prime locations
+                        '5000000+' => '₱5M+'                  // High-end properties
+                    ]
+                ],
+
+                'bedrooms' => ['label'=>'Bedrooms', 'options'=>[''=>'Any','1'=>'1','2'=>'2','3'=>'3','4'=>'4+']],
+                'bathrooms' => ['label'=>'Bathrooms', 'options'=>[''=>'Any','1'=>'1','2'=>'2','3'=>'3','4'=>'4+']],
+                'size' => ['label'=>'Size (sqm)', 'options'=>[''=>'Any Size','0-50'=>'Up to 50 sqm','50-100'=>'50-100 sqm','100-200'=>'100-200 sqm','200+'=>'200+ sqm']]
             ];
 
             foreach ($filters as $id => $data):
@@ -101,13 +152,12 @@ $stmt->close();
                 </button>
             <?php endforeach; ?>
 
-            <!-- Reset button -->
-            <button id="searchForm1" class="user-search-submit" aria-label="Reset">
-                <i class="fa-solid fa-arrows-rotate"></i>
+            <button id="searchForm1" class="user-search-submit" aria-label="Search">
+                <i class="fa-solid fa-magnifying-glass"></i>
             </button>
         </div>
     </div>
-
+    
     <div class="properties-grid" id="propertiesGrid">
         <?php if (!empty($properties)): ?>
             <?php foreach ($properties as $property): ?>
