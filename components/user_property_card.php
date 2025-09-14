@@ -9,9 +9,14 @@ if (!function_exists('render_property_card')) {
 
         $propertyId = (int)($property['id'] ?? 0);
 
-        // --- Fetch property images ---
+        // --- Fetch property images, primary first ---
         $images = ['/BatEstateExplorer/assets/images/bg4.jpg'];
-        $stmtImg = $conn->prepare("SELECT image_path FROM property_images WHERE property_id = ? ORDER BY id ASC");
+        $stmtImg = $conn->prepare("
+            SELECT image_path 
+            FROM property_images 
+            WHERE property_id = ? 
+            ORDER BY is_primary DESC, id ASC
+        ");
         if ($stmtImg) {
             $stmtImg->bind_param("i", $propertyId);
             $stmtImg->execute();
@@ -27,11 +32,13 @@ if (!function_exists('render_property_card')) {
 
         // --- Fetch past reviews ---
         $property['past_reviews'] = [];
-        $reviewsSql = "SELECT r.*, u.first_name, u.last_name
-                       FROM property_reviews r
-                       INNER JOIN users u ON r.user_id = u.id
-                       WHERE r.property_id = ?
-                       ORDER BY r.created_at DESC";
+        $reviewsSql = "
+            SELECT r.*, u.first_name, u.last_name
+            FROM property_reviews r
+            INNER JOIN users u ON r.user_id = u.id
+            WHERE r.property_id = ?
+            ORDER BY r.created_at DESC
+        ";
         $stmt = $conn->prepare($reviewsSql);
         if ($stmt) {
             $stmt->bind_param("i", $propertyId);
@@ -41,6 +48,7 @@ if (!function_exists('render_property_card')) {
             $stmt->close();
         }
 
+        // --- Sanitize fields ---
         $image = htmlspecialchars($property['images'][0]);
         $title = htmlspecialchars($property['title'] ?? '');
         $location = htmlspecialchars($property['location'] ?? '');
@@ -54,6 +62,7 @@ if (!function_exists('render_property_card')) {
 ?>
 <div class="property-card"
      data-id="<?= $propertyId ?>"
+     data-images='<?= json_encode($property['images']) ?>'
      data-location="<?= strtolower($location) ?>"
      data-type="<?= htmlspecialchars($property['property_type'] ?? '') ?>"
      data-price="<?= (int)($property['price'] ?? 0) ?>"
@@ -62,9 +71,11 @@ if (!function_exists('render_property_card')) {
      data-size="<?= (int)($property['sqm'] ?? 0) ?>"
      data-date="<?= $createdAt ?>"
      data-image="<?= $image ?>">
-    <div class="property-image">
-        <img src="<?= $image ?>" alt="Property Image">
+
+    <div class="property-image" style="position:relative; overflow:hidden;">
+        <img src="<?= $image ?>" alt="Property Image" style="width:100%; transition:opacity 0.5s ease;">
     </div>
+
     <div class="property-content">
         <h3><?= $title ?></h3>
         <p class="property-location"><i class="fas fa-map-marker-alt"></i> <?= $location ?></p>
@@ -79,7 +90,7 @@ if (!function_exists('render_property_card')) {
 <?php
         endif;
 
-        // --- Modal only once per page ---
+        // --- Include modal only once ---
         if (!defined('PROPERTY_MODAL_INCLUDED')):
             define('PROPERTY_MODAL_INCLUDED', true);
 ?>

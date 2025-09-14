@@ -1,8 +1,5 @@
 <?php
-// admin_layout.php
-// Requires:
-// - $current_user array available
-// - $content_html string with the page's main content
+require_once __DIR__ . '/../../../../components/notification.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
