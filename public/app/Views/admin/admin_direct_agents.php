@@ -136,10 +136,10 @@ $stmt->close();
               data-additional-docs-path="<?php echo htmlspecialchars($agent['additional_docs_path'] ?? ''); ?>"
               data-account-created="<?php echo htmlspecialchars($agent['user_created_at'] ?? ''); ?>"
               data-status="<?php echo htmlspecialchars(strtoupper($agent['user_status'] ?? '')); ?>">
-              View Details
+              Details
             </button>
 
-            <button class="btn btn-remove" data-agent-id="<?php echo $agent['id']; ?>">Remove Account</button>
+            <button class="btn btn-remove" data-agent-id="<?php echo $agent['id']; ?>">Remove</button>
           </div>
         </div>
       <?php endforeach; ?>

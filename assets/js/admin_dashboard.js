@@ -127,12 +127,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         modalBody.innerHTML = `
+        <div class="personal-info">
           <h3>Personal Information</h3>
           <div class="detail-row"><div class="detail-label">Full Name:</div><div class="detail-value">${btn.dataset.firstName} ${btn.dataset.lastName}</div></div>
           <div class="detail-row"><div class="detail-label">Email:</div><div class="detail-value">${btn.dataset.email}</div></div>
           <div class="detail-row"><div class="detail-label">Phone:</div><div class="detail-value">${btn.dataset.phone || 'N/A'}</div></div>
           <div class="detail-row"><div class="detail-label">Address:</div><div class="detail-value">${btn.dataset.address || 'N/A'}</div></div>
+        </div>
 
+        <div class="agent-info">
           <h3>Agent Information</h3>
           <div class="detail-row"><div class="detail-label">Agent Type:</div><div class="detail-value">${btn.dataset.userType || 'DIRECT AGENT'}</div></div>
           <div class="detail-row"><div class="detail-label">Broker ID:</div><div class="detail-value">${btn.dataset.brokerId || 'N/A'}</div></div>
@@ -146,8 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="detail-row"><div class="detail-label">School:</div><div class="detail-value">${btn.dataset.school || 'N/A'}</div></div>
           <div class="detail-row"><div class="detail-label">Course:</div><div class="detail-value">${btn.dataset.course || 'N/A'}</div></div>
           <div class="detail-row"><div class="detail-label">Graduation Year:</div><div class="detail-value">${btn.dataset.graduationYear || 'N/A'}</div></div>
-          <div class="detail-row"><div class="detail-label">Certifications:</div><div class="detail-value">${btn.dataset.certifications || 'N/A'}</div></div>
-          <div class="detail-row"><div class="detail-label">Training:</div><div class="detail-value">${btn.dataset.training || 'N/A'}</div></div>
 
           <h3>Uploaded Documents</h3>
           ${docLink('Broker License', btn.dataset.brokerLicensePath)}
@@ -159,7 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <h3>Account Information</h3>
           <div class="detail-row"><div class="detail-label">Account Created:</div><div class="detail-value">${new Date(btn.dataset.accountCreated).toLocaleDateString()}</div></div>
           <div class="detail-row"><div class="detail-label">Status:</div><div class="detail-value">${btn.dataset.status || 'N/A'}</div></div>
-        `;
+        </div>
+      `;
 
         agentModal.style.display = 'block';
       }
