@@ -101,7 +101,7 @@ if ($agent_id) {
 ?>
 
 
-<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_profile_tab.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/direct_profile.css">
 
 <div class="dashboard-container">
     <!-- Header -->

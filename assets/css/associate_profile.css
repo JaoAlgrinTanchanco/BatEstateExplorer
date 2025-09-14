@@ -1,3 +1,88 @@
+/* Property List Grid */
+.property-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+    box-sizing: border-box;
+}
+
+/* Property Card */
+.property-card {
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.property-card img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.property-card.selected {
+    border-color: #007bff;
+    background-color: #eef5ff;
+    transform: scale(1.02);
+}
+
+/* Review Card */
+.review-card {
+    display: flex;
+    gap: 20px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background-color: #fff;
+    transition: box-shadow 0.2s ease;
+}
+
+.review-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Review Sections */
+.review-left {
+    flex: 2;
+}
+
+.review-right {
+    flex: 1;
+    text-align: center;
+}
+
+.review-right img {
+    width: 100px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+/* Stars */
+.stars {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.stars span {
+    color: #ccc; /* default star color */
+    display: inline-block;
+}
+
+.stars span.filled {
+    color: gold !important; /* force gold color */
+}
+
+//======
+
 
 /* ===== Overview Tab Container ===== */
 .overview-container {
@@ -594,23 +679,6 @@
     border-color: #007bff;
     background-color: #eef5ff;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @keyframes spin {
     0% { transform: rotate(0deg); }
