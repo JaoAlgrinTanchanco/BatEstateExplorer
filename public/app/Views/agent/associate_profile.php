@@ -3,7 +3,8 @@ if (!isset($user)) {
     die('Access denied.');
 }
 
-// Display flash messages
+// 🔹 Show session flash messages (deprecated since you're moving to centralized notifications, 
+// but leaving here for fallback)
 foreach (['success', 'error'] as $type) {
     if (!empty($_SESSION['flash_' . $type])): ?>
         <div class="alert alert-<?= $type === 'success' ? 'success' : 'danger' ?>">
@@ -15,20 +16,40 @@ foreach (['success', 'error'] as $type) {
 // Detect active tab
 $tab = $_GET['tab'] ?? 'overview';
 
-// Initialize variables
-$listings = [];
-$agent_id = 0;
+// Initialize defaults
+$listings      = [];
+$reviews       = [];
+$agent_id      = 0;
+$company_id    = 0;
+$company_name  = 'Unknown Company';
+$avg_rating    = 0;
+$total_reviews = 0;
 
-// 🔹 Fetch agent info
-$stmt = $conn->prepare("SELECT id FROM agents WHERE user_id = ?");
+// 🔹 Fetch agent (id + company_id in one go)
+$stmt = $conn->prepare("SELECT id, company_id FROM agents WHERE user_id = ?");
 $stmt->bind_param("i", $user['id']);
 $stmt->execute();
-$res = $stmt->get_result();
+$res   = $stmt->get_result();
 $agent = $res ? $res->fetch_assoc() : null;
 $stmt->close();
 
 if ($agent) {
-    $agent_id = (int)$agent['id'];
+    $agent_id   = (int)$agent['id'];
+    $company_id = (int)$agent['company_id'];
+
+    // 🔹 Fetch company info
+    if ($company_id > 0) {
+        $companyStmt = $conn->prepare("SELECT name FROM companies WHERE id = ?");
+        $companyStmt->bind_param("i", $company_id);
+        $companyStmt->execute();
+        $companyRes = $companyStmt->get_result();
+        $company    = $companyRes->fetch_assoc();
+        $companyStmt->close();
+
+        if ($company) {
+            $company_name = $company['name'];
+        }
+    }
 
     // 🔹 Fetch all properties for this agent
     $propsStmt = $conn->prepare("
@@ -44,8 +65,9 @@ if ($agent) {
     ");
     $propsStmt->bind_param("ii", $agent_id, $agent_id);
     $propsStmt->execute();
-    $res = $propsStmt->get_result();
+    $res      = $propsStmt->get_result();
     $listings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+    $propsStmt->close();
 
     // 🔹 Attach primary image to each property
     $stmtImg = $conn->prepare("
@@ -53,83 +75,65 @@ if ($agent) {
         FROM property_images 
         WHERE property_id = ? 
         ORDER BY is_primary DESC, id ASC
-        LIMIT 1
     ");
-    foreach ($listings as &$property) {  // note the & to modify in place
+    foreach ($listings as &$property) {
         $stmtImg->bind_param("i", $property['id']);
         $stmtImg->execute();
         $resImg = $stmtImg->get_result();
-        $image = $resImg && $resImg->num_rows ? $resImg->fetch_assoc() : null;
+        $image  = $resImg && $resImg->num_rows ? $resImg->fetch_assoc() : null;
 
         $property['images'] = $image ? [$image] : [];
     }
     $stmtImg->close();
+
+    // 🔹 Fetch average rating + total reviews
+    $stmt = $conn->prepare("
+        SELECT AVG(pr.rating) AS avg_rating, COUNT(*) AS total_reviews
+        FROM property_reviews pr
+        JOIN properties p ON pr.property_id = p.id
+        WHERE p.agent_id = ?
+    ");
+    $stmt->bind_param("i", $agent_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res ? $res->fetch_assoc() : null;
+    $avg_rating    = $row && $row['avg_rating'] ? round($row['avg_rating'], 1) : 0;
+    $total_reviews = $row['total_reviews'] ?? 0;
+    $stmt->close();
+
+    // 🔹 Fetch reviews with user info and primary image
+    $stmt = $conn->prepare("
+        SELECT 
+            pr.rating, 
+            pr.review_text, 
+            u.first_name, 
+            u.last_name, 
+            u.email, 
+            p.title, 
+            pi.image_path
+        FROM property_reviews pr
+        JOIN users u ON pr.user_id = u.id
+        JOIN properties p ON pr.property_id = p.id
+        LEFT JOIN property_images pi 
+            ON pi.property_id = p.id AND pi.is_primary = 1
+        WHERE p.agent_id = ?
+        ORDER BY pr.created_at DESC
+    ");
+    $stmt->bind_param("i", $agent_id);
+    $stmt->execute();
+    $res     = $stmt->get_result();
+    $reviews = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+    $stmt->close();
 }
 
-// 🔹 Fetch average rating and total reviews
-$stmt = $conn->prepare("
-    SELECT AVG(pr.rating) AS avg_rating, COUNT(*) AS total_reviews
-    FROM property_reviews pr
-    JOIN properties p ON pr.property_id = p.id
-    WHERE p.agent_id = ?
-");
-$stmt->bind_param("i", $agent_id);
-$stmt->execute();
-$res = $stmt->get_result();
-$row = $res ? $res->fetch_assoc() : null;
-$avg_rating = $row && $row['avg_rating'] ? round($row['avg_rating'], 1) : 0;
-$total_reviews = $row['total_reviews'] ?? 0;
-$stmt->close();
-
-// 🔹 Fetch reviews with user info and primary image
-$stmt = $conn->prepare("
-    SELECT 
-        pr.rating, 
-        pr.review_text, 
-        u.first_name, 
-        u.last_name, 
-        u.email, 
-        p.title, 
-        pi.image_path
-    FROM property_reviews pr
-    JOIN users u ON pr.user_id = u.id
-    JOIN properties p ON pr.property_id = p.id
-    LEFT JOIN property_images pi 
-        ON pi.property_id = p.id AND pi.is_primary = 1
-    WHERE p.agent_id = ?
-    ORDER BY pr.created_at DESC
-");
-$stmt->bind_param("i", $agent_id);
-$stmt->execute();
-$res = $stmt->get_result();
-$reviews = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-$stmt->close();
-
-// Make sure $user is the logged-in user
-$logged_in_user_id = (int)($user['id'] ?? 0);
-
-// Fetch the agent record to get company_id
-$agentStmt = $conn->prepare("SELECT company_id FROM agents WHERE user_id = ?");
-$agentStmt->bind_param("i", $logged_in_user_id);
-$agentStmt->execute();
-$agentRes = $agentStmt->get_result();
-$agent = $agentRes->fetch_assoc();
-$company_id = (int)($agent['company_id'] ?? 0);
-
-// Fetch company info
-$companyStmt = $conn->prepare("SELECT name FROM companies WHERE id = ?");
-$companyStmt->bind_param("i", $company_id);
-$companyStmt->execute();
-$companyRes = $companyStmt->get_result();
-$company = $companyRes->fetch_assoc();
-$company_name = $company['name'] ?? 'Unknown Company';
-
-// Output console log for debugging
+// 🔹 Debug log
 echo "<script>console.log('Company ID: {$company_id}, Company Name: " . addslashes($company_name) . "');</script>";
 
-// Fetch all properties from the same company (no pagination)
-$propsStmt = $conn->prepare("
-    SELECT 
+// 🔹 Fetch all properties from the same company
+$company_listings = [];
+if ($company_id > 0) {
+    $propsStmt = $conn->prepare("
+        SELECT 
         p.id, 
         p.title, 
         p.location, 
@@ -139,24 +143,37 @@ $propsStmt = $conn->prepare("
         p.sqm, 
         p.status, 
         p.created_at,
+
+        -- Creator
         a.id AS agent_id, 
         CONCAT(u.first_name, ' ', u.last_name) AS created_by,
+
+        -- Sold by
         sa.id AS sold_agent_id, 
         CONCAT(su.first_name, ' ', su.last_name) AS sold_by
+
     FROM properties p
-    LEFT JOIN agents a ON p.agent_id = a.id
-    LEFT JOIN users u ON a.user_id = u.id
-    LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
-    LEFT JOIN users su ON sa.user_id = su.id
+    LEFT JOIN agents a 
+        ON p.agent_id = a.id
+    LEFT JOIN users u 
+        ON a.user_id = u.id
+
+    LEFT JOIN agents sa 
+        ON p.sold_by_agent_id = sa.id
+    LEFT JOIN users su 
+        ON sa.user_id = su.id
+
     WHERE a.company_id = ?
     ORDER BY p.created_at DESC
-");
-
-$propsStmt->bind_param("i", $company_id);
-$propsStmt->execute();
-$res = $propsStmt->get_result();
-
+    ");
+    $propsStmt->bind_param("i", $company_id);
+    $propsStmt->execute();
+    $res              = $propsStmt->get_result();
+    $company_listings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+    $propsStmt->close();
+}
 ?>
+
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_profile.css">
 
@@ -178,10 +195,7 @@ $res = $propsStmt->get_result();
 
     <!-- Content Section -->
     <section class="dashboard-content">
-        <?php 
-        switch ($tab):
-            case 'my_listings': 
-        ?>
+        <?php switch ($tab): case 'my_listings': ?>
             <h2>My Listings</h2>
 
             <div class="overview-container">
@@ -321,101 +335,101 @@ $res = $propsStmt->get_result();
         <?php break; ?>
 
         <?php case 'add_listing': ?>
-        <h2>Add New Listing (Associate)</h2>
+            <h2>Add New Listing (Associate)</h2>
 
-        <div class="overview-container">
-        <div class="overview-card">
-            <form id="addListingForm" 
-                action="/BatEstateExplorer/public/api/associate_save_listing.php" 
-                method="POST" 
-                enctype="multipart/form-data">
+            <div class="overview-container">
+            <div class="overview-card">
+                <form id="addListingForm" 
+                    action="/BatEstateExplorer/public/api/associate_save_listing.php" 
+                    method="POST" 
+                    enctype="multipart/form-data">
 
-                <!-- Property Name -->
-                <label for="title"><strong>Property Name</strong></label>
-                <input type="text" id="title" name="title" required>
+                    <!-- Property Name -->
+                    <label for="title"><strong>Property Name</strong></label>
+                    <input type="text" id="title" name="title" required>
 
-                <!-- Location -->
-                <label for="location"><strong>Location</strong></label>
-                <select id="location" name="location" required>
-                    <option value="">Select Location</option>
-                    <option value="Agoncillo">Agoncillo</option>
-                    <option value="Alitagtag">Alitagtag</option>
-                    <option value="Balayan">Balayan</option>
-                    <option value="Balete">Balete</option>
-                    <option value="Batangas City">Batangas City</option>
-                    <option value="Bauan">Bauan</option>
-                    <option value="Calaca">Calaca</option>
-                    <option value="Calatagan">Calatagan</option>
-                    <option value="Cuenca">Cuenca</option>
-                    <option value="Ibaan">Ibaan</option>
-                    <option value="Laurel">Laurel</option>
-                    <option value="Lemery">Lemery</option>
-                    <option value="Lian">Lian</option>
-                    <option value="Lipa City">Lipa City</option>
-                    <option value="Lobo">Lobo</option>
-                    <option value="Mabini">Mabini</option>
-                    <option value="Malvar">Malvar</option>
-                    <option value="Mataasnakahoy">Mataasnakahoy</option>
-                    <option value="Nasugbu">Nasugbu</option>
-                    <option value="Padre Garcia">Padre Garcia</option>
-                    <option value="Rosario">Rosario</option>
-                    <option value="San Jose">San Jose</option>
-                    <option value="San Juan">San Juan</option>
-                    <option value="San Luis">San Luis</option>
-                    <option value="San Nicolas">San Nicolas</option>
-                    <option value="San Pascual">San Pascual</option>
-                    <option value="Santa Teresita">Santa Teresita</option>
-                    <option value="Santo Tomas">Santo Tomas</option>
-                    <option value="Taal">Taal</option>
-                    <option value="Talisay">Talisay</option>
-                    <option value="Tanauan City">Tanauan City</option>
-                    <option value="Taysan">Taysan</option>
-                    <option value="Tingloy">Tingloy</option>
-                    <option value="Tuy">Tuy</option>
-                </select>
+                    <!-- Location -->
+                    <label for="location"><strong>Location</strong></label>
+                    <select id="location" name="location" required>
+                        <option value="">Select Location</option>
+                        <option value="Agoncillo">Agoncillo</option>
+                        <option value="Alitagtag">Alitagtag</option>
+                        <option value="Balayan">Balayan</option>
+                        <option value="Balete">Balete</option>
+                        <option value="Batangas City">Batangas City</option>
+                        <option value="Bauan">Bauan</option>
+                        <option value="Calaca">Calaca</option>
+                        <option value="Calatagan">Calatagan</option>
+                        <option value="Cuenca">Cuenca</option>
+                        <option value="Ibaan">Ibaan</option>
+                        <option value="Laurel">Laurel</option>
+                        <option value="Lemery">Lemery</option>
+                        <option value="Lian">Lian</option>
+                        <option value="Lipa City">Lipa City</option>
+                        <option value="Lobo">Lobo</option>
+                        <option value="Mabini">Mabini</option>
+                        <option value="Malvar">Malvar</option>
+                        <option value="Mataasnakahoy">Mataasnakahoy</option>
+                        <option value="Nasugbu">Nasugbu</option>
+                        <option value="Padre Garcia">Padre Garcia</option>
+                        <option value="Rosario">Rosario</option>
+                        <option value="San Jose">San Jose</option>
+                        <option value="San Juan">San Juan</option>
+                        <option value="San Luis">San Luis</option>
+                        <option value="San Nicolas">San Nicolas</option>
+                        <option value="San Pascual">San Pascual</option>
+                        <option value="Santa Teresita">Santa Teresita</option>
+                        <option value="Santo Tomas">Santo Tomas</option>
+                        <option value="Taal">Taal</option>
+                        <option value="Talisay">Talisay</option>
+                        <option value="Tanauan City">Tanauan City</option>
+                        <option value="Taysan">Taysan</option>
+                        <option value="Tingloy">Tingloy</option>
+                        <option value="Tuy">Tuy</option>
+                    </select>
 
-                <!-- Price -->
-                <label for="price"><strong>Price (₱)</strong></label>
-                <input type="number" id="price" name="price" min="0" step="0.01" required>
+                    <!-- Price -->
+                    <label for="price"><strong>Price (₱)</strong></label>
+                    <input type="number" id="price" name="price" min="0" step="0.01" required>
 
-                <!-- Lot Size -->
-                <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
-                <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
+                    <!-- Lot Size -->
+                    <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
+                    <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
 
-                <!-- Property Type -->
-                <label for="property_type"><strong>Property Type</strong></label>
-                <select id="property_type" name="property_type" required>
-                    <option value="">-- Select Type --</option>
-                    <option value="Property">Property</option>
-                    <option value="Lot">Lot</option>
-                </select>
+                    <!-- Property Type -->
+                    <label for="property_type"><strong>Property Type</strong></label>
+                    <select id="property_type" name="property_type" required>
+                        <option value="">-- Select Type --</option>
+                        <option value="Property">Property</option>
+                        <option value="Lot">Lot</option>
+                    </select>
 
-                <!-- Bedrooms -->
-                <label for="bedrooms"><strong>Bedrooms</strong></label>
-                <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
+                    <!-- Bedrooms -->
+                    <label for="bedrooms"><strong>Bedrooms</strong></label>
+                    <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
 
-                <!-- Bathrooms -->
-                <label for="bathrooms"><strong>Bathrooms</strong></label>
-                <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
+                    <!-- Bathrooms -->
+                    <label for="bathrooms"><strong>Bathrooms</strong></label>
+                    <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
 
-                <!-- Description -->
-                <label for="description"><strong>Description</strong></label>
-                <textarea id="description" name="description" rows="4" required></textarea>
+                    <!-- Description -->
+                    <label for="description"><strong>Description</strong></label>
+                    <textarea id="description" name="description" rows="4" required></textarea>
 
-                <!-- Images -->
-                <label for="images"><strong>Property Images</strong></label>
-                <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
-                    <p>Drag & drop images here or click to browse</p>
-                    <input type="file" id="images" accept="image/*" multiple style="display:none;">
-                </div>
+                    <!-- Images -->
+                    <label for="images"><strong>Property Images</strong></label>
+                    <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
+                        <p>Drag & drop images here or click to browse</p>
+                        <input type="file" id="images" accept="image/*" multiple style="display:none;">
+                    </div>
 
-                <div id="imagePreview" class="image-preview" aria-live="polite"></div>
+                    <div id="imagePreview" class="image-preview" aria-live="polite"></div>
 
-                <button type="submit" class="btn-submit">Save Listing</button>
-            </form>
-        </div>
-        </div>
-<?php break; ?>
+                    <button type="submit" class="btn-submit">Save Listing</button>
+                </form>
+            </div>
+            </div>
+        <?php break; ?>
 
         <?php case 'analytics': ?>
                 <h2>Performance Analytics</h2>
@@ -480,19 +494,25 @@ $res = $propsStmt->get_result();
                             </tr>
                         </thead>
                         <tbody>
-                            <?php while ($row = $res->fetch_assoc()): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($row['title']); ?></td>
-                                <td><?= htmlspecialchars($row['location']); ?></td>
-                                <td>₱<?= number_format($row['price'], 2); ?></td>
-                                <td><?= (int)$row['bedrooms']; ?></td>
-                                <td><?= (int)$row['bathrooms']; ?></td>
-                                <td><?= number_format($row['sqm'], 2); ?></td>
-                                <td><?= ucfirst($row['status']); ?></td>
-                                <td><?= htmlspecialchars($row['created_by'] ?? 'N/A'); ?></td>
-                                <td><?= htmlspecialchars($row['sold_by'] ?? 'N/A'); ?></td>
-                            </tr>
-                            <?php endwhile; ?>
+                            <?php if (!empty($company_listings)): ?>
+                                <?php foreach ($company_listings as $row): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($row['title']); ?></td>
+                                        <td><?= htmlspecialchars($row['location']); ?></td>
+                                        <td>₱<?= number_format($row['price'], 2); ?></td>
+                                        <td><?= (int)$row['bedrooms']; ?></td>
+                                        <td><?= (int)$row['bathrooms']; ?></td>
+                                        <td><?= number_format($row['sqm'], 2); ?></td>
+                                        <td><?= ucfirst($row['status']); ?></td>
+                                        <td><?= !empty($row['created_by']) ? htmlspecialchars($row['created_by']) : 'N/A'; ?></td>
+                                        <td><?= !empty($row['sold_by']) ? htmlspecialchars($row['sold_by']) : 'N/A'; ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="9" style="text-align:center;">No company listings found.</td>
+                                </tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -540,9 +560,7 @@ $res = $propsStmt->get_result();
                         <button onclick="closePrivilegeModal()">Exit</button>
                     </div>
                 </div>
-
-
-            <?php break; ?>
+        <?php break; ?>
 
         <?php default:
             // Overview Tab
@@ -670,3 +688,5 @@ $res = $propsStmt->get_result();
         <?php endswitch; ?>
     </section>
 </div>
+
+<script src="/BatEstateExplorer/assets/js/associate_profile.js"></script>
