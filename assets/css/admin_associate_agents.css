@@ -1,205 +1,394 @@
-/* admin_associate_agents.css */
-
-/* ===== Reset & basics ===== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Inter', Arial, sans-serif;
+/* ====== Fonts ====== */
+@font-face {
+    font-family: 'Satoshi';
+    src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+    font-weight: 900;
+    font-style: normal;
 }
 
-body {
-    background: #f5f6f8;
-    color: #111827;
-    line-height: 1.5;
+@font-face {
+    font-family: 'Satoshi-Bold';
+    src: url('../fonts/Satoshi-Bold.otf') format('opentype');
+    font-style: normal;
 }
 
-/* ===== Header ===== */
+@font-face {
+    font-family: 'Satoshi-Medium';
+    src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Satoshi-Regular';
+    src: url('../fonts/Satoshi-Regular.otf') format('opentype');
+    font-style: normal;
+}
+
 .content-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem 2rem;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
 }
 
 .content-header h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.user-info span {
-    font-size: 0.95rem;
-    color: #6b7280;
-}
-
-/* ===== Sort Row ===== */
-.sort-row {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 1rem;
-}
-
-.sort-by label {
-    margin-right: 0.5rem;
-    font-weight: 500;
-}
-
-.sort-by select {
-    padding: 0.4rem 0.6rem;
-    border-radius: 6px;
-    border: 1px solid #d1d5db;
     background: #fff;
-    cursor: pointer;
-    font-size: 0.95rem;
+    padding: 0.75rem 2rem;
+    font-family: 'Satoshi', sans-serif;
+    margin-bottom: 1.5rem;
+    font-size: 2.5rem;
+    color: #111827;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    display: inline-block;
 }
 
-/* ===== Agent Cards ===== */
+/* ===== Direct Agents List ===== */
 .direct-agent-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
 }
+
+/* ===== Direct Agent Card ===== */
 
 .direct-agent-card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-    padding: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  position: relative;
+  aspect-ratio: 1 / 1;
+  transform: translateZ(0);
+  /* Smooth movement */
+  transition: 
+    transform 0.3s ease,      /* hover lift */
+    box-shadow 0.3s ease,     /* hover shadow */
+    margin 0.4s ease-in-out,  /* grid rearrangement */
+    top 0.4s ease-in-out, 
+    left 0.4s ease-in-out;
 }
 
 .direct-agent-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 
+/* ===== Avatar ===== */
 .direct-agent-avatar {
-    font-size: 2rem;
-    color: #6b7280;
-    flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
 }
 
+/* ===== Agent Info ===== */
 .direct-agent-info {
-    flex: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .direct-agent-name {
-    font-weight: 600;
-    font-size: 1rem;
-    margin-bottom: 0.25rem;
+  font-family: 'Satoshi-Bold', sans-serif;
+  font-size: 1.1rem;
+  color: #111827;
+  margin-bottom: 0.25rem;
 }
 
 .direct-agent-details {
-    font-size: 0.875rem;
-    color: #6b7280;
+  font-size: 0.9rem;
+  color: #6b7280;
 }
 
-/* ===== Agent Actions ===== */
+/* ===== Actions ===== */
 .direct-agent-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
 }
 
-.btn {
-    padding: 0.45rem 0.8rem;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: background 0.2s ease;
-}
-
+/* View Button */
 .btn-view {
-    background: #3b82f6;
-    color: #fff;
+  flex: 1 1 calc(50% - 0.5rem);
+  padding: 0.6rem 1.25rem;
+  font-size: 0.9rem;
+  font-family: 'satoshi', sans-serif;
+  font-weight: 600;
+  border-radius: 30px;
+  border: 1px solid #111;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .btn-view:hover {
-    background: #2563eb;
+  background: transparent;
+  color: #111;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
 }
 
+/* Remove Button */
 .btn-remove {
-    background: #ef4444;
-    color: #fff;
+  flex: 1 1 calc(50% - 0.5rem);
+  padding: 0.6rem 1.25rem;
+  font-size: 0.9rem;
+  font-family: 'satoshi', sans-serif;
+  font-weight: 600;
+  border-radius: 30px;
+  border: 1px solid #111;
+  background: transparent;
+  color: #111;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .btn-remove:hover {
-    background: #b91c1c;
+  background: #111;
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
 }
 
-/* ===== No Agents ===== */
-.no-agents {
-    text-align: center;
-    padding: 2rem;
-    font-size: 0.95rem;
-    color: #6b7280;
+/* ===== Modal Styling ===== */
+#agentModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 9999;
+  overflow-y: auto;
+  padding: 2rem;
 }
 
-/* ===== Modal ===== */
-.modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
+#agentModal .modal-content {
+  background: #fff;
+  border-radius: 20px;
+  max-width: 500px;
+  margin: 3rem auto;
+  padding: 2rem;
+  position: relative;
+  animation: slideIn 0.3s ease-out;
 }
 
-.modal-content {
-    background: #fff;
-    border-radius: 12px;
-    max-width: 500px;
-    width: 90%;
-    padding: 1.5rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+#agentModal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
+#agentModal .close {
+  cursor: pointer;
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 
-.modal-header h2 {
-    font-size: 1.25rem;
-    font-weight: 700;
+#agentModal .modal-body {
+  font-size: 0.95rem;
+  color: #374151;
 }
 
-.modal-header .close {
-    font-size: 1.25rem;
-    cursor: pointer;
-    color: #6b7280;
-}
-
-.modal-body {
-    margin-bottom: 1rem;
-}
-
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
+#agentModal .modal-footer {
+  text-align: right;
+  margin-top: 1rem;
 }
 
 .cancel-btn {
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    background: #e5e7eb;
-    color: #111827;
-    cursor: pointer;
+  background: #e5e7eb;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
 }
 
-.cancel-btn:hover {
-    background: #d1d5db;
+.cancel-btn:hover,
+#agentModal .close:hover {
+  opacity: 0.85;
+}
+
+/* ===== Sorting Row ===== */
+.sort-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.sort-by select {
+    width: 150px;
+  padding: 0.6rem 1rem;
+  border-radius: 30px; /* match button/card rounding */
+  border: 1px solid #d1d5db;
+  font-size: 0.95rem;
+  font-family: 'Satoshi', sans-serif;
+  font-weight: 500;
+  background: #fff;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  appearance: none; /* remove default arrow for styling */
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg width='14' height='8' viewBox='0 0 14 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%236B7280' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 14px 8px;
+}
+
+.sort-by select:hover,
+.sort-by select:focus {
+  border-color: #111;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  outline: none;
+}
+
+/* ===== Animations ===== */
+@keyframes slideIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ===== No Agents Message ===== */
+.no-agents {
+  text-align: center;
+  font-size: 1rem;
+  color: #6b7280;
+  margin-top: 2rem;
+}
+
+/* ===== Responsive Adjustments ===== */
+
+/* Medium Screens (tablets) */
+@media (max-width: 992px) {
+  .content-header h1 {
+    font-size: 2rem;
+    padding: 0.5rem 1.5rem;
+  }
+
+  .direct-agent-list {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .direct-agent-card {
+    padding: 1rem;
+  }
+
+  .direct-agent-avatar {
+    width: 50px;
+    height: 50px;
+    font-size: 1.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .direct-agent-name {
+    font-size: 1rem;
+  }
+
+  .direct-agent-details {
+    font-size: 0.85rem;
+  }
+
+  .btn-view, .btn-remove {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Small Screens (phones) */
+@media (max-width: 768px) {
+  .content-header h1 {
+    font-size: 1.75rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .direct-agent-list {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .direct-agent-card {
+    aspect-ratio: auto; /* allow cards to auto height for small screens */
+    flex-direction: row; /* optional: avatar + info side by side */
+    align-items: center;
+    padding: 1rem;
+  }
+
+  .direct-agent-avatar {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    margin-bottom: 0;
+    margin-right: 1rem;
+  }
+
+  .direct-agent-info {
+    flex: 1;
+  }
+
+  .btn-view, .btn-remove {
+    flex: 1 1 100%;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .direct-agent-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .sort-row {
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
+  .sort-by select {
+    width: 100%;
+    max-width: 250px;
+  }
+}
+
+/* Extra Small Screens (very small phones) */
+@media (max-width: 480px) {
+  .content-header h1 {
+    font-size: 1.5rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .direct-agent-card {
+    padding: 0.75rem;
+  }
+
+  .direct-agent-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+
+  .direct-agent-name {
+    font-size: 0.95rem;
+  }
+
+  .direct-agent-details {
+    font-size: 0.8rem;
+  }
+
+  .btn-view, .btn-remove {
+    padding: 0.45rem 0.9rem;
+    font-size: 0.8rem;
+  }
 }

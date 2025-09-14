@@ -22,9 +22,6 @@ $stmt->close();
 
 <header class="content-header">
   <h1>Associate Agents</h1>
-  <div class="user-info">
-    <span>Welcome, <?php echo htmlspecialchars($current_user['email']); ?></span>
-  </div>
 </header>
 
 <div class="content-body">
@@ -59,8 +56,8 @@ $stmt->close();
             </div>
           </div>
           <div class="direct-agent-actions">
-            <button class="btn btn-view" data-agent-id="<?php echo $agent['id']; ?>">View Details</button>
-            <button class="btn btn-remove" data-agent-id="<?php echo $agent['id']; ?>">Remove Account</button>
+            <button class="btn btn-view" data-agent-id="<?php echo $agent['id']; ?>">Details</button>
+            <button class="btn btn-remove" data-agent-id="<?php echo $agent['id']; ?>">Remove</button>
           </div>
         </div>
       <?php endforeach; ?>
