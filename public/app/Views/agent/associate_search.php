@@ -127,7 +127,7 @@ $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
                     ]
                 ],
 
-                'property_type' => ['label'=>'Property Type', 'options'=>[''=>'Property','Lot'=>'Property']],
+                'property_type' => ['label'=>'Property Type', 'options'=>['Property'=>'Property','Lot'=>'Lot']],
                 'price_range' => [
                     'label' => 'Price Range',
                     'options' => [
@@ -179,7 +179,6 @@ $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     <?php render_agent_property_card([], true); ?>
 </div>
 
-<script src="/BatEstateExplorer/assets/js/agent_property_card_logic.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 

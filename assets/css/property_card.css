@@ -146,19 +146,28 @@
   gap: 20px;
 }
 
+/* Modal close buttons */
 .modal-close {
-  position: absolute;
-  top: 15px;
-  right: 20px;
-  font-size: 2rem;
-  font-weight: bold;
-  color: #666;
-  cursor: pointer;
-  transition: color 0.3s ease;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 32px;
+    height: 32px;
+    background-color: rgba(0,0,0,0.6);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    transition: background-color 0.3s ease;
 }
 
 .modal-close:hover {
-  color: #e74c3c;
+    background-color: rgba(0,0,0,0.8);
 }
 
 .modal-body {

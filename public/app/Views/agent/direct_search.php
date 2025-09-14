@@ -121,7 +121,7 @@ $stmt->close();
                     ]
                 ],
 
-                'property_type' => ['label'=>'Property Type', 'options'=>[''=>'Property','Lot'=>'Property']],
+                'property_type' => ['label'=>'Property Type', 'options'=>['Property'=>'Property','Lot'=>'Lot']],
                 'price_range' => [
                     'label' => 'Price Range',
                     'options' => [
@@ -157,7 +157,7 @@ $stmt->close();
             </button>
         </div>
     </div>
-    
+
     <div class="properties-grid" id="propertiesGrid">
         <?php if (!empty($properties)): ?>
             <?php foreach ($properties as $property): ?>
@@ -175,7 +175,6 @@ $stmt->close();
     <?php render_agent_property_card([], true); ?>
 </div>
 
-<script src="/BatEstateExplorer/assets/js/agent_property_card_logic.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const filters = ['location','property_type','price_range','bedrooms','bathrooms','size'];

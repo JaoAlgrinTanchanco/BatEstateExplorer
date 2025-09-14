@@ -80,4 +80,3 @@ render_agent_property_card([], true);
 <!-- Swiper CSS & JS -->
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css"/>
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-<script src="/BatEstateExplorer/assets/js/agent_property_card_logic.js"></script>
