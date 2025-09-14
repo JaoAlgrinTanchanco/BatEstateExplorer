@@ -4,6 +4,8 @@ if (!isset($user) || !is_array($user)) {
     die('Access denied.');
 }
 
+require_once __DIR__ . '/../../../../components/notification.php';
+
 // Build a safe first-name for the welcome card
 $rawFirst = null;
 if (!empty($user['first_name'])) {

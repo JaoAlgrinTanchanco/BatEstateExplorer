@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../../../config/database.php';
+require_once __DIR__ . '/../../../../components/notification.php';
 require_once __DIR__ . '/../../../../components/agent_property_card.php';
 
 // Detect AJAX

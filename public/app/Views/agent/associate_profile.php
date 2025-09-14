@@ -175,7 +175,6 @@ if ($company_id > 0) {
 }
 ?>
 
-
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_profile.css">
 
 <div class="dashboard-container">
