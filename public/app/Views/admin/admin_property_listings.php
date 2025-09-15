@@ -89,115 +89,106 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
     </div>
 
     <!-- Tab Content -->
-    <div class="content-body">
+    <div id="tab-content">
 
-        <!-- Tab Content -->
-        <div id="tab-content">
-
-            <!-- Direct Agents Tab -->
-            <div class="tab-panel" id="tab-direct" style="display: block;">
-                <?php if (empty($direct_properties)): ?>
-                    <div>No property listings found for direct agents.</div>
-                <?php else: ?>
-                    <div class="grid-container"> <!-- Added grid wrapper -->
+        <!-- Direct Agents Tab -->
+        <div class="tab-panel" id="tab-direct" style="display: block;">
+            <?php if (empty($direct_properties)): ?>
+                <div>No property listings found for direct agents.</div>
+            <?php else: ?>
+                <div class="grid-container">
                     <?php foreach ($direct_properties as $property): ?>
-                        <div class="property-card"
-                            data-name="<?php echo htmlspecialchars($property['property_name']); ?>"
-                            data-type="<?php echo htmlspecialchars($property['property_type']); ?>"
-                            data-price="<?php echo (int)$property['price']; ?>"
-                            data-date="<?php echo htmlspecialchars($property['date_uploaded']); ?>">
-
-                            <div class="property-status status-<?php echo $property['status']; ?>">
+                        <?php
+                        $image_url = $property['image_path'] 
+                            ? '/BatEstateExplorer/' . ltrim($property['image_path'], '/')
+                            : '/BatEstateExplorer/assets/images/bg4.jpg';
+                        ?>
+                        <div class="property-card">
+                            <!-- Badge -->
+                            <div class="property-badge <?php echo htmlspecialchars($property['status']); ?>">
                                 <?php echo ucfirst($property['status']); ?>
                             </div>
 
-                            <?php
-                            $image_url = $property['image_path'] 
-                                ? '/BatEstateExplorer/' . ltrim($property['image_path'], '/')
-                                : '/BatEstateExplorer/assets/images/bg4.jpg';
-                            ?>
-                            <div class="property-image" style="background-image: url('<?php echo htmlspecialchars($image_url); ?>')"></div>
+                            <!-- Card background and image -->
+                            <div class="property-image" style="background-image: url('<?php echo htmlspecialchars($image_url); ?>');"></div>
 
-                            <div class="property-info">
-                                <div class="property-name"><?php echo htmlspecialchars($property['property_name']); ?></div>
-                                <div class="property-meta">
-                                    <span>Type: <?php echo htmlspecialchars($property['property_type']); ?></span>
-                                    <span>₱<?php echo number_format((float)$property['price'], 2); ?></span>
-                                    <span>Date: <?php echo htmlspecialchars($property['date_uploaded']); ?></span>
+                            <!-- Single Overlay (info + actions) -->
+                            <div class="property-overlay">
+                                <div class="overlay-content">
+                                    <div class="property-name"><?php echo htmlspecialchars($property['property_name']); ?></div>
+                                    <div class="property-meta">
+                                        <span>Type: <?php echo htmlspecialchars($property['property_type']); ?></span>
+                                        <span>₱<?php echo number_format((float)$property['price'], 2); ?></span>
+                                        <span>Date: <?php echo htmlspecialchars($property['date_uploaded']); ?></span>
+                                    </div>
+                                    <div class="property-actions">
+                                        <button class="btn-view" data-id="<?php echo $property['property_id']; ?>">View</button>
+                                        <?php if ($property['status'] === 'pending'): ?>
+                                            <button class="btn-approve" data-id="<?php echo $property['property_id']; ?>">Approve</button>
+                                            <button class="btn-reject" data-id="<?php echo $property['property_id']; ?>">Reject</button>
+                                        <?php else: ?>
+                                            <button class="btn-remove" data-id="<?php echo $property['property_id']; ?>">Remove</button>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div class="property-actions">
-                                <button class="btn-view" data-id="<?php echo $property['property_id']; ?>">View Post</button>
-
-                                <?php if ($property['status'] === 'pending'): ?>
-                                    <button class="btn-approve" data-id="<?php echo $property['property_id']; ?>">Approve</button>
-                                    <button class="btn-reject" data-id="<?php echo $property['property_id']; ?>">Reject</button>
-                                <?php else: ?>
-                                    <button class="btn-remove" data-id="<?php echo $property['property_id']; ?>">Remove Post</button>
-                                <?php endif; ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
+                </div>
+            <?php endif; ?>
+        </div>
 
-            <!-- Associate Agents Tab -->
-            <div class="tab-panel" id="tab-associate" style="display: none;">
-                <?php if (empty($associate_properties)): ?>
-                    <div>No property listings found for associate agents.</div>
-                <?php else: ?>
-                    <div class="grid-container"> <!-- Added grid wrapper -->
+        <!-- Associate Agents Tab -->
+        <div class="tab-panel" id="tab-associate" style="display: none;">
+            <?php if (empty($associate_properties)): ?>
+                <div>No property listings found for associate agents.</div>
+            <?php else: ?>
+                <div class="grid-container">
                     <?php foreach ($associate_properties as $property): ?>
-                        <div class="property-card"
-                            data-name="<?php echo htmlspecialchars($property['property_name']); ?>"
-                            data-type="<?php echo htmlspecialchars($property['property_type']); ?>"
-                            data-price="<?php echo (int)$property['price']; ?>"
-                            data-date="<?php echo htmlspecialchars($property['date_uploaded']); ?>">
-
-                            <div class="property-status status-<?php echo $property['status']; ?>">
+                        <?php
+                        $image_url = $property['image_path'] 
+                            ? '/BatEstateExplorer/' . ltrim($property['image_path'], '/')
+                            : '/BatEstateExplorer/assets/images/bg4.jpg';
+                        ?>
+                        <div class="property-card">
+                            <!-- Badge -->
+                            <div class="property-badge <?php echo htmlspecialchars($property['status']); ?>">
                                 <?php echo ucfirst($property['status']); ?>
                             </div>
+                            
+                            <!-- Card background and image -->
+                            <div class="property-image" style="background-image: url('<?php echo htmlspecialchars($image_url); ?>');"></div>
 
-                            <?php
-                            $image_url = $property['image_path'] 
-                                ? '/BatEstateExplorer/' . ltrim($property['image_path'], '/')
-                                : '/BatEstateExplorer/assets/images/bg4.jpg';
-                            ?>
-                            <div class="property-image" style="background-image: url('<?php echo htmlspecialchars($image_url); ?>')"></div>
-
-                            <div class="property-info">
-                                <div class="property-name"><?php echo htmlspecialchars($property['property_name']); ?></div>
-                                <div class="property-meta">
-                                    <span>Type: <?php echo htmlspecialchars($property['property_type']); ?></span>
-                                    <span>₱<?php echo number_format((float)$property['price'], 2); ?></span>
-                                    <span>Date: <?php echo htmlspecialchars($property['date_uploaded']); ?></span>
+                            <!-- Single Overlay (info + actions) -->
+                            <div class="property-overlay">
+                                <div class="overlay-content">
+                                    <div class="property-name"><?php echo htmlspecialchars($property['property_name']); ?></div>
+                                    <div class="property-meta">
+                                        <span>Type: <?php echo htmlspecialchars($property['property_type']); ?></span>
+                                        <span>₱<?php echo number_format((float)$property['price'], 2); ?></span>
+                                        <span>Date: <?php echo htmlspecialchars($property['date_uploaded']); ?></span>
+                                    </div>
+                                    <div class="property-actions">
+                                        <button class="btn-view" data-id="<?php echo $property['property_id']; ?>">View</button>
+                                        <?php if ($property['status'] === 'pending'): ?>
+                                            <button class="btn-approve" data-id="<?php echo $property['property_id']; ?>">Approve</button>
+                                            <button class="btn-reject" data-id="<?php echo $property['property_id']; ?>">Reject</button>
+                                        <?php else: ?>
+                                            <button class="btn-remove" data-id="<?php echo $property['property_id']; ?>">Remove</button>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div class="property-actions">
-                                <button class="btn-view" data-id="<?php echo $property['property_id']; ?>">View Post</button>
-
-                                <?php if ($property['status'] === 'pending'): ?>
-                                    <button class="btn-approve" data-id="<?php echo $property['property_id']; ?>">Approve</button>
-                                    <button class="btn-reject" data-id="<?php echo $property['property_id']; ?>">Reject</button>
-                                <?php endif; ?>
-
-                                <button class="btn-remove" data-id="<?php echo $property['property_id']; ?>">Remove Post</button>
                             </div>
                         </div>
                     <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>                                
+                </div>
+            <?php endif; ?>
+        </div>
+
     </div>
 </div>
 
-</div>
-
-<!-- Modal Structure -->
+<!-- Modal -->
 <div id="propertyModal" class="modal" style="display:none;">
     <div class="modal-content">
         <span class="close">&times;</span>

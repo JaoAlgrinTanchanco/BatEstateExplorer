@@ -1,3 +1,30 @@
+/* ====== Fonts ====== */
+@font-face {
+    font-family: 'Satoshi';
+    src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Satoshi-Bold';
+    src: url('../fonts/Satoshi-Bold.otf') format('opentype');
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Satoshi-Medium';
+    src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Satoshi-Regular';
+    src: url('../fonts/Satoshi-Regular.otf') format('opentype');
+    font-style: normal;
+}
+
+
 /* ===== GRID ===== */
 .grid-container {
   display: grid;
@@ -28,132 +55,158 @@
 .property-card {
   background: #fff;
   border-radius: 40px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  aspect-ratio: 1 / 1; /* square */
-  padding: 1rem;
-  position: relative;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  font-family: 'satoshi';
 }
 
+/* Hover lift and shadow */
 .property-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* ===== PROPERTY STATUS BADGE ===== */
-.property-status {
+/* Dim overlay for entire card */
+.property-card::before {
+  content: '';
   position: absolute;
-  top: 12px;
-  left: 12px;
-  font-size: 0.8rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px;
-  font-weight: 600;
-  background: #f3f4f6;
-  color: #111827;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.25); /* adjust darkness here */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 40px; /* match card radius */
+  pointer-events: none; /* allow clicking overlay buttons */
 }
 
-.status-pending { background: #fef3c7; color: #92400e; }
-.status-approved { background: #d1fae5; color: #065f46; }
-.status-rejected { background: #fee2e2; color: #991b1b; }
+.property-card:hover::before {
+  opacity: 1;
+}
 
-/* ===== PROPERTY IMAGE ===== */
+/* Image section */
 .property-image {
-  flex: 1;
+  width: 100%;
+  aspect-ratio: 1 / 1; /* square */
   background-size: cover;
   background-position: center;
-  border-radius: 20px;
-  margin-bottom: 1rem;
+  border-radius: 25px;
 }
 
-/* ===== INFO ===== */
-.property-info {
-  font-family: 'Satoshi-Regular', sans-serif;
-  flex: none;
+/* Single overlay for info + actions */
+.property-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 25px 15px;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  border-radius: 0 0 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
+/* On hover, slide up and fade in */
+.property-card:hover .property-overlay {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Overlay content styling */
+.overlay-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Property text */
 .property-name {
-  font-family: 'Satoshi-Bold', sans-serif;
-  font-size: 1.1rem;
-  margin-bottom: 0.4rem;
-  color: #111827;
+  font-weight: bold;
+  font-size: 1rem;
 }
 
 .property-meta {
   font-size: 0.85rem;
-  color: #6b7280;
+  color: #555;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 2px;
 }
 
-/* ===== ACTIONS ===== */
+/* ===== Overlay Buttons: Single Row ===== */
 .property-actions {
   display: flex;
-  flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 1rem;
+  flex-wrap: nowrap; /* keep buttons in one row */
+  justify-content: space-between;
+  margin-top: 0.5rem;
 }
 
-.btn-view,
-.btn-approve,
-.btn-reject,
-.btn-remove {
-  flex: 1 1 calc(50% - 0.5rem);
-  padding: 0.6rem 1.25rem;
-  font-size: 0.85rem;
-  font-family: 'Satoshi', sans-serif;
+/* Buttons: all types */
+.property-actions button {
+  flex: 1 1 0; /* equal width */
+  min-width: 0; /* allow shrinking */
+  padding: 0.5rem 0.75rem; /* slightly smaller for 3 buttons */
+  font-size: 0.8rem; /* adjust font */
+  font-family: 'satoshi', sans-serif;
   font-weight: 600;
-  border-radius: 30px;
+  border-radius: 25px;
   border: 1px solid #111;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-/* View */
-.btn-view {
+/* Primary: View */
+.property-actions .btn-view {
   background: #111;
   color: #fff;
 }
-.btn-view:hover {
+
+.property-actions .btn-view:hover {
+  background: transparent;
+  color: #111;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+/* Secondary: Remove / Approve / Reject */
+.property-actions .btn-remove,
+.property-actions .btn-approve,
+.property-actions .btn-reject {
   background: transparent;
   color: #111;
 }
 
-/* Approve */
-.btn-approve {
-  background: #10b981;
-  color: #fff;
-  border-color: #10b981;
-}
-.btn-approve:hover {
-  background: transparent;
-  color: #10b981;
-}
-
-/* Reject */
-.btn-reject {
-  background: #ef4444;
-  color: #fff;
-  border-color: #ef4444;
-}
-.btn-reject:hover {
-  background: transparent;
-  color: #ef4444;
-}
-
-/* Remove */
-.btn-remove {
-  background: transparent;
-  color: #111;
-}
-.btn-remove:hover {
+.property-actions .btn-remove:hover,
+.property-actions .btn-approve:hover,
+.property-actions .btn-reject:hover {
   background: #111;
   color: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
 }
+
+/* Responsive: on very small screens, stack if needed */
+@media (max-width: 400px) {
+  .property-actions {
+    flex-wrap: wrap;
+  }
+  .property-actions button {
+    flex: 1 1 100%;
+    font-size: 0.75rem;
+  }
+}
+
 
 /* ===== TABS ===== */
 .tab-bar {
@@ -221,4 +274,42 @@
 @keyframes slideIn {
   from { transform: translateY(-20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+/* ===== Property Badge Base ===== */
+.property-badge {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 300; /* thin */
+  font-family: 'Satoshi-Regular', sans-serif;
+  border: 3px solid #fff;
+  border-radius: 20px;
+  z-index: 20;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  text-transform: uppercase;
+  pointer-events: none; /* doesn’t interfere with hover */
+}
+
+/* Status-specific pastel colors */
+.property-badge.pending {
+  color: #a36d00;
+  background: #fff7cc;
+}
+
+.property-badge.available {
+  color: #0066a1;
+  background: #e1f4ff;
+}
+
+.property-badge.rejected {
+  color: #7f1d1d;
+  background: #fee2e2;
+}
+
+.property-badge.sold {
+  color: #0f7c4e;
+  background: #a7f3d0;
 }
