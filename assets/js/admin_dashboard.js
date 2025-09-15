@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// ================== Admin Direct Agents ==================
+// ================== Admin Agents (Direct + Associate) ==================
 document.addEventListener('DOMContentLoaded', () => {
   const agentList = document.getElementById('agentList');
   const agentModal = document.getElementById('agentModal');
@@ -127,41 +127,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         modalBody.innerHTML = `
-        <div class="personal-info">
-          <h3>Personal Information</h3>
-          <div class="detail-row"><div class="detail-label">Full Name:</div><div class="detail-value">${btn.dataset.firstName} ${btn.dataset.lastName}</div></div>
-          <div class="detail-row"><div class="detail-label">Email:</div><div class="detail-value">${btn.dataset.email}</div></div>
-          <div class="detail-row"><div class="detail-label">Phone:</div><div class="detail-value">${btn.dataset.phone || 'N/A'}</div></div>
-          <div class="detail-row"><div class="detail-label">Address:</div><div class="detail-value">${btn.dataset.address || 'N/A'}</div></div>
-        </div>
+          <div class="col-left">
+            <section class="personal-info">
+              <h3>Personal Information</h3>
+              <div class="detail-row"><div class="detail-label">Full Name:</div><div class="detail-value">${btn.dataset.firstName} ${btn.dataset.lastName}</div></div>
+              <div class="detail-row"><div class="detail-label">Email:</div><div class="detail-value">${btn.dataset.email}</div></div>
+              <div class="detail-row"><div class="detail-label">Phone:</div><div class="detail-value">${btn.dataset.phone || 'N/A'}</div></div>
+              <div class="detail-row"><div class="detail-label">Address:</div><div class="detail-value">${btn.dataset.address || 'N/A'}</div></div>
+            </section>
 
-        <div class="agent-info">
-          <h3>Agent Information</h3>
-          <div class="detail-row"><div class="detail-label">Agent Type:</div><div class="detail-value">${btn.dataset.userType || 'DIRECT AGENT'}</div></div>
-          <div class="detail-row"><div class="detail-label">Broker ID:</div><div class="detail-value">${btn.dataset.brokerId || 'N/A'}</div></div>
-          <div class="detail-row"><div class="detail-label">License Number:</div><div class="detail-value">${btn.dataset.licenseNumber || 'N/A'}</div></div>
-          <div class="detail-row"><div class="detail-label">Experience:</div><div class="detail-value">${btn.dataset.experienceYears || 'N/A'} years</div></div>
-          <div class="detail-row"><div class="detail-label">Specialization:</div><div class="detail-value">${btn.dataset.specialization || 'N/A'}</div></div>
-          <div class="detail-row"><div class="detail-label">Company:</div><div class="detail-value">${btn.dataset.companyName || 'N/A'}</div></div>
+            <section class="agent-info">
+              <h3>Agent Information</h3>
+              <div class="detail-row"><div class="detail-label">Agent Type:</div><div class="detail-value">${btn.dataset.userType || 'DIRECT AGENT'}</div></div>
+              <div class="detail-row"><div class="detail-label">Broker ID:</div><div class="detail-value">${btn.dataset.brokerId || 'N/A'}</div></div>
+              <div class="detail-row"><div class="detail-label">License Number:</div><div class="detail-value">${btn.dataset.licenseNumber || 'N/A'}</div></div>
+              <div class="detail-row"><div class="detail-label">Experience:</div><div class="detail-value">${btn.dataset.experienceYears || 'N/A'} years</div></div>
+              <div class="detail-row"><div class="detail-label">Specialization:</div><div class="detail-value">${btn.dataset.specialization || 'N/A'}</div></div>
+              <div class="detail-row"><div class="detail-label">Company:</div><div class="detail-value">${btn.dataset.companyName || 'N/A'}</div></div>
+            </section>
+          </div>
 
-          <h3>Education & Qualifications</h3>
-          <div class="detail-row"><div class="detail-label">Education:</div><div class="detail-value">${btn.dataset.education || 'N/A'}</div></div>
-          <div class="detail-row"><div class="detail-label">School:</div><div class="detail-value">${btn.dataset.school || 'N/A'}</div></div>
-          <div class="detail-row"><div class="detail-label">Course:</div><div class="detail-value">${btn.dataset.course || 'N/A'}</div></div>
-          <div class="detail-row"><div class="detail-label">Graduation Year:</div><div class="detail-value">${btn.dataset.graduationYear || 'N/A'}</div></div>
+          <div class="col-right">
+            <section class="education">
+              <h3>Education & Qualifications</h3>
+              <div class="detail-row"><div class="detail-label">Education:</div><div class="detail-value">${btn.dataset.education || 'N/A'}</div></div>
+              <div class="detail-row"><div class="detail-label">School:</div><div class="detail-value">${btn.dataset.school || 'N/A'}</div></div>
+              <div class="detail-row"><div class="detail-label">Course:</div><div class="detail-value">${btn.dataset.course || 'N/A'}</div></div>
+              <div class="detail-row"><div class="detail-label">Graduation Year:</div><div class="detail-value">${btn.dataset.graduationYear || 'N/A'}</div></div>
+            </section>
 
-          <h3>Uploaded Documents</h3>
-          ${docLink('Broker License', btn.dataset.brokerLicensePath)}
-          ${docLink('PRC License', btn.dataset.prcLicensePath)}
-          ${docLink('Resume/CV', btn.dataset.resumePath)}
-          ${docLink('Valid ID', btn.dataset.validIdPath)}
-          ${additionalDocsHtml || '<div class="detail-row"><div class="detail-value">No additional documents uploaded</div></div>'}
+            <section class="documents">
+              <h3>Uploaded Documents</h3>
+              ${docLink('Broker License', btn.dataset.brokerLicensePath)}
+              ${docLink('PRC License', btn.dataset.prcLicensePath)}
+              ${docLink('Resume/CV', btn.dataset.resumePath)}
+              ${docLink('Valid ID', btn.dataset.validIdPath)}
+              ${additionalDocsHtml || '<div class="detail-row"><div class="detail-value">No additional documents uploaded</div></div>'}
+            </section>
 
-          <h3>Account Information</h3>
-          <div class="detail-row"><div class="detail-label">Account Created:</div><div class="detail-value">${new Date(btn.dataset.accountCreated).toLocaleDateString()}</div></div>
-          <div class="detail-row"><div class="detail-label">Status:</div><div class="detail-value">${btn.dataset.status || 'N/A'}</div></div>
-        </div>
-      `;
+            <section class="account">
+              <h3>Account Information</h3>
+              <div class="detail-row"><div class="detail-label">Account Created:</div><div class="detail-value">${new Date(btn.dataset.accountCreated).toLocaleDateString()}</div></div>
+              <div class="detail-row"><div class="detail-label">Status:</div><div class="detail-value">${btn.dataset.status || 'N/A'}</div></div>
+            </section>
+          </div>
+        `;
 
         agentModal.style.display = 'block';
       }
@@ -182,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const data = await response.json();
 
           if (response.ok && data.success) {
-            const card = e.target.closest('.direct-agent-card');
+            const card = e.target.closest('.direct-agent-card, .associate-agent-card');
             if (card) card.remove();
             alert('Agent account removed successfully.');
           } else {
@@ -198,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sortSelect) {
       sortSelect.addEventListener('change', () => {
         const sortBy = sortSelect.value;
-        const cards = Array.from(agentList.querySelectorAll('.direct-agent-card'));
+        const cards = Array.from(agentList.querySelectorAll('.direct-agent-card, .associate-agent-card'));
         let sorted;
         switch (sortBy) {
           case 'date':
@@ -223,4 +233,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-

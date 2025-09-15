@@ -71,7 +71,7 @@ while ($row = $result->fetch_assoc()) {
 $stmt->close();
 ?>
 
-<link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_direct_agent.css" />
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_agents.css" />
 
 <header class="content-header">
   <h1>Direct Agents</h1>
@@ -153,7 +153,6 @@ $stmt->close();
   <div class="modal-content">
     <div class="modal-header">
       <h2>Agent Details</h2>
-      <span class="close">&times;</span>
     </div>
     <div class="modal-body" id="modalBody">
       <!-- Content loaded via JS -->
