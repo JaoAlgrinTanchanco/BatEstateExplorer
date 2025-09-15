@@ -155,7 +155,7 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
                             <div class="property-badge <?php echo htmlspecialchars($property['status']); ?>">
                                 <?php echo ucfirst($property['status']); ?>
                             </div>
-                            
+
                             <!-- Card background and image -->
                             <div class="property-image" style="background-image: url('<?php echo htmlspecialchars($image_url); ?>');"></div>
 
@@ -187,12 +187,33 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
 
     </div>
 </div>
-
 <!-- Modal -->
 <div id="propertyModal" class="modal" style="display:none;">
     <div class="modal-content">
         <span class="close">&times;</span>
-        <div id="modalBody">Loading...</div>
+
+        <div class="modal-left">
+            <div class="property-main-image" style="background-image: url('');"></div>
+            <div class="property-name"></div>
+            <div class="property-images"></div>
+        </div>
+
+        <div class="modal-right">
+            <section><span class="label">Location:</span> <span class="value location"></span></section>
+            <section><span class="label">Price:</span> <span class="value price"></span></section>
+            <section><span class="label">Property Type:</span> <span class="value property-type"></span></section>
+            <section><span class="label">Bedrooms:</span> <span class="value bedrooms"></span></section>
+            <section><span class="label">Bathrooms:</span> <span class="value bathrooms"></span></section>
+            <section><span class="label">Area:</span> <span class="value sqm"></span></section>
+            <section><span class="label">Lot Size:</span> <span class="value lot_size"></span></section>
+            <section><span class="label">Status:</span> <span class="value status"></span></section>
+            <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>
+
+            <section>
+                <span class="label">Description:</span>
+                <div class="property-description"></div>
+            </section>
+        </div>
     </div>
 </div>
 
@@ -227,41 +248,70 @@ document.addEventListener('click', async e => {
     const propertyId = e.target.dataset.id;
     if (!propertyId) return;
 
+    // Get property_type from button data attribute
+    const propertyTypeFromBtn = e.target.dataset.type || '-';
+
     modal.style.display = 'block';
-    modalBody.innerHTML = '<p>Loading...</p>';
+
+    // Clear existing content
+    const mainImage = modal.querySelector('.property-main-image');
+    modal.querySelector('.property-name').textContent = '';
+    modal.querySelector('.property-type').textContent = '';
+    modal.querySelectorAll('.modal-right .value').forEach(v => v.textContent = '');
+    modal.querySelector('.property-images').innerHTML = '';
+    modal.querySelector('.property-description').textContent = '';
 
     try {
         const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${propertyId}`);
         const data = await res.json();
 
         if (!data.success || !data.property) {
-            modalBody.innerHTML = `<p>${data.error || 'Failed to load property details.'}</p>`;
+            alert(data.error || 'Failed to load property details.');
+            modal.style.display = 'none';
             return;
         }
 
         const prop = data.property;
 
-        // Render property details
-        modalBody.innerHTML = `
-            <h2>${prop.title}</h2>
-            <p><strong>Location:</strong> ${prop.location || '-'}</p>
-            <p><strong>Price:</strong> ₱${parseFloat(prop.price || 0).toLocaleString()}</p>
-            <p><strong>Bedrooms:</strong> ${prop.bedrooms || 0}</p>
-            <p><strong>Bathrooms:</strong> ${prop.bathrooms || 0}</p>
-            <p><strong>Area:</strong> ${prop.sqm || 0} sqm</p>
-            <p><strong>Lot Size:</strong> ${prop.lot_size || 0} sqm</p>
-            <p><strong>Status:</strong> ${prop.status || '-'}</p>
-            <p><strong>Date Uploaded:</strong> ${prop.date_uploaded || '-'}</p>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
-                ${(prop.images || []).map(img => `
-                    <img src="${img}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">
-                `).join('')}
-            </div>
-            <p style="margin-top:10px;">${prop.description || ''}</p>
-        `;
+        // Populate left column
+        mainImage.style.backgroundImage = `url('${prop.images?.[0] || '/BatEstateExplorer/assets/images/bg4.jpg'}')`;
+        modal.querySelector('.property-name').textContent = prop.title || '-';
+
+        // Populate right column
+        modal.querySelector('.location').textContent = prop.location || '-';
+        modal.querySelector('.price').textContent = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
+        modal.querySelector('.property-type').textContent = prop.property_type || propertyTypeFromBtn || '-'; // fallback
+        modal.querySelector('.bedrooms').textContent = prop.bedrooms || 0;
+        modal.querySelector('.bathrooms').textContent = prop.bathrooms || 0;
+        modal.querySelector('.sqm').textContent = `${prop.sqm || 0} sqm`;
+        modal.querySelector('.lot_size').textContent = `${prop.lot_size || 0} sqm`;
+        modal.querySelector('.status').textContent = prop.status || '-';
+        modal.querySelector('.date_uploaded').textContent = prop.date_uploaded || '-';
+
+        // Description
+        modal.querySelector('.property-description').textContent = prop.description || '';
+
+        // Populate images gallery with selection functionality
+        const gallery = modal.querySelector('.property-images');
+        (prop.images || []).forEach((img, idx) => {
+            const imgEl = document.createElement('img');
+            imgEl.src = img;
+
+            if(idx === 0) imgEl.classList.add('active'); // first image selected by default
+
+            imgEl.addEventListener('click', () => {
+                mainImage.style.backgroundImage = `url('${img}')`;
+                gallery.querySelectorAll('img').forEach(i => i.classList.remove('active'));
+                imgEl.classList.add('active');
+            });
+
+            gallery.appendChild(imgEl);
+        });
+
     } catch (err) {
         console.error(err);
-        modalBody.innerHTML = '<p>An unexpected error occurred.</p>';
+        alert('An unexpected error occurred.');
+        modal.style.display = 'none';
     }
 });
 

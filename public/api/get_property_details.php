@@ -12,10 +12,9 @@ if ($property_id <= 0) {
 }
 
 // Fetch property details including agent_id
-$sql = "SELECT id, title, description, location, price, bedrooms, bathrooms, sqm, lot_size, status, created_at, agent_id
+$sql = "SELECT id, title, property_type, description, location, price, bedrooms, bathrooms, sqm, lot_size, status, created_at, agent_id
         FROM properties
-        WHERE id = ?
-        LIMIT 1";
+        WHERE id = ? LIMIT 1";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $property_id);
@@ -77,6 +76,7 @@ if ($uid) {
 $property_data = [
     'id'           => (int)$property['id'],
     'title'        => $property['title'] ?: 'No Title',
+    'property_type'=> $property['property_type'] ?: '-',
     'description'  => $property['description'] ?: 'No description available.',
     'location'     => $property['location'] ?: 'Location not available',
     'price'        => isset($property['price']) ? (float)$property['price'] : 0,
