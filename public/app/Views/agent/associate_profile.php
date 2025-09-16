@@ -377,97 +377,166 @@ if ($company_id > 0) {
             <h2>Add New Listing (Associate)</h2>
 
             <div class="overview-container">
-            <div class="overview-card">
-                <form id="addListingForm" 
-                    action="/BatEstateExplorer/public/api/associate_save_listing.php" 
-                    method="POST" 
-                    enctype="multipart/form-data">
+                <div class="overview-card">
+                    <form id="addListingForm" 
+                        action="/BatEstateExplorer/public/api/associate_save_listing.php" 
+                        method="POST" 
+                        enctype="multipart/form-data">
 
-                    <!-- Property Name -->
-                    <label for="title"><strong>Property Name</strong></label>
-                    <input type="text" id="title" name="title" required>
+                        <!-- Property Name -->
+                        <label for="title"><strong>Property Name</strong></label>
+                        <input type="text" id="title" name="title" required>
 
-                    <!-- Location -->
-                    <label for="location"><strong>Location</strong></label>
-                    <select id="location" name="location" required>
-                        <option value="">Select Location</option>
-                        <option value="Agoncillo">Agoncillo</option>
-                        <option value="Alitagtag">Alitagtag</option>
-                        <option value="Balayan">Balayan</option>
-                        <option value="Balete">Balete</option>
-                        <option value="Batangas City">Batangas City</option>
-                        <option value="Bauan">Bauan</option>
-                        <option value="Calaca">Calaca</option>
-                        <option value="Calatagan">Calatagan</option>
-                        <option value="Cuenca">Cuenca</option>
-                        <option value="Ibaan">Ibaan</option>
-                        <option value="Laurel">Laurel</option>
-                        <option value="Lemery">Lemery</option>
-                        <option value="Lian">Lian</option>
-                        <option value="Lipa City">Lipa City</option>
-                        <option value="Lobo">Lobo</option>
-                        <option value="Mabini">Mabini</option>
-                        <option value="Malvar">Malvar</option>
-                        <option value="Mataasnakahoy">Mataasnakahoy</option>
-                        <option value="Nasugbu">Nasugbu</option>
-                        <option value="Padre Garcia">Padre Garcia</option>
-                        <option value="Rosario">Rosario</option>
-                        <option value="San Jose">San Jose</option>
-                        <option value="San Juan">San Juan</option>
-                        <option value="San Luis">San Luis</option>
-                        <option value="San Nicolas">San Nicolas</option>
-                        <option value="San Pascual">San Pascual</option>
-                        <option value="Santa Teresita">Santa Teresita</option>
-                        <option value="Santo Tomas">Santo Tomas</option>
-                        <option value="Taal">Taal</option>
-                        <option value="Talisay">Talisay</option>
-                        <option value="Tanauan City">Tanauan City</option>
-                        <option value="Taysan">Taysan</option>
-                        <option value="Tingloy">Tingloy</option>
-                        <option value="Tuy">Tuy</option>
-                    </select>
+                        <!-- Location -->
+                        <label for="location"><strong>Location</strong></label>
+                        <select id="location" name="location" required>
+                            <option value="">Select Location</option>
+                            <option value="Agoncillo">Agoncillo</option>
+                            <option value="Alitagtag">Alitagtag</option>
+                            <option value="Balayan">Balayan</option>
+                            <option value="Balete">Balete</option>
+                            <option value="Batangas City">Batangas City</option>
+                            <option value="Bauan">Bauan</option>
+                            <option value="Calaca">Calaca</option>
+                            <option value="Calatagan">Calatagan</option>
+                            <option value="Cuenca">Cuenca</option>
+                            <option value="Ibaan">Ibaan</option>
+                            <option value="Laurel">Laurel</option>
+                            <option value="Lemery">Lemery</option>
+                            <option value="Lian">Lian</option>
+                            <option value="Lipa City">Lipa City</option>
+                            <option value="Lobo">Lobo</option>
+                            <option value="Mabini">Mabini</option>
+                            <option value="Malvar">Malvar</option>
+                            <option value="Mataasnakahoy">Mataasnakahoy</option>
+                            <option value="Nasugbu">Nasugbu</option>
+                            <option value="Padre Garcia">Padre Garcia</option>
+                            <option value="Rosario">Rosario</option>
+                            <option value="San Jose">San Jose</option>
+                            <option value="San Juan">San Juan</option>
+                            <option value="San Luis">San Luis</option>
+                            <option value="San Nicolas">San Nicolas</option>
+                            <option value="San Pascual">San Pascual</option>
+                            <option value="Santa Teresita">Santa Teresita</option>
+                            <option value="Santo Tomas">Santo Tomas</option>
+                            <option value="Taal">Taal</option>
+                            <option value="Talisay">Talisay</option>
+                            <option value="Tanauan City">Tanauan City</option>
+                            <option value="Taysan">Taysan</option>
+                            <option value="Tingloy">Tingloy</option>
+                            <option value="Tuy">Tuy</option>
+                        </select>
 
-                    <!-- Price -->
-                    <label for="price"><strong>Price (₱)</strong></label>
-                    <input type="number" id="price" name="price" min="0" step="0.01" required>
+                        <!-- Price -->
+                        <label for="price"><strong>Price (₱)</strong></label>
+                        <input type="number" id="price" name="price" min="0" step="0.01" required>
 
-                    <!-- Lot Size -->
-                    <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
-                    <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
+                        <!-- Lot Size -->
+                        <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
+                        <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
 
-                    <!-- Property Type -->
-                    <label for="property_type"><strong>Property Type</strong></label>
-                    <select id="property_type" name="property_type" required>
-                        <option value="">-- Select Type --</option>
-                        <option value="Property">Property</option>
-                        <option value="Lot">Lot</option>
-                    </select>
+                        <!-- Property Type -->
+                        <label for="property_type"><strong>Property Type</strong></label>
+                        <select id="property_type" name="property_type" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="Property">Property</option>
+                            <option value="Lot">Lot</option>
+                        </select>
 
-                    <!-- Bedrooms -->
-                    <label for="bedrooms"><strong>Bedrooms</strong></label>
-                    <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
+                        <!-- Bedrooms -->
+                        <label for="bedrooms"><strong>Bedrooms</strong></label>
+                        <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
 
-                    <!-- Bathrooms -->
-                    <label for="bathrooms"><strong>Bathrooms</strong></label>
-                    <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
+                        <!-- Bathrooms -->
+                        <label for="bathrooms"><strong>Bathrooms</strong></label>
+                        <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
 
-                    <!-- Description -->
-                    <label for="description"><strong>Description</strong></label>
-                    <textarea id="description" name="description" rows="4" required></textarea>
+                        <!-- Description -->
+                        <label for="description"><strong>Description</strong></label>
+                        <textarea id="description" name="description" rows="4" required></textarea>
 
-                    <!-- Images -->
-                    <label for="images"><strong>Property Images</strong></label>
-                    <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
-                        <p>Drag & drop images here or click to browse</p>
-                        <input type="file" id="images" accept="image/*" multiple style="display:none;">
-                    </div>
+                        <!-- Images -->
+                        <label for="images"><strong>Property Images</strong></label>
+                        <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
+                            <p>Drag & drop images here or click to browse</p>
+                            <input type="file" id="images" accept="image/*" multiple style="display:none;">
+                        </div>
 
-                    <div id="imagePreview" class="image-preview" aria-live="polite"></div>
+                        <div id="imagePreview" class="image-preview" aria-live="polite"></div>
 
-                    <button type="submit" class="btn-submit">Save Listing</button>
-                </form>
+                        <!-- Submit / Pay Button -->
+                        <button type="button" id="validateAndShowPaypal" class="btn-submit">
+                            Save Listing & Pay
+                        </button>
+
+                        <!-- Container where PayPal button will appear -->
+                        <div id="paypal-button-container" style="margin-top:10px;"></div>
+                    </form>
+                </div>
             </div>
-            </div>
+            <script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt"></script>
+            <script>
+                const form = document.getElementById("addListingForm");
+                const validateBtn = document.getElementById("validateAndShowPaypal");
+                const paypalContainer = document.getElementById("paypal-button-container");
+
+                // Step 1: validate form
+                validateBtn.addEventListener("click", () => {
+                    if (!form.checkValidity()) {
+                        // Trigger HTML5 validation UI
+                        form.reportValidity();
+                        return;
+                    }
+
+                    // Step 2: hide the original button
+                    validateBtn.style.display = "none";
+
+                    // Step 3: render PayPal button
+                    paypal.Buttons({
+                        createOrder: (data, actions) => {
+                            const price = document.getElementById("price").value || "10.00";
+                            return actions.order.create({
+                                purchase_units: [{ amount: { value: price } }]
+                            });
+                        },
+                        onApprove: (data, actions) => {
+                            return actions.order.capture().then(details => {
+                                alert("Payment completed by " + details.payer.name.given_name);
+
+                                // Submit form via fetch after payment
+                                const fd = new FormData(form);
+                                fetch("/BatEstateExplorer/public/api/associate_save_listing.php", {
+                                    method: "POST",
+                                    body: fd
+                                })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        alert("Listing saved successfully!");
+                                        window.location.href = "http://localhost/BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=add_listing";
+                                    } else {
+                                        console.error(data);
+                                        alert("Failed to save listing: " + (data.error || 'Unknown error'));
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error(err);
+                                    alert("Error saving listing after payment.");
+                                });
+                            });
+                        },
+                        onCancel: () => {
+                            alert("Payment cancelled. Listing not saved.");
+                            validateBtn.style.display = "block"; // show button again
+                        },
+                        onError: (err) => {
+                            console.error(err);
+                            alert("Something went wrong with PayPal.");
+                            validateBtn.style.display = "block"; // show button again
+                        }
+                    }).render("#paypal-button-container");
+                });
+            </script>
         <?php break; ?>
 
         <?php case 'analytics': ?>
