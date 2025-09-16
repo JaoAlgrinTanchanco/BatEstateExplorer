@@ -1,57 +1,60 @@
-/* ====== Fonts ====== */
+/* ===========================
+   Fonts
+=========================== */
 @font-face {
-    font-family: 'Satoshi';
-    src: url('../fonts/Satoshi-Medium.otf') format('opentype');
-    font-weight: 900;
-    font-style: normal;
+  font-family: 'Satoshi';
+  src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi-Bold';
+  src: url('../fonts/Satoshi-Bold.otf') format('opentype');
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi-Medium';
+  src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi-Regular';
+  src: url('../fonts/Satoshi-Regular.otf') format('opentype');
+  font-style: normal;
 }
 
-@font-face {
-    font-family: 'Satoshi-Bold';
-    src: url('../fonts/Satoshi-Bold.otf') format('opentype');
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'Satoshi-Medium';
-    src: url('../fonts/Satoshi-Medium.otf') format('opentype');
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'Satoshi-Regular';
-    src: url('../fonts/Satoshi-Regular.otf') format('opentype');
-    font-style: normal;
-}
-
+/* ===========================
+   Content Header
+=========================== */
 .content-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .content-header h1 {
-    background: #fff;
-    padding: 0.75rem 2rem;
-    font-family: 'Satoshi', sans-serif;
-    margin-bottom: 1.5rem;
-    font-size: 2.5rem;
-    color: #111827;
-    border-radius: 20px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    display: inline-block;
+  background: #fff;
+  padding: 0.75rem 2rem;
+  font-family: 'Satoshi', sans-serif;
+  margin-bottom: 1.5rem;
+  font-size: 2.5rem;
+  color: #111827;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  display: inline-block;
 }
 
-/* ===== Direct Agents List ===== */
+/* ===========================
+   Direct Agents List & Cards
+=========================== */
 .direct-agent-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(245px, 245px)); /* default square */
   gap: 1.5rem;
   margin-top: 1.5rem;
+  justify-content: start;
 }
-
-/* ===== Direct Agent Card ===== */
 
 .direct-agent-card {
   background: #fff;
@@ -62,22 +65,19 @@
   padding: 1.5rem;
   position: relative;
   aspect-ratio: 1 / 1;
+  max-width: 245px;
   transform: translateZ(0);
-  /* Smooth movement */
-  transition: 
-    transform 0.3s ease,      /* hover lift */
-    box-shadow 0.3s ease,     /* hover shadow */
-    margin 0.4s ease-in-out,  /* grid rearrangement */
-    top 0.4s ease-in-out, 
-    left 0.4s ease-in-out;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, margin 0.4s ease-in-out,
+              top 0.4s ease-in-out, left 0.4s ease-in-out;
 }
-
 .direct-agent-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 
-/* ===== Avatar ===== */
+/* ===========================
+   Avatar & Info
+=========================== */
 .direct-agent-avatar {
   width: 60px;
   height: 60px;
@@ -90,7 +90,6 @@
   margin-bottom: 1rem;
 }
 
-/* ===== Agent Info ===== */
 .direct-agent-info {
   flex: 1;
   display: flex;
@@ -110,7 +109,9 @@
   color: #6b7280;
 }
 
-/* ===== Actions ===== */
+/* ===========================
+   Actions & Buttons
+=========================== */
 .direct-agent-actions {
   display: flex;
   gap: 0.5rem;
@@ -118,21 +119,24 @@
   margin-top: 1rem;
 }
 
-/* View Button */
-.btn-view {
+.btn-view,
+.btn-remove {
   flex: 1 1 calc(50% - 0.5rem);
   padding: 0.6rem 1.25rem;
   font-size: 0.9rem;
-  font-family: 'satoshi', sans-serif;
+  font-family: 'Satoshi', sans-serif;
   font-weight: 600;
   border-radius: 30px;
   border: 1px solid #111;
-  background: #111;
-  color: #fff;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
+/* View button */
+.btn-view {
+  background: #111;
+  color: #fff;
+}
 .btn-view:hover {
   background: transparent;
   color: #111;
@@ -140,21 +144,11 @@
   transform: translateY(-2px);
 }
 
-/* Remove Button */
+/* Remove button */
 .btn-remove {
-  flex: 1 1 calc(50% - 0.5rem);
-  padding: 0.6rem 1.25rem;
-  font-size: 0.9rem;
-  font-family: 'satoshi', sans-serif;
-  font-weight: 600;
-  border-radius: 30px;
-  border: 1px solid #111;
   background: transparent;
   color: #111;
-  cursor: pointer;
-  transition: all 0.3s ease;
 }
-
 .btn-remove:hover {
   background: #111;
   color: #fff;
@@ -162,14 +156,15 @@
   transform: translateY(-2px);
 }
 
-/* ===== Modal Styling ===== */
+/* ===========================
+   Modal Styling
+=========================== */
 #agentModal {
   display: none;
   position: fixed;
   top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(17, 24, 39, 0.55);
+  width: 100%; height: 100%;
+  background: rgba(17,24,39,0.55);
   z-index: 9999;
   overflow-y: auto;
   padding: 2rem;
@@ -180,9 +175,9 @@
 #agentModal .modal-content {
   background: #fff;
   border-radius: 20px;
-  max-width: 950px; /* landscape */
+  max-width: 950px;
   margin: 3rem auto;
-  padding: 2rem 2.5rem; /* slightly tighter */
+  padding: 2rem 2.5rem;
   position: relative;
   animation: slideIn 0.3s ease-out;
   box-shadow: 0 20px 50px rgba(0,0,0,0.18);
@@ -195,17 +190,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #000; /* thin solid black */
+  border-bottom: 1px solid #000;
   padding-bottom: 0.75rem;
   margin-bottom: 1.5rem;
 }
-
 #agentModal .modal-header h2 {
   font-size: 2.5rem;
   font-weight: 700;
   color: #111827;
 }
-
 #agentModal .close {
   cursor: pointer;
   font-size: 1.6rem;
@@ -213,66 +206,39 @@
   color: #6b7280;
   transition: color 0.2s ease;
 }
-#agentModal .close:hover {
-  color: #111;
-}
+#agentModal .close:hover { color: #111; }
 
-/* Body → 2-column layout */
+/* Body */
 #agentModal .modal-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem; /* less spacing */
+  gap: 2rem;
   font-size: 1.1rem;
   color: #374151;
-  line-height: 1.6; /* tighter line height */
+  line-height: 1.6;
 }
-
 #agentModal .modal-body section {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem; /* less space between rows */
+  gap: 0.75rem;
   padding-bottom: 1rem;
 }
-
-#agentModal .modal-body section:last-child {
-  border-bottom: none;
-}
-
 #agentModal .modal-body h3 {
   font-size: 1.2rem;
   font-weight: 700;
   color: #111827;
   margin-bottom: 0.25rem;
   padding-bottom: 0.3rem;
-  border-bottom: 1px solid #000; /* thin solid black under headers */
+  border-bottom: 1px solid #000;
 }
 
-/* Rows inside sections */
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-}
-
-.detail-label {
-  color: #374151;
-  flex: 1;
-  font-size: 1rem;
-}
-
-.detail-value {
-  flex: 1;
-  text-align: right;
-  color: #4b5563;
-  word-break: break-word;
-  font-size: 1rem;
-}
+/* Rows */
+.detail-row { display: flex; justify-content: space-between; }
+.detail-label { flex: 1; font-size: 1rem; color: #374151; }
+.detail-value { flex: 1; text-align: right; font-size: 1rem; color: #4b5563; word-break: break-word; }
 
 /* Footer */
-#agentModal .modal-footer {
-  text-align: right;
-  margin-top: 1.5rem;
-}
-
+#agentModal .modal-footer { text-align: right; margin-top: 1.5rem; }
 .cancel-btn {
   background: #111827;
   color: #fff;
@@ -284,9 +250,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
 }
-.cancel-btn:hover {
-  background: #374151;
-}
+.cancel-btn:hover { background: #374151; }
 
 /* Animation */
 @keyframes slideIn {
@@ -294,24 +258,18 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  #agentModal .modal-body {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ===== Sorting Row ===== */
+/* ===========================
+   Sorting Row
+=========================== */
 .sort-row {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 1rem;
 }
-
 .sort-by select {
-    width: 150px;
+  width: 150px;
   padding: 0.6rem 1rem;
-  border-radius: 30px; /* match button/card rounding */
+  border-radius: 30px;
   border: 1px solid #d1d5db;
   font-size: 0.95rem;
   font-family: 'Satoshi', sans-serif;
@@ -321,13 +279,12 @@
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  appearance: none; /* remove default arrow for styling */
+  appearance: none;
   background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg width='14' height='8' viewBox='0 0 14 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%236B7280' stroke-width='2'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 14px 8px;
 }
-
 .sort-by select:hover,
 .sort-by select:focus {
   border-color: #111;
@@ -335,13 +292,9 @@
   outline: none;
 }
 
-/* ===== Animations ===== */
-@keyframes slideIn {
-  from { transform: translateY(-20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-/* ===== No Agents Message ===== */
+/* ===========================
+   No Agents Message
+=========================== */
 .no-agents {
   text-align: center;
   font-size: 1rem;
@@ -349,125 +302,63 @@
   margin-top: 2rem;
 }
 
-/* ===== Responsive Adjustments ===== */
-
-/* Medium Screens (tablets) */
-@media (max-width: 992px) {
-  .content-header h1 {
-    font-size: 2rem;
-    padding: 0.5rem 1.5rem;
-  }
-
-  .direct-agent-list {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-  }
-
-  .direct-agent-card {
-    padding: 1rem;
-  }
-
-  .direct-agent-avatar {
-    width: 50px;
-    height: 50px;
-    font-size: 1.75rem;
-    margin-bottom: 0.75rem;
-  }
-
+/* ===========================
+   Responsive
+=========================== */
+@media (min-width: 992px) {
   .direct-agent-name {
-    font-size: 1rem;
+    font-size: 1.25rem;   /* bigger name text */
   }
 
   .direct-agent-details {
-    font-size: 0.85rem;
+    font-size: 1rem;      /* bigger details text */
   }
 
   .btn-view, .btn-remove {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.95rem;
   }
 }
 
-/* Small Screens (phones) */
 @media (max-width: 768px) {
-  .content-header h1 {
-    font-size: 1.75rem;
-    padding: 0.5rem 1rem;
-  }
-
   .direct-agent-list {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(245px, 350px));
+    justify-content: center;
   }
-
   .direct-agent-card {
-    aspect-ratio: auto; /* allow cards to auto height for small screens */
-    flex-direction: row; /* optional: avatar + info side by side */
-    align-items: center;
+    max-width: 350px;
+    aspect-ratio: 1 / 1;
     padding: 1rem;
   }
-
-  .direct-agent-avatar {
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
-    margin-bottom: 0;
-    margin-right: 1rem;
-  }
-
-  .direct-agent-info {
-    flex: 1;
-  }
-
-  .btn-view, .btn-remove {
-    flex: 1 1 100%;
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-  }
-
-  .direct-agent-actions {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .sort-row {
-    justify-content: center;
-    margin-bottom: 1rem;
-  }
-
-  .sort-by select {
-    width: 100%;
-    max-width: 250px;
-  }
+  #agentModal .modal-body { grid-template-columns: 1fr; }
 }
 
-/* Extra Small Screens (very small phones) */
-@media (max-width: 480px) {
-  .content-header h1 {
-    font-size: 1.5rem;
-    padding: 0.4rem 0.8rem;
+@media (max-width: 600px) {
+  .direct-agent-list {
+    grid-template-columns: 1fr; /* each card takes full row width */
+    justify-content: center;
   }
 
   .direct-agent-card {
+    width: 100%;
+    height: 250px;       /* fixed rectangle height */
+    max-width: none;     /* remove the cap so it can fill */
+    aspect-ratio: auto;  /* disable square ratio */
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .direct-agent-card {
+    max-width: 300px;
+    aspect-ratio: 1 / 1;
     padding: 0.75rem;
   }
-
   .direct-agent-avatar {
     width: 40px;
     height: 40px;
     font-size: 1.25rem;
   }
-
-  .direct-agent-name {
-    font-size: 0.95rem;
-  }
-
-  .direct-agent-details {
-    font-size: 0.8rem;
-  }
-
-  .btn-view, .btn-remove {
-    padding: 0.45rem 0.9rem;
-    font-size: 0.8rem;
-  }
+  .direct-agent-name { font-size: 0.95rem; }
+  .direct-agent-details { font-size: 0.8rem; }
 }
