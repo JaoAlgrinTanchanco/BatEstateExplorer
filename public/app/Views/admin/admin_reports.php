@@ -30,9 +30,6 @@ if (!$is_logged_in || !$is_admin) {
 
     <header class="content-header">
         <h1>Admin Reports</h1>
-        <div class="user-info">
-            <span>Welcome, <?php echo htmlspecialchars($current_user['email']); ?></span>
-        </div>
     </header>
 
       <div class="sort-row">
@@ -48,9 +45,9 @@ if (!$is_logged_in || !$is_admin) {
 
       <!-- Tabs -->
       <div class="tab-bar" role="tablist" aria-label="Report Categories">
-        <div class="tab active" role="tab" tabindex="0" aria-selected="true" aria-controls="directAgentReports" id="tab-directAgent">Direct Agents</div>
-        <div class="tab" role="tab" tabindex="-1" aria-selected="false" aria-controls="associateAgentReports" id="tab-associateAgent">Associate Agents</div>
-        <div class="tab" role="tab" tabindex="-1" aria-selected="false" aria-controls="clientReports" id="tab-clients">Clients</div>
+        <button class="tab-btn active" role="tab" tabindex="0" aria-selected="true" aria-controls="directAgentReports" id="tab-directAgent">Direct Agents</button>
+        <button class="tab-btn" role="tab" tabindex="-1" aria-selected="false" aria-controls="associateAgentReports" id="tab-associateAgent">Associate Agents</button>
+        <button class="tab-btn" role="tab" tabindex="-1" aria-selected="false" aria-controls="clientReports" id="tab-clients">Clients</button>
       </div>
 
       <!-- Report Sections -->
@@ -70,7 +67,7 @@ if (!$is_logged_in || !$is_admin) {
 
   <script>
     // Tab switching logic
-    const tabs = document.querySelectorAll('.tab-bar .tab');
+    const tabs = document.querySelectorAll('.tab-bar .tab-btn'); // updated selector
     const reportContainers = document.querySelectorAll('.report-container');
     const sortSelect = document.getElementById('sort');
 
@@ -110,7 +107,4 @@ if (!$is_logged_in || !$is_admin) {
       // Implement sorting logic per visible tab here
       alert(`Sorting reports by: ${sortSelect.value}. (Sorting logic not implemented yet.)`);
     });
-
-    // Sidebar toggle and dropdown logic can be added here if needed (copied from original)
-
   </script>
