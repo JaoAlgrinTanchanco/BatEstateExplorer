@@ -81,7 +81,6 @@ if ($result) {
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_performance.css" />
 
-<!-- Main Content HTML -->
 <header class="content-header">
     <h1>Performance</h1>
 </header>
@@ -102,7 +101,7 @@ if ($result) {
   <?php if (empty($agent_performance)): ?>
     <div class="no-data">No performance data available.</div>
   <?php else: ?>
-    <canvas id="performanceChart" height="260"></canvas>
+    <div class="chart-wrapper"><canvas id="performanceChart"></canvas></div>
   <?php endif; ?>
 </section>
 
@@ -111,7 +110,7 @@ if ($result) {
   <?php if (empty($most_selling_properties)): ?>
     <div class="no-data">No property sales data available.</div>
   <?php else: ?>
-    <canvas id="propertyChart" height="260"></canvas>
+    <div class="chart-wrapper"><canvas id="propertyChart"></canvas></div>
   <?php endif; ?>
 </section>
 
@@ -120,164 +119,115 @@ if ($result) {
   <?php if (empty($company_performance)): ?>
     <div class="no-data">No company performance data available.</div>
   <?php else: ?>
-    <canvas id="companyChart" height="260"></canvas>
+    <div class="chart-wrapper"><canvas id="companyChart"></canvas></div>
   <?php endif; ?>
 </section>
 
-<!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
+function getBarThickness() {
+    let width = window.innerWidth;
+    return Math.max(Math.floor(width / 15), 25); // min 50px
+}
+
+// ===== Agent Performance =====
 <?php if (!empty($agent_performance)): ?>
 const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+const performanceGradient = performanceCtx.createLinearGradient(0, 0, 0, document.querySelector('#performanceChart').parentElement.clientHeight);
+performanceGradient.addColorStop(0, 'rgba(26,127,26,0.8)');
+performanceGradient.addColorStop(1, 'rgba(26,127,26,0.1)');
+
 new Chart(performanceCtx, {
-  type: 'bar',
-  data: {
-    labels: [<?php echo implode(',', array_map(fn($a) => '"' . addslashes($a['first_name'] . ' ' . $a['last_name']) . '"', $agent_performance)); ?>],
-    datasets: [{
-      label: 'Properties Sold',
-      data: [<?php echo implode(',', array_map(fn($a) => (int)$a['properties_sold'], $agent_performance)); ?>],
-      backgroundColor: '#1a7f1a',
-      borderRadius: 8,
-    }]
-  },
-  options: {
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: ctx => `Properties Sold: ${ctx.parsed.y}`
-        }
-      }
+    type: 'bar',
+    data: {
+        labels: [<?php echo implode(',', array_map(fn($a)=>'"'.addslashes($a['first_name'].' '.$a['last_name']).'"', $agent_performance)); ?>],
+        datasets: [{
+            label: 'Properties Sold',
+            data: [<?php echo implode(',', array_map(fn($a)=> (int)$a['properties_sold'], $agent_performance)); ?>],
+            backgroundColor: performanceGradient,
+            borderRadius: 8,
+            maxBarThickness: getBarThickness()
+        }]
     },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { color: '#333', font: { size: 14 } },
-        title: {
-          display: true,
-          text: 'Agents',
-          color: '#333',
-          font: { size: 16, weight: 'bold' },
-          padding: { top: 12 }
+    options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { 
+            x: { grid: { display: false }, ticks: { color: '#333', font: { size: 14 } } },
+            y: { beginAtZero: true, grid: { color: '#eee' }, ticks: { color: '#888', font: { size: 13 } } }
         }
-      },
-      y: {
-        beginAtZero: true,
-        grid: { color: '#eee' },
-        ticks: { color: '#888', font: { size: 13 } },
-        title: {
-          display: true,
-          text: 'Properties Sold',
-          color: '#333',
-          font: { size: 16, weight: 'bold' },
-          padding: { bottom: 12 }
-        }
-      }
     }
-  }
 });
 <?php endif; ?>
 
+// ===== Most Selling Properties =====
 <?php if (!empty($most_selling_properties)): ?>
 const propertyCtx = document.getElementById('propertyChart').getContext('2d');
+const propertyGradient = propertyCtx.createLinearGradient(0, 0, 0, document.querySelector('#propertyChart').parentElement.clientHeight);
+propertyGradient.addColorStop(0, 'rgba(0,116,217,0.8)');
+propertyGradient.addColorStop(1, 'rgba(0,116,217,0.1)');
+
 new Chart(propertyCtx, {
-  type: 'bar',
-  data: {
-    labels: [<?php echo implode(',', array_map(fn($p) => '"' . addslashes($p['title']) . '"', $most_selling_properties)); ?>],
-    datasets: [{
-      label: 'Units Sold',
-      data: [<?php echo implode(',', array_map(fn($p) => (int)$p['units_sold'], $most_selling_properties)); ?>],
-      backgroundColor: '#0074d9',
-      borderRadius: 8,
-    }]
-  },
-  options: {
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: ctx => `Units Sold: ${ctx.parsed.y}`
-        }
-      }
+    type: 'bar',
+    data: {
+        labels: [<?php echo implode(',', array_map(fn($p)=>'"'.addslashes($p['title']).'"', $most_selling_properties)); ?>],
+        datasets: [{
+            label: 'Units Sold',
+            data: [<?php echo implode(',', array_map(fn($p)=> (int)$p['units_sold'], $most_selling_properties)); ?>],
+            backgroundColor: propertyGradient,
+            borderRadius: 8,
+            maxBarThickness: getBarThickness()
+        }]
     },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { color: '#333', font: { size: 14 } },
-        title: {
-          display: true,
-          text: 'Properties',
-          color: '#333',
-          font: { size: 16, weight: 'bold' },
-          padding: { top: 12 }
+    options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { 
+            x: { grid: { display: false }, ticks: { color: '#333', font: { size: 14 } } },
+            y: { beginAtZero: true, grid: { color: '#eee' }, ticks: { color: '#888', font: { size: 13 } } }
         }
-      },
-      y: {
-        beginAtZero: true,
-        grid: { color: '#eee' },
-        ticks: { color: '#888', font: { size: 13 } },
-        title: {
-          display: true,
-          text: 'Units Sold',
-          color: '#333',
-          font: { size: 16, weight: 'bold' },
-          padding: { bottom: 12 }
-        }
-      }
     }
-  }
 });
 <?php endif; ?>
 
+// ===== Company Performance =====
 <?php if (!empty($company_performance)): ?>
 const companyCtx = document.getElementById('companyChart').getContext('2d');
+const pastelColors = [
+    'rgba(0,116,217,0.8)',
+    'rgba(26,127,26,0.8)',
+    'rgba(187,187,187,0.8)'
+];
+const companyGradients = [];
+const companyHeight = document.querySelector('#companyChart').parentElement.clientHeight;
+
+for (let i=0; i<<?php echo count($company_performance); ?>; i++){
+    let grad = companyCtx.createLinearGradient(0,0,0,companyHeight);
+    grad.addColorStop(0, pastelColors[i]);
+    grad.addColorStop(1, pastelColors[i].replace('0.8','0.1'));
+    companyGradients.push(grad);
+}
+
 new Chart(companyCtx, {
-  type: 'bar',
-  data: {
-    labels: [<?php echo implode(',', array_map(fn($c) => '"' . addslashes($c['name']) . '"', $company_performance)); ?>],
-    datasets: [{
-      label: 'Properties Sold',
-      data: [<?php echo implode(',', array_map(fn($c) => (int)$c['properties_sold'], $company_performance)); ?>],
-      backgroundColor: ['#0074d9', '#1a7f1a', '#bbb'].slice(0, <?php echo count($company_performance); ?>),
-      borderRadius: 8,
-    }]
-  },
-  options: {
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: ctx => `Properties Sold: ${ctx.parsed.y}`
-        }
-      }
+    type: 'bar',
+    data: {
+        labels: [<?php echo implode(',', array_map(fn($c)=>'"'.addslashes($c['name']).'"', $company_performance)); ?>],
+        datasets: [{
+            label: 'Properties Sold',
+            data: [<?php echo implode(',', array_map(fn($c)=> (int)$c['properties_sold'], $company_performance)); ?>],
+            backgroundColor: companyGradients,
+            borderRadius: 8,
+            maxBarThickness: getBarThickness()
+        }]
     },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { color: '#333', font: { size: 14 } },
-        title: {
-          display: true,
-          text: 'Companies',
-          color: '#333',
-          font: { size: 16, weight: 'bold' },
-          padding: { top: 12 }
+    options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { 
+            x: { grid: { display: false }, ticks: { color: '#333', font: { size: 14 } } },
+            y: { beginAtZero: true, grid: { color: '#eee' }, ticks: { color: '#888', font: { size: 13 } } }
         }
-      },
-      y: {
-        beginAtZero: true,
-        grid: { color: '#eee' },
-        ticks: { color: '#888', font: { size: 13 } },
-        title: {
-          display: true,
-          text: 'Properties Sold',
-          color: '#333',
-          font: { size: 16, weight: 'bold' },
-          padding: { bottom: 12 }
-        }
-      }
     }
-  }
 });
 <?php endif; ?>
+
+// Re-render on resize
+window.addEventListener('resize', () => location.reload());
 </script>
