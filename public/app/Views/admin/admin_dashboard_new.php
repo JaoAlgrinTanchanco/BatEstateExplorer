@@ -200,173 +200,181 @@ if ($result) {
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const dropdowns = document.querySelectorAll('.dropdown');
-        const modal = document.getElementById('confirmModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalMessage = document.getElementById('modalMessage');
-        const confirmBtn = document.getElementById('confirmBtn');
-        const cancelBtn = document.getElementById('cancelBtn');
-        let selectedStatus = null;
+document.addEventListener('DOMContentLoaded', () => {
+    const dropdowns = document.querySelectorAll('.dropdown');
+    const modal = document.getElementById('confirmModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    let selectedStatus = null;
 
-        // ===== Handle dropdown toggle =====
-        dropdowns.forEach(dropdown => {
-            const toggle = dropdown.querySelector('.dropdown-toggle');
-            const menu = dropdown.querySelector('.dropdown-menu');
+    // ===== Handle dropdown toggle =====
+    dropdowns.forEach(dropdown => {
+        const toggle = dropdown.querySelector('.dropdown-toggle');
+        const menu = dropdown.querySelector('.dropdown-menu');
+        menu.style.display = 'none';
 
-            // Ensure menu is hidden on load
-            menu.style.display = 'none';
+        toggle.addEventListener('click', e => {
+            e.stopPropagation();
 
-            toggle.addEventListener('click', e => {
-                e.stopPropagation();
-
-                // Close all other dropdowns
-                dropdowns.forEach(d => {
-                    const otherMenu = d.querySelector('.dropdown-menu');
-                    if (otherMenu !== menu) otherMenu.style.display = 'none';
-                });
-
-                // Toggle current dropdown
-                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            // Close all other dropdowns
+            dropdowns.forEach(d => {
+                const otherMenu = d.querySelector('.dropdown-menu');
+                if (otherMenu !== menu) otherMenu.style.display = 'none';
             });
-        });
 
-        // ===== Close dropdown when clicking outside =====
-        document.addEventListener('click', () => {
-            dropdowns.forEach(d => d.querySelector('.dropdown-menu').style.display = 'none');
-        });
-
-        // ===== Handle dropdown item click =====
-        document.querySelectorAll('.dropdown-menu li').forEach(item => {
-            item.addEventListener('click', e => {
-                e.stopPropagation();
-                selectedStatus = item.dataset.status;
-
-                if (selectedStatus === 'all') {
-                    modalTitle.textContent = "Confirm Deletion";
-                    modalMessage.textContent = "Are you sure you want to delete ALL applications? This cannot be undone.";
-                } else {
-                    modalTitle.textContent = "Confirm Deletion";
-                    modalMessage.textContent = `Are you sure you want to remove all ${selectedStatus} applications?`;
-                }
-
-                // Show modal
-                modal.style.display = 'flex';
-
-                // Close dropdown
-                item.closest('.dropdown-menu').style.display = 'none';
-            });
-        });
-
-        // ===== Modal actions =====
-        cancelBtn.addEventListener('click', () => {
-            modal.style.display = 'none';
-            selectedStatus = null;
-        });
-
-        confirmBtn.addEventListener('click', () => {
-            if (!selectedStatus) return;
-
-            fetch("/BatEstateExplorer/public/api/delete_applications.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: "status=" + encodeURIComponent(selectedStatus)
-            })
-            .then(res => res.json())
-            .then(data => {
-                alert(data.message);
-                if (data.success) location.reload();
-            })
-            .catch(() => alert("Something went wrong."));
-
-            modal.style.display = 'none';
+            // Toggle current dropdown
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
         });
     });
 
-    window.addEventListener('resize', () => {
-        Object.values(Chart.instances).forEach(chart => chart.resize());
-        // Also fix grid overflow
-        document.querySelectorAll('.dashboard-grid, .right-column').forEach(el => {
-            el.style.maxWidth = "100%";
-            el.style.overflowX = "hidden";
+    // ===== Close dropdown when clicking outside =====
+    document.addEventListener('click', () => {
+        dropdowns.forEach(d => d.querySelector('.dropdown-menu').style.display = 'none');
+    });
+
+    // ===== Handle dropdown item click =====
+    document.querySelectorAll('.dropdown-menu li').forEach(item => {
+        item.addEventListener('click', e => {
+            e.stopPropagation();
+            selectedStatus = item.dataset.status;
+
+            modalTitle.textContent = "Confirm Deletion";
+            modalMessage.textContent = (selectedStatus === 'all')
+                ? "Are you sure you want to delete ALL applications? This cannot be undone."
+                : `Are you sure you want to remove all ${selectedStatus} applications?`;
+
+            modal.style.display = 'flex';
+            item.closest('.dropdown-menu').style.display = 'none';
         });
     });
-    const grayShades = ["#111827", "#374151", "#6b7280", "#9ca3af", "#d1d5db"];
 
-    // Donut data
-    const donutData = {
-        labels: <?= json_encode(array_keys($applications_by_status)) ?>,
-        datasets: [{
-            data: <?= json_encode(array_values($applications_by_status)) ?>,
-            backgroundColor: [grayShades[0], grayShades[2], grayShades[4]],
-            borderWidth: 0
-        }]
-    };
+    // ===== Modal actions =====
+    cancelBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        selectedStatus = null;
+    });
 
-    // Line data
-    const lineData = {
-        labels: <?= json_encode(array_column($applications_over_time, 'month')) ?>,
-        datasets: [{
-            label: "Applications",
-            data: <?= json_encode(array_column($applications_over_time, 'total')) ?>,
-            borderColor: grayShades[0],
-            backgroundColor: "rgba(17,24,39,0.08)",
-            fill: true,
-            tension: 0.35,
-            pointBackgroundColor: grayShades[1],
-            pointBorderColor: "#fff",
-            pointBorderWidth: 2,
-            pointRadius: 4
-        }]
-    };
+    confirmBtn.addEventListener('click', () => {
+        if (!selectedStatus) return;
 
-    // Bar data
-    const barData = {
-        labels: <?= json_encode(array_keys($properties_by_location)) ?>,
-        datasets: [{
-            label: "Properties",
-            data: <?= json_encode(array_values($properties_by_location)) ?>,
-            backgroundColor: grayShades,
-            borderRadius: 6
-        }]
-    };
+        fetch("/BatEstateExplorer/public/api/delete_applications.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "status=" + encodeURIComponent(selectedStatus)
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) location.reload();
+        })
+        .catch(() => alert("Something went wrong."));
 
-    // Render charts
-    new Chart(document.getElementById('donutChart'), {
-        type: 'doughnut',
-        data: donutData,
-        options: {
-            responsive: true,
-            cutout: "70%",
-            plugins: {
-                legend: { position: 'bottom', labels: { color: "#374151", font: { family: "Satoshi-Regular" } } }
+        modal.style.display = 'none';
+    });
+});
+
+// ===== Chart.js resize fix =====
+window.addEventListener('resize', () => {
+    Object.values(Chart.instances).forEach(chart => chart.resize());
+    document.querySelectorAll('.dashboard-grid, .right-column').forEach(el => {
+        el.style.maxWidth = "100%";
+        el.style.overflowX = "hidden";
+    });
+});
+
+const grayShades = ["#111827", "#374151", "#6b7280", "#9ca3af", "#d1d5db"];
+
+// ===== Donut data =====
+const donutData = {
+    labels: <?= json_encode(array_keys($applications_by_status)) ?>,
+    datasets: [{
+        data: <?= json_encode(array_values($applications_by_status)) ?>,
+        backgroundColor: [grayShades[0], grayShades[2], grayShades[4]],
+        borderWidth: 0
+    }]
+};
+
+// ===== Line data =====
+const lineData = {
+    labels: <?= json_encode(array_column($applications_over_time, 'month')) ?>,
+    datasets: [{
+        label: "Applications",
+        data: <?= json_encode(array_column($applications_over_time, 'total')) ?>,
+        borderColor: grayShades[0],
+        backgroundColor: "rgba(17,24,39,0.08)",
+        fill: true,
+        tension: 0.35,
+        pointBackgroundColor: grayShades[1],
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        pointRadius: 4
+    }]
+};
+
+// ===== Bar data (black gradient) =====
+const barData = {
+    labels: <?= json_encode(array_keys($properties_by_location)) ?>,
+    datasets: [{
+        label: "Properties",
+        data: <?= json_encode(array_values($properties_by_location)) ?>,
+        backgroundColor: [],
+        borderRadius: 6
+    }]
+};
+
+// ===== Donut Chart =====
+new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: donutData,
+    options: {
+        responsive: true,
+        cutout: "70%",
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { color: "#374151", font: { family: "Satoshi-Regular" } }
             }
         }
-    });
+    }
+});
 
-    new Chart(document.getElementById('lineChart'), {
-        type: 'line',
-        data: lineData,
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { ticks: { color: "#6b7280" }, grid: { display: false } },
-                y: { ticks: { color: "#6b7280" }, grid: { color: "rgba(0,0,0,0.05)" }, beginAtZero: true }
-            }
+// ===== Line Chart =====
+new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: lineData,
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { color: "#6b7280" }, grid: { display: false } },
+            y: { ticks: { color: "#6b7280" }, grid: { color: "rgba(0,0,0,0.05)" }, beginAtZero: true }
         }
-    });
+    }
+});
 
-    new Chart(document.getElementById('barChart'), {
-        type: 'bar',
-        data: barData,
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { ticks: { color: "#6b7280" }, grid: { display: false } },
-                y: { ticks: { color: "#6b7280" }, grid: { color: "rgba(0,0,0,0.05)" }, beginAtZero: true }
-            }
+// ===== Bar Chart with Black Gradient =====
+const barCtx = document.getElementById('barChart').getContext('2d');
+
+// Apply black gradient to each bar
+barData.datasets[0].data.forEach(() => {
+    const grad = barCtx.createLinearGradient(0, 0, 0, barCtx.canvas.height);
+    grad.addColorStop(0, 'rgba(0,0,0,0.9)'); // top black
+    grad.addColorStop(1, 'rgba(0,0,0,0.1)'); // bottom transparent
+    barData.datasets[0].backgroundColor.push(grad);
+});
+
+new Chart(barCtx, {
+    type: 'bar',
+    data: barData,
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { color: "#6b7280" }, grid: { display: false } },
+            y: { ticks: { color: "#6b7280" }, grid: { color: "rgba(0,0,0,0.05)" }, beginAtZero: true }
         }
-    });
+    }
+});
 </script>

@@ -127,7 +127,8 @@ if ($result) {
 <script>
 function getBarThickness() {
     let width = window.innerWidth;
-    return Math.max(Math.floor(width / 15), 25); // min 50px
+    return Math.min(Math.max(Math.floor(width / 15), 20), 60); 
+    // min 20px, max 40px
 }
 
 // ===== Agent Performance =====
