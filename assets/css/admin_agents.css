@@ -305,20 +305,7 @@
 /* ===========================
    Responsive
 =========================== */
-@media (min-width: 992px) {
-  .direct-agent-name {
-    font-size: 1.25rem;   /* bigger name text */
-  }
-
-  .direct-agent-details {
-    font-size: 1rem;      /* bigger details text */
-  }
-
-  .btn-view, .btn-remove {
-    padding: 0.75rem 1.25rem;
-    font-size: 0.95rem;
-  }
-}
+@media (max-width: 992px) { .direct-agent-list { grid-template-columns: repeat(auto-fit, minmax(245px, 350px)); justify-content: center; gap: 1rem; } .direct-agent-card { max-width: 350px; aspect-ratio: 1 / 1; padding: 1rem; } }
 
 @media (max-width: 768px) {
   .direct-agent-list {
