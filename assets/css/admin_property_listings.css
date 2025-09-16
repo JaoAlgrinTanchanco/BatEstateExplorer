@@ -442,12 +442,6 @@
 }
 
 /* ===== GRID RESPONSIVENESS WITH MINIMUM CARD SIZE ===== */
-.grid-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr)); /* min 245px */
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-}
 
 /* Medium screens */
 @media (max-width: 1400px) {
@@ -500,20 +494,30 @@
     padding: 0.4rem 0.8rem;
   }
 }
+.grid-container {
+  display: flex;
+  flex-wrap: wrap;       /* wrap onto next line */
+  gap: 1.5rem;           /* spacing between cards */
+  justify-content: flex-start; /* align to the left */
+  margin-top: 1.5rem;
+}
 
 /* ===== PROPERTY CARD ===== */
 .property-card {
+  flex: 1 1 270px;       /* grow if space, shrink, but base size is 245px */
+  max-width: 270px;      /* never exceed 245px */
+  max-height: 270px;     /* optional: keep them square */
+  
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   background: #fff;
   border-radius: 40px;
   padding: 15px;
-  min-width: 245px; /* ensures buttons fit */
-  min-height: 245px; /* maintain square-ish card */
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   position: relative;
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
