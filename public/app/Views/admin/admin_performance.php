@@ -84,9 +84,6 @@ if ($result) {
 <!-- Main Content HTML -->
 <header class="content-header">
     <h1>Performance</h1>
-    <div class="user-info">
-        <span>Welcome, <?php echo htmlspecialchars($current_user['email']); ?></span>
-    </div>
 </header>
 
 <div class="metrics-summary">
