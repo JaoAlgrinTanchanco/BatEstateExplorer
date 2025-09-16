@@ -315,6 +315,10 @@ tr:hover td {
     pointer-events: auto;
   }
 
+  .role {
+    border-radius: 0 !important;
+  }
+  
   .sidebar-wrapper.collapsed .sidebar-logo {
     max-width: 80px;
     margin: 0 auto 1rem;
