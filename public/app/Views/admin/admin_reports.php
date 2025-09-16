@@ -3,10 +3,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// echo realpath(__DIR__ . '/../../../../config/database.php');
-
-
-
 $is_logged_in = is_logged_in();
 $current_user = null;
 $is_admin = false;
@@ -20,91 +16,119 @@ if (!$is_logged_in || !$is_admin) {
     header('Location: login.php');
     exit;
 }
-
-// (You can fetch report data here later per tab as needed)
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_reports.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Main Content -->
+<header class="content-header">
+    <h1>Admin Reports</h1>
+</header>
 
-    <header class="content-header">
-        <h1>Admin Reports</h1>
-    </header>
-
-      <div class="sort-row">
-        <div class="sort-by">
-          <label for="sort">Sort By:</label>
-          <select id="sort">
-            <option value="name">Name</option>
-            <option value="type">Type</option>
-            <option value="date">Date</option>
-          </select>
+<div class="reports-grid">
+    <!-- Direct Agents Card -->
+    <div class="report-card" id="directAgentsCard">
+        <h2>Direct Agents</h2>
+        <div class="metrics">
+            <p>Total: <span id="totalDirectAgents">0</span></p>
+            <p>Active: <span id="activeDirectAgents">0</span></p>
+            <p>Inactive: <span id="inactiveDirectAgents">0</span></p>
+            <p>Avg Experience: <span id="avgExpDirectAgents">0</span> years</p>
         </div>
-      </div>
+        <div class="chart-container">
+            <canvas id="directAgentChart"></canvas>
+        </div>
+    </div>
 
-      <!-- Tabs -->
-      <div class="tab-bar" role="tablist" aria-label="Report Categories">
-        <button class="tab-btn active" role="tab" tabindex="0" aria-selected="true" aria-controls="directAgentReports" id="tab-directAgent">Direct Agents</button>
-        <button class="tab-btn" role="tab" tabindex="-1" aria-selected="false" aria-controls="associateAgentReports" id="tab-associateAgent">Associate Agents</button>
-        <button class="tab-btn" role="tab" tabindex="-1" aria-selected="false" aria-controls="clientReports" id="tab-clients">Clients</button>
-      </div>
+    <!-- Associate Agents Card -->
+    <div class="report-card" id="associateAgentsCard">
+        <h2>Associate Agents</h2>
+        <div class="metrics">
+            <p>Total: <span id="totalAssociateAgents">0</span></p>
+            <p>Active: <span id="activeAssociateAgents">0</span></p>
+            <p>Inactive: <span id="inactiveAssociateAgents">0</span></p>
+            <p>Avg Experience: <span id="avgExpAssociateAgents">0</span> years</p>
+        </div>
+        <div class="chart-container">
+            <canvas id="associateAgentChart"></canvas>
+        </div>
+    </div>
 
-      <!-- Report Sections -->
-      <section id="directAgentReports" class="report-container active" role="tabpanel" aria-labelledby="tab-directAgent">
-        <div class="no-reports">No reports available for Direct Agents.</div>
-      </section>
+    <!-- Clients Card -->
+    <div class="report-card" id="clientsCard">
+        <h2>Clients</h2>
+        <div class="metrics">
+            <p>Total: <span id="totalClients">0</span></p>
+            <p>Active: <span id="activeClients">0</span></p>
+            <p>Inactive: <span id="inactiveClients">0</span></p>
+        </div>
+        <div class="chart-container">
+            <canvas id="clientChart"></canvas>
+        </div>
+    </div>
+</div>
 
-      <section id="associateAgentReports" class="report-container" role="tabpanel" aria-labelledby="tab-associateAgent">
-        <div class="no-reports">No reports available for Associate Agents.</div>
-      </section>
+<script>
+async function fetchReports() {
+    try {
+        const response = await fetch('/BatEstateExplorer/public/api/admin_reports.php');
+        const data = await response.json();
 
-      <section id="clientReports" class="report-container" role="tabpanel" aria-labelledby="tab-clients">
-        <div class="no-reports">No reports available for Clients.</div>
-      </section>
-    </main>
-  </div>
-
-  <script>
-    // Tab switching logic
-    const tabs = document.querySelectorAll('.tab-bar .tab-btn'); // updated selector
-    const reportContainers = document.querySelectorAll('.report-container');
-    const sortSelect = document.getElementById('sort');
-
-    function activateTab(tab) {
-      tabs.forEach(t => {
-        const selected = t === tab;
-        t.classList.toggle('active', selected);
-        t.setAttribute('aria-selected', selected ? 'true' : 'false');
-        t.tabIndex = selected ? 0 : -1;
-      });
-
-      reportContainers.forEach(container => {
-        container.classList.toggle('active', container.id === tab.getAttribute('aria-controls'));
-      });
-
-      // Reset sorting dropdown when switching tabs (optional)
-      sortSelect.selectedIndex = 0;
-    }
-
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => activateTab(tab));
-      tab.addEventListener('keydown', e => {
-        if (e.key === 'ArrowRight') {
-          const next = tab.nextElementSibling || tabs[0];
-          next.focus();
-        } else if (e.key === 'ArrowLeft') {
-          const prev = tab.previousElementSibling || tabs[tabs.length - 1];
-          prev.focus();
-        } else if (e.key === 'Enter' || e.key === ' ') {
-          activateTab(tab);
+        function getChartData(agentData) {
+            if (!agentData || !agentData.monthly_signups) return { labels: [], values: [] };
+            return {
+                labels: agentData.monthly_signups.map(i => i.month),
+                values: agentData.monthly_signups.map(i => i.count)
+            };
         }
-      });
-    });
 
-    // Sorting placeholder function (to be implemented when reports have content)
-    sortSelect.addEventListener('change', () => {
-      // Implement sorting logic per visible tab here
-      alert(`Sorting reports by: ${sortSelect.value}. (Sorting logic not implemented yet.)`);
-    });
-  </script>
+        function createChart(id, dataPoints, color) {
+            const ctx = document.getElementById(id).getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dataPoints.labels,
+                    datasets: [{
+                        label: 'Signups Over Time',
+                        data: dataPoints.values,
+                        borderColor: color,
+                        backgroundColor: color.replace('1)', '0.2)'),
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // allow smooth stretching
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // Set metrics and charts
+        document.getElementById('totalDirectAgents').textContent = data.direct_agents.total;
+        document.getElementById('activeDirectAgents').textContent = data.direct_agents.active;
+        document.getElementById('inactiveDirectAgents').textContent = data.direct_agents.inactive;
+        document.getElementById('avgExpDirectAgents').textContent = data.direct_agents.avg_experience_years;
+        createChart('directAgentChart', getChartData(data.direct_agents), 'rgba(54, 162, 235, 1)');
+
+        document.getElementById('totalAssociateAgents').textContent = data.associate_agents.total;
+        document.getElementById('activeAssociateAgents').textContent = data.associate_agents.active;
+        document.getElementById('inactiveAssociateAgents').textContent = data.associate_agents.inactive;
+        document.getElementById('avgExpAssociateAgents').textContent = data.associate_agents.avg_experience_years;
+        createChart('associateAgentChart', getChartData(data.associate_agents), 'rgba(255, 206, 86, 1)');
+
+        document.getElementById('totalClients').textContent = data.clients.total;
+        document.getElementById('activeClients').textContent = data.clients.active;
+        document.getElementById('inactiveClients').textContent = data.clients.inactive;
+        createChart('clientChart', getChartData(data.clients), 'rgba(75, 192, 192, 1)');
+
+    } catch (err) {
+        console.error('Failed to fetch reports:', err);
+    }
+}
+
+fetchReports();
+
+</script>
