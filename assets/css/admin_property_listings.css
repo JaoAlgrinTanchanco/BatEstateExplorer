@@ -186,6 +186,10 @@
 
 /* Primary: View */
 .property-actions .btn-view {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
   background: #111;
   color: #fff;
 }
@@ -203,6 +207,10 @@
 .property-actions .btn-reject {
   background: transparent;
   color: #111;
+  display: flex;             /* enable flex layout */
+  justify-content: center;   /* horizontal center */
+  align-items: center;       /* vertical center */
+  text-align: center;        /* fallback for text */
 }
 
 .property-actions .btn-remove:hover,
@@ -212,17 +220,6 @@
   color: #fff;
   box-shadow: 0 6px 18px rgba(0,0,0,0.1);
   transform: translateY(-2px);
-}
-
-/* Responsive: on very small screens, stack if needed */
-@media (max-width: 400px) {
-  .property-actions {
-    flex-wrap: wrap;
-  }
-  .property-actions button {
-    flex: 1 1 100%;
-    font-size: 0.75rem;
-  }
 }
 
 /* ===== Tabs ===== */
@@ -442,4 +439,81 @@
 .property-badge.sold {
   color: #0f7c4e;
   background: #a7f3d0;
+}
+
+/* ===== GRID RESPONSIVENESS WITH MINIMUM CARD SIZE ===== */
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr)); /* min 245px */
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* Medium screens */
+@media (max-width: 1400px) {
+  .grid-container {
+    grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+  }
+}
+
+/* Tablets */
+@media (max-width: 992px) {
+  .content-header h1 {
+    font-size: 2rem;
+    padding: 0.5rem 1.5rem;
+  }
+
+  .grid-container {
+    grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+  }
+
+  .property-actions button {
+    flex: 1 1 calc(33% - 0.5rem); /* 3 buttons in a row */
+    min-width: 0;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .content-header h1 {
+    font-size: 1.75rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+
+  .grid-container {
+    grid-template-columns: 1fr;
+  }
+
+  .property-actions button {
+    flex: 1 1 100%;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-header h1 {
+    font-size: 1.5rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+/* ===== PROPERTY CARD ===== */
+.property-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: #fff;
+  border-radius: 40px;
+  padding: 15px;
+  min-width: 245px; /* ensures buttons fit */
+  min-height: 245px; /* maintain square-ish card */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
