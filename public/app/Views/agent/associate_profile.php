@@ -173,10 +173,54 @@
         $company_listings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
         $propsStmt->close();
     }
+
+    // 🔹 Fetch wallet balance for the logged-in user
+    $walletBalance = 0.00;
+    if (isset($user['id'])) {
+        $stmtWallet = $conn->prepare("SELECT wallet_balance FROM users WHERE id = ?");
+        $stmtWallet->bind_param("i", $user['id']);
+        $stmtWallet->execute();
+        $resWallet = $stmtWallet->get_result();
+        $rowWallet = $resWallet ? $resWallet->fetch_assoc() : null;
+        $walletBalance = $rowWallet ? (float)$rowWallet['wallet_balance'] : 0.00;
+        $stmtWallet->close();
+    }
+
+    // Format for display
+    $walletBalanceFormatted = number_format($walletBalance, 2, '.', ',');
+
+    // 🔹 Fetch last 10 transaction history for the logged-in user
+    $transactions = [];
+    $stmt = $conn->prepare("
+        SELECT 
+            id,
+            property,
+            amount,
+            status,
+            method,
+            DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS date
+        FROM transactions
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT 10
+    ");
+    $stmt->bind_param("i", $user['id']);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($res && $res->num_rows > 0) {
+        $transactions = $res->fetch_all(MYSQLI_ASSOC);
+    }
+    $stmt->close();
+
+    // 🔹 Fetch agent info for wallet tab
+    $agentInfo = [
+        'name'  => $user['first_name'] . ' ' . $user['last_name'],
+        'phone' => $user['phone'] ?? 'N/A'
+    ];
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_profile.css">
-
+<script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt&currency=PHP"></script>
 <div class="dashboard-container">
     <!-- Header -->
     <header class="dashboard-header">
@@ -475,7 +519,7 @@
                     </form>
                 </div>
             </div>
-            <script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt"></script>
+            <!-- <script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt"></script> -->
             <script>
                 const form = document.getElementById("addListingForm");
                 const validateBtn = document.getElementById("validateAndShowPaypal");
@@ -676,7 +720,7 @@
 
             <!-- Wallet Balance -->
             <div class="wallet-balance-section mb-4 d-flex align-items-center justify-content-between" style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem;">
-                <h3>PHP <span id="walletBalance">10,000.00</span></h3>
+                <h3>PHP <span id="walletBalance"><?= $walletBalance ?></span></h3>
                 <button class="btn btn-success btn-circle" onclick="openDepositModal()">
                     <i class="fa-solid fa-plus"></i>
                 </button>
@@ -684,9 +728,9 @@
 
             <!-- Agent Info -->
             <div class="agent-info p-3 mb-4" style="border: 1px solid #ddd; border-radius: 8px;">
-                <p><strong>Name:</strong> John Ansel Doton</p>
-                <p><strong>Contact:</strong> 09171234502</p>
-                <p><strong>Email:</strong> sandbox@example.com</p>
+                <p><strong>Name:</strong> <?= htmlspecialchars($agentInfo['name']) ?></p>
+                <p><strong>Contact:</strong> <?= htmlspecialchars($agentInfo['phone']) ?></p>
+                <p><strong>Email:</strong> agent@personal.example.com</p>
             </div>
 
             <!-- Transaction History -->
@@ -731,80 +775,79 @@
                             <button type="button" class="deposit-amount-btn" data-amount="<?= $amt ?>">PHP <?= $amt ?></button>
                         <?php endforeach; ?>
                     </div>
-                    <button type="button" class="btn btn-success w-100" id="depositBtn">Deposit</button>
+                    <div id="paypal-button-container"></div>
                 </div>
             </div>
 
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
-                    const modal = document.getElementById('depositModal');
-                    const depositBtn = document.getElementById('depositBtn');
                     const selectedInput = document.getElementById('selectedAmount');
+                    const balanceEl = document.getElementById('walletBalance');
+                    const modal = document.getElementById('depositModal');
 
-                    // Open / close functions
+                    // Open / close modal
                     window.openDepositModal = () => modal.style.display = 'flex';
                     window.closeDepositModal = (event) => {
                         if(!event || event.target === modal) modal.style.display = 'none';
-                    };
+                    }
 
-                    // Deposit amount buttons
+                    // Amount buttons
                     document.querySelectorAll('.deposit-amount-btn').forEach(btn => {
                         btn.addEventListener('click', () => selectedInput.value = btn.dataset.amount);
                     });
 
-                    // Deposit button
-                    if(depositBtn){
-                        depositBtn.addEventListener('click', () => {
+                    // Render PayPal Buttons
+                    paypal.Buttons({
+                        style: { layout:'vertical', color:'blue', shape:'pill', label:'pay' },
+                        createOrder: function(data, actions) {
                             const amount = selectedInput.value;
-                            if(amount){
-                                const balanceEl = document.getElementById('walletBalance');
+                            if(!amount){ alert('Please select an amount first.'); return; }
+                            return actions.order.create({ purchase_units: [{ amount: { value: amount } }] });
+                        },
+                        onApprove: function(data, actions) {
+                            return actions.order.capture().then(function(details) {
+                                const amount = parseFloat(selectedInput.value);
+
+                                // Update wallet balance on page
                                 let current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
-                                balanceEl.innerText = (current + parseFloat(amount)).toLocaleString('en-PH', {minimumFractionDigits: 2});
-                                closeDepositModal();
-                            } else {
-                                alert('Select an amount first.');
-                            }
-                        });
-                    }
+                                balanceEl.innerText = (current + amount).toLocaleString('en-PH', {minimumFractionDigits:2});
+
+                                // Save deposit to DB via API
+                                fetch('/BatEstateExplorer/public/api/deposit.php', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type':'application/x-www-form-urlencoded' },
+                                    body: `amount=${encodeURIComponent(amount)}`
+                                })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if(data.success){
+                                        alert('Deposit successful! Paid by: ' + details.payer.name.given_name);
+                                        selectedInput.value = '';
+                                        closeDepositModal();
+                                    } else {
+                                        alert('Deposit saved to PayPal but failed to update wallet: ' + (data.error || 'Unknown error'));
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error(err);
+                                    alert('Deposit saved to PayPal but failed to update wallet in DB.');
+                                });
+                            });
+                        },
+                        onError: function(err) {
+                            console.error(err);
+                            alert('PayPal transaction failed.');
+                        }
+                    }).render('#paypal-button-container');
                 });
             </script>
 
             <style>
-                /* Deposit Modal */
-                .deposit-modal {
-                    display: none;
-                    position: fixed;
-                    inset: 0;
-                    background: rgba(0,0,0,0.6);
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 9999;
-                }
-                .modal-content {
-                    background: #fff;
-                    padding: 20px;
-                    border-radius: 8px;
-                    max-width: 400px;
-                    width: 90%;
-                }
-                .modal-content .close {
-                    float: right;
-                    font-size: 1.5rem;
-                    cursor: pointer;
-                }
-                .deposit-amounts button {
-                    margin: 4px;
-                    padding: 8px 12px;
-                    cursor: pointer;
-                }
-                .btn-circle {
-                    border-radius: 50%;
-                    width: 40px;
-                    height: 40px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
+                .deposit-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:9999; }
+                .modal-content { background:#fff; padding:20px; border-radius:8px; max-width:400px; width:90%; }
+                .modal-content .close { float:right; font-size:1.5rem; cursor:pointer; }
+                .deposit-amounts button { margin:4px; padding:8px 12px; cursor:pointer; }
+                .btn-circle { border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; }
             </style>
         <?php break; ?>
 
