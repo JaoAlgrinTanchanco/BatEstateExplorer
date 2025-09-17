@@ -1,178 +1,178 @@
 <?php
-if (!isset($user)) {die('Access denied.');}
+    if (!isset($user)) {die('Access denied.');}
 
-require_once __DIR__ . '/../../../../components/notification.php';
+    require_once __DIR__ . '/../../../../components/notification.php';
 
-// 🔹 Show session flash messages (deprecated since you're moving to centralized notifications, 
-// but leaving here for fallback)
-foreach (['success', 'error'] as $type) {
-    if (!empty($_SESSION['flash_' . $type])): ?>
-        <div class="alert alert-<?= $type === 'success' ? 'success' : 'danger' ?>">
-            <?= $_SESSION['flash_' . $type]; unset($_SESSION['flash_' . $type]); ?>
-        </div>
-    <?php endif;
-}
+    // 🔹 Show session flash messages (deprecated since you're moving to centralized notifications, 
+    // but leaving here for fallback)
+    foreach (['success', 'error'] as $type) {
+        if (!empty($_SESSION['flash_' . $type])): ?>
+            <div class="alert alert-<?= $type === 'success' ? 'success' : 'danger' ?>">
+                <?= $_SESSION['flash_' . $type]; unset($_SESSION['flash_' . $type]); ?>
+            </div>
+        <?php endif;
+    }
 
-// Detect active tab
-$tab = $_GET['tab'] ?? 'overview';
+    // Detect active tab
+    $tab = $_GET['tab'] ?? 'overview';
 
-// Initialize defaults
-$listings      = [];
-$reviews       = [];
-$agent_id      = 0;
-$company_id    = 0;
-$company_name  = 'Unknown Company';
-$avg_rating    = 0;
-$total_reviews = 0;
+    // Initialize defaults
+    $listings      = [];
+    $reviews       = [];
+    $agent_id      = 0;
+    $company_id    = 0;
+    $company_name  = 'Unknown Company';
+    $avg_rating    = 0;
+    $total_reviews = 0;
 
-// 🔹 Fetch agent (id + company_id in one go)
-$stmt = $conn->prepare("SELECT id, company_id FROM agents WHERE user_id = ?");
-$stmt->bind_param("i", $user['id']);
-$stmt->execute();
-$res   = $stmt->get_result();
-$agent = $res ? $res->fetch_assoc() : null;
-$stmt->close();
+    // 🔹 Fetch agent (id + company_id in one go)
+    $stmt = $conn->prepare("SELECT id, company_id FROM agents WHERE user_id = ?");
+    $stmt->bind_param("i", $user['id']);
+    $stmt->execute();
+    $res   = $stmt->get_result();
+    $agent = $res ? $res->fetch_assoc() : null;
+    $stmt->close();
 
-if ($agent) {
-    $agent_id   = (int)$agent['id'];
-    $company_id = (int)$agent['company_id'];
+    if ($agent) {
+        $agent_id   = (int)$agent['id'];
+        $company_id = (int)$agent['company_id'];
 
-    // 🔹 Fetch company info
-    if ($company_id > 0) {
-        $companyStmt = $conn->prepare("SELECT name FROM companies WHERE id = ?");
-        $companyStmt->bind_param("i", $company_id);
-        $companyStmt->execute();
-        $companyRes = $companyStmt->get_result();
-        $company    = $companyRes->fetch_assoc();
-        $companyStmt->close();
+        // 🔹 Fetch company info
+        if ($company_id > 0) {
+            $companyStmt = $conn->prepare("SELECT name FROM companies WHERE id = ?");
+            $companyStmt->bind_param("i", $company_id);
+            $companyStmt->execute();
+            $companyRes = $companyStmt->get_result();
+            $company    = $companyRes->fetch_assoc();
+            $companyStmt->close();
 
-        if ($company) {
-            $company_name = $company['name'];
+            if ($company) {
+                $company_name = $company['name'];
+            }
         }
+
+        // 🔹 Fetch all properties for this agent
+        $propsStmt = $conn->prepare("
+            SELECT 
+                p.*,
+                sa.id AS sold_by_agent_id,
+                su.email AS sold_by_email
+            FROM properties p
+            LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
+            LEFT JOIN users su ON sa.user_id = su.id
+            WHERE p.agent_id = ? OR p.sold_by_agent_id = ?
+            ORDER BY p.created_at DESC
+        ");
+        $propsStmt->bind_param("ii", $agent_id, $agent_id);
+        $propsStmt->execute();
+        $res      = $propsStmt->get_result();
+        $listings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        $propsStmt->close();
+
+        // 🔹 Attach ALL images (not just primary) to each property
+        $stmtImg = $conn->prepare("
+            SELECT image_path, is_primary
+            FROM property_images 
+            WHERE property_id = ? 
+            ORDER BY is_primary DESC, id ASC
+        ");
+        foreach ($listings as &$property) {
+            $stmtImg->bind_param("i", $property['id']);
+            $stmtImg->execute();
+            $resImg = $stmtImg->get_result();
+
+            $property['images'] = $resImg && $resImg->num_rows 
+                ? $resImg->fetch_all(MYSQLI_ASSOC) 
+                : [];
+        }
+        $stmtImg->close();
+
+        // 🔹 Fetch average rating + total reviews
+        $stmt = $conn->prepare("
+            SELECT AVG(pr.rating) AS avg_rating, COUNT(*) AS total_reviews
+            FROM property_reviews pr
+            JOIN properties p ON pr.property_id = p.id
+            WHERE p.agent_id = ?
+        ");
+        $stmt->bind_param("i", $agent_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $avg_rating    = $row && $row['avg_rating'] ? round($row['avg_rating'], 1) : 0;
+        $total_reviews = $row['total_reviews'] ?? 0;
+        $stmt->close();
+
+        // 🔹 Fetch reviews with user info and primary image
+        $stmt = $conn->prepare("
+            SELECT 
+                pr.rating, 
+                pr.review_text, 
+                u.first_name, 
+                u.last_name, 
+                u.email, 
+                p.title, 
+                pi.image_path
+            FROM property_reviews pr
+            JOIN users u ON pr.user_id = u.id
+            JOIN properties p ON pr.property_id = p.id
+            LEFT JOIN property_images pi 
+                ON pi.property_id = p.id AND pi.is_primary = 1
+            WHERE p.agent_id = ?
+            ORDER BY pr.created_at DESC
+        ");
+        $stmt->bind_param("i", $agent_id);
+        $stmt->execute();
+        $res     = $stmt->get_result();
+        $reviews = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        $stmt->close();
     }
 
-    // 🔹 Fetch all properties for this agent
-    $propsStmt = $conn->prepare("
-        SELECT 
-            p.*,
-            sa.id AS sold_by_agent_id,
-            su.email AS sold_by_email
-        FROM properties p
-        LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
-        LEFT JOIN users su ON sa.user_id = su.id
-        WHERE p.agent_id = ? OR p.sold_by_agent_id = ?
-        ORDER BY p.created_at DESC
-    ");
-    $propsStmt->bind_param("ii", $agent_id, $agent_id);
-    $propsStmt->execute();
-    $res      = $propsStmt->get_result();
-    $listings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-    $propsStmt->close();
+    // 🔹 Debug log
+    echo "<script>console.log('Company ID: {$company_id}, Company Name: " . addslashes($company_name) . "');</script>";
 
-    // 🔹 Attach ALL images (not just primary) to each property
-    $stmtImg = $conn->prepare("
-        SELECT image_path, is_primary
-        FROM property_images 
-        WHERE property_id = ? 
-        ORDER BY is_primary DESC, id ASC
-    ");
-    foreach ($listings as &$property) {
-        $stmtImg->bind_param("i", $property['id']);
-        $stmtImg->execute();
-        $resImg = $stmtImg->get_result();
-
-        $property['images'] = $resImg && $resImg->num_rows 
-            ? $resImg->fetch_all(MYSQLI_ASSOC) 
-            : [];
-    }
-    $stmtImg->close();
-
-    // 🔹 Fetch average rating + total reviews
-    $stmt = $conn->prepare("
-        SELECT AVG(pr.rating) AS avg_rating, COUNT(*) AS total_reviews
-        FROM property_reviews pr
-        JOIN properties p ON pr.property_id = p.id
-        WHERE p.agent_id = ?
-    ");
-    $stmt->bind_param("i", $agent_id);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $row = $res ? $res->fetch_assoc() : null;
-    $avg_rating    = $row && $row['avg_rating'] ? round($row['avg_rating'], 1) : 0;
-    $total_reviews = $row['total_reviews'] ?? 0;
-    $stmt->close();
-
-    // 🔹 Fetch reviews with user info and primary image
-    $stmt = $conn->prepare("
-        SELECT 
-            pr.rating, 
-            pr.review_text, 
-            u.first_name, 
-            u.last_name, 
-            u.email, 
+    // 🔹 Fetch all properties from the same company
+    $company_listings = [];
+    if ($company_id > 0) {
+        $propsStmt = $conn->prepare("
+            SELECT 
+            p.id, 
             p.title, 
-            pi.image_path
-        FROM property_reviews pr
-        JOIN users u ON pr.user_id = u.id
-        JOIN properties p ON pr.property_id = p.id
-        LEFT JOIN property_images pi 
-            ON pi.property_id = p.id AND pi.is_primary = 1
-        WHERE p.agent_id = ?
-        ORDER BY pr.created_at DESC
-    ");
-    $stmt->bind_param("i", $agent_id);
-    $stmt->execute();
-    $res     = $stmt->get_result();
-    $reviews = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-    $stmt->close();
-}
+            p.location, 
+            p.price, 
+            p.bedrooms, 
+            p.bathrooms, 
+            p.sqm, 
+            p.status, 
+            p.created_at,
 
-// 🔹 Debug log
-echo "<script>console.log('Company ID: {$company_id}, Company Name: " . addslashes($company_name) . "');</script>";
+            -- Creator
+            a.id AS agent_id, 
+            CONCAT(u.first_name, ' ', u.last_name) AS created_by,
 
-// 🔹 Fetch all properties from the same company
-$company_listings = [];
-if ($company_id > 0) {
-    $propsStmt = $conn->prepare("
-        SELECT 
-        p.id, 
-        p.title, 
-        p.location, 
-        p.price, 
-        p.bedrooms, 
-        p.bathrooms, 
-        p.sqm, 
-        p.status, 
-        p.created_at,
+            -- Sold by
+            sa.id AS sold_agent_id, 
+            CONCAT(su.first_name, ' ', su.last_name) AS sold_by
 
-        -- Creator
-        a.id AS agent_id, 
-        CONCAT(u.first_name, ' ', u.last_name) AS created_by,
+        FROM properties p
+        LEFT JOIN agents a 
+            ON p.agent_id = a.id
+        LEFT JOIN users u 
+            ON a.user_id = u.id
 
-        -- Sold by
-        sa.id AS sold_agent_id, 
-        CONCAT(su.first_name, ' ', su.last_name) AS sold_by
+        LEFT JOIN agents sa 
+            ON p.sold_by_agent_id = sa.id
+        LEFT JOIN users su 
+            ON sa.user_id = su.id
 
-    FROM properties p
-    LEFT JOIN agents a 
-        ON p.agent_id = a.id
-    LEFT JOIN users u 
-        ON a.user_id = u.id
-
-    LEFT JOIN agents sa 
-        ON p.sold_by_agent_id = sa.id
-    LEFT JOIN users su 
-        ON sa.user_id = su.id
-
-    WHERE a.company_id = ?
-    ORDER BY p.created_at DESC
-    ");
-    $propsStmt->bind_param("i", $company_id);
-    $propsStmt->execute();
-    $res              = $propsStmt->get_result();
-    $company_listings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-    $propsStmt->close();
-}
+        WHERE a.company_id = ?
+        ORDER BY p.created_at DESC
+        ");
+        $propsStmt->bind_param("i", $company_id);
+        $propsStmt->execute();
+        $res              = $propsStmt->get_result();
+        $company_listings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        $propsStmt->close();
+    }
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_profile.css">
@@ -191,6 +191,7 @@ if ($company_id > 0) {
         <a href="?view=associate_profile&tab=analytics" class="tab <?= ($tab === 'analytics') ? 'active' : '' ?>">Analytics</a>
         <a href="?view=associate_profile&tab=company_listings" class="tab <?= ($tab === 'company_listings') ? 'active' : '' ?>">Company Listings</a>
         <a href="?view=associate_profile&tab=review_privileges" class="tab <?= ($tab === 'review_privileges') ? 'active' : '' ?>">Review Privileges</a>
+        <a href="?view=associate_profile&tab=wallet" class="tab <?= ($tab === 'wallet') ? 'active' : '' ?>">Wallet</a>
     </nav>
 
     <!-- Content Section -->
@@ -673,40 +674,19 @@ if ($company_id > 0) {
         <?php case 'wallet': ?>
             <h2>Agent Wallet</h2>
 
+            <!-- Wallet Balance -->
+            <div class="wallet-balance-section mb-4 d-flex align-items-center justify-content-between" style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem;">
+                <h3>PHP <span id="walletBalance">10,000.00</span></h3>
+                <button class="btn btn-success btn-circle" onclick="openDepositModal()">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+
             <!-- Agent Info -->
             <div class="agent-info p-3 mb-4" style="border: 1px solid #ddd; border-radius: 8px;">
                 <p><strong>Name:</strong> John Ansel Doton</p>
                 <p><strong>Contact:</strong> 09171234502</p>
                 <p><strong>Email:</strong> sandbox@example.com</p>
-            </div>
-
-            <!-- Wallet Balance -->
-            <div class="wallet-balance-section mb-4 d-flex align-items-center justify-content-between" style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem;">
-                <h3>PHP <span id="walletBalance">10,000.00</span></h3>
-                <button class="btn btn-success btn-circle" data-bs-toggle="modal" data-bs-target="#depositModal">
-                    <i class="fa-solid fa-plus"></i>
-                </button>
-            </div>
-
-            <!-- Deposit Modal -->
-            <div class="modal fade" id="depositModal" tabindex="-1" aria-labelledby="depositModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="depositModalLabel">Deposit Funds</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="d-flex flex-wrap mb-3">
-                    <?php foreach ([50,100,200,400,600,1000] as $amt): ?>
-                        <button type="button" class="btn btn-outline-primary m-1 deposit-amount-btn" data-amount="<?= $amt ?>">PHP <?= $amt ?></button>
-                    <?php endforeach; ?>
-                    </div>
-                    <input type="text" id="selectedAmount" class="form-control mb-3" placeholder="Selected amount" disabled>
-                    <button type="button" class="btn btn-success w-100" id="depositBtn">Deposit</button>
-                </div>
-                </div>
-            </div>
             </div>
 
             <!-- Transaction History -->
@@ -740,39 +720,91 @@ if ($company_id > 0) {
                 </table>
             </div>
 
-            <script>
-            // Deposit modal logic
-            document.querySelectorAll('.deposit-amount-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                document.getElementById('selectedAmount').value = btn.dataset.amount;
-                });
-            });
+            <!-- Deposit Modal -->
+            <div id="depositModal" class="deposit-modal" onclick="closeDepositModal(event)">
+                <div class="modal-content" onclick="event.stopPropagation()">
+                    <span class="close" onclick="closeDepositModal()">&times;</span>
+                    <h2>Deposit Funds</h2>
+                    <input type="text" id="selectedAmount" class="form-control mb-3" placeholder="Selected amount" disabled>
+                    <div class="deposit-amounts mb-3">
+                        <?php foreach ([50,100,200,400,600,1000] as $amt): ?>
+                            <button type="button" class="deposit-amount-btn" data-amount="<?= $amt ?>">PHP <?= $amt ?></button>
+                        <?php endforeach; ?>
+                    </div>
+                    <button type="button" class="btn btn-success w-100" id="depositBtn">Deposit</button>
+                </div>
+            </div>
 
-            document.getElementById('depositBtn').addEventListener('click', () => {
-                const amount = document.getElementById('selectedAmount').value;
-                if(amount){
-                    alert('Deposit PHP ' + amount + ' clicked!');
-                    // Update balance dynamically if needed
-                    const balanceEl = document.getElementById('walletBalance');
-                    let current = parseFloat(balanceEl.innerText.replace(/,/g,''));
-                    balanceEl.innerText = (current + parseFloat(amount)).toLocaleString('en-PH', {minimumFractionDigits: 2});
-                    document.getElementById('depositModal').querySelector('.btn-close').click();
-                } else {
-                    alert('Select an amount first.');
-                }
-            });
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const modal = document.getElementById('depositModal');
+                    const depositBtn = document.getElementById('depositBtn');
+                    const selectedInput = document.getElementById('selectedAmount');
+
+                    // Open / close functions
+                    window.openDepositModal = () => modal.style.display = 'flex';
+                    window.closeDepositModal = (event) => {
+                        if(!event || event.target === modal) modal.style.display = 'none';
+                    };
+
+                    // Deposit amount buttons
+                    document.querySelectorAll('.deposit-amount-btn').forEach(btn => {
+                        btn.addEventListener('click', () => selectedInput.value = btn.dataset.amount);
+                    });
+
+                    // Deposit button
+                    if(depositBtn){
+                        depositBtn.addEventListener('click', () => {
+                            const amount = selectedInput.value;
+                            if(amount){
+                                const balanceEl = document.getElementById('walletBalance');
+                                let current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
+                                balanceEl.innerText = (current + parseFloat(amount)).toLocaleString('en-PH', {minimumFractionDigits: 2});
+                                closeDepositModal();
+                            } else {
+                                alert('Select an amount first.');
+                            }
+                        });
+                    }
+                });
             </script>
 
             <style>
-            .btn-circle {
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 1.2rem;
-            }
+                /* Deposit Modal */
+                .deposit-modal {
+                    display: none;
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0,0,0,0.6);
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 9999;
+                }
+                .modal-content {
+                    background: #fff;
+                    padding: 20px;
+                    border-radius: 8px;
+                    max-width: 400px;
+                    width: 90%;
+                }
+                .modal-content .close {
+                    float: right;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                }
+                .deposit-amounts button {
+                    margin: 4px;
+                    padding: 8px 12px;
+                    cursor: pointer;
+                }
+                .btn-circle {
+                    border-radius: 50%;
+                    width: 40px;
+                    height: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
             </style>
         <?php break; ?>
 
