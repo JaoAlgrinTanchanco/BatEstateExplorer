@@ -50,6 +50,34 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
       </a>
     <?php endif; ?>
 
+    <!-- Wallet Balance -->
+  <div class="wallet-balance" style="
+      display: inline-flex;
+      align-items: center;
+      background-color: #f8f9fa;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      margin-right: 10px;
+      font-weight: 500;
+      font-size: 1rem;
+      border: 1px solid #ced4da;
+      color: #000; /* Text color black */
+  ">
+    PHP <?= number_format($user['wallet_balance'] ?? 1000, 2) ?>
+    <button class="btn btn-success ms-2" style="
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%; /* Circular */
+        font-size: 0.8rem;
+    ">
+      <i class="fa-solid fa-plus"></i>
+    </button>
+  </div>
+
     <!-- Message Button -->
     <a href="/BatEstateExplorer/public/agent_message.php" target="_blank" class="message-btn" title="Messages" style="
         display: inline-flex;
