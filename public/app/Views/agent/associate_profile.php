@@ -784,46 +784,109 @@
                     const selectedInput = document.getElementById('selectedAmount');
                     const balanceEl = document.getElementById('walletBalance');
                     const modal = document.getElementById('depositModal');
+                    const walletLimit = 10000;
+                    const tableBody = document.getElementById('transactionTable');
 
                     // Open / close modal
                     window.openDepositModal = () => modal.style.display = 'flex';
                     window.closeDepositModal = (event) => {
-                        if(!event || event.target === modal) modal.style.display = 'none';
+                        if (!event || event.target === modal) modal.style.display = 'none';
                     }
 
-                    // Amount buttons
+                    // Deposit amount buttons
                     document.querySelectorAll('.deposit-amount-btn').forEach(btn => {
-                        btn.addEventListener('click', () => selectedInput.value = btn.dataset.amount);
+                        btn.addEventListener('click', () => {
+                            const amount = parseFloat(btn.dataset.amount);
+                            const current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
+
+                            if(current + amount > walletLimit){
+                                alert(`Deposit exceeds wallet limit of PHP ${walletLimit}. Please try a smaller amount.`);
+                                selectedInput.value = '';
+                                return;
+                            }
+
+                            selectedInput.value = amount;
+                        });
                     });
 
-                    // Render PayPal Buttons
+                    // Render PayPal buttons
                     paypal.Buttons({
                         style: { layout:'vertical', color:'blue', shape:'pill', label:'pay' },
+
                         createOrder: function(data, actions) {
-                            const amount = selectedInput.value;
-                            if(!amount){ alert('Please select an amount first.'); return; }
-                            return actions.order.create({ purchase_units: [{ amount: { value: amount } }] });
+                            const amount = parseFloat(selectedInput.value);
+                            if (!amount) {
+                                alert('Please select an amount first.');
+                                return;
+                            }
+
+                            const current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
+                            if (current + amount > walletLimit) {
+                                alert(`Deposit exceeds wallet limit of PHP ${walletLimit}. Please try a smaller amount.`);
+                                return;
+                            }
+
+                            return actions.order.create({
+                                purchase_units: [{ amount: { value: amount.toFixed(2) } }]
+                            });
                         },
+
                         onApprove: function(data, actions) {
                             return actions.order.capture().then(function(details) {
                                 const amount = parseFloat(selectedInput.value);
+                                let current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
+                                let newBalance = current + amount;
+
+                                if (newBalance > walletLimit) {
+                                    alert(`Deposit exceeds wallet limit of PHP ${walletLimit}. Transaction will not be processed.`);
+                                    return;
+                                }
 
                                 // Update wallet balance on page
-                                let current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
-                                balanceEl.innerText = (current + amount).toLocaleString('en-PH', {minimumFractionDigits:2});
+                                balanceEl.innerText = newBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
-                                // Save deposit to DB via API
+                                // Save deposit to DB
                                 fetch('/BatEstateExplorer/public/api/deposit.php', {
                                     method: 'POST',
-                                    headers: { 'Content-Type':'application/x-www-form-urlencoded' },
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                                     body: `amount=${encodeURIComponent(amount)}`
                                 })
                                 .then(res => res.json())
                                 .then(data => {
-                                    if(data.success){
+                                    if (data.success) {
                                         alert('Deposit successful! Paid by: ' + details.payer.name.given_name);
                                         selectedInput.value = '';
                                         closeDepositModal();
+
+                                        // Add new transaction row dynamically
+                                        const now = new Date();
+                                        const formattedDate = now.getFullYear() + '-' +
+                                                            String(now.getMonth()+1).padStart(2,'0') + '-' +
+                                                            String(now.getDate()).padStart(2,'0') + ' ' +
+                                                            String(now.getHours()).padStart(2,'0') + ':' +
+                                                            String(now.getMinutes()).padStart(2,'0') + ':' +
+                                                            String(now.getSeconds()).padStart(2,'0');
+
+                                        const newRow = document.createElement('tr');
+                                        newRow.innerHTML = `
+                                            <td>${formattedDate}</td>
+                                            <td>Deposit</td>
+                                            <td>₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                                            <td>Completed</td>
+                                            <td>PayPal</td>
+                                        `;
+
+                                        // Remove "No transactions yet" placeholder if present
+                                        const placeholder = tableBody.querySelector('.text-center');
+                                        if (placeholder) tableBody.innerHTML = '';
+
+                                        tableBody.prepend(newRow);
+
+                                        // Limit table to last 10 transactions
+                                        while(tableBody.rows.length > 10) {
+                                            tableBody.deleteRow(10);
+                                        }
+
                                     } else {
                                         alert('Deposit saved to PayPal but failed to update wallet: ' + (data.error || 'Unknown error'));
                                     }
@@ -834,10 +897,12 @@
                                 });
                             });
                         },
+
                         onError: function(err) {
                             console.error(err);
-                            alert('PayPal transaction failed.');
+                            alert('An error occurred during the PayPal transaction. Please check the amount and try again.');
                         }
+
                     }).render('#paypal-button-container');
                 });
             </script>
