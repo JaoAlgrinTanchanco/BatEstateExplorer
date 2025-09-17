@@ -582,51 +582,51 @@ if ($company_id > 0) {
         <?php break; ?>
 
         <?php case 'company_listings': ?>
-                <h2>Company Listings: <?= htmlspecialchars($company_name) ?></h2>
-                <p>List of all properties from your company.</p>
+            <h2>Company Listings: <?= htmlspecialchars($company_name) ?></h2>
+            <p>List of all properties from your company.</p>
 
-                <!-- Scrollable container -->
-                <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd;">
-                    <table border="1" cellpadding="8" cellspacing="0" width="100%">
-                        <thead style="position: sticky; top: 0; background: #f5f5f5; z-index: 1;">
-                            <tr>
-                                <th>Property</th>
-                                <th>Location</th>
-                                <th>Price</th>
-                                <th>Bedrooms</th>
-                                <th>Bathrooms</th>
-                                <th>Size (sqm)</th>
-                                <th>Status</th>
-                                <th>Created By</th>
-                                <th>Sold By</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (!empty($company_listings)): ?>
-                                <?php foreach ($company_listings as $row): ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars($row['title']); ?></td>
-                                        <td><?= htmlspecialchars($row['location']); ?></td>
-                                        <td>₱<?= number_format($row['price'], 2); ?></td>
-                                        <td><?= (int)$row['bedrooms']; ?></td>
-                                        <td><?= (int)$row['bathrooms']; ?></td>
-                                        <td><?= number_format($row['sqm'], 2); ?></td>
-                                        <td><?= ucfirst($row['status']); ?></td>
-                                        <td><?= !empty($row['created_by']) ? htmlspecialchars($row['created_by']) : 'N/A'; ?></td>
-                                        <td><?= !empty($row['sold_by']) ? htmlspecialchars($row['sold_by']) : 'N/A'; ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
+            <!-- Scrollable container -->
+            <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd;">
+                <table border="1" cellpadding="8" cellspacing="0" width="100%">
+                    <thead style="position: sticky; top: 0; background: #f5f5f5; z-index: 1;">
+                        <tr>
+                            <th>Property</th>
+                            <th>Location</th>
+                            <th>Price</th>
+                            <th>Bedrooms</th>
+                            <th>Bathrooms</th>
+                            <th>Size (sqm)</th>
+                            <th>Status</th>
+                            <th>Created By</th>
+                            <th>Sold By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($company_listings)): ?>
+                            <?php foreach ($company_listings as $row): ?>
                                 <tr>
-                                    <td colspan="9" style="text-align:center;">No company listings found.</td>
+                                    <td><?= htmlspecialchars($row['title']); ?></td>
+                                    <td><?= htmlspecialchars($row['location']); ?></td>
+                                    <td>₱<?= number_format($row['price'], 2); ?></td>
+                                    <td><?= (int)$row['bedrooms']; ?></td>
+                                    <td><?= (int)$row['bathrooms']; ?></td>
+                                    <td><?= number_format($row['sqm'], 2); ?></td>
+                                    <td><?= ucfirst($row['status']); ?></td>
+                                    <td><?= !empty($row['created_by']) ? htmlspecialchars($row['created_by']) : 'N/A'; ?></td>
+                                    <td><?= !empty($row['sold_by']) ? htmlspecialchars($row['sold_by']) : 'N/A'; ?></td>
                                 </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php break; ?>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="9" style="text-align:center;">No company listings found.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php break; ?>
 
-            <?php case 'review_privileges': ?>
+        <?php case 'review_privileges': ?>
                 <h2>Review Privileges</h2>
 
                 <div class="overview-container">
@@ -668,6 +668,112 @@ if ($company_id > 0) {
                         <button onclick="closePrivilegeModal()">Exit</button>
                     </div>
                 </div>
+        <?php break; ?>
+
+        <?php case 'wallet': ?>
+            <h2>Agent Wallet</h2>
+
+            <!-- Agent Info -->
+            <div class="agent-info p-3 mb-4" style="border: 1px solid #ddd; border-radius: 8px;">
+                <p><strong>Name:</strong> John Ansel Doton</p>
+                <p><strong>Contact:</strong> 09171234502</p>
+                <p><strong>Email:</strong> sandbox@example.com</p>
+            </div>
+
+            <!-- Wallet Balance -->
+            <div class="wallet-balance-section mb-4 d-flex align-items-center justify-content-between" style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem;">
+                <h3>PHP <span id="walletBalance">10,000.00</span></h3>
+                <button class="btn btn-success btn-circle" data-bs-toggle="modal" data-bs-target="#depositModal">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+
+            <!-- Deposit Modal -->
+            <div class="modal fade" id="depositModal" tabindex="-1" aria-labelledby="depositModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="depositModalLabel">Deposit Funds</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex flex-wrap mb-3">
+                    <?php foreach ([50,100,200,400,600,1000] as $amt): ?>
+                        <button type="button" class="btn btn-outline-primary m-1 deposit-amount-btn" data-amount="<?= $amt ?>">PHP <?= $amt ?></button>
+                    <?php endforeach; ?>
+                    </div>
+                    <input type="text" id="selectedAmount" class="form-control mb-3" placeholder="Selected amount" disabled>
+                    <button type="button" class="btn btn-success w-100" id="depositBtn">Deposit</button>
+                </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Transaction History -->
+            <h4 class="mt-5">Transaction History</h4>
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd;">
+                <table class="table table-bordered mb-0">
+                    <thead class="table-light position-sticky top-0">
+                        <tr>
+                            <th>Date</th>
+                            <th>Property</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Payment Method</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionTable">
+                        <?php if(!empty($transactions)): ?>
+                            <?php foreach($transactions as $tx): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($tx['date']); ?></td>
+                                    <td><?= htmlspecialchars($tx['property']); ?></td>
+                                    <td>₱<?= number_format($tx['amount'], 2); ?></td>
+                                    <td><?= ucfirst($tx['status']); ?></td>
+                                    <td><?= htmlspecialchars($tx['method']); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr><td colspan="5" class="text-center">No transactions yet.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <script>
+            // Deposit modal logic
+            document.querySelectorAll('.deposit-amount-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                document.getElementById('selectedAmount').value = btn.dataset.amount;
+                });
+            });
+
+            document.getElementById('depositBtn').addEventListener('click', () => {
+                const amount = document.getElementById('selectedAmount').value;
+                if(amount){
+                    alert('Deposit PHP ' + amount + ' clicked!');
+                    // Update balance dynamically if needed
+                    const balanceEl = document.getElementById('walletBalance');
+                    let current = parseFloat(balanceEl.innerText.replace(/,/g,''));
+                    balanceEl.innerText = (current + parseFloat(amount)).toLocaleString('en-PH', {minimumFractionDigits: 2});
+                    document.getElementById('depositModal').querySelector('.btn-close').click();
+                } else {
+                    alert('Select an amount first.');
+                }
+            });
+            </script>
+
+            <style>
+            .btn-circle {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2rem;
+            }
+            </style>
         <?php break; ?>
 
         <?php default:
