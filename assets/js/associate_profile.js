@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // =========================
     // Notification helper
+    // =========================
     function notify(type, message) {
         const container = document.querySelector('.notification-container') 
             || (() => {
@@ -24,7 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => notif.remove(), 5000);
     }
 
-    // Toggle Bedrooms/Bathrooms
+    // =========================
+    // Bedrooms/Bathrooms toggle
+    // =========================
     const toggleRooms = (typeSelect, bedroomsInput, bathroomsInput) => {
         const isLot = typeSelect.value === 'Lot';
         bedroomsInput.disabled = isLot;
@@ -32,7 +36,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isLot) { bedroomsInput.value = 0; bathroomsInput.value = 0; }
     };
 
+    // =========================
     // Drag & Drop Image Upload
+    // =========================
     const initImageUpload = ({ dropAreaId, fileInputId, previewId, formId, maxFiles = 10 }) => {
         const dropArea  = document.getElementById(dropAreaId);
         const fileInput = document.getElementById(fileInputId);
@@ -79,14 +85,14 @@ document.addEventListener('DOMContentLoaded', () => {
             renderPreviews();
         };
 
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt =>
+        ['dragenter','dragover','dragleave','drop'].forEach(evt =>
             dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); })
         );
         dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
         dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
         dropArea.addEventListener('drop', e => { dropArea.classList.remove('drag-over'); addFiles(e.dataTransfer.files); });
         dropArea.addEventListener('click', () => fileInput.click());
-        dropArea.addEventListener('keydown', e => { if (['Enter', ' '].includes(e.key)) { e.preventDefault(); fileInput.click(); } });
+        dropArea.addEventListener('keydown', e => { if (['Enter',' '].includes(e.key)) { e.preventDefault(); fileInput.click(); } });
         fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
 
         form.addEventListener('submit', e => {
@@ -96,23 +102,23 @@ document.addEventListener('DOMContentLoaded', () => {
             fetch(form.action, { method: 'POST', body: fd })
                 .then(res => res.text())
                 .then(() => {
-                    notify('success', 'Listing saved!');
+                    notify('success','Listing saved!');
                     form.reset(); selectedFiles = []; renderPreviews();
                 })
-                .catch(() => notify('error', 'Upload failed!'));
+                .catch(() => notify('error','Upload failed!'));
         });
     };
-    initImageUpload({ dropAreaId: 'imageUploadArea', fileInputId: 'images', previewId: 'imagePreview', formId: 'addListingForm', maxFiles: 10 });
+    initImageUpload({ dropAreaId:'imageUploadArea', fileInputId:'images', previewId:'imagePreview', formId:'addListingForm', maxFiles:10 });
 
-    // Edit listing modals
-    window.openModal  = id => document.getElementById(`editModal-${id}`).style.display = 'block';
-    window.closeModal = id => document.getElementById(`editModal-${id}`).style.display = 'none';
-    window.onclick = event => { document.querySelectorAll('.edit-modal').forEach(m => { if (event.target === m) m.style.display = 'none'; }); };
-
-    // Remove image from slider
+    // =========================
+    // Edit modals
+    // =========================
+    window.openModal  = id => document.getElementById(`editModal-${id}`).style.display='block';
+    window.closeModal = id => document.getElementById(`editModal-${id}`).style.display='none';
+    window.onclick = e => { document.querySelectorAll('.edit-modal').forEach(m => { if(e.target===m) m.style.display='none'; }); };
     window.removeImage = btn => btn.closest('.slider-item').remove();
 
-    // Bedrooms/Bathrooms toggle init
+    // Bedrooms/Bathrooms init
     document.querySelectorAll('.edit-modal').forEach(modal => {
         const typeSelect = modal.querySelector('select[name="property_type"]');
         const bedrooms   = modal.querySelector('input[name="bedrooms"]');
@@ -121,16 +127,17 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleRooms(typeSelect, bedrooms, bathrooms);
         typeSelect.addEventListener('change', () => toggleRooms(typeSelect, bedrooms, bathrooms));
     });
-    const addType  = document.getElementById('property_type');
-    const addBeds  = document.getElementById('bedrooms');
+    const addType = document.getElementById('property_type');
+    const addBeds = document.getElementById('bedrooms');
     const addBaths = document.getElementById('bathrooms');
     if (addType && addBeds && addBaths) {
         toggleRooms(addType, addBeds, addBaths);
         addType.addEventListener('change', () => toggleRooms(addType, addBeds, addBaths));
     }
 
+    // =========================
     // Company listing modal
-    const propertyModal = document.getElementById('propertyModal');
+    // =========================
     document.querySelectorAll('.view-details').forEach(link => {
         link.addEventListener('click', e => {
             e.preventDefault();
@@ -144,98 +151,170 @@ document.addEventListener('DOMContentLoaded', () => {
                     carousel.innerHTML = '';
                     if (data.images?.length) {
                         data.images.forEach((img, idx) => {
-                            carousel.innerHTML += `<div class="carousel-item ${idx === 0 ? 'active' : ''}"><img src="storage/uploads/property_images/${img}" class="d-block w-100"></div>`;
+                            carousel.innerHTML += `<div class="carousel-item ${idx===0?'active':''}"><img src="storage/uploads/property_images/${img}" class="d-block w-100"></div>`;
                         });
-                    } else { carousel.innerHTML = '<div class="carousel-item active"><p>No images</p></div>'; }
+                    } else carousel.innerHTML='<div class="carousel-item active"><p>No images</p></div>';
                     const details = document.getElementById('propertyDetails');
-                    details.innerHTML = `
+                    details.innerHTML=`
                         <li class="list-group-item"><b>Location:</b> ${data.location}</li>
                         <li class="list-group-item"><b>Price:</b> ₱${parseFloat(data.price).toLocaleString()}</li>
                         <li class="list-group-item"><b>Bedrooms:</b> ${data.bedrooms}</li>
                         <li class="list-group-item"><b>Bathrooms:</b> ${data.bathrooms}</li>
                         <li class="list-group-item"><b>Size:</b> ${data.sqm} sqm</li>
                         <li class="list-group-item"><b>Status:</b> ${data.status}</li>
-                        <li class="list-group-item"><b>Created By:</b> ${data.created_by ?? 'N/A'}</li>
-                        <li class="list-group-item"><b>Sold By:</b> ${data.sold_by ?? 'N/A'}</li>`;
+                        <li class="list-group-item"><b>Created By:</b> ${data.created_by??'N/A'}</li>
+                        <li class="list-group-item"><b>Sold By:</b> ${data.sold_by??'N/A'}</li>`;
                 })
-                .catch(() => notify('error', 'Error fetching property details.'));
+                .catch(() => notify('error','Error fetching property details.'));
         });
     });
 
+    // =========================
     // Delete agent modal
-    const openBtn   = document.getElementById("openDeleteModal");
-    const modal     = document.getElementById("deleteModal");
+    // =========================
+    const openBtn = document.getElementById("openDeleteModal");
+    const modal = document.getElementById("deleteModal");
     const cancelBtn = document.getElementById("cancelDeleteBtn");
     const deleteForm = document.getElementById("deleteAgentForm");
     const confirmBtn = document.getElementById("confirmDeleteBtn");
-    const spinner    = document.getElementById("deleteSpinner");
-    openBtn.addEventListener("click", () => modal.style.display = "flex");
-    cancelBtn.addEventListener("click", () => modal.style.display = "none");
-    deleteForm.addEventListener("submit", () => { confirmBtn.style.display = "none"; spinner.style.display = "flex"; });
-}); // DOMContentLoaded ends
+    const spinner = document.getElementById("deleteSpinner");
+    if(openBtn) openBtn.addEventListener("click", () => modal.style.display="flex");
+    if(cancelBtn) cancelBtn.addEventListener("click", () => modal.style.display="none");
+    if(deleteForm) deleteForm.addEventListener("submit", () => { confirmBtn.style.display="none"; spinner.style.display="flex"; });
 
-// Toggle Sold By
-function toggleSoldBy(select, propertyId) {
-    const container = document.getElementById('soldByContainer-' + propertyId);
-    if (!container) return;
-    if (select.value === 'sold_by') container.style.display = 'block';
-    else { container.style.display = 'none'; container.querySelector('input').value = ''; }
+// =========================
+// Listing Fee Modal & Payment Flow
+// =========================
+const listingForm = document.getElementById('addListingForm');
+const listingModal = document.getElementById('listingFeeModal');
+const walletBalanceEl = document.getElementById('agentWalletBalance');
+const payBtn = document.getElementById('payListingFeeBtn');
+const listingFee = 20;
+
+// Dedicated "Save Listing" button that opens modal
+const openListingBtn = document.getElementById('openListingModalBtn');
+
+if(listingForm && listingModal && walletBalanceEl && payBtn && openListingBtn){
+    
+    // Open / Close modal helpers
+    window.openListingFeeModal = () => listingModal.style.display = 'flex';
+    window.closeListingFeeModal = (e) => { 
+        if(!e || e.target === listingModal) listingModal.style.display = 'none'; 
+    };
+
+    // Click "Save Listing" -> validate form -> show modal
+    openListingBtn.addEventListener('click', () => {
+        if(!listingForm.checkValidity()){
+            listingForm.reportValidity();
+            return;
+        }
+        const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g,''));
+        if(walletBalance < listingFee){
+            notify('error','Insufficient wallet balance. Please deposit first.');
+            return;
+        }
+        openListingFeeModal();
+    });
+
+    // Click "Pay Listing Fee & Submit" -> charge fee -> save listing
+    payBtn.addEventListener('click', () => {
+        const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g,''));
+        if(walletBalance < listingFee){
+            notify('error','Insufficient wallet balance. Please deposit first.');
+            return;
+        }
+
+        const formData = new FormData(listingForm);
+
+        // Step 1: Process listing fee
+        fetch('/BatEstateExplorer/public/api/listing_fee.php', { method:'POST', body: formData })
+        .then(res => res.json())
+        .then(feeData => {
+            if(!feeData.success) throw new Error(feeData.error || 'Failed to process listing fee.');
+
+            // Update wallet balance on success
+            walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+            // Step 2: Save listing after fee
+            return fetch('/BatEstateExplorer/public/api/associate_save_listing.php', { method:'POST', body: formData });
+        })
+        .then(res => res.json())
+        .then(saveData => {
+            if(saveData.success){
+                notify('success','Listing saved successfully!');
+                closeListingFeeModal();
+                listingForm.reset();
+            } else {
+                notify('error','Listing fee paid but failed to save listing: ' + (saveData.error || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            notify('error', err.message || 'An error occurred. Please try again.');
+        });
+    });
 }
 
-// Confirm edit
-function confirmEdit(propertyId) {
-    const form = document.getElementById('editForm-' + propertyId);
-    if (!form) return;
-    if (confirm("Are you sure you want to update this listing?")) form.submit();
+}); // End DOMContentLoaded
+
+// =========================
+// Other global functions
+// =========================
+function toggleSoldBy(select, propertyId){
+    const container = document.getElementById('soldByContainer-'+propertyId);
+    if(!container) return;
+    if(select.value==='sold_by') container.style.display='block';
+    else { container.style.display='none'; container.querySelector('input').value=''; }
 }
 
-// Privilege management
+function confirmEdit(propertyId){
+    const form = document.getElementById('editForm-'+propertyId);
+    if(!form) return;
+    if(confirm("Are you sure you want to update this listing?")) form.submit();
+}
+
 let selectedPropertyId = null;
 window.currentEmail = null;
-window.searchClient = function() {
+window.searchClient = function(){
     const email = document.getElementById('searchEmail').value.trim();
-    if (!email) return notify('error', 'Please enter an email');
+    if(!email) return notify('error','Please enter an email');
     fetch(`/BatEstateExplorer/public/api/give_privilege.php?email=${encodeURIComponent(email)}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) return notify('error', data.error);
-            document.getElementById('userNameEmail').textContent = `${data.name || ''} (${data.email})`;
-            document.getElementById('privilegeModal').style.display = 'block';
+        .then(res=>res.json())
+        .then(data=>{
+            if(data.error) return notify('error',data.error);
+            document.getElementById('userNameEmail').textContent = `${data.name||''} (${data.email})`;
+            document.getElementById('privilegeModal').style.display='block';
             window.currentEmail = data.email;
         })
-        .catch(() => notify('error', 'Search client error.'));
+        .catch(()=>notify('error','Search client error.'));
 };
-window.selectProperty = function(card, propertyId) {
-    document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
+window.selectProperty = function(card, propertyId){
+    document.querySelectorAll('.property-card').forEach(c=>c.classList.remove('selected'));
     card.classList.add('selected'); selectedPropertyId = propertyId;
 };
-window.closePrivilegeModal = function() {
-    document.getElementById('privilegeModal').style.display = 'none'; selectedPropertyId = null;
+window.closePrivilegeModal = function(){
+    document.getElementById('privilegeModal').style.display='none'; selectedPropertyId=null;
 };
-window.givePrivilege = function() {
-    if (!selectedPropertyId) return notify('error', 'Please select a property first.');
-    if (!window.currentEmail) return notify('error', 'No client selected.');
-    fetch('/BatEstateExplorer/public/api/give_privilege.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `email=${encodeURIComponent(window.currentEmail)}&property_id=${encodeURIComponent(selectedPropertyId)}`
+window.givePrivilege = function(){
+    if(!selectedPropertyId) return notify('error','Please select a property first.');
+    if(!window.currentEmail) return notify('error','No client selected.');
+    fetch('/BatEstateExplorer/public/api/give_privilege.php',{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:`email=${encodeURIComponent(window.currentEmail)}&property_id=${encodeURIComponent(selectedPropertyId)}`
     })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) { notify('success', 'Privilege granted successfully!'); closePrivilegeModal(); }
-            else notify('error', data.error || 'Something went wrong.');
-        })
-        .catch(() => notify('error', 'Give privilege error.'));
+    .then(res=>res.json())
+    .then(data=>{
+        if(data.success){ notify('success','Privilege granted successfully!'); closePrivilegeModal(); }
+        else notify('error',data.error||'Something went wrong.');
+    })
+    .catch(()=>notify('error','Give privilege error.'));
 };
 
-// Mark image for removal
-function markImageForRemoval(button, imagePath) {
-    button.closest('.image-item').style.opacity = '0.5';
+function markImageForRemoval(button, imagePath){
+    button.closest('.image-item').style.opacity='0.5';
     const hiddenInput = document.createElement('input');
-    hiddenInput.type = 'hidden';
-    hiddenInput.name = 'remove_images[]';
-    hiddenInput.value = imagePath;
+    hiddenInput.type='hidden'; hiddenInput.name='remove_images[]'; hiddenInput.value=imagePath;
     const container = button.closest('form').querySelector('[id^="removeImages-"]');
     container.appendChild(hiddenInput);
-    button.disabled = true;
+    button.disabled=true;
 }

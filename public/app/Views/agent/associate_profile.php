@@ -419,7 +419,7 @@
         <?php break; ?>
 
         <?php case 'add_listing': ?>
-            <h2>Add New Listing (Associate)</h2>
+            <h2>Add New Listing</h2>
 
             <div class="overview-container">
                 <div class="overview-card">
@@ -506,7 +506,7 @@
                         <div id="imagePreview" class="image-preview" aria-live="polite"></div>
 
                         <!-- Submit -->
-                        <button type="submit" class="btn-submit">Save Listing</button>
+                        <button type="button" id="openListingModalBtn" class="btn-submit">Save Listing</button>
                     </form>
                 </div>
             </div>
@@ -522,91 +522,6 @@
                     <button id="payListingFeeBtn" class="btn btn-success mt-3">Pay Listing Fee & Submit</button>
                 </div>
             </div>
-
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const form = document.getElementById('addListingForm');
-                    const listingModal = document.getElementById('listingFeeModal');
-                    const walletBalanceEl = document.getElementById('agentWalletBalance');
-                    const payBtn = document.getElementById('payListingFeeBtn');
-                    const listingFee = 20;
-
-                    // Modal functions
-                    window.openListingFeeModal = () => listingModal.style.display = 'flex';
-                    window.closeListingFeeModal = (event) => {
-                        if(!event || event.target === listingModal) listingModal.style.display = 'none';
-                    }
-
-                    // Form submit -> validate -> open modal
-                    form.addEventListener('submit', (e) => {
-                        e.preventDefault();
-
-                        // Simple HTML validation check
-                        if (!form.checkValidity()) {
-                            form.reportValidity();
-                            return;
-                        }
-
-                        const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g,''));
-                        if(walletBalance < listingFee){
-                            alert('Insufficient wallet balance. Please deposit first.');
-                            return;
-                        }
-
-                        openListingFeeModal();
-                    });
-
-                    // Pay listing fee and submit form data
-                    payBtn.addEventListener('click', () => {
-                        const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g,''));
-                        if(walletBalance < listingFee){
-                            alert('Insufficient wallet balance. Please deposit first.');
-                            return;
-                        }
-
-                        const formData = new FormData(form);
-
-                        // Call API to deduct listing fee
-                        fetch('/BatEstateExplorer/public/api/listing_fee.php', {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if(data.success){
-                                // Submit actual form data to associate_save_listing.php
-                                fetch('/BatEstateExplorer/public/api/associate_save_listing.php', {
-                                    method: 'POST',
-                                    body: formData
-                                })
-                                .then(res => res.json())
-                                .then(saveData => {
-                                    if(saveData.success){
-                                        alert('Listing saved successfully!');
-                                        closeListingFeeModal();
-                                        form.reset();
-                                    } else {
-                                        alert('Listing fee paid but failed to save listing: ' + (saveData.error||'Unknown error'));
-                                    }
-                                });
-                            } else {
-                                alert('Failed to process listing fee: ' + (data.error||'Unknown error'));
-                            }
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            alert('Error processing listing fee. Please try again.');
-                        });
-                    });
-                });
-            </script>
-
-            <style>
-                .deposit-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:9999; }
-                .modal-content { background:#fff; padding:20px; border-radius:8px; max-width:400px; width:90%; }
-                .modal-content .close { float:right; font-size:1.5rem; cursor:pointer; }
-                .btn-submit, #payListingFeeBtn { cursor:pointer; }
-            </style>
         <?php break; ?>
 
         <?php case 'analytics': ?>
