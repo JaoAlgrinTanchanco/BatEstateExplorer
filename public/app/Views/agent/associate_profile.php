@@ -423,10 +423,7 @@
 
             <div class="overview-container">
                 <div class="overview-card">
-                    <form id="addListingForm" 
-                        action="/BatEstateExplorer/public/api/associate_save_listing.php" 
-                        method="POST" 
-                        enctype="multipart/form-data">
+                    <form id="addListingForm" enctype="multipart/form-data">
 
                         <!-- Property Name -->
                         <label for="title"><strong>Property Name</strong></label>
@@ -506,82 +503,110 @@
                             <p>Drag & drop images here or click to browse</p>
                             <input type="file" id="images" accept="image/*" multiple style="display:none;">
                         </div>
-
                         <div id="imagePreview" class="image-preview" aria-live="polite"></div>
 
-                        <!-- Submit / Pay Button -->
-                        <button type="button" id="validateAndShowPaypal" class="btn-submit">
-                            Save Listing & Pay
-                        </button>
-
-                        <!-- Container where PayPal button will appear -->
-                        <div id="paypal-button-container" style="margin-top:10px;"></div>
+                        <!-- Submit -->
+                        <button type="submit" class="btn-submit">Save Listing</button>
                     </form>
                 </div>
             </div>
-            <!-- <script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt"></script> -->
-            <script>
-                const form = document.getElementById("addListingForm");
-                const validateBtn = document.getElementById("validateAndShowPaypal");
-                const paypalContainer = document.getElementById("paypal-button-container");
 
-                // Step 1: validate form
-                validateBtn.addEventListener("click", () => {
-                    if (!form.checkValidity()) {
-                        // Trigger HTML5 validation UI
-                        form.reportValidity();
-                        return;
+            <!-- Listing Fee Modal -->
+            <div id="listingFeeModal" class="deposit-modal" onclick="closeListingFeeModal(event)">
+                <div class="modal-content" onclick="event.stopPropagation()">
+                    <span class="close" onclick="closeListingFeeModal()">&times;</span>
+                    <h2>Listing Fee Payment</h2>
+                    <p>Wallet Balance: PHP <span id="agentWalletBalance"><?= $walletBalance ?></span></p>
+                    <p>Listing Fee: PHP 20</p>
+                    <small>If admin rejects this property, PHP 20 minus 2% will be refunded to your wallet.</small>
+                    <button id="payListingFeeBtn" class="btn btn-success mt-3">Pay Listing Fee & Submit</button>
+                </div>
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const form = document.getElementById('addListingForm');
+                    const listingModal = document.getElementById('listingFeeModal');
+                    const walletBalanceEl = document.getElementById('agentWalletBalance');
+                    const payBtn = document.getElementById('payListingFeeBtn');
+                    const listingFee = 20;
+
+                    // Modal functions
+                    window.openListingFeeModal = () => listingModal.style.display = 'flex';
+                    window.closeListingFeeModal = (event) => {
+                        if(!event || event.target === listingModal) listingModal.style.display = 'none';
                     }
 
-                    // Step 2: hide the original button
-                    validateBtn.style.display = "none";
+                    // Form submit -> validate -> open modal
+                    form.addEventListener('submit', (e) => {
+                        e.preventDefault();
 
-                    // Step 3: render PayPal button
-                    paypal.Buttons({
-                        createOrder: (data, actions) => {
-                            const price = document.getElementById("price").value || "10.00";
-                            return actions.order.create({
-                                purchase_units: [{ amount: { value: price } }]
-                            });
-                        },
-                        onApprove: (data, actions) => {
-                            return actions.order.capture().then(details => {
-                                alert("Payment completed by " + details.payer.name.given_name);
+                        // Simple HTML validation check
+                        if (!form.checkValidity()) {
+                            form.reportValidity();
+                            return;
+                        }
 
-                                // Submit form via fetch after payment
-                                const fd = new FormData(form);
-                                fetch("/BatEstateExplorer/public/api/associate_save_listing.php", {
-                                    method: "POST",
-                                    body: fd
+                        const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g,''));
+                        if(walletBalance < listingFee){
+                            alert('Insufficient wallet balance. Please deposit first.');
+                            return;
+                        }
+
+                        openListingFeeModal();
+                    });
+
+                    // Pay listing fee and submit form data
+                    payBtn.addEventListener('click', () => {
+                        const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g,''));
+                        if(walletBalance < listingFee){
+                            alert('Insufficient wallet balance. Please deposit first.');
+                            return;
+                        }
+
+                        const formData = new FormData(form);
+
+                        // Call API to deduct listing fee
+                        fetch('/BatEstateExplorer/public/api/listing_fee.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if(data.success){
+                                // Submit actual form data to associate_save_listing.php
+                                fetch('/BatEstateExplorer/public/api/associate_save_listing.php', {
+                                    method: 'POST',
+                                    body: formData
                                 })
                                 .then(res => res.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        alert("Listing saved successfully!");
-                                        window.location.href = "http://localhost/BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab=add_listing";
+                                .then(saveData => {
+                                    if(saveData.success){
+                                        alert('Listing saved successfully!');
+                                        closeListingFeeModal();
+                                        form.reset();
                                     } else {
-                                        console.error(data);
-                                        alert("Failed to save listing: " + (data.error || 'Unknown error'));
+                                        alert('Listing fee paid but failed to save listing: ' + (saveData.error||'Unknown error'));
                                     }
-                                })
-                                .catch(err => {
-                                    console.error(err);
-                                    alert("Error saving listing after payment.");
                                 });
-                            });
-                        },
-                        onCancel: () => {
-                            alert("Payment cancelled. Listing not saved.");
-                            validateBtn.style.display = "block"; // show button again
-                        },
-                        onError: (err) => {
+                            } else {
+                                alert('Failed to process listing fee: ' + (data.error||'Unknown error'));
+                            }
+                        })
+                        .catch(err => {
                             console.error(err);
-                            alert("Something went wrong with PayPal.");
-                            validateBtn.style.display = "block"; // show button again
-                        }
-                    }).render("#paypal-button-container");
+                            alert('Error processing listing fee. Please try again.');
+                        });
+                    });
                 });
             </script>
+
+            <style>
+                .deposit-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:9999; }
+                .modal-content { background:#fff; padding:20px; border-radius:8px; max-width:400px; width:90%; }
+                .modal-content .close { float:right; font-size:1.5rem; cursor:pointer; }
+                .btn-submit, #payListingFeeBtn { cursor:pointer; }
+            </style>
         <?php break; ?>
 
         <?php case 'analytics': ?>
