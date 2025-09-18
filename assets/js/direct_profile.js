@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dropArea || !fileInput || !form) return;
 
         let selectedFiles = [];
+        window.getSelectedFiles = () => selectedFiles;
         const fileSignature = f => `${f.name}|${f.size}|${f.lastModified}`;
 
         const renderPreviews = () => {
@@ -231,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             openListingFeeModal();
         });
 
+        // replace your payListingFeeBtn click handler
         directPayBtn.addEventListener('click', () => {
             const walletBalance = parseFloat(directWalletBalanceEl.innerText.replace(/,/g,'')) || 0;
             if(walletBalance < directListingFee){
@@ -238,7 +240,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Build FormData
             const formData = new FormData(directListingForm);
+
+            // ⬅️ Append images from selectedFiles (not from input)
+            if (window.getSelectedFiles) {
+                window.getSelectedFiles().forEach(file => formData.append('images[]', file));
+            }
 
             fetch('/BatEstateExplorer/public/api/listing_fee.php', { method:'POST', body: formData })
             .then(res => res.json())
@@ -262,7 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => notify('error', err.message || 'An error occurred. Please try again.'));
         });
     }
-
 }); // End DOMContentLoaded
 
 // =========================

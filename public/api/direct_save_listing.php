@@ -56,32 +56,52 @@ try {
     $property_id = $pdo->lastInsertId();
 
     // 🔹 Handle image uploads (limit 10)
-    $upload_dir = 'C:\\xampp\\htdocs\\BatEstateExplorer\\storage\\uploads\\property_images\\'; // absolute
+    $upload_dir = 'C:\\xampp\\htdocs\\BatEstateExplorer\\storage\\uploads\\property_images\\'; // absolute path
+    $db_path_prefix = 'storage/uploads/property_images/';
+
     if (!is_dir($upload_dir)) {
         mkdir($upload_dir, 0777, true);
     }
 
-    if (isset($_FILES['images']) && is_array($_FILES['images']['tmp_name']) && $_FILES['images']['tmp_name'][0] !== '') {
+    $uploadedImages = []; // 👈 collect debug info
+
+    if (
+        isset($_FILES['images']) &&
+        is_array($_FILES['images']['tmp_name']) &&
+        $_FILES['images']['tmp_name'][0] !== ''
+    ) {
         $file_count = min(count($_FILES['images']['tmp_name']), 10);
+
+        $stmtImg = $pdo->prepare("
+            INSERT INTO property_images (property_id, image_path, is_primary, created_at)
+            VALUES (?, ?, ?, NOW())
+        ");
 
         for ($i = 0; $i < $file_count; $i++) {
             $tmp   = $_FILES['images']['tmp_name'][$i];
             $name  = $_FILES['images']['name'][$i];
             $error = $_FILES['images']['error'][$i];
 
-            if ($error !== UPLOAD_ERR_OK) continue;
+            if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)) continue;
 
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
             if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) continue;
 
             $newFileName = uniqid('prop_', true) . '.' . $ext;
             $destination = $upload_dir . $newFileName;
+            $relativePath = $db_path_prefix . $newFileName;
 
             if (move_uploaded_file($tmp, $destination)) {
-                // store relative path in DB
-                $relativePath = 'storage/uploads/property_images/' . $newFileName;
-                $stmtImg = $pdo->prepare("INSERT INTO property_images (property_id, image_path) VALUES (?, ?)");
-                $stmtImg->execute([$property_id, $relativePath]);
+                $isPrimary = ($i === 0) ? 1 : 0; // first image = primary
+                $stmtImg->execute([$property_id, $relativePath, $isPrimary]);
+
+                // add debug info
+                $uploadedImages[] = [
+                    'original' => $name,
+                    'saved_as' => $newFileName,
+                    'relative' => $relativePath,
+                    'is_primary' => $isPrimary
+                ];
             }
         }
     }
@@ -91,13 +111,22 @@ try {
     echo json_encode([
         'success' => true,
         'message' => 'Property submitted successfully! Awaiting admin approval.',
-        'property_id' => $property_id
+        'property_id' => $property_id,
+        'debug' => [
+            'POST' => $_POST,
+            'FILES' => $_FILES,
+            'uploadedImages' => $uploadedImages
+        ]
     ]);
 
 } catch (Exception $e) {
     $pdo->rollBack();
     echo json_encode([
         'success' => false,
-        'error' => 'Error saving property: ' . $e->getMessage()
+        'error' => 'Error saving property: ' . $e->getMessage(),
+        'debug' => [
+            'POST' => $_POST,
+            'FILES' => $_FILES
+        ]
     ]);
 }
