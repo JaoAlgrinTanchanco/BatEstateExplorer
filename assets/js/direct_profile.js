@@ -213,40 +213,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const directOpenListingBtn = document.getElementById('openListingModalBtn');
 
-    if(directListingForm && directListingModal && directWalletBalanceEl && directPayBtn && directOpenListingBtn){
+    if (directListingForm && directListingModal && directWalletBalanceEl && directPayBtn && directOpenListingBtn) {
         window.openListingFeeModal = () => directListingModal.style.display = 'flex';
         window.closeListingFeeModal = (e) => { 
-            if(!e || e.target === directListingModal) directListingModal.style.display = 'none'; 
+            if (!e || e.target === directListingModal) directListingModal.style.display = 'none'; 
         };
 
         directOpenListingBtn.addEventListener('click', () => {
-            if(!directListingForm.checkValidity()){
+            // ✅ Check if form is valid
+            if (!directListingForm.checkValidity()) {
                 directListingForm.reportValidity();
                 return;
             }
+
+            // ✅ Require at least 1 image
+            if (!window.getSelectedFiles || window.getSelectedFiles().length === 0) {
+                notify('error', 'Please upload at least one image.');
+                return;
+            }
+
             const walletBalance = parseFloat(directWalletBalanceEl.innerText.replace(/,/g,'')) || 0;
-            if(walletBalance < directListingFee){
+            if (walletBalance < directListingFee) {
                 notify('error','Insufficient wallet balance. Please deposit first.');
                 return;
             }
             openListingFeeModal();
         });
 
-        // replace your payListingFeeBtn click handler
         directPayBtn.addEventListener('click', () => {
             const walletBalance = parseFloat(directWalletBalanceEl.innerText.replace(/,/g,'')) || 0;
-            if(walletBalance < directListingFee){
+            if (walletBalance < directListingFee) {
                 notify('error','Insufficient wallet balance. Please deposit first.');
                 return;
             }
 
-            // Build FormData
-            const formData = new FormData(directListingForm);
-
-            // ⬅️ Append images from selectedFiles (not from input)
-            if (window.getSelectedFiles) {
-                window.getSelectedFiles().forEach(file => formData.append('images[]', file));
+            // ✅ Make sure the file input contains the selected files
+            if (window.getSelectedFiles && window.getSelectedFiles().length > 0) {
+                const dataTransfer = new DataTransfer();
+                window.getSelectedFiles().forEach(file => dataTransfer.items.add(file));
+                document.getElementById('images').files = dataTransfer.files;
             }
+
+            // Build FormData from the form
+            const formData = new FormData(directListingForm);
 
             fetch('/BatEstateExplorer/public/api/listing_fee.php', { method:'POST', body: formData })
             .then(res => res.json())
@@ -254,6 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(!feeData.success) throw new Error(feeData.error || 'Failed to process listing fee.');
                 directWalletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
+                // ✅ Submit listing with images
                 return fetch('/BatEstateExplorer/public/api/direct_save_listing.php', { method:'POST', body: formData });
             })
             .then(res => res.json())

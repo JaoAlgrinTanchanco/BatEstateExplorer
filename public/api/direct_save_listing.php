@@ -20,10 +20,9 @@ if ($user_data['user_type'] !== 'direct_agent') {
 $stmt = $pdo->prepare("SELECT id FROM agents WHERE user_id = ?");
 $stmt->execute([$user_data['id']]);
 $agent = $stmt->fetch(PDO::FETCH_ASSOC);
+$agent_id = $agent ? $agent['id'] : null;
 
-if ($agent) {
-    $agent_id = $agent['id'];
-} else {
+if (!$agent_id) {
     $stmtInsert = $pdo->prepare("INSERT INTO agents (user_id, created_at) VALUES (?, NOW())");
     $stmtInsert->execute([$user_data['id']]);
     $agent_id = $pdo->lastInsertId();
@@ -39,6 +38,16 @@ $bathrooms     = (int) ($_POST['bathrooms'] ?? 0);
 $sqm           = (float) ($_POST['sqm'] ?? 0);
 $lot_size      = (float) ($_POST['lot_size'] ?? 0);
 $property_type = trim($_POST['property_type'] ?? '');
+
+// 🔹 Check at least one image is uploaded
+if (!isset($_FILES['images']) || empty($_FILES['images']['tmp_name'])) {
+    echo json_encode([
+        'success' => false,
+        'error' => 'No images uploaded. At least one image is required.',
+        'debug' => ['FILES' => $_FILES]
+    ]);
+    exit;
+}
 
 try {
     $pdo->beginTransaction();
@@ -56,54 +65,47 @@ try {
     $property_id = $pdo->lastInsertId();
 
     // 🔹 Handle image uploads (limit 10)
-    $upload_dir = 'C:\\xampp\\htdocs\\BatEstateExplorer\\storage\\uploads\\property_images\\'; // absolute path
+    $upload_dir = 'C:/xampp/htdocs/BatEstateExplorer/storage/uploads/property_images/';
     $db_path_prefix = 'storage/uploads/property_images/';
 
     if (!is_dir($upload_dir)) {
         mkdir($upload_dir, 0777, true);
     }
 
-    $uploadedImages = []; // 👈 collect debug info
+    $uploadedImages = [];
+    $file_count = min(count($_FILES['images']['tmp_name']), 10);
+    $stmtImg = $pdo->prepare("
+        INSERT INTO property_images (property_id, image_path, is_primary, created_at)
+        VALUES (?, ?, ?, NOW())
+    ");
 
-    if (
-        isset($_FILES['images']) &&
-        is_array($_FILES['images']['tmp_name']) &&
-        $_FILES['images']['tmp_name'][0] !== ''
-    ) {
-        $file_count = min(count($_FILES['images']['tmp_name']), 10);
+    for ($i = 0; $i < $file_count; $i++) {
+        $tmp   = $_FILES['images']['tmp_name'][$i];
+        $name  = $_FILES['images']['name'][$i];
+        $error = $_FILES['images']['error'][$i];
 
-        $stmtImg = $pdo->prepare("
-            INSERT INTO property_images (property_id, image_path, is_primary, created_at)
-            VALUES (?, ?, ?, NOW())
-        ");
+        if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)) continue;
 
-        for ($i = 0; $i < $file_count; $i++) {
-            $tmp   = $_FILES['images']['tmp_name'][$i];
-            $name  = $_FILES['images']['name'][$i];
-            $error = $_FILES['images']['error'][$i];
+        $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg','jpeg','png','gif'])) continue;
 
-            if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)) continue;
+        $newFileName = uniqid('prop_', true) . '.' . $ext;
+        $destination = $upload_dir . $newFileName;
+        $relativePath = $db_path_prefix . $newFileName;
 
-            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) continue;
-
-            $newFileName = uniqid('prop_', true) . '.' . $ext;
-            $destination = $upload_dir . $newFileName;
-            $relativePath = $db_path_prefix . $newFileName;
-
-            if (move_uploaded_file($tmp, $destination)) {
-                $isPrimary = ($i === 0) ? 1 : 0; // first image = primary
-                $stmtImg->execute([$property_id, $relativePath, $isPrimary]);
-
-                // add debug info
-                $uploadedImages[] = [
-                    'original' => $name,
-                    'saved_as' => $newFileName,
-                    'relative' => $relativePath,
-                    'is_primary' => $isPrimary
-                ];
-            }
+        if (!move_uploaded_file($tmp, $destination)) {
+            throw new Exception("Failed to move uploaded file: $name");
         }
+
+        $isPrimary = ($i === 0) ? 1 : 0;
+        $stmtImg->execute([$property_id, $relativePath, $isPrimary]);
+
+        $uploadedImages[] = [
+            'original' => $name,
+            'saved_as' => $newFileName,
+            'relative' => $relativePath,
+            'is_primary' => $isPrimary
+        ];
     }
 
     $pdo->commit();
