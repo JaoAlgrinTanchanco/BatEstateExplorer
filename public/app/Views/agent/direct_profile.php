@@ -455,11 +455,43 @@
                         <div id="imagePreview" class="image-preview" aria-live="polite"></div>
 
                         <!-- Submit -->
-                        <button type="submit" class="btn-submit">Save Listing</button>
+                        <button type="button" id="openListingModalBtn" class="btn-submit">Save Listing</button>
                     </form>
                 </div>
             </div>
+            <!-- Listing Fee Modal -->
+            <div id="listingFeeModal" class="deposit-modal" onclick="closeListingFeeModal(event)">
+                <div class="modal-content" onclick="event.stopPropagation()">
+                    <span class="close" onclick="closeListingFeeModal()">&times;</span>
+                    <h2 class="modal-title">Listing Fee Payment</h2>
+                    
+                    <div class="modal-body">
+                        <div class="wallet-info">
+                            <p><strong>Wallet Balance:</strong> PHP <span id="agentWalletBalance"><?= $walletBalance ?></span></p>
+                            <p><strong>Listing Fee:</strong> PHP 20</p>
+                        </div>
 
+                        <div class="note">
+                            <small>
+                                Please note: If the property is rejected by the admin, the listing fee of PHP 20 will be refunded to your wallet, minus a 2% processing fee.
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button id="payListingFeeBtn" class="btn btn-success">
+                            <span class="btn-text">Pay Listing Fee & Submit</span>
+                            <span class="spinner" style="display:none;">
+                                <svg width="20" height="20" viewBox="0 0 50 50">
+                                    <circle cx="25" cy="25" r="20" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round">
+                                        <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="1s" from="0 25 25" to="360 25 25"/>
+                                    </circle>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         <?php break; ?>
 
         <?php case 'analytics': ?>

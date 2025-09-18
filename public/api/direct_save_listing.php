@@ -1,25 +1,18 @@
 <?php
 session_start();
+header('Content-Type: application/json');
 require_once __DIR__ . '/../../config/pdo_database.php';
 
 // 🔹 Ensure logged-in user
 $user_data = get_logged_in_user($pdo);
 if (!$user_data) {
-    $_SESSION['notification'] = [
-        'type' => 'error',
-        'message' => 'No logged-in user detected.'
-    ];
-    header("Location: ../../auth/login.php");
+    echo json_encode(['success' => false, 'error' => 'No logged-in user detected.']);
     exit;
 }
 
 // 🔹 Ensure only direct agents can access
 if ($user_data['user_type'] !== 'direct_agent') {
-    $_SESSION['notification'] = [
-        'type' => 'error',
-        'message' => 'Access denied: only direct agents can save listings.'
-    ];
-    header("Location: ../../index.php");
+    echo json_encode(['success' => false, 'error' => 'Access denied: only direct agents can save listings.']);
     exit;
 }
 
@@ -94,19 +87,16 @@ try {
 
     $pdo->commit();
 
-    $_SESSION['notification'] = [
-        'type' => 'success',
-        'message' => 'Property submitted successfully! Awaiting admin approval.'
-    ];
-    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=add_listing");
-    exit;
+    echo json_encode([
+        'success' => true,
+        'message' => 'Property submitted successfully! Awaiting admin approval.',
+        'property_id' => $property_id
+    ]);
 
 } catch (Exception $e) {
     $pdo->rollBack();
-    $_SESSION['notification'] = [
-        'type' => 'error',
-        'message' => 'Error saving property: ' . $e->getMessage()
-    ];
-    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=add_listing");
-    exit;
+    echo json_encode([
+        'success' => false,
+        'error' => 'Error saving property: ' . $e->getMessage()
+    ]);
 }
