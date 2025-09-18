@@ -4,7 +4,7 @@
 
 require_once __DIR__ . "/../config/database.php";
 
-$email = "arlenecruz@gmail.com";
+$email = "francisco@gmail.com";
 $newPassword = "agent123";
 
 // Generate a proper bcrypt hash

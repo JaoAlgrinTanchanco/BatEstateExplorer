@@ -1,108 +1,155 @@
 <?php
-if (!isset($user)) die('Access denied.');
+    if (!isset($user)) die('Access denied.');
 
-// 🔹 Use the centralized notification system
-require_once __DIR__ . '/../../../../components/notification.php';
+    // 🔹 Use the centralized notification system
+    require_once __DIR__ . '/../../../../components/notification.php';
 
-// Detect active tab
-$tab = $_GET['tab'] ?? 'overview';
+    // Detect active tab
+    $tab = $_GET['tab'] ?? 'overview';
 
-// 🔹 Initialize listings array
-$listings = [];
+    // 🔹 Initialize listings array
+    $listings = [];
 
-// 🔹 Determine agent_id
-$agent_id = 0;
-if ($user['user_type'] === 'direct') {
-    $agent_id = (int)$user['id']; // direct agents: user_id is agent_id
-} else {
-    // associates: fetch agent mapping
-    $stmt = $conn->prepare("SELECT id FROM agents WHERE user_id = ?");
+    // 🔹 Determine agent_id
+    $agent_id = 0;
+    if ($user['user_type'] === 'direct') {
+        $agent_id = (int)$user['id']; // direct agents: user_id is agent_id
+    } else {
+        // associates: fetch agent mapping
+        $stmt = $conn->prepare("SELECT id FROM agents WHERE user_id = ?");
+        $stmt->bind_param("i", $user['id']);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $agent = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
+
+        $agent_id = $agent ? (int)$agent['id'] : 0;
+    }
+
+    // Initialize analytics variables
+    $avg_rating = 0;
+    $total_reviews = 0;
+    $reviews = [];
+
+    // Fetch agent's properties
+    if ($agent_id) {
+        // Fetch properties
+        $stmt = $conn->prepare("
+            SELECT *
+            FROM properties
+            WHERE agent_id = ? OR sold_by_agent_id = ?
+            ORDER BY created_at DESC
+        ");
+        $stmt->bind_param("ii", $agent_id, $agent_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $properties = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        $stmt->close();
+
+        foreach ($properties as $property) {
+            $stmtImg = $conn->prepare("
+                SELECT image_path
+                FROM property_images
+                WHERE property_id = ?
+                ORDER BY is_primary DESC, id ASC
+            ");
+            $stmtImg->bind_param("i", $property['id']);
+            $stmtImg->execute();
+            $resImg = $stmtImg->get_result();
+            $images = $resImg ? $resImg->fetch_all(MYSQLI_ASSOC) : [];
+            $stmtImg->close();
+
+            $property['images'] = $images;
+            $listings[] = $property;
+        }
+
+        // If Analytics tab, fetch reviews and rating
+        if ($tab === 'analytics') {
+            // Average rating & total reviews
+            $stmt = $conn->prepare("
+                SELECT AVG(pr.rating) AS avg_rating, COUNT(*) AS total_reviews
+                FROM property_reviews pr
+                JOIN properties p ON pr.property_id = p.id
+                WHERE p.agent_id = ?
+            ");
+            $stmt->bind_param("i", $agent_id);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $row = $res ? $res->fetch_assoc() : null;
+            $avg_rating = $row['avg_rating'] ? round($row['avg_rating'], 1) : 0;
+            $total_reviews = $row['total_reviews'] ?? 0;
+            $stmt->close();
+
+            // Fetch reviews
+            $stmt = $conn->prepare("
+                SELECT pr.rating, pr.review_text, u.first_name, u.last_name, u.email, p.title, pi.image_path
+                FROM property_reviews pr
+                JOIN users u ON pr.user_id = u.id
+                JOIN properties p ON pr.property_id = p.id
+                LEFT JOIN property_images pi 
+                    ON pi.property_id = p.id AND pi.is_primary = 1
+                WHERE p.agent_id = ?
+                ORDER BY pr.created_at DESC
+            ");
+            $stmt->bind_param("i", $agent_id);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $reviews = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+            $stmt->close();
+        }
+    }
+
+    // 🔹 Fetch wallet balance for the logged-in user (works for both direct & associate agents)
+    $walletBalance = 0.00;
+    if (isset($user['id'])) {
+        $stmtWallet = $conn->prepare("
+            SELECT wallet_balance 
+            FROM users 
+            WHERE id = ?
+        ");
+        $stmtWallet->bind_param("i", $user['id']);
+        $stmtWallet->execute();
+        $resWallet = $stmtWallet->get_result();
+        $rowWallet = $resWallet ? $resWallet->fetch_assoc() : null;
+        $walletBalance = $rowWallet ? (float)$rowWallet['wallet_balance'] : 0.00;
+        $stmtWallet->close();
+    }
+
+    // Format wallet balance for display
+    $walletBalanceFormatted = number_format($walletBalance, 2, '.', ',');
+
+    // 🔹 Fetch last 10 transactions for this user (works for both direct & associate agents)
+    $transactions = [];
+    $stmt = $conn->prepare("
+        SELECT 
+            id,
+            property,
+            amount,
+            status,
+            method,
+            DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS date
+        FROM transactions
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT 10
+    ");
     $stmt->bind_param("i", $user['id']);
     $stmt->execute();
     $res = $stmt->get_result();
-    $agent = $res ? $res->fetch_assoc() : null;
+    if ($res && $res->num_rows > 0) {
+        $transactions = $res->fetch_all(MYSQLI_ASSOC);
+    }
     $stmt->close();
 
-    $agent_id = $agent ? (int)$agent['id'] : 0;
-}
-
-// Initialize analytics variables
-$avg_rating = 0;
-$total_reviews = 0;
-$reviews = [];
-
-// Fetch agent's properties
-if ($agent_id) {
-    // Fetch properties
-    $stmt = $conn->prepare("
-        SELECT *
-        FROM properties
-        WHERE agent_id = ? OR sold_by_agent_id = ?
-        ORDER BY created_at DESC
-    ");
-    $stmt->bind_param("ii", $agent_id, $agent_id);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $properties = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-    $stmt->close();
-
-    foreach ($properties as $property) {
-        $stmtImg = $conn->prepare("
-            SELECT image_path
-            FROM property_images
-            WHERE property_id = ?
-            ORDER BY is_primary DESC, id ASC
-        ");
-        $stmtImg->bind_param("i", $property['id']);
-        $stmtImg->execute();
-        $resImg = $stmtImg->get_result();
-        $images = $resImg ? $resImg->fetch_all(MYSQLI_ASSOC) : [];
-        $stmtImg->close();
-
-        $property['images'] = $images;
-        $listings[] = $property;
-    }
-
-    // If Analytics tab, fetch reviews and rating
-    if ($tab === 'analytics') {
-        // Average rating & total reviews
-        $stmt = $conn->prepare("
-            SELECT AVG(pr.rating) AS avg_rating, COUNT(*) AS total_reviews
-            FROM property_reviews pr
-            JOIN properties p ON pr.property_id = p.id
-            WHERE p.agent_id = ?
-        ");
-        $stmt->bind_param("i", $agent_id);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $row = $res ? $res->fetch_assoc() : null;
-        $avg_rating = $row['avg_rating'] ? round($row['avg_rating'], 1) : 0;
-        $total_reviews = $row['total_reviews'] ?? 0;
-        $stmt->close();
-
-        // Fetch reviews
-        $stmt = $conn->prepare("
-            SELECT pr.rating, pr.review_text, u.first_name, u.last_name, u.email, p.title, pi.image_path
-            FROM property_reviews pr
-            JOIN users u ON pr.user_id = u.id
-            JOIN properties p ON pr.property_id = p.id
-            LEFT JOIN property_images pi 
-                ON pi.property_id = p.id AND pi.is_primary = 1
-            WHERE p.agent_id = ?
-            ORDER BY pr.created_at DESC
-        ");
-        $stmt->bind_param("i", $agent_id);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $reviews = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-        $stmt->close();
-    }
-}
+    // 🔹 Fetch agent info for wallet tab
+    $agentInfo = [
+        'name'  => trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')),
+        'phone' => $user['phone'] ?? 'N/A'
+    ];
 ?>
 
-
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/direct_profile.css">
-
+<script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt&currency=PHP"></script>
 <div class="dashboard-container">
     <!-- Header -->
     <header class="dashboard-header">
@@ -116,6 +163,7 @@ if ($agent_id) {
         <a href="?view=direct_profile&tab=add_listing" class="tab <?= ($tab === 'add_listing') ? 'active' : '' ?>">Add Listing</a>
         <a href="?view=direct_profile&tab=analytics" class="tab <?= ($tab === 'analytics') ? 'active' : '' ?>">Analytics</a>
         <a href="?view=direct_profile&tab=review_privileges" class="tab <?= ($tab === 'review_privileges') ? 'active' : '' ?>">Review Privileges</a>
+        <a href="?view=direct_profile&tab=wallet" class="tab <?= ($tab === 'wallet') ? 'active' : '' ?>">Wallet</a>
     </nav>
 
     <!-- Content Section -->
@@ -499,6 +547,207 @@ if ($agent_id) {
                 </div>
             </div>
 
+        <?php break; ?>
+
+        <?php case 'wallet': ?>
+            <h2>Agent Wallet</h2>
+
+            <!-- Wallet Balance -->
+            <div class="wallet-balance-section mb-4 d-flex align-items-center justify-content-between" style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem;">
+                <h3>PHP <span id="walletBalance"><?= $walletBalance ?></span></h3>
+                <button class="btn btn-success btn-circle" onclick="openDepositModal()">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+
+            <!-- Agent Info -->
+            <div class="agent-info p-3 mb-4" style="border: 1px solid #ddd; border-radius: 8px;">
+                <p><strong>Name:</strong> <?= htmlspecialchars($agentInfo['name']) ?></p>
+                <p><strong>Contact:</strong> <?= htmlspecialchars($agentInfo['phone']) ?></p>
+                <p><strong>Email:</strong> agent@personal.example.com</p>
+            </div>
+
+            <!-- Transaction History -->
+            <h4 class="mt-5">Transaction History</h4>
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd;">
+                <table class="table table-bordered mb-0">
+                    <thead class="table-light position-sticky top-0">
+                        <tr>
+                            <th>Date</th>
+                            <th>Property</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Payment Method</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionTable">
+                        <?php if(!empty($transactions)): ?>
+                            <?php foreach($transactions as $tx): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($tx['date']); ?></td>
+                                    <td><?= htmlspecialchars($tx['property']); ?></td>
+                                    <td>₱<?= number_format($tx['amount'], 2); ?></td>
+                                    <td><?= ucfirst($tx['status']); ?></td>
+                                    <td><?= htmlspecialchars($tx['method']); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr><td colspan="5" class="text-center">No transactions yet.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Deposit Modal -->
+            <div id="depositModal" class="deposit-modal" onclick="closeDepositModal(event)">
+                <div class="modal-content" onclick="event.stopPropagation()">
+                    <span class="close" onclick="closeDepositModal()">&times;</span>
+                    <h2>Deposit Funds</h2>
+                    <input type="text" id="selectedAmount" class="form-control mb-3" placeholder="Selected amount" disabled>
+                    <div class="deposit-amounts mb-3">
+                        <?php foreach ([50,100,200,400,600,1000] as $amt): ?>
+                            <button type="button" class="deposit-amount-btn" data-amount="<?= $amt ?>">PHP <?= $amt ?></button>
+                        <?php endforeach; ?>
+                    </div>
+                    <div id="paypal-button-container"></div>
+                </div>
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const selectedInput = document.getElementById('selectedAmount');
+                    const balanceEl = document.getElementById('walletBalance');
+                    const modal = document.getElementById('depositModal');
+                    const walletLimit = 10000;
+                    const tableBody = document.getElementById('transactionTable');
+
+                    // Open / close modal
+                    window.openDepositModal = () => modal.style.display = 'flex';
+                    window.closeDepositModal = (event) => {
+                        if (!event || event.target === modal) modal.style.display = 'none';
+                    }
+
+                    // Deposit amount buttons
+                    document.querySelectorAll('.deposit-amount-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const amount = parseFloat(btn.dataset.amount);
+                            const current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
+
+                            if(current + amount > walletLimit){
+                                alert(`Deposit exceeds wallet limit of PHP ${walletLimit}. Please try a smaller amount.`);
+                                selectedInput.value = '';
+                                return;
+                            }
+
+                            selectedInput.value = amount;
+                        });
+                    });
+
+                    // Render PayPal buttons
+                    paypal.Buttons({
+                        style: { layout:'vertical', color:'blue', shape:'pill', label:'pay' },
+
+                        createOrder: function(data, actions) {
+                            const amount = parseFloat(selectedInput.value);
+                            if (!amount) {
+                                alert('Please select an amount first.');
+                                return;
+                            }
+
+                            const current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
+                            if (current + amount > walletLimit) {
+                                alert(`Deposit exceeds wallet limit of PHP ${walletLimit}. Please try a smaller amount.`);
+                                return;
+                            }
+
+                            return actions.order.create({
+                                purchase_units: [{ amount: { value: amount.toFixed(2) } }]
+                            });
+                        },
+
+                        onApprove: function(data, actions) {
+                            return actions.order.capture().then(function(details) {
+                                const amount = parseFloat(selectedInput.value);
+                                let current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
+                                let newBalance = current + amount;
+
+                                if (newBalance > walletLimit) {
+                                    alert(`Deposit exceeds wallet limit of PHP ${walletLimit}. Transaction will not be processed.`);
+                                    return;
+                                }
+
+                                // Update wallet balance on page
+                                balanceEl.innerText = newBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+                                // Save deposit to DB
+                                fetch('/BatEstateExplorer/public/api/deposit.php', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                    body: `amount=${encodeURIComponent(amount)}`
+                                })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        alert('Deposit successful! Paid by: ' + details.payer.name.given_name);
+                                        selectedInput.value = '';
+                                        closeDepositModal();
+
+                                        // Add new transaction row dynamically
+                                        const now = new Date();
+                                        const formattedDate = now.getFullYear() + '-' +
+                                                            String(now.getMonth()+1).padStart(2,'0') + '-' +
+                                                            String(now.getDate()).padStart(2,'0') + ' ' +
+                                                            String(now.getHours()).padStart(2,'0') + ':' +
+                                                            String(now.getMinutes()).padStart(2,'0') + ':' +
+                                                            String(now.getSeconds()).padStart(2,'0');
+
+                                        const newRow = document.createElement('tr');
+                                        newRow.innerHTML = `
+                                            <td>${formattedDate}</td>
+                                            <td>Deposit</td>
+                                            <td>₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                                            <td>Completed</td>
+                                            <td>PayPal</td>
+                                        `;
+
+                                        // Remove "No transactions yet" placeholder if present
+                                        const placeholder = tableBody.querySelector('.text-center');
+                                        if (placeholder) tableBody.innerHTML = '';
+
+                                        tableBody.prepend(newRow);
+
+                                        // Limit table to last 10 transactions
+                                        while(tableBody.rows.length > 10) {
+                                            tableBody.deleteRow(10);
+                                        }
+
+                                    } else {
+                                        alert('Deposit saved to PayPal but failed to update wallet: ' + (data.error || 'Unknown error'));
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error(err);
+                                    alert('Deposit saved to PayPal but failed to update wallet in DB.');
+                                });
+                            });
+                        },
+
+                        onError: function(err) {
+                            console.error(err);
+                            alert('An error occurred during the PayPal transaction. Please check the amount and try again.');
+                        }
+
+                    }).render('#paypal-button-container');
+                });
+            </script>
+
+            <style>
+                .deposit-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:9999; }
+                .modal-content { background:#fff; padding:20px; border-radius:8px; max-width:400px; width:90%; }
+                .modal-content .close { float:right; font-size:1.5rem; cursor:pointer; }
+                .deposit-amounts button { margin:4px; padding:8px 12px; cursor:pointer; }
+                .btn-circle { border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; }
+            </style>
         <?php break; ?>
 
         <?php default:

@@ -18,22 +18,36 @@ if ($amount <= 0) {
     exit;
 }
 
-// Start transaction
 $conn->begin_transaction();
 
 try {
-    // Update wallet_balance
+    // Get user type (direct_agent or associate_agent)
+    $stmt = $conn->prepare("SELECT user_type FROM users WHERE id = ?");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $stmt->bind_result($userType);
+    $stmt->fetch();
+    $stmt->close();
+
+    if (!$userType) {
+        throw new Exception('User type not found.');
+    }
+
+    // Update wallet balance
     $stmt = $conn->prepare("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?");
     $stmt->bind_param("di", $amount, $userId);
     if (!$stmt->execute()) throw new Exception('Failed to update wallet balance.');
     $stmt->close();
 
-    // Insert into transactions table
-    $stmt = $conn->prepare("INSERT INTO transactions (user_id, property, amount, status, method, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
-    $property = 'Deposit'; // Since this is a wallet top-up
+    // Insert into transactions (log deposit)
+    $stmt = $conn->prepare("
+        INSERT INTO transactions (user_id, property, amount, status, method, created_at, user_type) 
+        VALUES (?, ?, ?, ?, ?, NOW(), ?)
+    ");
+    $property = 'Deposit'; // Wallet top-up
     $status   = 'completed';
     $method   = 'PayPal';
-    $stmt->bind_param("isdss", $userId, $property, $amount, $status, $method);
+    $stmt->bind_param("isdsss", $userId, $property, $amount, $status, $method, $userType);
     if (!$stmt->execute()) throw new Exception('Failed to log transaction.');
     $stmt->close();
 

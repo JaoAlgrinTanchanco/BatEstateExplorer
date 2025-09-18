@@ -2,18 +2,18 @@
 session_start();
 require_once __DIR__ . '/../../config/pdo_database.php';
 
-// Get logged-in user
+// 🔹 Ensure logged-in user
 $user_data = get_logged_in_user($pdo);
 if (!$user_data) {
     $_SESSION['notification'] = [
         'type' => 'error',
-        'message' => 'No logged in user detected.'
+        'message' => 'No logged-in user detected.'
     ];
     header("Location: ../../auth/login.php");
     exit;
 }
 
-// Ensure only direct agents can use this
+// 🔹 Ensure only direct agents can access
 if ($user_data['user_type'] !== 'direct_agent') {
     $_SESSION['notification'] = [
         'type' => 'error',
@@ -23,34 +23,34 @@ if ($user_data['user_type'] !== 'direct_agent') {
     exit;
 }
 
-// Get or create agent.id
+// 🔹 Ensure direct agent has an agent_id
 $stmt = $pdo->prepare("SELECT id FROM agents WHERE user_id = ?");
 $stmt->execute([$user_data['id']]);
 $agent = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$agent) {
+if ($agent) {
+    $agent_id = $agent['id'];
+} else {
     $stmtInsert = $pdo->prepare("INSERT INTO agents (user_id, created_at) VALUES (?, NOW())");
     $stmtInsert->execute([$user_data['id']]);
     $agent_id = $pdo->lastInsertId();
-} else {
-    $agent_id = $agent['id'];
 }
 
-// Collect form data
-$title         = $_POST['title'] ?? '';
-$description   = $_POST['description'] ?? '';
-$price         = floatval($_POST['price'] ?? 0);
-$location      = $_POST['location'] ?? '';
-$bedrooms      = intval($_POST['bedrooms'] ?? 0);
-$bathrooms     = intval($_POST['bathrooms'] ?? 0);
-$sqm           = floatval($_POST['sqm'] ?? 0);
-$lot_size      = floatval($_POST['lot_size'] ?? 0);
-$property_type = $_POST['property_type'] ?? '';
+// 🔹 Collect form data safely
+$title         = trim($_POST['title'] ?? '');
+$description   = trim($_POST['description'] ?? '');
+$price         = (float) ($_POST['price'] ?? 0);
+$location      = trim($_POST['location'] ?? '');
+$bedrooms      = (int) ($_POST['bedrooms'] ?? 0);
+$bathrooms     = (int) ($_POST['bathrooms'] ?? 0);
+$sqm           = (float) ($_POST['sqm'] ?? 0);
+$lot_size      = (float) ($_POST['lot_size'] ?? 0);
+$property_type = trim($_POST['property_type'] ?? '');
 
 try {
     $pdo->beginTransaction();
 
-    // Insert property
+    // 🔹 Insert property (default: pending)
     $stmt = $pdo->prepare("
         INSERT INTO properties
         (title, description, property_type, location, price, bedrooms, bathrooms, sqm, lot_size, agent_id, status, created_at)
@@ -60,11 +60,13 @@ try {
         $title, $description, $property_type, $location, $price,
         $bedrooms, $bathrooms, $sqm, $lot_size, $agent_id
     ]);
-
     $property_id = $pdo->lastInsertId();
 
-    // Handle uploads
-    $upload_dir = 'C:\\xampp\\htdocs\\BatEstateExplorer\\storage\\uploads\\property_images\\';
+    // 🔹 Handle image uploads (limit 10)
+    $upload_dir = __DIR__ . '/../../storage/uploads/property_images/';
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0777, true);
+    }
 
     if (isset($_FILES['images']) && is_array($_FILES['images']['tmp_name']) && $_FILES['images']['tmp_name'][0] !== '') {
         $file_count = min(count($_FILES['images']['tmp_name']), 10);
@@ -79,7 +81,7 @@ try {
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
             if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) continue;
 
-            $newFileName = uniqid() . '.' . $ext;
+            $newFileName = uniqid('prop_', true) . '.' . $ext;
             $destination = $upload_dir . $newFileName;
 
             if (move_uploaded_file($tmp, $destination)) {
@@ -94,18 +96,17 @@ try {
 
     $_SESSION['notification'] = [
         'type' => 'success',
-        'message' => 'Property submitted successfully and is pending admin approval.'
+        'message' => 'Property submitted successfully! Awaiting admin approval.'
     ];
-    // Redirect to the full URL
     header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=add_listing");
     exit;
 
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        $_SESSION['notification'] = [
-            'type' => 'error',
-            'message' => 'Error saving property: ' . $e->getMessage()
-        ];
-        header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=add_listing");
-        exit;
-    }
+} catch (Exception $e) {
+    $pdo->rollBack();
+    $_SESSION['notification'] = [
+        'type' => 'error',
+        'message' => 'Error saving property: ' . $e->getMessage()
+    ];
+    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab=add_listing");
+    exit;
+}
