@@ -55,11 +55,16 @@ try {
     $stmt->close();
 
     // Record transaction for agent
-    $stmt = $conn->prepare("INSERT INTO transactions (user_id, property, amount, status, method, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
     $property = 'Listing Fee';
-    $status = 'paid';
+    $amount = $listingFee;
+    $status = 'completed'; // <-- FIX: status properly set
     $method = 'wallet';
-    $stmt->bind_param("isdss", $user_id, $property, $listingFee, $status, $method);
+
+    $stmt = $conn->prepare("
+        INSERT INTO transactions (user_id, property, amount, status, method, created_at) 
+        VALUES (?, ?, ?, ?, ?, NOW())
+    ");
+    $stmt->bind_param("isdss", $user_id, $property, $amount, $status, $method);
     $stmt->execute();
     $stmt->close();
 

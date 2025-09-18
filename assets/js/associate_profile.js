@@ -62,7 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 removeBtn.type = 'button';
                 removeBtn.className = 'remove-img';
                 removeBtn.innerHTML = '&times;';
-                removeBtn.addEventListener('click', () => { selectedFiles.splice(index, 1); renderPreviews(); });
+                removeBtn.addEventListener('click', () => { 
+                    selectedFiles.splice(index, 1); 
+                    renderPreviews(); 
+                });
                 wrap.appendChild(removeBtn);
 
                 const reader = new FileReader();
@@ -79,12 +82,14 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const f of incoming) {
                 if (selectedFiles.length >= maxFiles) break;
                 if (!existingSigs.has(fileSignature(f))) {
-                    selectedFiles.push(f); existingSigs.add(fileSignature(f));
+                    selectedFiles.push(f); 
+                    existingSigs.add(fileSignature(f));
                 }
             }
             renderPreviews();
         };
 
+        // Drag + drop events
         ['dragenter','dragover','dragleave','drop'].forEach(evt =>
             dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); })
         );
@@ -103,12 +108,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(res => res.text())
                 .then(() => {
                     notify('success','Listing saved!');
-                    form.reset(); selectedFiles = []; renderPreviews();
+                    form.reset(); 
+                    selectedFiles = []; 
+                    renderPreviews();
                 })
                 .catch(() => notify('error','Upload failed!'));
         });
+
+        // ✅ Expose reset globally but keep access to closure variables
+        window.resetImageUpload = () => {
+            selectedFiles = [];
+            renderPreviews();
+        };
     };
-    initImageUpload({ dropAreaId:'imageUploadArea', fileInputId:'images', previewId:'imagePreview', formId:'addListingForm', maxFiles:10 });
+
+    initImageUpload({
+        dropAreaId:'imageUploadArea', 
+        fileInputId:'images', 
+        previewId:'imagePreview', 
+        formId:'addListingForm', 
+        maxFiles:10 
+    });
 
     // =========================
     // Edit modals
@@ -241,9 +261,10 @@ if(listingForm && listingModal && walletBalanceEl && payBtn && openListingBtn){
         .then(res => res.json())
         .then(saveData => {
             if(saveData.success){
-                notify('success','Listing saved successfully!');
+                notify('success','Listing submitted! Awaiting admin approval.');
                 closeListingFeeModal();
                 listingForm.reset();
+                resetImageUpload();
             } else {
                 notify('error','Listing fee paid but failed to save listing: ' + (saveData.error || 'Unknown error'));
             }
