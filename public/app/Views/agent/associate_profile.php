@@ -501,7 +501,7 @@
                         <label for="images"><strong>Property Images</strong></label>
                         <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
                             <p>Drag & drop images here or click to browse</p>
-                            <input type="file" id="images" accept="image/*" multiple style="display:none;">
+                            <input type="file" id="images" name="images[]" accept="image/*" multiple style="display:none;">
                         </div>
                         <div id="imagePreview" class="image-preview" aria-live="polite"></div>
 

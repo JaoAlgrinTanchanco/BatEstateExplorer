@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================
     // Drag & Drop Image Upload
     // =========================
+    window.selectedFiles = [];
     const initImageUpload = ({ dropAreaId, fileInputId, previewId, formId, maxFiles = 10 }) => {
         const dropArea  = document.getElementById(dropAreaId);
         const fileInput = document.getElementById(fileInputId);
@@ -246,16 +247,17 @@ if(listingForm && listingModal && walletBalanceEl && payBtn && openListingBtn){
 
         const formData = new FormData(listingForm);
 
+        // ✅ Append all selected files to FormData
+        window.selectedFiles.forEach(f => formData.append('images[]', f));
+
         // Step 1: Process listing fee
         fetch('/BatEstateExplorer/public/api/listing_fee.php', { method:'POST', body: formData })
         .then(res => res.json())
         .then(feeData => {
             if(!feeData.success) throw new Error(feeData.error || 'Failed to process listing fee.');
-
-            // Update wallet balance on success
             walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
-            // Step 2: Save listing after fee
+            // Step 2: Save listing
             return fetch('/BatEstateExplorer/public/api/associate_save_listing.php', { method:'POST', body: formData });
         })
         .then(res => res.json())
@@ -264,15 +266,14 @@ if(listingForm && listingModal && walletBalanceEl && payBtn && openListingBtn){
                 notify('success','Listing submitted! Awaiting admin approval.');
                 closeListingFeeModal();
                 listingForm.reset();
-                resetImageUpload();
+                window.resetImageUpload(); // clear previews & selectedFiles
             } else {
                 notify('error','Listing fee paid but failed to save listing: ' + (saveData.error || 'Unknown error'));
             }
         })
-        .catch(err => {
-            notify('error', err.message || 'An error occurred. Please try again.');
-        });
+        .catch(err => notify('error', err.message || 'An error occurred.'));
     });
+
 }
 
 }); // End DOMContentLoaded
