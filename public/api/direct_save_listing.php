@@ -56,7 +56,7 @@ try {
     $property_id = $pdo->lastInsertId();
 
     // 🔹 Handle image uploads (limit 10)
-    $upload_dir = __DIR__ . '/../../storage/uploads/property_images/';
+    $upload_dir = 'C:\\xampp\\htdocs\\BatEstateExplorer\\storage\\uploads\\property_images\\'; // absolute
     if (!is_dir($upload_dir)) {
         mkdir($upload_dir, 0777, true);
     }
@@ -78,6 +78,7 @@ try {
             $destination = $upload_dir . $newFileName;
 
             if (move_uploaded_file($tmp, $destination)) {
+                // store relative path in DB
                 $relativePath = 'storage/uploads/property_images/' . $newFileName;
                 $stmtImg = $pdo->prepare("INSERT INTO property_images (property_id, image_path) VALUES (?, ?)");
                 $stmtImg->execute([$property_id, $relativePath]);

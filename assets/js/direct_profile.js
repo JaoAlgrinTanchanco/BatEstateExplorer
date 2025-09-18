@@ -43,20 +43,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =========================
-    // Image Upload (Drag & Drop + Preview)
+    // Drag & Drop Image Upload (from associate.js)
     // =========================
-    const dropArea  = document.getElementById('imageUploadArea');
-    const fileInput = document.getElementById('images');
-    const preview   = document.getElementById('imagePreview');
-    const form      = document.getElementById('addListingForm');
-    const MAX_FILES = 10;
+    function initImageUpload({ dropAreaId, fileInputId, previewId, formId, maxFiles = 10 }) {
+        const dropArea  = document.getElementById(dropAreaId);
+        const fileInput = document.getElementById(fileInputId);
+        const preview   = document.getElementById(previewId);
+        const form      = document.getElementById(formId);
+        if (!dropArea || !fileInput || !form) return;
 
-    if (dropArea && fileInput && form) {
         let selectedFiles = [];
-
         const fileSignature = f => `${f.name}|${f.size}|${f.lastModified}`;
 
-        function renderPreviews() {
+        const renderPreviews = () => {
             preview.innerHTML = '';
             selectedFiles.forEach((file, index) => {
                 const wrap = document.createElement('div');
@@ -70,80 +69,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 removeBtn.type = 'button';
                 removeBtn.className = 'remove-img';
                 removeBtn.innerHTML = '&times;';
-                wrap.appendChild(removeBtn);
-
                 removeBtn.addEventListener('click', () => {
                     selectedFiles.splice(index, 1);
                     renderPreviews();
                 });
+                wrap.appendChild(removeBtn);
 
                 const reader = new FileReader();
-                reader.onload = e => img.src = e.target.result;
+                reader.onload = e => (img.src = e.target.result);
                 reader.readAsDataURL(file);
 
                 preview.appendChild(wrap);
             });
-        }
+        };
 
-        function addFiles(fileList) {
+        const addFiles = fileList => {
             if (!fileList) return;
             const incoming = Array.from(fileList).filter(f => f.type.startsWith('image/'));
             const existingSigs = new Set(selectedFiles.map(fileSignature));
             for (const f of incoming) {
-                if (selectedFiles.length >= MAX_FILES) break;
+                if (selectedFiles.length >= maxFiles) break;
                 if (!existingSigs.has(fileSignature(f))) {
                     selectedFiles.push(f);
                     existingSigs.add(fileSignature(f));
                 }
             }
             renderPreviews();
-        }
+        };
 
         // Drag & drop events
-        ['dragenter','dragover','dragleave','drop'].forEach(evt => {
-            dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
-        });
+        ['dragenter','dragover','dragleave','drop'].forEach(evt =>
+            dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); })
+        );
         dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
         dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
-        dropArea.addEventListener('drop', e => {
-            dropArea.classList.remove('drag-over');
-            addFiles(e.dataTransfer.files);
-        });
+        dropArea.addEventListener('drop', e => { dropArea.classList.remove('drag-over'); addFiles(e.dataTransfer.files); });
 
         // File input
         dropArea.addEventListener('click', () => fileInput.click());
-        dropArea.addEventListener('keydown', e => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                fileInput.click();
-            }
-        });
-        fileInput.addEventListener('change', () => {
-            addFiles(fileInput.files);
-            fileInput.value = '';
-        });
+        dropArea.addEventListener('keydown', e => { if (['Enter',' '].includes(e.key)) { e.preventDefault(); fileInput.click(); } });
+        fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
 
-        // Form submit
-        form.addEventListener('submit', e => {
-            e.preventDefault();
-            const fd = new FormData(form);
-            selectedFiles.forEach(f => fd.append('images[]', f));
-
-            fetch(form.action, { method: 'POST', body: fd })
-                .then(res => res.text())
-                .then(data => {
-                    console.log('Server response:', data);
-                    notify('success', 'Listing saved successfully!');
-                    form.reset();
-                    selectedFiles = [];
-                    renderPreviews();
-                })
-                .catch(err => {
-                    console.error('Upload error:', err);
-                    notify('error', 'Failed to save listing.');
-                });
-        });
+        // ✅ Expose reset globally
+        window.resetImageUpload = () => {
+            selectedFiles = [];
+            renderPreviews();
+        };
     }
+
+    // Initialize upload for direct listings
+    initImageUpload({
+        dropAreaId: 'imageUploadArea',
+        fileInputId: 'images',
+        previewId: 'imagePreview',
+        formId: 'addListingForm',
+        maxFiles: 10
+    });
 
     // =========================
     // Modal Handling
@@ -229,24 +210,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const directPayBtn = document.getElementById('payListingFeeBtn');
     const directListingFee = 20;
 
-    // Dedicated "Save Listing" button that opens modal
     const directOpenListingBtn = document.getElementById('openListingModalBtn');
 
     if(directListingForm && directListingModal && directWalletBalanceEl && directPayBtn && directOpenListingBtn){
-        
-        // Open / Close modal helpers
         window.openListingFeeModal = () => directListingModal.style.display = 'flex';
         window.closeListingFeeModal = (e) => { 
             if(!e || e.target === directListingModal) directListingModal.style.display = 'none'; 
         };
 
-        // Click "Save Listing" -> validate form -> show modal
         directOpenListingBtn.addEventListener('click', () => {
             if(!directListingForm.checkValidity()){
                 directListingForm.reportValidity();
                 return;
             }
-            const walletBalance = parseFloat(directWalletBalanceEl.innerText.replace(/,/g,''));
+            const walletBalance = parseFloat(directWalletBalanceEl.innerText.replace(/,/g,'')) || 0;
             if(walletBalance < directListingFee){
                 notify('error','Insufficient wallet balance. Please deposit first.');
                 return;
@@ -254,9 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
             openListingFeeModal();
         });
 
-        // Click "Pay Listing Fee & Submit" -> charge fee -> save listing
         directPayBtn.addEventListener('click', () => {
-            const walletBalance = parseFloat(directWalletBalanceEl.innerText.replace(/,/g,''));
+            const walletBalance = parseFloat(directWalletBalanceEl.innerText.replace(/,/g,'')) || 0;
             if(walletBalance < directListingFee){
                 notify('error','Insufficient wallet balance. Please deposit first.');
                 return;
@@ -264,16 +240,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData(directListingForm);
 
-            // Step 1: Process listing fee
             fetch('/BatEstateExplorer/public/api/listing_fee.php', { method:'POST', body: formData })
             .then(res => res.json())
             .then(feeData => {
                 if(!feeData.success) throw new Error(feeData.error || 'Failed to process listing fee.');
-
-                // Update wallet balance on success
                 directWalletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
-                // Step 2: Save listing after fee (Direct API)
                 return fetch('/BatEstateExplorer/public/api/direct_save_listing.php', { method:'POST', body: formData });
             })
             .then(res => res.json())
@@ -287,13 +259,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     notify('error','Listing fee paid but failed to save listing: ' + (saveData.error || 'Unknown error'));
                 }
             })
-            .catch(err => {
-                notify('error', err.message || 'An error occurred. Please try again.');
-            });
+            .catch(err => notify('error', err.message || 'An error occurred. Please try again.'));
         });
     }
 
-});
+}); // End DOMContentLoaded
 
 // =========================
 // Client Search & Privilege
@@ -375,5 +345,7 @@ function markImageForRemoval(button, imagePath) {
     // Disable button to prevent duplicate marking
     button.disabled = true;
 }
+
+
 
 
