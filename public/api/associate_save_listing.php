@@ -20,12 +20,12 @@ try {
     $stmt = $pdo->prepare("SELECT id FROM agents WHERE user_id = ?");
     $stmt->execute([$user_data['id']]);
     $agent = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$agent) {
+    $agent_id = $agent ? $agent['id'] : null;
+
+    if (!$agent_id) {
         $stmtInsert = $pdo->prepare("INSERT INTO agents (user_id, created_at) VALUES (?, NOW())");
         $stmtInsert->execute([$user_data['id']]);
         $agent_id = $pdo->lastInsertId();
-    } else {
-        $agent_id = $agent['id'];
     }
 
     // =========================
@@ -42,13 +42,19 @@ try {
     $property_type = trim($_POST['property_type'] ?? '');
 
     // =========================
+    // Debug: log incoming POST & FILES
+    // =========================
+    error_log("=== POST DATA ===\n" . print_r($_POST, true));
+    error_log("=== FILES DATA ===\n" . print_r($_FILES, true));
+
+    // =========================
     // Check at least one image is uploaded
     // =========================
     if (!isset($_FILES['images']) || empty($_FILES['images']['tmp_name'])) {
         echo json_encode([
             'success' => false,
-            'error'   => 'No images uploaded. At least one image is required.',
-            'debug'   => ['FILES' => $_FILES]
+            'error'   => 'Please upload at least one property image.',
+            'debug'   => ['POST' => $_POST, 'FILES' => $_FILES]
         ]);
         exit;
     }

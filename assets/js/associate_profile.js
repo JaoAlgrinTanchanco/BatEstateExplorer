@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================
     // Drag & Drop Image Upload
     // =========================
-    window.selectedFiles = [];
+    window.selectedFiles = window.selectedFiles || [];
     const initImageUpload = ({ dropAreaId, fileInputId, previewId, formId, maxFiles = 10 }) => {
         const dropArea  = document.getElementById(dropAreaId);
         const fileInput = document.getElementById(fileInputId);
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const form      = document.getElementById(formId);
         if (!dropArea || !fileInput || !form) return;
 
-        let selectedFiles = [];
+        let selectedFiles = window.selectedFiles;
         const fileSignature = f => `${f.name}|${f.size}|${f.lastModified}`;
 
         const renderPreviews = () => {
@@ -203,78 +203,96 @@ document.addEventListener('DOMContentLoaded', () => {
     if(cancelBtn) cancelBtn.addEventListener("click", () => modal.style.display="none");
     if(deleteForm) deleteForm.addEventListener("submit", () => { confirmBtn.style.display="none"; spinner.style.display="flex"; });
 
-// =========================
-// Listing Fee Modal & Payment Flow
-// =========================
-const listingForm = document.getElementById('addListingForm');
-const listingModal = document.getElementById('listingFeeModal');
-const walletBalanceEl = document.getElementById('agentWalletBalance');
-const payBtn = document.getElementById('payListingFeeBtn');
-const listingFee = 20;
+    // =========================
+    // Listing Fee Modal & Submit Flow (Associate)
+    // =========================
+    const listingForm = document.getElementById('addListingForm');
+    const listingModal = document.getElementById('listingFeeModal');
+    const walletBalanceEl = document.getElementById('agentWalletBalance');
+    const payBtn = document.getElementById('payListingFeeBtn');
+    const listingFee = 20;
+    const openListingBtn = document.getElementById('openListingModalBtn');
 
-// Dedicated "Save Listing" button that opens modal
-const openListingBtn = document.getElementById('openListingModalBtn');
+    if(listingForm && listingModal && walletBalanceEl && payBtn && openListingBtn){
 
-if(listingForm && listingModal && walletBalanceEl && payBtn && openListingBtn){
-    
-    // Open / Close modal helpers
-    window.openListingFeeModal = () => listingModal.style.display = 'flex';
-    window.closeListingFeeModal = (e) => { 
-        if(!e || e.target === listingModal) listingModal.style.display = 'none'; 
-    };
+        // Open / Close modal helpers
+        const openListingFeeModal = () => listingModal.style.display = 'flex';
+        const closeListingFeeModal = (e) => { 
+            if(!e || e.target === listingModal) listingModal.style.display = 'none'; 
+        };
 
-    // Click "Save Listing" -> validate form -> show modal
-    openListingBtn.addEventListener('click', () => {
-        if(!listingForm.checkValidity()){
-            listingForm.reportValidity();
-            return;
-        }
-        const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g,''));
-        if(walletBalance < listingFee){
-            notify('error','Insufficient wallet balance. Please deposit first.');
-            return;
-        }
-        openListingFeeModal();
-    });
-
-    // Click "Pay Listing Fee & Submit" -> charge fee -> save listing
-    payBtn.addEventListener('click', () => {
-        const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g,''));
-        if(walletBalance < listingFee){
-            notify('error','Insufficient wallet balance. Please deposit first.');
-            return;
-        }
-
-        const formData = new FormData(listingForm);
-
-        // ✅ Append all selected files to FormData
-        window.selectedFiles.forEach(f => formData.append('images[]', f));
-
-        // Step 1: Process listing fee
-        fetch('/BatEstateExplorer/public/api/listing_fee.php', { method:'POST', body: formData })
-        .then(res => res.json())
-        .then(feeData => {
-            if(!feeData.success) throw new Error(feeData.error || 'Failed to process listing fee.');
-            walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
-
-            // Step 2: Save listing
-            return fetch('/BatEstateExplorer/public/api/associate_save_listing.php', { method:'POST', body: formData });
-        })
-        .then(res => res.json())
-        .then(saveData => {
-            if(saveData.success){
-                notify('success','Listing submitted! Awaiting admin approval.');
-                closeListingFeeModal();
-                listingForm.reset();
-                window.resetImageUpload(); // clear previews & selectedFiles
-            } else {
-                notify('error','Listing fee paid but failed to save listing: ' + (saveData.error || 'Unknown error'));
+        // Click "Save Listing" -> validate form + images -> show modal
+        openListingBtn.addEventListener('click', () => {
+            // 1️⃣ Form validity
+            if(!listingForm.checkValidity()){
+                listingForm.reportValidity();
+                return;
             }
-        })
-        .catch(err => notify('error', err.message || 'An error occurred.'));
-    });
 
-}
+            // 2️⃣ Must have at least one image
+            if(!window.selectedFiles || window.selectedFiles.length === 0){
+                notify('error','Please upload at least one property image.');
+                return;
+            }
+
+            // 3️⃣ Wallet balance check
+            const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g,''));
+            if(walletBalance < listingFee){
+                notify('error','Insufficient wallet balance. Please deposit first.');
+                return;
+            }
+
+            // ✅ All good: open modal
+            openListingFeeModal();
+        });
+
+        // Click "Pay Listing Fee & Submit" -> process fee -> save listing
+        payBtn.addEventListener('click', () => {
+            const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g,''));
+            if(walletBalance < listingFee){
+                notify('error','Insufficient wallet balance. Please deposit first.');
+                return;
+            }
+
+            // Must have at least one image before submitting
+            if(!window.selectedFiles || window.selectedFiles.length === 0){
+                notify('error','Please upload at least one property image.');
+                return;
+            }
+
+            const formData = new FormData(listingForm);
+
+            // Append all selected files from drag-drop
+            window.selectedFiles.forEach(f => formData.append('images[]', f));
+
+            // Step 1: Charge listing fee
+            fetch('/BatEstateExplorer/public/api/listing_fee.php', { method:'POST', body: formData })
+            .then(res => res.json())
+            .then(feeData => {
+                if(!feeData.success) throw new Error(feeData.error || 'Failed to process listing fee.');
+                walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+                // Step 2: Save listing
+                return fetch('/BatEstateExplorer/public/api/associate_save_listing.php', { method:'POST', body: formData });
+            })
+            .then(res => res.json())
+            .then(saveData => {
+                if(saveData.success){
+                    notify('success','Listing submitted! Awaiting admin approval.');
+                    closeListingFeeModal();
+                    listingForm.reset();
+                    window.resetImageUpload(); // clears previews & selectedFiles
+                } else {
+                    notify('error','Listing fee paid but failed to save listing: ' + (saveData.error || 'Unknown error'));
+                }
+            })
+            .catch(err => notify('error', err.message || 'An error occurred.'));
+        });
+
+        // Expose modal close globally
+        window.closeListingFeeModal = closeListingFeeModal;
+        window.openListingFeeModal = openListingFeeModal;
+    }
 
 }); // End DOMContentLoaded
 
