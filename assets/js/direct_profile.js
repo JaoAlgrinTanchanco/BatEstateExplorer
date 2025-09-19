@@ -280,6 +280,33 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => notify('error', err.message || 'An error occurred. Please try again.'));
         });
     }
+
+    //trim
+    const TRIM_AGENT_API = '/BatEstateExplorer/public/api/agent_trim_transact.php';
+
+    async function trimAgentTransactions() {
+        try {
+            const res = await fetch(TRIM_AGENT_API, { method: 'POST', credentials: 'same-origin' });
+            const data = await res.json();
+            if (!data.success) {
+                console.warn('Agent trim API failed:', data.error, data.debug);
+            } else {
+                console.log(`Agent trim complete. Deleted: ${data.deleted_count}`, data.details || {});
+            }
+        } catch (err) {
+            console.error('Error calling trimAgentTransactions:', err);
+        }
+    }
+
+    // 🔹 Call immediately when wallet tab is opened or page reloads
+    trimAgentTransactions();
+
+    // Optional: also refresh on tab visibility change
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            trimAgentTransactions();
+        }
+    });
 }); // End DOMContentLoaded
 
 // =========================
