@@ -25,15 +25,12 @@
 
 .dashboard-container {
     display: grid;
-    grid-template-columns: 1fr 300px; /* Wallet content + Sidebar */
     gap: 25px;
-    background: var(--card-bg-light);
     border-radius: 0;
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-deep);
-    padding: 25px;
 
     width: 100%;
     min-height: 100%;
