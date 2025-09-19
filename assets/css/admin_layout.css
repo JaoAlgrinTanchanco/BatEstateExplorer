@@ -301,6 +301,10 @@ tr:hover td {
 
 /* Responsive: <=1024px */
 @media (max-width: 1024px) {
+  .main-content {
+    padding: 0;
+  }
+
   .sidebar-wrapper.collapsed,
   .sidebar-wrapper.collapsed:hover {
     width: 260px;
@@ -364,6 +368,7 @@ tr:hover td {
 
 /* Desktop: hide toggle */
 @media (min-width: 1025px) {
+  
   .sidebar-toggle-btn {
     display: none !important;
   }
