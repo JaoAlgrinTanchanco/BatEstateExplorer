@@ -250,8 +250,8 @@ h2 {
 
 .transaction-amount {
     font-weight: 600;
-    min-width: 70px;
-    text-align: right;
+    min-width: 130px;
+    text-align: center;
     font-size: 14px;
     padding: 4px 8px;
     border-radius: 50px;
@@ -300,6 +300,9 @@ h2 {
     .visa-standard .card-number {
         font-size: 20px;
         letter-spacing: 3px;
+    }
+    .transaction-amount {
+    min-width: 70px;
     }
 }
 

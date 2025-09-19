@@ -91,15 +91,78 @@ if ($action === 'approve') {
     }
 
 } elseif ($action === 'reject') {
-    $stmt = $conn->prepare("UPDATE properties SET status = 'rejected' WHERE id = ?");
+    // Mark property as rejected
+    $stmt = $conn->prepare("SELECT agent_id FROM properties WHERE id = ? LIMIT 1");
     $stmt->bind_param("i", $property_id);
-    if ($stmt->execute()) {
-        $response = ['success' => true, 'message' => 'Property rejected'];
-    } else {
-        $response = ['success' => false, 'error' => 'Failed to reject property'];
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $agent_id = null;
+    if ($row = $res->fetch_assoc()) {
+        $agent_id = intval($row['agent_id']);
     }
     $stmt->close();
 
+    if (!$agent_id) {
+        echo json_encode(['success' => false, 'error' => 'Agent not found for this property']);
+        exit;
+    }
+
+    // Update property status
+    $stmt = $conn->prepare("UPDATE properties SET status = 'rejected' WHERE id = ?");
+    $stmt->bind_param("i", $property_id);
+    $stmt->execute();
+    $stmt->close();
+
+    // Start transaction
+    $conn->begin_transaction();
+
+    try {
+        $deductAmount = 20.00;                 // system "fee"
+        $agentAmount  = $deductAmount * 0.98;  // ₱19.60 to agent
+        $profit       = $deductAmount - $agentAmount; // ₱0.40 profit for admin
+
+        // Deduct only ₱19.60 from admin balance (not full ₱20)
+        $stmt = $conn->prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?");
+        $stmt->bind_param("di", $agentAmount, $current_user['id']);
+        $stmt->execute();
+        $stmt->close();
+
+        // Add ₱19.60 to agent balance
+        $stmt = $conn->prepare("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?");
+        $stmt->bind_param("di", $agentAmount, $agent_id);
+        $stmt->execute();
+        $stmt->close();
+
+        // Insert transaction for admin (-19.60 instead of -20)
+        $stmt = $conn->prepare("
+            INSERT INTO transactions (user_id, property, amount, status, method)
+            VALUES (?, 'Reject Fee Deduction', ?, 'completed', 'system')
+        ");
+        $negAmount = -$agentAmount; // -19.60
+        $stmt->bind_param("id", $current_user['id'], $negAmount);
+        $stmt->execute();
+        $stmt->close();
+
+        // Insert transaction for agent (+19.60)
+        $stmt = $conn->prepare("
+            INSERT INTO transactions (user_id, property, amount, status, method)
+            VALUES (?, 'Reject Fee Credit', ?, 'completed', 'system')
+        ");
+        $stmt->bind_param("id", $agent_id, $agentAmount);
+        $stmt->execute();
+        $stmt->close();
+
+        $conn->commit();
+
+        $response = [
+            'success' => true,
+            'message' => "Property rejected. ₱{$agentAmount} credited to agent."
+        ];
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        $response = ['success' => false, 'error' => 'Transaction failed: ' . $e->getMessage()];
+    }
 } elseif ($action === 'remove') {
     $stmt = $conn->prepare("DELETE FROM properties WHERE id = ?");
     $stmt->bind_param("i", $property_id);
