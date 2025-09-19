@@ -38,6 +38,7 @@ require_once __DIR__ . '/../../../../components/notification.php';
             <li><a href="admin_dashboard.php?view=applications"><i class="fa-solid fa-file-signature"></i><span>Applications</span></a></li>
             <li><a href="admin_dashboard.php?view=reports"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a></li>
             <li><a href="admin_dashboard.php?view=performance"><i class="fa-solid fa-ranking-star"></i><span>Performance</span></a></li>
+            <li><a href="admin_dashboard.php?view=wallet"><i class="fa-solid fa-wallet"></i><span>Wallet</span></a></li>
           </ul>
         </nav>
 
