@@ -3,37 +3,39 @@ session_start();
 header('Content-Type: application/json');
 require_once __DIR__ . '/../../config/database.php';
 
-// Only admin can fetch total listing fees
+// Ensure user is logged in
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['success' => false, 'error' => 'User not logged in']);
     exit;
 }
 
-// Optionally, check if the user is admin
-$userId = $_SESSION['user_id'];
+$userId = (int) $_SESSION['user_id'];
 
 try {
-    $stmt = $conn->prepare("
-        SELECT SUM(amount) AS total_listing_fees
-        FROM transactions
-        WHERE property = 'Listing Fee'
-    ");
+    $stmt = $conn->prepare("SELECT wallet_balance FROM users WHERE id = ? LIMIT 1");
+    $stmt->bind_param("i", $userId);
     $stmt->execute();
     $res = $stmt->get_result();
     $row = $res->fetch_assoc();
     $stmt->close();
 
-    $total = $row['total_listing_fees'] ?? 0;
-    
-    // Convert to positive value (admin balance)
-    $total = abs($total);
+    if (!$row) {
+        echo json_encode(['success' => false, 'error' => 'User not found']);
+        exit;
+    }
+
+    $balance = (float) $row['wallet_balance'];
 
     echo json_encode([
         'success' => true,
-        'total_listing_fees' => number_format($total, 2)
+        // raw numeric value (useful for calculations in JS)
+        'wallet_balance_raw' => $balance,
+        // formatted string with 2 decimals and thousands separators
+        'wallet_balance_formatted' => number_format($balance, 2)
     ]);
-
+    exit;
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    exit;
 }
 ?>

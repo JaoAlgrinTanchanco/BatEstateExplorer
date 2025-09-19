@@ -26,8 +26,8 @@
                         </button>
                     </div>
                     <div class="card-details">
-                        <span class="card-holder">MR. JOHN DOE</span>
-                        <span class="card-expiry">05/23</span>
+                        <span class="card-holder">Administration</span>
+                        <span class="card-expiry">05/26</span>
                     </div>
                 </div>
             </div>
@@ -44,74 +44,107 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    /* ================================
-       CARD NUMBER TOGGLE
-    ================================= */
-    const cardNumberEl = document.getElementById('cardNumber');
-    const toggleBtn2 = document.getElementById('toggleNumber');
-    const realNumber = "4012 2312 0552 7892";
-    let hidden = true; // hidden by default
+    document.addEventListener('DOMContentLoaded', async () => {
+        /* ================================
+        CONFIG
+        ================================ */
+        const API_BASE = '/BatEstateExplorer/public/api';
+        const TRIM_API = `${API_BASE}/trim_transactions.php`;
+        const BALANCE_API = `${API_BASE}/get_listing_fee_total.php`;
+        const TX_API = `${API_BASE}/get_listing_fee_transactions.php`;
 
-    function maskNumber(num) {
-        return num.replace(/\d/g, "•");
-    }
-
-    // Initialize masked card number
-    cardNumberEl.textContent = maskNumber(realNumber);
-
-    toggleBtn2.addEventListener('click', () => {
-        if (hidden) {
-            cardNumberEl.textContent = realNumber;
-        } else {
-            cardNumberEl.textContent = maskNumber(realNumber);
+        /* ================================
+        HELPERS
+        ================================ */
+        function maskNumber(num) {
+            return num.replace(/\d/g, "•");
         }
-        hidden = !hidden;
-    });
 
-    /* ================================
-       UPDATE CARD BALANCE
-    ================================= */
-    async function updateCardBalance() {
-        try {
-            const response = await fetch('/BatEstateExplorer/public/api/get_listing_fee_total.php');
-            const data = await response.json();
-
-            if (data.success) {
-                const cardBalanceEl = document.querySelector('.card-balance');
-                cardBalanceEl.textContent = `₱${parseFloat(data.total_listing_fees).toLocaleString()}`;
-            } else {
-                console.error('❌ Failed to fetch listing fee total:', data.error);
+        async function safeFetchJson(url, opts = {}) {
+            opts.credentials = opts.credentials || 'same-origin';
+            try {
+                const res = await fetch(url, opts);
+                return await res.json();
+            } catch (err) {
+                console.error('Fetch error for', url, err);
+                return { success: false, error: err.message || 'Fetch error' };
             }
-        } catch (err) {
-            console.error('❌ Error fetching listing fee total:', err);
         }
-    }
 
-    /* ================================
-       LOAD TRANSACTIONS (LISTING FEES)
-    ================================= */
-    async function loadListingFeeTransactions() {
-        try {
-            const response = await fetch('/BatEstateExplorer/public/api/get_listing_fee_transactions.php');
-            const data = await response.json();
+        /* ================================
+        CARD NUMBER TOGGLE
+        ================================ */
+        const cardNumberEl = document.getElementById('cardNumber');
+        const toggleBtn2 = document.getElementById('toggleNumber');
+        const realNumber = "4012 2312 0552 7892";
+        let hidden = true;
 
+        if (cardNumberEl) cardNumberEl.textContent = maskNumber(realNumber);
+
+        if (toggleBtn2) {
+            toggleBtn2.addEventListener('click', () => {
+                cardNumberEl.textContent = hidden ? realNumber : maskNumber(realNumber);
+                hidden = !hidden;
+            });
+        }
+
+        /* ================================
+        TRIM OLD TRANSACTIONS (ADMIN ONLY)
+        ================================ */
+        async function trimOldTransactions() {
+            const data = await safeFetchJson(TRIM_API, { method: 'POST' });
             if (!data.success) {
-                console.error('❌ Failed to fetch transactions:', data.error);
+                console.warn('Trim API warning/error:', data.error || data);
+            } else {
+                console.log(`Trimmed transactions: ${data.deleted_count ?? 0}`);
+            }
+            return data;
+        }
+
+        /* ================================
+        UPDATE CARD BALANCE
+        ================================ */
+        async function updateCardBalance() {
+            const data = await safeFetchJson(BALANCE_API, { method: 'GET' });
+            if (!data.success) {
+                console.error('Failed to fetch wallet balance:', data.error);
+                return;
+            }
+
+            const cardBalanceEl = document.querySelector('.card-balance');
+            if (!cardBalanceEl) return;
+
+            let formatted = data.wallet_balance_formatted;
+            if (!formatted && typeof data.wallet_balance_raw !== 'undefined') {
+                formatted = Number(data.wallet_balance_raw)
+                    .toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            cardBalanceEl.textContent = `₱${formatted ?? '0.00'}`;
+        }
+
+        /* ================================
+        LOAD TRANSACTIONS (LISTING FEES)
+        ================================ */
+        async function loadListingFeeTransactions() {
+            const data = await safeFetchJson(TX_API, { method: 'GET' });
+            if (!data.success) {
+                console.error('Failed to fetch transactions:', data.error);
                 return;
             }
 
             const container = document.getElementById('listingFeeTransactions');
-            container.innerHTML = ''; // clear old items
+            if (!container) return;
+
+            container.innerHTML = '';
 
             data.transactions.forEach(tx => {
                 const item = document.createElement('div');
                 item.className = 'transaction-item';
 
-                // ✅ Use profile picture if available, fallback to icon
-                const profilePic = tx.agent_profile 
+                const profilePic = tx.agent_profile
                     ? `<img src="${tx.agent_profile}" alt="${tx.agent_name}" class="transaction-pic">`
-                    : `<div class="transaction-icon"><i class="fas fa-user"></i></div>`;
+                    : `<div class="transaction-icon neutral-bg"><i class="fas fa-user neutral-icon"></i></div>`;
 
                 item.innerHTML = `
                     ${profilePic}
@@ -125,15 +158,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 container.appendChild(item);
             });
-        } catch (err) {
-            console.error('❌ Error loading transactions:', err);
         }
-    }
 
-    /* ================================
-       INIT ON PAGE LOAD
-    ================================= */
-    updateCardBalance();
-    loadListingFeeTransactions();
-});
+        /* ================================
+        INIT: Trim then refresh UI
+        ================================ */
+        async function initWalletUI() {
+            await trimOldTransactions();  // Admin-only trim
+            await updateCardBalance();    // Update balance
+            await loadListingFeeTransactions(); // Load latest 10
+        }
+
+        await initWalletUI();
+
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible') {
+                await initWalletUI();
+            }
+        });
+    });
 </script>
