@@ -15,7 +15,7 @@
                 <!-- Right Column: VISA Card -->
                 <div class="card visa-standard">
                     <div class="card-type">VISA Standard</div>
-                    <div class="card-balance">$7,983.82</div>
+                    <div class="card-balance"></div>
                     <div class="card-number-wrapper">
                         <div class="card-number" id="cardNumber">•••• •••• •••• ••••</div>
                         <button class="toggle-number" id="toggleNumber" aria-label="Toggle card number">
@@ -36,64 +36,104 @@
         <!-- Transactions Section (1 Column) -->
         <section class="transactions-section">
             <h2>Recent Transactions</h2>
-            <div class="transactions-list">
-                <div class="transaction-item">
-                    <div class="transaction-icon"><i class="fas fa-utensils"></i></div>
-                    <div class="transaction-info">
-                        <p class="transaction-name">Restaurant food</p>
-                        <p class="transaction-date-time">2/02 • 6:11 PM</p>
-                    </div>
-                    <div class="transaction-amount negative">-$32.01</div>
-                </div>
-
-                <div class="transaction-item">
-                    <div class="transaction-icon"><i class="fas fa-user"></i></div>
-                    <div class="transaction-info">
-                        <p class="transaction-name">From Joe</p>
-                        <p class="transaction-date-time">1/02 • 1:21 PM</p>
-                    </div>
-                    <div class="transaction-amount positive">+$100.00</div>
-                </div>
-
-                <div class="transaction-item">
-                    <div class="transaction-icon"><i class="fas fa-shopping-bag"></i></div>
-                    <div class="transaction-info">
-                        <p class="transaction-name">Shopping cashback</p>
-                        <p class="transaction-date-time">1/02 • 11:21 AM</p>
-                    </div>
-                    <div class="transaction-amount positive">+$4.11</div>
-                </div>
-
-                <div class="transaction-item">
-                    <div class="transaction-icon"><i class="fas fa-gift"></i></div>
-                    <div class="transaction-info">
-                        <p class="transaction-name">For Tom's gift</p>
-                        <p class="transaction-date-time">20/01 • 8:32 PM</p>
-                    </div>
-                    <div class="transaction-amount negative">-$58.00</div>
-                </div>
+            <div class="transactions-list" id="listingFeeTransactions">
+                <!-- JS will populate items here -->
             </div>
         </section>
     </main>
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', () => {
+    /* ================================
+       CARD NUMBER TOGGLE
+    ================================= */
     const cardNumberEl = document.getElementById('cardNumber');
     const toggleBtn2 = document.getElementById('toggleNumber');
-
-    let hidden = true; // hidden by default
     const realNumber = "4012 2312 0552 7892";
+    let hidden = true; // hidden by default
+
+    function maskNumber(num) {
+        return num.replace(/\d/g, "•");
+    }
+
+    // Initialize masked card number
+    cardNumberEl.textContent = maskNumber(realNumber);
 
     toggleBtn2.addEventListener('click', () => {
         if (hidden) {
             cardNumberEl.textContent = realNumber;
-            hidden = false;
         } else {
-            cardNumberEl.textContent = realNumber.replace(/\d/g, "•");
-            hidden = true;
+            cardNumberEl.textContent = maskNumber(realNumber);
         }
+        hidden = !hidden;
     });
 
-    // Initialize hidden state
-    cardNumberEl.textContent = realNumber.replace(/\d/g, "•");
+    /* ================================
+       UPDATE CARD BALANCE
+    ================================= */
+    async function updateCardBalance() {
+        try {
+            const response = await fetch('/BatEstateExplorer/public/api/get_listing_fee_total.php');
+            const data = await response.json();
+
+            if (data.success) {
+                const cardBalanceEl = document.querySelector('.card-balance');
+                cardBalanceEl.textContent = `₱${parseFloat(data.total_listing_fees).toLocaleString()}`;
+            } else {
+                console.error('❌ Failed to fetch listing fee total:', data.error);
+            }
+        } catch (err) {
+            console.error('❌ Error fetching listing fee total:', err);
+        }
+    }
+
+    /* ================================
+       LOAD TRANSACTIONS (LISTING FEES)
+    ================================= */
+    async function loadListingFeeTransactions() {
+        try {
+            const response = await fetch('/BatEstateExplorer/public/api/get_listing_fee_transactions.php');
+            const data = await response.json();
+
+            if (!data.success) {
+                console.error('❌ Failed to fetch transactions:', data.error);
+                return;
+            }
+
+            const container = document.getElementById('listingFeeTransactions');
+            container.innerHTML = ''; // clear old items
+
+            data.transactions.forEach(tx => {
+                const item = document.createElement('div');
+                item.className = 'transaction-item';
+
+                // ✅ Use profile picture if available, fallback to icon
+                const profilePic = tx.agent_profile 
+                    ? `<img src="${tx.agent_profile}" alt="${tx.agent_name}" class="transaction-pic">`
+                    : `<div class="transaction-icon"><i class="fas fa-user"></i></div>`;
+
+                item.innerHTML = `
+                    ${profilePic}
+                    <div class="transaction-info">
+                        <p class="transaction-name">${tx.agent_name}</p>
+                        <p class="transaction-date-time">${tx.datetime}</p>
+                    </div>
+                    <div class="transaction-amount ${tx.amount < 0 ? 'negative' : 'positive'}">
+                        ₱${Math.abs(tx.amount).toFixed(2)}
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        } catch (err) {
+            console.error('❌ Error loading transactions:', err);
+        }
+    }
+
+    /* ================================
+       INIT ON PAGE LOAD
+    ================================= */
+    updateCardBalance();
+    loadListingFeeTransactions();
+});
 </script>
