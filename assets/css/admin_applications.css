@@ -124,6 +124,7 @@
   flex-direction: column;
   gap: 0.75rem;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  min-height: 280px;
 }
 
 .application-card:hover {
@@ -182,17 +183,21 @@
 
 .application-field {
   display: flex;
+  align-items: flex-start;   /* align to top for multi-line values */
   gap: 0.5rem;
 }
 
 .field-label {
-  width: 120px;
+  flex: 0 0 120px;           /* fixed width */
   font-weight: 500;
   color: #374151;
 }
 
 .field-value {
+  flex: 1;                   /* take remaining space */
   color: #111827;
+  word-break: break-word;    /* prevent overflow */
+  line-height: 1.4;          /* better readability for wrapped text */
 }
 
 /* ---- Card Actions ---- */
@@ -348,27 +353,54 @@
   }
 }
 
-/* Tablets (portrait) */
+/* Tablets (portrait) & small devices */
 @media screen and (max-width: 768px) {
   .application-list {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
+
   .content-header h1 { 
     font-size: 1.75rem; 
     padding: 0.5rem 1.25rem; 
   }
-  .detail-label { width: 120px; }
+
+  .detail-label { 
+    width: 120px; 
+  }
+
   #applicationModal .modal-content { 
     width: 95%; 
     padding: 1rem 1.25rem; 
   }
-  .application-actions { 
-    gap: 0.4rem; 
+
+  /* ==== Application Content smaller ==== */
+  .application-content {
+    font-size: 0.8rem;       /* shrink text */
+    gap: 0.25rem;
   }
+
+  .field-label {
+    width: 100px;
+    font-size: 0.8rem;
+  }
+
+  .field-value {
+    font-size: 0.8rem;
+  }
+
+  /* ==== Actions in single row ==== */
+  .application-actions { 
+    gap: 0.35rem; 
+    flex-wrap: nowrap;       /* force buttons into one row */
+  }
+
   .application-actions button { 
-    flex: 1 1 45%; 
+    flex: 1 1 auto;          /* distribute space evenly */
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
   }
 }
+
 
 /* Mobile */
 @media screen and (max-width: 480px) {

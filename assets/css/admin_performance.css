@@ -67,10 +67,17 @@
 /* ===== Chart Sections ===== */
 .chart-wrapper {
   width: 100%;
-  height: 350px; /* Adjust this value */
+  min-height: 250px;     /* ensure enough space */
+  height: 35vh;          /* responsive to viewport height */
+  max-height: 500px;     /* prevent overly tall charts */
   position: relative;
 }
 
+canvas {
+  width: 100% !important;
+  height: 100% !important; /* match wrapper size */
+  max-width: 100%;
+}
 .chart-section {
     background: #fff;
     padding: 1rem 1.5rem;
@@ -107,43 +114,56 @@ canvas {
 /* ===== Responsive ===== */
 
 /* Tablets / medium screens */
+/* Tablets / medium screens */
 @media (max-width: 1024px) {
-    .metrics-summary, .chart-section {
-        margin: 0 3rem 1.5rem 3rem;
-    }
+  .metrics-summary, .chart-section {
+    margin: 0 3rem 1.5rem 3rem;
+  }
+
+  .chart-wrapper {
+    height: 40vh;       /* slightly taller for tablets */
+  }
 }
 
 /* Small screens */
 @media (max-width: 768px) {
-    .metrics-summary, .chart-section {
-        margin: 0 1rem 1.5rem 1rem;
-    }
-    
-    .metric-box {
-        flex: 1 1 180px; /* smaller rectangles */
-        padding: 0.75rem 1rem;
-    }
-    
-    .metric-value { font-size: 1rem; }
-    .metric-title { font-size: 0.8rem; }
+  .content-header h1 {
+    font-size: 1.75rem;
+    padding: 0.5rem 1rem;
+  }
+  .metrics-summary, .chart-section {
+    margin: 0 1rem 1.5rem 1rem;
+  }
 
-    canvas { height: 400px !important; }
+  .metric-box {
+    flex: 1 1 180px;
+    padding: 0.75rem 1rem;
+  }
+
+  .metric-value { font-size: 1rem; }
+  .metric-title { font-size: 0.8rem; }
+
+  .chart-wrapper {
+    height: 45vh;       /* give more room on smaller screens */
+  }
 }
 
 /* Extra small / mobile screens */
 @media (max-width: 480px) {
-    .metrics-summary {
-        flex-direction: column;
-        gap: 0.75rem;
-    }
+  .metrics-summary {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
 
-    .metric-box {
-        flex: 1 1 100%;
-        padding: 0.5rem 0.75rem;
-    }
+  .metric-box {
+    flex: 1 1 100%;
+    padding: 0.5rem 0.75rem;
+  }
 
-    .metric-value { font-size: 0.9rem; }
-    .metric-title { font-size: 0.75rem; }
+  .metric-value { font-size: 0.9rem; }
+  .metric-title { font-size: 0.75rem; }
 
-    canvas { height: 450px !important; }
+  .chart-wrapper {
+    height: 50vh;       /* charts get tallest on phones */
+  }
 }
