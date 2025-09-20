@@ -37,23 +37,12 @@ require_once __DIR__ . '/../../../../components/agent_property_card.php';
 
 ?>
 
-<!-- user_home.php -->
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_home.css">
+
 <div class="welcome-card">
-  <h2>Welcome back, <?= $agentFirst ?>!</h2>
-  <p>Here’s a quick overview of your latest listings and tools.</p>
-  
-  <div class="action-buttons">
-    <a href="agent_dashboard.php?view=associate_search" class="btn btn-primary">
-      <i class="fa-solid fa-search"></i> Search Properties
-    </a>
-    <a href="agent_dashboard.php?view=associate_profile" class="btn btn-secondary">
-      <i class="fa-solid fa-user"></i> Manage Profile
-    </a>
-    <a href="agent_dashboard.php?view=associate_profile" class="btn btn-success">
-      <i class="fa-solid fa-plus"></i> Add New Property
-    </a>
-  </div>
+    <img src="/BatEstateExplorer/assets/images/Frame 6.png" alt="Welcome Banner" class="welcome-image">
 </div>
+
 
 <section class="properties">
   <div class="container">
