@@ -308,6 +308,15 @@
 @media (max-width: 992px) { .direct-agent-list { grid-template-columns: repeat(auto-fit, minmax(245px, 350px)); justify-content: center; gap: 1rem; } .direct-agent-card { max-width: 350px; aspect-ratio: 1 / 1; padding: 1rem; } }
 
 @media (max-width: 768px) {
+  .content-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+  }
+  .content-header h1 {
+      font-size: 1.75rem;
+      padding: 0.5rem 1rem;
+  }
   .direct-agent-list {
     grid-template-columns: repeat(auto-fit, minmax(245px, 350px));
     justify-content: center;
@@ -321,6 +330,7 @@
 }
 
 @media (max-width: 600px) {
+  
   .direct-agent-list {
     grid-template-columns: 1fr; /* each card takes full row width */
     justify-content: center;
@@ -336,6 +346,9 @@
 }
 
 @media (max-width: 480px) {
+  .content-header h1 {
+      font-size: 1.5rem;
+  }
   .direct-agent-card {
     max-width: 300px;
     aspect-ratio: 1 / 1;
