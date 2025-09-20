@@ -1,14 +1,14 @@
 /* ===========================
-   Property Card
+   Property Card (Square-ish)
 =========================== */
 .property-card {
-  flex: 0 1 400px;
-  max-width: 400px;
-  height: 515px;
+  flex: 0 1 350px;              /* narrower for more "square" look */
+  max-width: 350px;
+  aspect-ratio: 1 / 1;       /* ensures the card stays close to square */
   background: #fff;
-  border-radius: 15px;
+  border-radius: 30px;
   overflow: hidden;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
   display: flex;
@@ -16,336 +16,145 @@
 }
 
 .property-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.15);
 }
 
+/* ===========================
+   Image Container with Padding
+=========================== */
 .property-image {
   position: relative;
-  height: 250px;
-  overflow: hidden;
+  flex: 0 0 auto;
+  padding: 15px;                /* cute padding inside the card */
+  height: 190px;
+  box-sizing: border-box;
 }
 
 .property-image img {
   width: 100%;
   height: 100%;
+  border-radius: 20px;          /* rounded edges for "soft" look */
   object-fit: cover;
-  transition: transform 0.3s ease;
+  transition: transform 0.35s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-.property-card:hover .property-image img {
+.property-card:hover {
   transform: scale(1.05);
 }
 
+/* Badge sits on image still */
 .property-badge {
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: 20px;
+  right: 20px;
   background: #e74c3c;
   color: #fff;
-  padding: 5px 15px;
+  padding: 6px 16px;
   border-radius: 20px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
 }
 
+/* ===========================
+   Property Content (Compact Cute)
+=========================== */
 .property-content {
-  padding: 20px 25px;
+  padding: 0 16px 0px 16px;
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
 }
 
+/* Title */
 .property-content h3 {
-  font-size: 1.4rem;
-  margin-bottom: 8px;
+  font-size: 1.05rem;       /* smaller */
+  font-weight: 600;
   color: #2c3e50;
+  margin-bottom: 4px;
+  line-height: 1.25;
+  letter-spacing: 0.2px;
+  transition: color 0.3s ease;
 }
 
+.property-card:hover .property-content h3 {
+  color: #3498db;
+}
+
+/* Location */
 .property-location {
-  color: #666;
-  margin-bottom: 12px;
-  font-size: 0.95rem;
+  font-size: 0.8rem;        /* smaller */
+  color: #777;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .property-location i {
+  font-size: 0.85rem;
   color: #e74c3c;
-  margin-right: 5px;
 }
 
+/* Price */
 .property-price {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 1.1rem;        /* smaller */
+  font-weight: 700;
   color: #27ae60;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
+  letter-spacing: -0.2px;
 }
 
+/* Features row */
 .property-features {
   display: flex;
-  gap: 15px;
-  margin-bottom: 20px;
   flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .property-features span {
   display: flex;
   align-items: center;
-  color: #666;
-  font-size: 0.9rem;
+  gap: 4px;
+  font-size: 0.75rem;       /* smaller pill text */
+  color: #555;
+  background: #f5f7fa;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-weight: 500;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.property-features span:hover {
+  background: #3498db;
+  color: #fff;
 }
 
 .property-features i {
-  margin-right: 5px;
-  color: #3498db;
+  font-size: 0.8rem;
+  color: inherit;
 }
 
+/* Button */
 .btn-outline {
   display: inline-block;
-  padding: 10px 20px;
+  padding: 8px 14px;        /* smaller button */
   border: 2px solid #3498db;
-  border-radius: 50px;
+  border-radius: 25px;
   color: #3498db;
-  text-decoration: none;
+  font-size: 0.8rem;        /* smaller font */
   font-weight: 600;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  text-decoration: none;
   text-align: center;
+  transition: all 0.3s ease;
 }
 
 .btn-outline:hover {
   background-color: #3498db;
   color: #fff;
-}
-
-/* ===========================
-   Modal Styles
-=========================== */
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 9999;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
-  background-color: rgba(0,0,0,0.7);
-  padding: 50px 20px;
-}
-
-.modal-content {
-  background: #fff;
-  border-radius: 15px;
-  padding: 25px;
-  max-width: 1000px;
-  width: 100%;
-  margin: auto;
-  position: relative;
-  animation: fadeIn 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* Modal close buttons */
-.modal-close {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    width: 32px;
-    height: 32px;
-    background-color: rgba(0,0,0,0.6);
-    color: #fff;
-    border-radius: 50%;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
-    transition: background-color 0.3s ease;
-}
-
-.modal-close:hover {
-    background-color: rgba(0,0,0,0.8);
-}
-
-.modal-body {
-  display: flex;
-  flex-direction: row;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.modal-image {
-  flex: 2;
-  width: 100%;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.modal-details {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.modal-details h2 {
-  font-size: 1.8rem;
-  margin-bottom: 8px;
-  color: #2c3e50;
-}
-
-.modal-details p {
-  color: #555;
-  margin-bottom: 8px;
-}
-
-.modal-details .price {
-  font-size: 1.6rem;
-  font-weight: bold;
-  color: #27ae60;
-  margin-bottom: 10px;
-}
-
-.modal-details .features {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 15px;
-}
-
-.modal-details .features span {
-  display: flex;
-  align-items: center;
-  font-size: 0.95rem;
-  color: #666;
-}
-
-.modal-details .features i {
-  margin-right: 6px;
-  color: #3498db;
-}
-
-.modal-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.modal-actions .btn {
-  border-radius: 50px;
-  font-weight: 600;
-  padding: 10px 20px;
-  cursor: pointer;
-}
-
-/* ===========================
-   Past Reviews Card
-=========================== */
-#modalReviewsCard {
-  background: #fafafa;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  padding: 15px;
-  max-height: 600px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-#modalReviewsCard h3 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-size: 1.2rem;
-  color: #2c3e50;
-}
-
-#modalPastReviews .review-card {
-  border-bottom: 1px solid #eee;
-  padding: 10px 0;
-}
-
-#modalPastReviews .review-card:last-child {
-  border-bottom: none;
-}
-
-#modalPastReviews .review-card strong {
-  color: #2c3e50;
-}
-
-#modalPastReviews .review-card p {
-  color: #555;
-  margin: 5px 0;
-}
-
-/* ===========================
-   Notifications
-=========================== */
-.notification-container {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 10000;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.notification {
-  display: flex;
-  align-items: center;
-  background: #333;
-  color: #fff;
-  padding: 10px 15px;
-  border-radius: 8px;
-  min-width: 250px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  opacity: 1;
-  transition: opacity 0.5s ease, transform 0.3s ease;
-}
-
-.notification.fade-out {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-.notification__icon {
-  margin-right: 10px;
-  display: flex;
-  align-items: center;
-}
-
-.notification__close {
-  margin-left: auto;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
-
-/* ===========================
-   Animations
-=========================== */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ===========================
-   Responsive
-=========================== */
-@media (max-width: 768px) {
-  .modal-body {
-    flex-direction: column;
-  }
-
-  .modal-image, .modal-details {
-    flex: unset;
-    width: 100%;
-  }
-
-  .property-card {
-    max-width: 100%;
-    height: auto;
-  }
+  box-shadow: 0 3px 8px rgba(52, 152, 219, 0.25);
 }

@@ -58,6 +58,7 @@ body {
   align-items: center; /* center everything horizontally */
   width: 100%;
   padding: 2rem 0;
+  background: #f8f8f8;
 }
 
 .properties .container {

@@ -102,8 +102,10 @@
 
   // ===== Open modal from card click =====
   document.addEventListener("click", e => {
-    const btn = e.target.closest(".view-details-btn");
-    if (btn) openPropertyModal(btn.dataset.id);
+    const card = e.target.closest(".property-card");
+    if (card && !e.target.closest(".modal") && !e.target.closest(".swiper-button-next") && !e.target.closest(".swiper-button-prev")) {
+      openPropertyModal(card.dataset.id);
+    }
   });
 
   // ===== Close modal =====

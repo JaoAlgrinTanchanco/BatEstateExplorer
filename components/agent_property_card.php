@@ -79,7 +79,6 @@ if (!function_exists('render_agent_property_card')) {
             <span><i class="fas fa-bed"></i> <?= $bedrooms ?> Beds</span>
             <span><i class="fas fa-bath"></i> <?= $bathrooms ?> Baths</span>
         </div>
-        <button class="btn btn-outline view-details-btn" data-id="<?= $propertyId ?>">View Details</button>
     </div>
 </div>
 <?php
