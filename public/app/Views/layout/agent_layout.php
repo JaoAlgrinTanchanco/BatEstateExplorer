@@ -22,7 +22,7 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
       <img src="/BatEstateExplorer/assets/images/vector 1.png" 
            alt="BatEstate Explorer Logo" 
            class="nav-logo-img">
-      <span>BatEstate Agent</span>
+      <span>BatEstate Explorer</span>
       <?php if (isset($user['user_type'])): ?>
         <div class="agent-role">
           (<?= $user['user_type'] === 'direct_agent' ? 'Direct' : 'Associate' ?>)

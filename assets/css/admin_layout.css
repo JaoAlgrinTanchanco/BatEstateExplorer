@@ -1,6 +1,10 @@
 /* =========================
    Agent Dashboard Topbar
 ========================= */
+.dashboard-content {
+  margin-top: 80px; /* adjust based on your navbar height */
+}
+
 
 .navbar {
   position: fixed;
@@ -8,7 +12,7 @@
   left: 0;
   width: 100%;
   z-index: 1000;
-  padding: 0.8rem 5%;
+  padding: 0.8rem 1%;
   background: #fff;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   font-family: 'Satoshi', 'Inter', sans-serif;
@@ -48,7 +52,7 @@
   flex: 1;
   display: flex;
   justify-content: center; /* keep centered */
-  gap: 3rem; /* spacing between links */
+  gap: 6rem; /* spacing between links */
 }
 
 .nav-center .nav-link {
