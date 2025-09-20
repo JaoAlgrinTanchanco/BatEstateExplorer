@@ -4,6 +4,14 @@
   font-weight: 1200;
   font-style: normal;
 }
+@font-face {
+  font-family: 'Satoshi-Light';
+  src: url('../fonts/Satoshi-Light.otf') format('opentype');
+  font-weight: 500;      /* light weight */
+  font-style: normal;
+}
+@font-face { font-family: 'Satoshi-Regular'; src: url('../fonts/Satoshi-Regular.otf') format('opentype'); font-style: normal; }
+
 
 /* ---------------- Global Reset ---------------- */
 * {
@@ -52,6 +60,10 @@ html, body {
   display: flex;
   align-items: center;
   gap: 12px; /* space between icon and label */
+}
+
+.sidebar-nav a span {
+  font-family: 'satoshi-regular';
 }
 
 /* Animate ONLY the labels (span inside links) */
@@ -298,6 +310,74 @@ tr:hover td {
   color: #111;
   transition: transform 0.3s ease;
 }
+
+//modal
+/* Logout Modal */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  font-family: 'Satoshi-Regular', sans-serif !important;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 1.5rem 2rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+  max-width: 400px;
+  width: 90%;
+  text-align: center; /* center text */
+}
+
+.modal-content h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: #111827;
+}
+
+.modal-content p {
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  color: #374151;
+}
+
+/* Buttons */
+.modal-actions {
+  display: flex;
+  justify-content: center; /* center horizontally */
+  gap: 1rem;
+}
+
+.cancel-btn2 {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 50px; /* fully rounded */
+  background: #fff !important;
+  color: #111 !important;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.cancel-btn:hover { background: #f3f4f6 !important; }
+
+.approve-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 50px; /* fully rounded */
+  background: #fff;  /* gray for logout (switched) */
+  color: #dc2626;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.2s ease;
+}
+
+.approve-btn:hover { background: #f3f4f6; }
+
 
 /* Responsive: <=1024px */
 @media (max-width: 1024px) {

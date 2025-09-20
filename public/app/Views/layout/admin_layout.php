@@ -57,6 +57,18 @@ require_once __DIR__ . '/../../../../components/notification.php';
     </div>
   </div>
 
+  <!-- Logout Confirmation Modal -->
+  <div id="logoutModal" class="modal">
+    <div class="modal-content">
+      <h2>Confirm Logout</h2>
+      <p>Are you sure you want to log out?</p>
+      <div class="modal-actions">
+        <button id="cancelLogout" class="cancel-btn2">Cancel</button>
+        <a href="../../auth/logout.php" id="confirmLogout" class="approve-btn">Logout</a>
+      </div>
+    </div>
+  </div>
+
   <script src="/BatEstateExplorer/assets/js/admin_dashboard.js"></script>
 
 </body>

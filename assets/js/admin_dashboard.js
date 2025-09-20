@@ -233,3 +233,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// Grab sidebar logout link and modal buttons
+  const logoutLink = document.querySelector('.sidebar-footer a');
+  const logoutModal = document.getElementById('logoutModal');
+  const cancelBtn = document.getElementById('cancelLogout');
+
+  // Open modal instead of direct logout
+  logoutLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    logoutModal.style.display = 'flex';
+  });
+
+  // Close modal on cancel
+  cancelBtn.addEventListener('click', function() {
+    logoutModal.style.display = 'none';
+  });
+
+  // Close modal if clicking outside content
+  logoutModal.addEventListener('click', function(e) {
+    if (e.target === logoutModal) {
+      logoutModal.style.display = 'none';
+    }
+  });
