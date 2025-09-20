@@ -48,3 +48,40 @@ body {
   margin: 0 auto;
   padding: 0 1rem;
 }
+
+/* =========================
+   Properties Section Layout
+========================= */
+.properties {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* center everything horizontally */
+  width: 100%;
+  padding: 2rem 0;
+}
+
+.properties .container {
+  width: 100%;
+  max-width: 1700px; /* same width for title + grid */
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* spacing between title and grid */
+}
+
+/* Section Title */
+.properties .section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111;
+  font-family: 'Satoshi', 'Inter', sans-serif;
+  text-align: left; /* change to center if you want */
+  margin: 0;
+}
+
+/* Properties Grid */
+.properties-grid {
+  width: 100%; /* now matches container width */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}

@@ -1,0 +1,126 @@
+/* =========================
+   Agent Dashboard Topbar
+========================= */
+.dashboard-content {
+  margin-top: 80px; /* adjust based on your navbar height */
+}
+
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 0.8rem 1%;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  font-family: 'Satoshi', 'Inter', sans-serif;
+}
+
+/* Container = full flex row */
+.nav-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* space left-center-right */
+}
+
+/* Left: Logo + role */
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #111;
+}
+
+.nav-logo-img {
+  width: 34px;
+  height: auto;
+}
+
+.agent-role {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #666;
+}
+
+/* Center: main menu */
+.nav-center {
+  flex: 1;
+  display: flex;
+  justify-content: center; /* keep centered */
+  gap: 6rem; /* spacing between links */
+}
+
+.nav-center .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  color: #444;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.nav-center .nav-link i {
+  font-size: 1rem;
+}
+
+.nav-center .nav-link:hover {
+  color: #000;
+  transform: translateY(-2px);
+}
+
+.nav-center .nav-link.active {
+  color: #111;
+  font-weight: 600;
+  border-bottom: 2px solid #111;
+  padding-bottom: 2px;
+}
+
+/* Right: Messages + Logout */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Highlight CTA (Messages) */
+.nav-right .glow-link {
+  font-weight: 600;
+  padding: 0.4rem 1rem;
+  border: 1px solid #111;
+  border-radius: 25px;
+  background: #111;
+  color: #fff !important;
+  transition: all 0.3s ease;
+}
+
+.nav-right .glow-link:hover {
+  background: transparent;
+  color: #111 !important;
+}
+
+/* Logout button */
+.nav-right .logout-btn {
+  background: transparent;
+  border: none;
+  color: #444;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.nav-right .logout-btn:hover {
+  color: #c0392b;
+  transform: translateY(-2px);
+}
+
