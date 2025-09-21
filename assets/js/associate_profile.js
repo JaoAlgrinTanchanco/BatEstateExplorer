@@ -386,18 +386,3 @@ function markImageForRemoval(button, imagePath){
     container.appendChild(hiddenInput);
     button.disabled=true;
 }
-
-const burger = document.querySelector('.nav-burger');
-const dropdown = document.querySelector('.nav-dropdown');
-
-burger.addEventListener('click', () => {
-dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
-});
-const footerSections = document.querySelectorAll('.footer-section');
-
-footerSections.forEach(section => {
-const header = section.querySelector('h3, h4');
-header.addEventListener('click', () => {
-    section.classList.toggle('active');
-});
-});
