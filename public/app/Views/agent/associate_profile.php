@@ -222,21 +222,35 @@
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_profile.css">
 <script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt&currency=PHP"></script>
 <div class="dashboard-container">
-    <!-- Header -->
-    <header class="dashboard-header">
-        <h1>Associate Agent Profile</h1>
-    </header>
+    <div class="agent-container">
+        <!-- Sidebar -->
+        <div class="agent-sidebar-wrapper collapsed">
+            <div class="role">
+                <p>Associate Agent</p>
+            </div>
 
-    <!-- Navigation Tabs -->
-    <nav class="dashboard-tabs">
-        <a href="?view=associate_profile" class="tab <?= ($tab === 'overview') ? 'active' : '' ?>">Overview</a>
-        <a href="?view=associate_profile&tab=my_listings" class="tab <?= ($tab === 'my_listings') ? 'active' : '' ?>">My Listings</a>
-        <a href="?view=associate_profile&tab=add_listing" class="tab <?= ($tab === 'add_listing') ? 'active' : '' ?>">Add Listing</a>
-        <a href="?view=associate_profile&tab=analytics" class="tab <?= ($tab === 'analytics') ? 'active' : '' ?>">Analytics</a>
-        <a href="?view=associate_profile&tab=company_listings" class="tab <?= ($tab === 'company_listings') ? 'active' : '' ?>">Company Listings</a>
-        <a href="?view=associate_profile&tab=review_privileges" class="tab <?= ($tab === 'review_privileges') ? 'active' : '' ?>">Review Privileges</a>
-        <a href="?view=associate_profile&tab=wallet" class="tab <?= ($tab === 'wallet') ? 'active' : '' ?>">Wallet</a>
-    </nav>
+            <div class="agent-sidebar">
+            <!-- Sidebar Header -->
+            <div class="sidebar-header">
+                <i class="fa-solid fa-user sidebar-icon"></i>
+                <h2>Profile</h2>
+            </div>
+
+            <!-- Sidebar Nav -->
+            <nav class="sidebar-nav">
+                <ul>
+                <li><a href="?view=associate_profile&tab=overview" class="<?= ($tab === 'overview') ? 'active' : '' ?>"><i class="fa-solid fa-user"></i><span>Overview</span></a></li>
+                <li><a href="?view=associate_profile&tab=my_listings" class="<?= ($tab === 'my_listings') ? 'active' : '' ?>"><i class="fa-solid fa-building"></i><span>My Listings</span></a></li>
+                <li><a href="?view=associate_profile&tab=add_listing" class="<?= ($tab === 'add_listing') ? 'active' : '' ?>"><i class="fa-solid fa-circle-plus"></i><span>Add Listing</span></a></li>
+                <li><a href="?view=associate_profile&tab=analytics" class="<?= ($tab === 'analytics') ? 'active' : '' ?>"><i class="fa-solid fa-chart-line"></i><span>Analytics</span></a></li>
+                <li><a href="?view=associate_profile&tab=company_listings" class="<?= ($tab === 'company_listings') ? 'active' : '' ?>"><i class="fa-solid fa-briefcase"></i><span>Company Listings</span></a></li>
+                <li><a href="?view=associate_profile&tab=review_privileges" class="<?= ($tab === 'review_privileges') ? 'active' : '' ?>"><i class="fa-solid fa-star"></i><span>Review Privileges</span></a></li>
+                <li><a href="?view=associate_profile&tab=wallet" class="<?= ($tab === 'wallet') ? 'active' : '' ?>"><i class="fa-solid fa-wallet"></i><span>Wallet</span></a></li>
+                </ul>
+            </nav>
+            </div>
+        </div>
+    </div>
 
     <!-- Content Section -->
     <section class="dashboard-content">
