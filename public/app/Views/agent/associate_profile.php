@@ -220,6 +220,7 @@
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_profile.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_sidebar.css">
 <script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt&currency=PHP"></script>
 <div class="dashboard-container">
 
@@ -900,8 +901,7 @@
             <?php default:
                 // Overview Tab
                 $fullName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
-                if ($fullName === '') $fullName = 'Agent';
-            ?>
+                if ($fullName === '') $fullName = 'Agent';?>
                 <h2>Profile Overview</h2>
                 <div class="overview-container">
                     <div class="profile-view">
