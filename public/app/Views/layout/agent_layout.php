@@ -10,6 +10,55 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
   <link rel="stylesheet" href="../../assets/css/agent_layout.css">
   <link rel="stylesheet" href="../../assets/css/property_card.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    /* Footer */
+    .footer {
+      font-family: "Inter", Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      padding: 3rem 8% 1rem;
+    }
+
+    .footer-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .footer h3, .footer h4 {
+      font-size: 18px;
+    }
+    footer h4 {
+      font-size: 16px;
+    }
+
+
+    .footer h3, .footer h4 {
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .footer a {
+      font-size: 14px;
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .footer a:hover {
+      color: #999;
+    }
+
+    .footer-bottom {
+      text-align: center;
+      padding-top: 1rem;
+      border-top: 1px solid #ddd;
+      font-size: 0.85rem;
+      color: #999;
+    }
+  </style>
 </head>
 
 <body>
@@ -76,5 +125,33 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
 <script src="/BatEstateExplorer/assets/js/agents.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- Footer -->
+    <footer class="footer scroll-animation">
+        <div class="container scroll-animation">
+            <div class="footer-content scroll-animation">
+                <div class="footer-section scroll-animation">
+                    <h3>BatEstate Explorer</h3>
+                    <p>Your trusted partner in finding the perfect property.</p>
+                </div>
+                <div class="footer-section scroll-animation">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#properties">Properties</a></li>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section scroll-animation">
+                    <h4>Contact Info</h4>
+                    <p><i class="fas fa-envelope"></i> info@batestate.com</p>
+                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                </div>
+            </div>
+            <div class="footer-bottom scroll-animation">
+                <p>&copy; 2025 BatEstate Explorer. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

@@ -44,6 +44,8 @@
   left: 0;
   width: 100%;
   background: rgba(255,255,255,0.95);
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
   padding: 16px 18px;
   display: flex;
   flex-direction: column;

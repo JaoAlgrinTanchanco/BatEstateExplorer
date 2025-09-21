@@ -64,66 +64,6 @@ require_once __DIR__ . '/../../../../components/agent_property_card.php';
 <!-- CSS -->
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_home.css">
 
-<style>
-/* Category spacing & font */
-.town-section {
-    margin-bottom: 3rem;
-}
-.town-section h3.section-title {
-    font-size: 1.9rem; /* larger font */
-    margin-bottom: 1rem;
-}
-
-/* Horizontal scrolling row */
-/* Horizontal scrolling row with fixed card width */
-.town-grid-wrapper {
-    display: flex;
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    gap: 1.5rem;
-    padding-bottom: 0.5rem;
-}
-
-.town-grid-wrapper::-webkit-scrollbar { display: none; }
-.town-grid-wrapper { -ms-overflow-style: none; scrollbar-width: none; }
-
-.town-grid {
-    display: flex; /* use flex instead of grid */
-    gap: 1.5rem;
-}
-
-/* Force all cards to have same width for consistency */
-.town-grid .property-card {
-    flex: 0 0 250px; /* fixed width */
-    max-width: 250px;
-}
-
-
-/* "See More" text link inside horizontal scroll */
-.town-grid .see-more-text {
-    flex: 0 0 250px; /* same width as property cards */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: #111;
-    text-decoration: none; /* remove underline */
-    border: 1px dashed transparent; /* invisible by default */
-    padding: 0.5rem 0;
-    cursor: pointer;
-    transition: color 0.2s ease, border 0.2s ease;
-}
-
-.town-grid .see-more-text:hover {
-    border: 2px dashed #000; /* black broken line border */
-    background: #c9c9c9;
-    color: #000; /* dimmed color */
-    border-radius: 20px;
-    
-}
-
-</style>
-
 <!-- Welcome Banner -->
 <div class="welcome-card">
     <img src="/BatEstateExplorer/assets/images/Frame 6.png" alt="Welcome Banner" class="welcome-image">
@@ -142,8 +82,8 @@ require_once __DIR__ . '/../../../../components/agent_property_card.php';
                         <?php foreach ($batangasProperties as $property): ?>
                             <?php render_agent_property_card($property); ?>
                         <?php endforeach; ?>
-                        <!-- See More as text link -->
-                        <a href="/all-properties.php?location=Batangas+City" class="see-more-text">See More</a>
+                        <!-- See More text link -->
+                        <a href="/BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_search&location=Batangas+City" class="see-more-text">See More</a>
                     </div>
                 </div>
             </div>
@@ -160,7 +100,7 @@ require_once __DIR__ . '/../../../../components/agent_property_card.php';
                                 <?php render_agent_property_card($property); ?>
                             <?php endforeach; ?>
                             <!-- See More as text link -->
-                            <a href="/all-properties.php?location=<?= urlencode($town) ?>" class="see-more-text">See More</a>
+                            <a href="/BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_search&location=<?= urlencode($town) ?>" class="see-more-text">See More</a>
                         </div>
                     </div>
                 </div>

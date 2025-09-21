@@ -84,3 +84,61 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1.5rem;
 }
+
+/* =========================
+   Town / Horizontal Scroll Styles
+========================= */
+
+/* Category spacing & font */
+.town-section {
+    margin-bottom: 3rem;
+}
+.town-section h3.section-title {
+    font-size: 1.9rem; /* larger font for town categories */
+    margin-bottom: 1rem;
+}
+
+/* Horizontal scrolling row with fixed card width */
+.town-grid-wrapper {
+    display: flex;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    gap: 1.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.town-grid-wrapper::-webkit-scrollbar { display: none; }
+.town-grid-wrapper { -ms-overflow-style: none; scrollbar-width: none; }
+
+.town-grid {
+    display: flex; /* horizontal scroll using flex */
+    gap: 1.5rem;
+}
+
+/* Force all cards to have same width for consistency */
+.town-grid .property-card {
+    flex: 0 0 250px; /* fixed width */
+    max-width: 250px;
+}
+
+/* "See More" text link inside horizontal scroll */
+.town-grid .see-more-text {
+    flex: 0 0 250px; /* same width as property cards */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #111;
+    text-decoration: none; /* remove underline */
+    border: 1px dashed transparent; /* invisible by default */
+    padding: 0.5rem 0;
+    cursor: pointer;
+    transition: color 0.2s ease, border 0.2s ease, background 0.2s ease;
+}
+
+.town-grid .see-more-text:hover {
+    border: 2px dashed #000; /* black broken line border */
+    background: #c9c9c9;
+    color: #000; /* dimmed color */
+    border-radius: 20px;
+}
