@@ -2,9 +2,8 @@
    Agent Dashboard Topbar
 ========================= */
 .dashboard-content {
-  margin-top: 80px; /* adjust based on your navbar height */
+  margin-top: 80px; /* adjust based on navbar height */
 }
-
 
 .navbar {
   position: fixed;
@@ -18,12 +17,11 @@
   font-family: 'Satoshi', 'Inter', sans-serif;
 }
 
-/* Container = full flex row */
 .nav-container {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between; /* space left-center-right */
+  justify-content: space-between;
 }
 
 /* Left: Logo + role */
@@ -47,12 +45,12 @@
   color: #666;
 }
 
-/* Center: main menu */
+/* Center nav links (desktop only) */
 .nav-center {
   flex: 1;
   display: flex;
-  justify-content: center; /* keep centered */
-  gap: 6rem; /* spacing between links */
+  justify-content: center;
+  gap: 4rem;
 }
 
 .nav-center .nav-link {
@@ -82,30 +80,14 @@
   padding-bottom: 2px;
 }
 
-/* Right: Messages + Logout */
+/* Right: Messages + Logout (desktop only) */
 .nav-right {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-/* Highlight CTA (Messages) */
-.nav-right .glow-link {
-  font-weight: 600;
-  padding: 0.4rem 1rem;
-  border: 1px solid #111;
-  border-radius: 25px;
-  background: #111;
-  color: #fff !important;
-  transition: all 0.3s ease;
-}
-
-.nav-right .glow-link:hover {
-  background: transparent;
-  color: #111 !important;
-}
-
-/* Logout button */
+.nav-right .glow-link,
 .nav-right .logout-btn {
   background: transparent;
   border: none;
@@ -119,9 +101,172 @@
   transition: color 0.3s ease, transform 0.2s ease;
 }
 
+.nav-right .glow-link:hover {
+  color: #111;
+  transform: translateY(-2px);
+}
+
 .nav-right .logout-btn:hover {
   color: #c0392b;
   transform: translateY(-2px);
 }
 
+/* Burger Menu */
+.nav-burger {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #111;
+}
 
+/* Burger Menu Dropdown */
+.nav-dropdown {
+  display: none;
+  flex-direction: column;
+  background: #fff;
+  position: absolute;  /* position relative to burger */
+  top: 100%;           /* just below the burger */
+  right: 0;            /* align to the right of burger */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 100;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  min-width: max-content; /* auto width based on content */
+}
+
+.nav-dropdown a,
+.nav-dropdown button {
+  padding: 0.4rem 0.6rem;
+  color: #444;
+  font-weight: 500;
+  text-align: left;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap; /* prevent text wrap */
+}
+
+.nav-dropdown a:hover,
+.nav-dropdown button:hover {
+  color: #111;
+  background: rgba(0,0,0,0.03);
+  border-radius: 5px;
+}
+
+/* Footer */
+.footer {
+  font-family: "Inter", Arial, sans-serif;
+  background: #111;
+  color: #fff;
+  padding: 3rem 8% 1rem;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.footer h3,
+.footer h4 {
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.footer h3 {
+  font-size: 18px;
+}
+
+.footer h4 {
+  font-size: 16px;
+}
+
+.footer a {
+  font-size: 0.9rem;
+  color: #fff;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: #999;
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid #333;
+  font-size: 0.85rem;
+  color: #999;
+}
+
+/* =========================
+   Responsive Enhancements
+========================= */
+
+/* ---------------- Tablet Mode (≤992px) ---------------- */
+@media (max-width: 992px) {
+
+  /* Navbar: hide center & right, show burger */
+  .nav-center,
+  .nav-right {
+    display: none;
+  }
+  .nav-burger {
+    display: flex;
+  }
+
+  /* Footer adjustments */
+  .footer {
+    padding: 2rem 5%;
+  }
+  .footer-content {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+  }
+  .footer h3 {
+    font-size: 16px;
+  }
+  .footer h4 {
+    font-size: 15px;
+  }
+  .footer a {
+    font-size: 0.85rem;
+  }
+}
+
+/* ---------------- Mobile Mode (≤768px) ---------------- */
+@media (max-width: 768px) {
+
+  /* Navbar: adjust center gap for smaller screens */
+  .nav-center {
+    gap: 2rem;
+  }
+
+  /* Footer compact mode */
+  .footer {
+    padding: 2rem 4%;
+  }
+  .footer-content {
+    display: block;          /* stack sections vertically */
+    gap: 1rem;
+  }
+  .footer h3 {
+    font-size: 15px;
+  }
+  .footer h4 {
+    font-size: 14px;
+  }
+  .footer a {
+    font-size: 0.8rem;
+  }
+  .footer-bottom {
+    font-size: 0.8rem;
+    padding-top: 0.8rem;
+  }
+}

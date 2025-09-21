@@ -10,55 +10,6 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
   <link rel="stylesheet" href="../../assets/css/agent_layout.css">
   <link rel="stylesheet" href="../../assets/css/property_card.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <style>
-    /* Footer */
-    .footer {
-      font-family: "Inter", Arial, sans-serif;
-      background: #111;
-      color: #fff;
-      padding: 3rem 8% 1rem;
-    }
-
-    .footer-content {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 2rem;
-      margin-bottom: 2rem;
-    }
-
-    .footer h3, .footer h4 {
-      font-size: 18px;
-    }
-    footer h4 {
-      font-size: 16px;
-    }
-
-
-    .footer h3, .footer h4 {
-      margin-bottom: 1rem;
-      font-weight: 600;
-    }
-
-    .footer a {
-      font-size: 14px;
-      color: #fff;
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-
-    .footer a:hover {
-      color: #999;
-    }
-
-    .footer-bottom {
-      text-align: center;
-      padding-top: 1rem;
-      border-top: 1px solid #ddd;
-      font-size: 0.85rem;
-      color: #999;
-    }
-  </style>
 </head>
 
 <body>
@@ -77,6 +28,39 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
           (<?= $user['user_type'] === 'direct_agent' ? 'Direct' : 'Associate' ?>)
         </div>
       <?php endif; ?>
+    </div>
+
+    <!-- Burger button for mobile/tablet -->
+    <button class="nav-burger" aria-label="Toggle Menu">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <!-- Mobile/Tablet dropdown menu -->
+    <div class="nav-dropdown">
+      <!-- Duplicate links from center nav -->
+      <div class="nav-links-mobile">
+        <?php if ($user['user_type'] === 'associate_agent'): ?>
+          <a href="agent_dashboard.php?view=associate_home" class="nav-link <?= ($view === 'associate_home') ? 'active' : '' ?>">
+            <i class="fa-solid fa-house"></i> Home
+          </a>
+          <a href="agent_dashboard.php?view=associate_profile" class="nav-link <?= ($view === 'associate_profile') ? 'active' : '' ?>">
+            <i class="fa-solid fa-user"></i> Profile
+          </a>
+          <a href="agent_dashboard.php?view=associate_search" class="nav-link <?= ($view === 'associate_search') ? 'active' : '' ?>">
+            <i class="fa-solid fa-search"></i> Search
+          </a>
+        <?php endif; ?>
+
+        <!-- Messages & Logout -->
+        <a href="/BatEstateExplorer/public/agent_message.php" class="nav-link">
+          <i class="fa-solid fa-envelope"></i> Messages
+        </a>
+        <form action="../../auth/logout.php" method="POST">
+          <button type="submit" class="nav-link logout-btn">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+          </button>
+        </form>
+      </div>
     </div>
 
     <!-- Center -->
@@ -155,3 +139,4 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
     </footer>
 </body>
 </html>
+
