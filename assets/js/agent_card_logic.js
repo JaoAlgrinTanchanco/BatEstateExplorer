@@ -56,14 +56,16 @@
       if (!data.success) return notify("error", data.error || "Failed to fetch property.");
 
       const prop = data.property;
-      const images = prop.images.length ? prop.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
+      const images = prop.images && prop.images.length ? prop.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
 
       // === Left Column ===
       modal.querySelector(".property-main-image").style.backgroundImage = `url('${images[0]}')`;
       modal.querySelector(".property-name").textContent = prop.title || "No title";
 
       const thumbs = modal.querySelector(".property-images");
-      thumbs.innerHTML = images.map(img => `<img src="${img}" alt="Property image">`).join("");
+      thumbs.innerHTML = images.map((img, i) =>
+        `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`
+      ).join("");
 
       // Thumbnail click to change main image
       thumbs.querySelectorAll("img").forEach(imgEl => {
@@ -75,22 +77,22 @@
       });
 
       // === Right Column ===
-      modal.querySelector(".location").textContent = prop.location || "-";
-      modal.querySelector(".price").textContent = `₱${parseFloat(prop.price).toLocaleString()}`;
+      modal.querySelector(".location").textContent      = prop.location || "-";
+      modal.querySelector(".price").textContent         = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
       modal.querySelector(".property-type").textContent = prop.property_type || "-";
-      modal.querySelector(".bedrooms").textContent = prop.bedrooms ?? "-";
-      modal.querySelector(".bathrooms").textContent = prop.bathrooms ?? "-";
-      modal.querySelector(".sqm").textContent = prop.sqm ?? "-";
-      modal.querySelector(".lot_size").textContent = prop.lot_size ?? "-";
-      modal.querySelector(".status").textContent = prop.status || "-";
-      modal.querySelector(".date_uploaded").textContent = prop.created_at 
-        ? new Date(prop.created_at).toLocaleDateString() 
+      modal.querySelector(".bedrooms").textContent      = prop.bedrooms ?? "-";
+      modal.querySelector(".bathrooms").textContent     = prop.bathrooms ?? "-";
+      modal.querySelector(".sqm").textContent           = prop.sqm ?? "-";
+      modal.querySelector(".lot_size").textContent      = prop.lot_size ?? "-";
+      modal.querySelector(".status").textContent        = prop.status || "-";
+      modal.querySelector(".date_uploaded").textContent = prop.created_at
+        ? new Date(prop.created_at).toLocaleDateString()
         : "-";
       modal.querySelector(".property-description").textContent = prop.description || "No description available.";
 
       // === Past Reviews (if container exists) ===
       if (reviewContainer) {
-        reviewContainer.innerHTML = (prop.past_reviews?.length)
+        reviewContainer.innerHTML = (prop.past_reviews && prop.past_reviews.length)
           ? prop.past_reviews.map(r => `
               <div class="review-card" style="margin-bottom:10px;">
                 <strong>${r.first_name} ${r.last_name}</strong>

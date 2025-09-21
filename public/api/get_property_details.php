@@ -85,7 +85,7 @@ $property_data = [
     'sqm'          => isset($property['sqm']) ? (float)$property['sqm'] : 0,
     'lot_size'     => isset($property['lot_size']) ? (float)$property['lot_size'] : 0,
     'status'       => $property['status'] ?? 'pending',
-    'date_uploaded'=> $property['created_at'] ?? null,
+    'created_at' => $property['created_at'] ?? null,
     'images'       => $images,
     'agent_id'     => $property['agent_id'] ?? null
 ];

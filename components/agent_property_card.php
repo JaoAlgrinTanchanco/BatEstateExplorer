@@ -84,20 +84,10 @@ if (!function_exists('render_agent_property_card')) {
     </div>
 </div>
 
-<?php
-        endif;
-
-        // --- Include modal only once ---
-        if (!defined('AGENT_PROPERTY_MODAL_INCLUDED')):
-            define('AGENT_PROPERTY_MODAL_INCLUDED', true);
-?>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-
 <!-- Modal -->
 <div id="propertyModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <span class="close">&times;</span>
+  <div class="custom-modal-content">
+    <button class="close">&times;</button>
 
     <!-- Left Side -->
     <div class="modal-left">
@@ -125,6 +115,17 @@ if (!function_exists('render_agent_property_card')) {
     </div>
   </div>
 </div>
+
+<?php
+        endif;
+
+        // --- Include modal only once ---
+        if (!defined('AGENT_PROPERTY_MODAL_INCLUDED')):
+            define('AGENT_PROPERTY_MODAL_INCLUDED', true);
+?>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
 <script>
 <?php echo file_get_contents($_SERVER['DOCUMENT_ROOT'].'/BatEstateExplorer/assets/js/agent_card_logic.js'); ?>
