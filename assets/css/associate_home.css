@@ -58,7 +58,6 @@ body {
   align-items: center; /* center everything horizontally */
   width: 100%;
   padding: 2rem 0;
-  background: #f8f8f8;
 }
 
 .properties .container {
@@ -83,6 +82,6 @@ body {
 .properties-grid {
   width: 100%; /* now matches container width */
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1.5rem;
 }

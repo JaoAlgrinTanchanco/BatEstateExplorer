@@ -67,11 +67,13 @@ if (!function_exists('render_agent_property_card')) {
      data-date="<?= $createdAt ?>"
      data-image="<?= $image ?>">
 
-    <div class="property-image" style="position:relative; overflow:hidden;">
-        <img src="<?= $image ?>" alt="Property Image" style="width:100%; transition:opacity 0.5s ease;">
+    <!-- Image always visible -->
+    <div class="property-image">
+        <img src="<?= $image ?>" alt="Property Image">
     </div>
 
-    <div class="property-content">
+    <!-- Overlay slides up on hover -->
+    <div class="property-overlay">
         <h3><?= $title ?></h3>
         <p class="property-location"><i class="fas fa-map-marker-alt"></i> <?= $location ?></p>
         <p class="property-price">₱<?= $price ?></p>
@@ -81,6 +83,7 @@ if (!function_exists('render_agent_property_card')) {
         </div>
     </div>
 </div>
+
 <?php
         endif;
 
@@ -91,51 +94,38 @@ if (!function_exists('render_agent_property_card')) {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
+<!-- Modal -->
 <div id="propertyModal" class="modal" style="display:none;">
-    <div class="modal-content" style="display:flex; gap:20px; max-width:1000px; margin:auto;">
-        <span class="modal-close">&times;</span>
+  <div class="modal-content">
+    <span class="close">&times;</span>
 
-        <!-- Left: Property Details -->
-        <div class="modal-body" style="flex:2;">
-            <div class="modal-image">
-                <div class="modal-swiper-container">
-                    <div class="swiper-wrapper" id="modalImageWrapper"></div>
-                    <div class="modal-swiper-button-next"></div>
-                    <div class="modal-swiper-button-prev"></div>
-                    <div class="modal-swiper-pagination"></div>
-                </div>
-            </div>
-            <div class="modal-details">
-                <h2 id="modalTitle"></h2>
-                <p id="modalLocation"></p>
-                <p id="modalPrice" class="price"></p>
-                <div class="features">
-                    <span><i class="fas fa-bed"></i> <span id="modalBedrooms"></span> Beds</span>
-                    <span><i class="fas fa-bath"></i> <span id="modalBathrooms"></span> Baths</span>
-                </div>
-                <p><strong>Description:</strong></p>
-                <p id="modalDescription"></p>
-                <!-- No action buttons for agents -->
-            </div>
-        </div>
-
-        <!-- Right: Past Reviews (read-only) -->
-        <div id="modalReviewsCard" style="
-            flex:1;
-            background:#fff;
-            border-radius:12px;
-            box-shadow:0 4px 12px rgba(0,0,0,0.15);
-            padding:15px;
-            max-height:600px;
-            overflow-y:auto;">
-            <h3 style="margin-top:0;">Past Reviews</h3>
-            <div id="modalPastReviews">
-                <p>Reviews will load here when modal opens.</p>
-            </div>
-        </div>
-
+    <!-- Left Side -->
+    <div class="modal-left">
+      <div class="property-main-image" style="background-image: url('');"></div>
+      <div class="property-name"></div>
+      <div class="property-images"></div>
     </div>
+
+    <!-- Right Side -->
+    <div class="modal-right">
+      <section><span class="label">Location:</span> <span class="value location"></span></section>
+      <section><span class="label">Price:</span> <span class="value price"></span></section>
+      <section><span class="label">Property Type:</span> <span class="value property-type"></span></section>
+      <section><span class="label">Bedrooms:</span> <span class="value bedrooms"></span></section>
+      <section><span class="label">Bathrooms:</span> <span class="value bathrooms"></span></section>
+      <section><span class="label">Area:</span> <span class="value sqm"></span></section>
+      <section><span class="label">Lot Size:</span> <span class="value lot_size"></span></section>
+      <section><span class="label">Status:</span> <span class="value status"></span></section>
+      <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>
+
+      <section>
+        <span class="label">Description:</span>
+        <div class="property-description"></div>
+      </section>
+    </div>
+  </div>
 </div>
+
 <script>
 <?php echo file_get_contents($_SERVER['DOCUMENT_ROOT'].'/BatEstateExplorer/assets/js/agent_card_logic.js'); ?>
 </script>

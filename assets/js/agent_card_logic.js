@@ -1,17 +1,16 @@
 (() => {
-  let modalSwiper = null;
   let currentPropertyId = null;
 
   // ===== Notification helper =====
   function notify(type, message) {
-    let container = document.querySelector('.notification-container');
+    let container = document.querySelector(".notification-container");
     if (!container) {
-      container = document.createElement('div');
-      container.className = 'notification-container';
+      container = document.createElement("div");
+      container.className = "notification-container";
       document.body.appendChild(container);
     }
 
-    const notif = document.createElement('div');
+    const notif = document.createElement("div");
     notif.className = `notification ${type}`;
     notif.innerHTML = `
       <div class="notification__title">${message}</div>
@@ -19,26 +18,26 @@
     `;
     container.appendChild(notif);
 
-    notif.querySelector('.notification__close').addEventListener('click', () => notif.remove());
+    notif.querySelector(".notification__close").addEventListener("click", () => notif.remove());
     setTimeout(() => notif.remove(), 5000);
   }
 
   // ===== Card hover auto-swipe =====
-  document.querySelectorAll('.property-card').forEach(card => {
-    const images = JSON.parse(card.dataset.images || '[]');
+  document.querySelectorAll(".property-card").forEach(card => {
+    const images = JSON.parse(card.dataset.images || "[]");
     if (images.length < 2) return;
 
-    const imgEl = card.querySelector('.property-image img');
+    const imgEl = card.querySelector(".property-image img");
     let index = 0, interval = null;
 
-    card.addEventListener('mouseenter', () => {
+    card.addEventListener("mouseenter", () => {
       interval = setInterval(() => {
         index = (index + 1) % images.length;
         imgEl.src = images[index];
       }, 1500);
     });
 
-    card.addEventListener('mouseleave', () => {
+    card.addEventListener("mouseleave", () => {
       clearInterval(interval);
       imgEl.src = images[0];
       index = 0;
@@ -48,8 +47,8 @@
   // ===== Open Property Modal =====
   async function openPropertyModal(propertyId) {
     currentPropertyId = propertyId;
-    const wrapper = document.getElementById("modalImageWrapper");
-    const reviewContainer = document.getElementById("modalPastReviews");
+    const modal = document.getElementById("propertyModal");
+    const reviewContainer = modal.querySelector(".property-reviews") || null;
 
     try {
       const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
@@ -59,40 +58,52 @@
       const prop = data.property;
       const images = prop.images.length ? prop.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
 
-      // Load Swiper slides
-      wrapper.innerHTML = images.map(img => `<div class="swiper-slide"><img src="${img}" style="width:100%;border-radius:8px;"></div>`).join('');
+      // === Left Column ===
+      modal.querySelector(".property-main-image").style.backgroundImage = `url('${images[0]}')`;
+      modal.querySelector(".property-name").textContent = prop.title || "No title";
 
-      // Destroy old Swiper
-      if (modalSwiper) { modalSwiper.destroy(true, true); modalSwiper = null; }
+      const thumbs = modal.querySelector(".property-images");
+      thumbs.innerHTML = images.map(img => `<img src="${img}" alt="Property image">`).join("");
 
-      // Initialize Swiper
-      modalSwiper = new Swiper(".modal-swiper-container", {
-        loop: images.length > 1,
-        navigation: { nextEl: ".modal-swiper-button-next", prevEl: ".modal-swiper-button-prev" },
-        pagination: { el: ".modal-swiper-pagination", clickable: true },
-        autoplay: { delay: 4000, disableOnInteraction: false },
+      // Thumbnail click to change main image
+      thumbs.querySelectorAll("img").forEach(imgEl => {
+        imgEl.addEventListener("click", () => {
+          modal.querySelector(".property-main-image").style.backgroundImage = `url('${imgEl.src}')`;
+          thumbs.querySelectorAll("img").forEach(i => i.classList.remove("active"));
+          imgEl.classList.add("active");
+        });
       });
 
-      // Update modal details
-      document.getElementById("modalTitle").textContent = prop.title;
-      document.getElementById("modalLocation").textContent = `📍 ${prop.location}`;
-      document.getElementById("modalPrice").textContent = `₱${parseFloat(prop.price).toLocaleString()}`;
-      document.getElementById("modalBedrooms").textContent = prop.bedrooms;
-      document.getElementById("modalBathrooms").textContent = prop.bathrooms;
-      document.getElementById("modalDescription").textContent = prop.description || "No description available.";
+      // === Right Column ===
+      modal.querySelector(".location").textContent = prop.location || "-";
+      modal.querySelector(".price").textContent = `₱${parseFloat(prop.price).toLocaleString()}`;
+      modal.querySelector(".property-type").textContent = prop.property_type || "-";
+      modal.querySelector(".bedrooms").textContent = prop.bedrooms ?? "-";
+      modal.querySelector(".bathrooms").textContent = prop.bathrooms ?? "-";
+      modal.querySelector(".sqm").textContent = prop.sqm ?? "-";
+      modal.querySelector(".lot_size").textContent = prop.lot_size ?? "-";
+      modal.querySelector(".status").textContent = prop.status || "-";
+      modal.querySelector(".date_uploaded").textContent = prop.created_at 
+        ? new Date(prop.created_at).toLocaleDateString() 
+        : "-";
+      modal.querySelector(".property-description").textContent = prop.description || "No description available.";
 
-      // Past reviews
-      reviewContainer.innerHTML = (prop.past_reviews?.length)
-        ? prop.past_reviews.map(r => `<div class="review-card" style="margin-bottom:10px;">
-            <strong>${r.first_name} ${r.last_name}</strong>
-            <span style="float:right;">${r.rating}⭐</span>
-            <p>${r.review_text}</p>
-            <small>${new Date(r.created_at).toLocaleDateString()}</small>
-          </div>`).join('')
-        : `<p>No reviews yet.</p>`;
+      // === Past Reviews (if container exists) ===
+      if (reviewContainer) {
+        reviewContainer.innerHTML = (prop.past_reviews?.length)
+          ? prop.past_reviews.map(r => `
+              <div class="review-card" style="margin-bottom:10px;">
+                <strong>${r.first_name} ${r.last_name}</strong>
+                <span style="float:right;">${r.rating}⭐</span>
+                <p>${r.review_text}</p>
+                <small>${new Date(r.created_at).toLocaleDateString()}</small>
+              </div>
+            `).join("")
+          : `<p>No reviews yet.</p>`;
+      }
 
       // Show modal
-      document.getElementById("propertyModal").style.display = "flex";
+      modal.style.display = "flex";
 
     } catch (err) {
       console.error(err);
@@ -103,15 +114,16 @@
   // ===== Open modal from card click =====
   document.addEventListener("click", e => {
     const card = e.target.closest(".property-card");
-    if (card && !e.target.closest(".modal") && !e.target.closest(".swiper-button-next") && !e.target.closest(".swiper-button-prev")) {
+    if (card && !e.target.closest(".modal")) {
       openPropertyModal(card.dataset.id);
     }
   });
 
   // ===== Close modal =====
-  document.querySelectorAll(".modal-close").forEach(btn => {
+  document.querySelectorAll("#propertyModal .close").forEach(btn => {
     btn.addEventListener("click", () => btn.closest(".modal").style.display = "none");
   });
 
+  // Expose for external use
   window.openPropertyModal = openPropertyModal;
 })();
