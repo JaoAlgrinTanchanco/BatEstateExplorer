@@ -2,9 +2,7 @@
 // ==================================================
 // 1. Ensure user is logged in
 // ==================================================
-if (!isset($user) || !is_array($user)) {
-    die('Access denied.');
-}
+if (!isset($user) || !is_array($user)) die('Access denied.');
 
 require_once __DIR__ . '/../../../../components/notification.php';
 
@@ -28,7 +26,7 @@ if (!isset($conn)) die('DB connection missing.');
 // ==================================================
 // 4. Fetch properties
 // ==================================================
-$featuredLimit = 5;
+$categoryLimit = 10; // max 10 per category
 $specificTowns = ['Lipa City', 'Tanauan City', 'Santo Tomas'];
 
 // --- a) Featured Batangas City ---
@@ -36,7 +34,7 @@ $sqlBatangas = "SELECT id, title, location, price, bedrooms, bathrooms, images, 
                 FROM properties
                 WHERE status = 'available' AND location = 'Batangas City'
                 ORDER BY created_at DESC
-                LIMIT $featuredLimit";
+                LIMIT $categoryLimit";
 $resultBatangas = $conn->query($sqlBatangas);
 $batangasProperties = $resultBatangas ? $resultBatangas->fetch_all(MYSQLI_ASSOC) : [];
 
@@ -48,7 +46,7 @@ foreach ($specificTowns as $town) {
                 FROM properties
                 WHERE status = 'available' AND location = '$escapedTown'
                 ORDER BY created_at DESC
-                LIMIT 12"; // minimum 12 per town
+                LIMIT $categoryLimit";
     $resultTown = $conn->query($sqlTown);
     if ($resultTown && $resultTown->num_rows > 0) {
         while ($property = $resultTown->fetch_assoc()) {
@@ -67,48 +65,63 @@ require_once __DIR__ . '/../../../../components/agent_property_card.php';
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_home.css">
 
 <style>
-/* Horizontal 2-row scrolling grid for town sections */
+/* Category spacing & font */
 .town-section {
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
+}
+.town-section h3.section-title {
+    font-size: 1.9rem; /* larger font */
+    margin-bottom: 1rem;
 }
 
+/* Horizontal scrolling row */
+/* Horizontal scrolling row with fixed card width */
 .town-grid-wrapper {
     display: flex;
     overflow-x: auto;
     scroll-behavior: smooth;
-    gap: 1rem;
+    gap: 1.5rem;
     padding-bottom: 0.5rem;
 }
 
-.town-grid-wrapper::-webkit-scrollbar {
-    display: none; /* hide scrollbar */
-}
-.town-grid-wrapper {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-}
+.town-grid-wrapper::-webkit-scrollbar { display: none; }
+.town-grid-wrapper { -ms-overflow-style: none; scrollbar-width: none; }
 
 .town-grid {
-    display: grid;
-    grid-template-rows: repeat(2, 1fr); /* 2 rows */
-    grid-auto-flow: column; /* fill horizontally */
-    gap: 1rem;
+    display: flex; /* use flex instead of grid */
+    gap: 1.5rem;
 }
 
-.see-more-btn {
-    display: inline-block;
-    margin-top: 1rem;
-    padding: 0.5rem 1.2rem;
-    border-radius: 50px;
-    background: #111;
-    color: #fff;
-    text-decoration: none;
+/* Force all cards to have same width for consistency */
+.town-grid .property-card {
+    flex: 0 0 250px; /* fixed width */
+    max-width: 250px;
+}
+
+
+/* "See More" text link inside horizontal scroll */
+.town-grid .see-more-text {
+    flex: 0 0 250px; /* same width as property cards */
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: bold;
-    transition: background 0.2s ease;
+    color: #111;
+    text-decoration: none; /* remove underline */
+    border: 1px dashed transparent; /* invisible by default */
+    padding: 0.5rem 0;
+    cursor: pointer;
+    transition: color 0.2s ease, border 0.2s ease;
 }
-.see-more-btn:hover {
-    background: #333;
+
+.town-grid .see-more-text:hover {
+    border: 2px dashed #000; /* black broken line border */
+    background: #c9c9c9;
+    color: #000; /* dimmed color */
+    border-radius: 20px;
+    
 }
+
 </style>
 
 <!-- Welcome Banner -->
@@ -122,11 +135,17 @@ require_once __DIR__ . '/../../../../components/agent_property_card.php';
 
         <!-- Featured Batangas City -->
         <?php if (!empty($batangasProperties)): ?>
-            <h3 class="section-title">Batangas City - Featured</h3>
-            <div class="properties-grid">
-                <?php foreach ($batangasProperties as $property): ?>
-                    <?php render_agent_property_card($property); ?>
-                <?php endforeach; ?>
+            <div class="town-section">
+                <h3 class="section-title">Batangas City - Featured</h3>
+                <div class="town-grid-wrapper">
+                    <div class="town-grid">
+                        <?php foreach ($batangasProperties as $property): ?>
+                            <?php render_agent_property_card($property); ?>
+                        <?php endforeach; ?>
+                        <!-- See More as text link -->
+                        <a href="/all-properties.php?location=Batangas+City" class="see-more-text">See More</a>
+                    </div>
+                </div>
             </div>
         <?php endif; ?>
 
@@ -140,9 +159,10 @@ require_once __DIR__ . '/../../../../components/agent_property_card.php';
                             <?php foreach ($townProperties[$town] as $property): ?>
                                 <?php render_agent_property_card($property); ?>
                             <?php endforeach; ?>
+                            <!-- See More as text link -->
+                            <a href="/all-properties.php?location=<?= urlencode($town) ?>" class="see-more-text">See More</a>
                         </div>
                     </div>
-                    <a href="/all-properties.php?location=<?= urlencode($town) ?>" class="see-more-btn">See More</a>
                 </div>
             <?php endif; ?>
         <?php endforeach; ?>
@@ -155,6 +175,6 @@ require_once __DIR__ . '/../../../../components/agent_property_card.php';
 render_agent_property_card([], true);
 ?>
 
-<!-- Swiper CSS & JS (if needed later) -->
+<!-- Swiper CSS & JS -->
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css"/>
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>

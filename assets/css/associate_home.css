@@ -65,7 +65,6 @@ body {
   max-width: 1700px; /* same width for title + grid */
   display: flex;
   flex-direction: column;
-  gap: 1.5rem; /* spacing between title and grid */
 }
 
 /* Section Title */
