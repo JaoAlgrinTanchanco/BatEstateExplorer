@@ -242,7 +242,10 @@
 
 /* ---------------- Mobile Mode (≤768px) ---------------- */
 @media (max-width: 768px) {
-
+  .nav-container {
+    padding: 0 0.5rem 0 0.5rem;
+  }
+  
   /* Navbar: adjust center gap for smaller screens */
   .nav-center {
     gap: 2rem;

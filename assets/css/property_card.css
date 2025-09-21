@@ -90,7 +90,6 @@
 .property-features {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
 }
 
 .property-features span {
@@ -271,9 +270,68 @@
 }
 
 /* Responsive adjustments for mobile */
-@media (max-width: 768px) {
+/* ===========================
+   Responsive Adjustments
+=========================== */
+
+/* Tablets */
+@media (max-width: 992px) {
+  .property-card {
+    flex: 0 1 260px;
+    border-radius: 16px;
+  }
+  .property-overlay {
+    padding: 14px 16px;
+    border-top-left-radius: 22px;
+    border-top-right-radius: 22px;
+  }
+  .property-overlay h3 {
+    font-size: 18px;
+  }
+  .property-price {
+    font-size: 1.05rem;
+  }
+
+  #propertyModal .custom-modal-content {
+    grid-template-columns: 1fr 1fr;
+    max-width: 720px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 576px) {
+  .property-card {
+    flex: 0 1 160px;
+    border-radius: 12px;
+  }
+  .property-overlay {
+    padding: 10px 12px;
+    gap: 6px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
+  .property-overlay h3 {
+    font-size: 16px;
+  }
+  .property-location {
+    font-size: 0.75rem;
+  }
+  .property-price {
+    font-size: 0.9rem;
+  }
+  .property-features span {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 10px;
+  }
+
   #propertyModal .custom-modal-content {
     grid-template-columns: 1fr;
     padding: 1rem;
+    max-width: 95%;
+  }
+  #propertyModal .close {
+    right: 1rem;
+    top: 1rem;
   }
 }
