@@ -28,19 +28,32 @@
 
 
 /* ===========================
-   Layout
+   Dashboard Layout
 =========================== */
-.agent-container {
-  display: flex;
-  min-height: 100vh;
-  gap: 1rem;
+.dashboard-container {
+  display: grid;
+  grid-template-columns: 240px 1fr; /* Sidebar fixed, content flexible */
+  gap: 1.5rem;
+  min-height: calc(100vh - 90px);
   padding: 0 1.5rem 1.5rem 1.5rem;
   font-family: 'Satoshi', sans-serif;
 }
 
-.agent-main-content {
-  flex: 1;
+
+/* ===========================
+   Sidebar Wrapper
+=========================== */
+.agent-sidebar-wrapper {
+  height: calc(100vh - 90px); /* subtract topbar + margin */
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
+
 
 /* ===========================
    Role Strip
@@ -61,18 +74,6 @@
   font-family: "Satoshi", sans-serif;
 }
 
-/* ===========================
-   Sidebar Wrapper
-=========================== */
-.agent-sidebar-wrapper {
-  width: 240px;
-  display: flex;
-  flex-direction: column;
-  background: #fff;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-}
 
 /* ===========================
    Sidebar Content
@@ -82,7 +83,9 @@
   display: flex;
   flex-direction: column;
   padding: 1.5rem 1rem;
+  overflow-y: auto;
 }
+
 
 /* ===========================
    Sidebar Header
@@ -105,6 +108,7 @@
   color: #111;
   margin: 0;
 }
+
 
 /* ===========================
    Sidebar Navigation
@@ -136,6 +140,15 @@
   background: #f3f4f6;
   color: #111;
 }
+
+
+/* ===========================
+   Right Side Content
+=========================== */
+.right-side {
+  width: 100%;
+}
+
 
 /* ===========================
    Dashboard Header
@@ -213,6 +226,19 @@
    Responsive
 =========================== */
 @media (max-width: 768px) {
+  .dashboard-container {
+    grid-template-columns: 1fr; /* stack sidebar on top */
+  }
+
+  .agent-sidebar-wrapper {
+    width: 100%;
+    height: auto;
+  }
+
+  .right-side {
+    padding-top: 1rem;
+  }
+
   .dashboard-header {
     padding: 1rem 1.5rem;
   }

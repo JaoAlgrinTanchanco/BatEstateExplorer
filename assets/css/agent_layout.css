@@ -2,7 +2,7 @@
    Agent Dashboard Topbar
 ========================= */
 .dashboard-content {
-  margin-top: 80px; /* adjust based on navbar height */
+  margin-top: 60px;
 }
 
 .navbar {
