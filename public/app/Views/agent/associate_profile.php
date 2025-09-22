@@ -225,10 +225,16 @@
 <script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt&currency=PHP"></script>
 <div class="dashboard-container">
 
+    <!-- Arrow Button for Mobile -->
+    <button id="sidebarToggle" class="sidebar-toggle">
+    <i class="fa-solid fa-arrow-right"></i>
+    </button>
+
     <div class="left-side">
         <div class="agent-container">
             <!-- Sidebar -->
             <div class="agent-sidebar-wrapper collapsed">
+                
                 <div class="role">
                     <p>Associate Agent</p>
                 </div>

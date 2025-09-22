@@ -408,3 +408,20 @@ function markImageForRemoval(button, imagePath){
     container.appendChild(hiddenInput);
     button.disabled=true;
 }
+
+const sidebarToggle = document.getElementById('sidebarToggle');
+const sidebarWrapper = document.querySelector('.agent-sidebar-wrapper');
+
+sidebarToggle.addEventListener('click', () => {
+  sidebarWrapper.classList.toggle('open');
+
+  const icon = sidebarToggle.querySelector('i');
+
+  if (sidebarWrapper.classList.contains('open')) {
+    sidebarToggle.style.left = '16rem'; // button moves to 16rem when open
+    icon.classList.replace('fa-arrow-right', 'fa-arrow-left');
+  } else {
+    sidebarToggle.style.left = '1rem'; // back to default when closed
+    icon.classList.replace('fa-arrow-left', 'fa-arrow-right');
+  }
+});

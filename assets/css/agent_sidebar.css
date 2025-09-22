@@ -26,7 +26,6 @@
   font-style: normal;
 }
 
-
 /* ===========================
    Dashboard Layout
 =========================== */
@@ -40,12 +39,11 @@
   padding: 0 1.5rem 1.5rem 1.5rem;
 }
 
-
 /* ===========================
    Sidebar Wrapper
 =========================== */
 .agent-sidebar-wrapper {
-  height: calc(100vh - 65px); /* subtract topbar + margin */
+  height: calc(100vh - 65px);
   margin-top: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -53,14 +51,14 @@
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  transition: left 0.3s ease;
 }
-
 
 /* ===========================
    Role Strip
 =========================== */
 .role {
-  background: #e1f4ff;
+  background: #ffe1e1; /* light red tint */
   border: 4px solid #fff;
   border-radius: 20px 20px 0 0;
   padding: 0.75rem 1rem;
@@ -71,10 +69,9 @@
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #008dff;
+  color: #ff4d4d; /* stronger red for text */
   font-family: "Satoshi", sans-serif;
 }
-
 
 /* ===========================
    Sidebar Content
@@ -86,7 +83,6 @@
   padding: 1.5rem 1rem;
   overflow-y: auto;
 }
-
 
 /* ===========================
    Sidebar Header
@@ -109,7 +105,6 @@
   color: #111;
   margin: 0;
 }
-
 
 /* ===========================
    Sidebar Navigation
@@ -142,14 +137,12 @@
   color: #111;
 }
 
-
 /* ===========================
    Right Side Content
 =========================== */
 .right-side {
   width: 100%;
 }
-
 
 /* ===========================
    Dashboard Header
@@ -174,7 +167,6 @@
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
   display: inline-block;
 }
-
 
 /* ===========================
    Dashboard Tabs
@@ -210,7 +202,6 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
-
 /* ===========================
    Page Header (Main Content)
 =========================== */
@@ -222,18 +213,66 @@
   color: #111827;
 }
 
+/* ===========================
+   Sidebar Toggle Button
+=========================== */
+/* Sidebar Toggle Button */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 4.75rem; /* adjust to match sidebar top + spacing */
+  left: 1rem;   /* default when sidebar is closed */
+  z-index: 10000;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: left 0.3s ease, transform 0.3s ease;
+}
+
+/* Adjust left position when sidebar is open */
+.agent-sidebar-wrapper.open + .sidebar-toggle {
+  left: 16rem; /* sidebar width + 1px gap */
+}
 
 /* ===========================
    Responsive
 =========================== */
 @media (max-width: 768px) {
   .dashboard-container {
-    grid-template-columns: 1fr; /* stack sidebar on top */
+    grid-template-columns: 1fr;
+  }
+
+  .role {
+    border-radius: 0;
+  }
+
+  .sidebar-toggle {
+    display: flex; /* <-- this makes it visible on all screens */
   }
 
   .agent-sidebar-wrapper {
-    width: 100%;
-    height: auto;
+    position: fixed;
+    top: 0;
+    left: -300px; /* hidden by default */
+    width: 240px;
+    height: 100%;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: 2px 0 24px rgba(0,0,0,0.15);
+    transition: left 0.3s ease;
+    z-index: 9999;
+  }
+
+  .agent-sidebar-wrapper.open {
+    left: 0;
   }
 
   .right-side {
