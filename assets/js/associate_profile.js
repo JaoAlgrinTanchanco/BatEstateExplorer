@@ -191,6 +191,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =========================
+    // Edit profile modal
+    // =========================
+    const editBtn = document.getElementById("editProfileBtn");
+    const editModal = document.getElementById("editModal");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+
+    if (editBtn && editModal && cancelEditBtn) {
+    editBtn.addEventListener("click", () => {
+        editModal.style.display = "flex"; // show
+    });
+
+    cancelEditBtn.addEventListener("click", () => {
+        editModal.style.display = "none"; // hide
+    });
+
+    window.addEventListener("click", e => {
+        if (e.target === editModal) editModal.style.display = "none";
+    });
+
+    }
+
+    // =========================
     // Delete agent modal
     // =========================
     const openBtn = document.getElementById("openDeleteModal");

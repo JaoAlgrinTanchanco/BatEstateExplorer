@@ -950,42 +950,50 @@
                         </div>
                     </div>  
 
-                    <!-- Edit Form (full width) -->
-                    <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php" style="display:none;">
-                        <label>First Name</label>
-                        <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" required>
+                    <div id="profileMessage"></div>
+                </div>
+                <!-- Edit Form (full width) -->
+                <div id="editModal" class="modal">
+                <div class="modal-content">
+                    <h4>Edit Profile</h4>
+                    <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php">
+                    <label>First Name</label>
+                    <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" required>
 
-                        <label>Last Name</label>
-                        <input type="text" name="last_name" value="<?= htmlspecialchars($user['last_name']) ?>" required>
+                    <label>Last Name</label>
+                    <input type="text" name="last_name" value="<?= htmlspecialchars($user['last_name']) ?>" required>
 
-                        <label>Phone</label>
-                        <input type="text" name="phone" value="<?= htmlspecialchars($user['phone']) ?>">
+                    <label>Phone</label>
+                    <input type="text" name="phone" value="<?= htmlspecialchars($user['phone']) ?>">
 
-                        <label>Email</label>
-                        <input type="email" name="email" value="<?= htmlspecialchars($user['email']) ?>" autocomplete="email" required>
+                    <label>Email</label>
+                    <input type="email" name="email" value="<?= htmlspecialchars($user['email']) ?>" autocomplete="email" required>
 
+                    <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
                         <button type="submit">Save Changes</button>
                         <button type="button" id="cancelEditBtn">Cancel</button>
+                    </div>
                     </form>
-
-                    <div id="profileMessage"></div>
+                </div>
                 </div>
 
                 <!-- Modal (outside container so it overlays everything) -->
-                <div id="deleteModal" class="modal" style="display:none;">
-                    <div class="modal-content">
-                        <h4>Confirm Account Deletion</h4>
-                        <p>Are you sure you want to delete this agent account? This action cannot be undone.</p>
-                        <form id="deleteAgentForm" method="POST" action="/BatEstateExplorer/public/api/delete_agent.php">
-                            <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
-                            <button type="submit" id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
-                            <button type="button" id="cancelDeleteBtn">Cancel</button>
-                            <div id="deleteSpinner" class="spinner" style="display:none;">
-                                <div class="loader"></div>
-                                <span>Deleting account...</span>
-                            </div>
-                        </form>
+                <div id="deleteModal" class="modal">
+                <div class="modal-content">
+                    <h4>Confirm Account Deletion</h4>
+                    <p>Are you sure you want to delete this agent account? This action cannot be undone.</p>
+                    <form id="deleteAgentForm" method="POST" action="/BatEstateExplorer/public/api/delete_agent.php">
+                    <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
+                    <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
+                        <button type="submit" id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
+                        <button type="button" id="cancelDeleteBtn">Cancel</button>
                     </div>
+                    <div id="deleteSpinner" class="spinner" style="display:none;">
+                        <div class="loader"></div>
+                        <span>Deleting account...</span>
+                    </div>
+                    </form>
+                </div>
                 </div>
 
             <?php endswitch; ?>

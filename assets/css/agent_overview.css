@@ -236,6 +236,158 @@
 }
 
 /* ===========================
+   Modal Base
+=========================== */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none; /* hidden by default */
+  justify-content: center;
+  align-items: center;
+  background: rgba(17, 17, 17, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 99999;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 20px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  animation: fadeInUp 0.3s ease;
+  position: relative;
+  text-align: center;
+}
+
+/* Modal animation */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===========================
+   Modal Titles & Text
+=========================== */
+.modal-content h4 {
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+  font-family: 'Satoshi-Bold', sans-serif;
+  color: #111;
+}
+
+.modal-content p {
+  margin-bottom: 1.5rem;
+  color: #444;
+  line-height: 1.5;
+}
+
+/* ===========================
+   Form inside Edit Modal
+=========================== */
+.profile-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-family: 'Satoshi', sans-serif;
+}
+
+.profile-edit label {
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  text-align: left;
+}
+
+.profile-edit input {
+  padding: 0.6rem;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+}
+
+.profile-edit input:focus {
+  border-color: #008dff;
+  outline: none;
+}
+
+/* Buttons inside modals */
+.modal-content button {
+  margin: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Satoshi-Medium', sans-serif;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.15s ease;
+}
+
+.modal-content button[type="submit"] {
+  background: #111;
+  color: #fff;
+}
+
+.modal-content button[type="button"] {
+  background: #e5e7eb;
+  color: #111;
+}
+
+.modal-content .delete-btn {
+  background: #dc2626;
+  color: #fff;
+}
+
+.modal-content .delete-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-2px);
+}
+
+.modal-content button:hover:not(.delete-btn) {
+  transform: translateY(-2px);
+}
+
+/* ===========================
+   Spinner
+=========================== */
+.spinner {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.spinner .loader {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #ddd;
+  border-top: 3px solid #111;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal-content {
+    padding: 1.5rem;
+    width: 95%;
+  }
+}
+
+/* ===========================
    Responsive
 =========================== */
 @media (max-width: 1024px) {
@@ -245,5 +397,106 @@
 
   #editProfileBtn {
     justify-self: stretch;
+  }
+}
+
+/* ===========================
+   Responsive for Tablets & Mobile
+=========================== */
+@media (max-width: 1024px) {
+  /* Overview container stacks to single column */
+  .overview-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Stretch edit profile button */
+  #editProfileBtn {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  /* Cards fill container */
+  .overview-card,
+  .overview-card.danger-zone {
+    width: 100%;
+  }
+}
+
+/* ===========================
+   Mobile Adjustments
+=========================== */
+@media (max-width: 768px) {
+  /* Content header stacks and font sizes shrink */
+  .content-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .content-header h2 {
+    font-size: 2rem;
+    padding: 0.6rem 1.5rem;
+  }
+
+  /* Profile edit form & modal adjustments */
+  .profile-edit {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  .profile-edit input {
+    font-size: 0.9rem;
+    padding: 0.5rem;
+  }
+
+  .modal-content {
+    padding: 1.5rem;
+    width: 95%;
+  }
+
+  /* Buttons full width & stacked */
+  #editProfileBtn,
+  .delete-btn,
+  .profile-edit button,
+  .modal-content button {
+    width: 100%;
+    text-align: center;
+    margin: 0.5rem 0;
+    padding: 0.7rem 1rem;
+  }
+
+  /* Cards height adjust for mobile */
+  .overview-card {
+    min-height: auto;
+  }
+
+  /* Spinner small adjustments */
+  .spinner .loader {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* ===========================
+   Extra Small Screens (<480px)
+=========================== */
+@media (max-width: 480px) {
+  .content-header h2 {
+    font-size: 1.75rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .profile-edit input,
+  .profile-edit button {
+    font-size: 0.85rem;
+  }
+
+  .modal-content h4 {
+    font-size: 1.2rem;
+  }
+
+  .modal-content p {
+    font-size: 0.9rem;
   }
 }
