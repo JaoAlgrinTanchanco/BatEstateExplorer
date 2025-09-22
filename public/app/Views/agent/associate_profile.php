@@ -280,31 +280,30 @@
                             $first_img_src = "/BatEstateExplorer/" . $property['images'][0]['image_path'];
                         }
                     ?>
-                        <div class="overview-card listing-card">
-                            <?php if ($first_img_src): ?>
-                                <div class="listing-thumb">
-                                    <img src="<?= $first_img_src ?>" alt="Property Image">
-                                </div>
-                            <?php endif; ?>
+                    <div class="listing-card">
+                        <?php if ($first_img_src): ?>
+                            <div class="listing-thumb">
+                                <img src="<?= $first_img_src ?>" alt="Property Image">
+                            </div>
+                        <?php endif; ?>
 
+                        <div class="details">
                             <div class="info-row"><strong>Title:</strong> <span><?= htmlspecialchars($property['title']) ?></span></div>
                             <div class="info-row"><strong>Location:</strong> <span><?= htmlspecialchars($property['location']) ?></span></div>
                             <div class="info-row"><strong>Price:</strong> <span>₱<?= number_format($property['price'], 2) ?></span></div>
                             <div class="info-row"><strong>Bedrooms:</strong> <span><?= htmlspecialchars($property['bedrooms']) ?></span></div>
                             <div class="info-row"><strong>Bathrooms:</strong> <span><?= htmlspecialchars($property['bathrooms']) ?></span></div>
                             <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($property['status']) ?></span></div>
+
                             <?php
                             $listingTypeSelected = !empty($property['sold_by_agent_id']) ? 'sold_by' : 'owned';
                             $ownershipLabel = $listingTypeSelected === 'sold_by' ? "Sold by: {$property['sold_by_email']}" : "Owned";
                             ?>
                             <div class="info-row"><strong>Listing Type:</strong> <span><?= $ownershipLabel ?></span></div>
 
-                            
                             <div class="info-row actions">
-                                <!-- Associates can edit -->
                                 <a href="javascript:void(0)" class="btn-edit" onclick="openModal(<?= $property['id'] ?>)">Edit</a>
                                 
-                                <!-- Delete -->
                                 <form method="POST" action="/BatEstateExplorer/public/api/delete_listing.php" style="display:inline;">
                                     <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
                                     <button type="submit" class="btn-delete" 
@@ -314,6 +313,7 @@
                                 </form>
                             </div>
                         </div>
+                </div>
 
                         <!-- Edit Modal -->
                         <div id="editModal-<?= $property['id'] ?>" class="edit-modal">
