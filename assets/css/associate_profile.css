@@ -1,0 +1,212 @@
+/* ===========================
+   Profile Overview Container
+=========================== */
+.overview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Profile view vs edit */
+.profile-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+/* ===========================
+   Cards
+=========================== */
+.overview-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.overview-card h3 {
+  font-family: 'Satoshi-Bold', sans-serif;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #111;
+}
+
+.info-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.info-row strong {
+  color: #111;
+  font-weight: 600;
+  min-width: 150px;
+}
+
+/* Danger zone */
+.overview-card.danger-zone {
+  border: 1px solid #f87171;
+  background: #fef2f2;
+}
+
+.overview-card.danger-zone h3 {
+  color: #b91c1c;
+}
+
+/* ===========================
+   Buttons
+=========================== */
+#editProfileBtn,
+.delete-btn,
+.profile-edit button {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Satoshi-Medium', sans-serif;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.15s ease;
+}
+
+#editProfileBtn {
+  align-self: flex-end;
+  background: #111;
+  color: #fff;
+}
+
+#editProfileBtn:hover {
+  background: #333;
+  transform: translateY(-2px);
+}
+
+.delete-btn {
+  background: #dc2626;
+  color: #fff;
+}
+
+.delete-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-2px);
+}
+
+.profile-edit button[type="submit"] {
+  background: #008dff;
+  color: #fff;
+}
+
+.profile-edit button[type="button"] {
+  background: #e5e7eb;
+  color: #111;
+}
+
+/* ===========================
+   Modal
+=========================== */
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0,0,0,0.55);
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  text-align: center;
+}
+
+.modal-content h4 {
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  font-family: 'Satoshi-Bold', sans-serif;
+}
+
+.modal-content p {
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+/* ===========================
+   Spinner
+=========================== */
+.spinner {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner .loader {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #111;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+/* ===========================
+   Form Fields
+=========================== */
+.profile-edit label {
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.profile-edit input {
+  padding: 0.6rem;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-family: 'Satoshi-Regular', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.profile-edit input:focus {
+  border-color: #008dff;
+}
+
+/* ===========================
+   Responsive
+=========================== */
+@media (max-width: 768px) {
+  .info-row {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .info-row strong {
+    min-width: auto;
+  }
+
+  #editProfileBtn {
+    align-self: stretch;
+  }
+}
