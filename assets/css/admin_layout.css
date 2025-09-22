@@ -22,9 +22,14 @@
 
 html, body {
   height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   font-family: 'satoshi';
   background: #f5f6f8ff;
   color: #222;
+  margin: 0;
+    padding: 0;
+    box-sizing: border-box;
   /* line-height: 1.5; */
 }
 

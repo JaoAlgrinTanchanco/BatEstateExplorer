@@ -58,7 +58,7 @@
    Role Strip
 =========================== */
 .role {
-  background: #ffe1e1; /* light red tint */
+  background: #fff8cc; /* soft light yellow */
   border: 4px solid #fff;
   border-radius: 20px 20px 0 0;
   padding: 0.75rem 1rem;
@@ -69,7 +69,7 @@
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #ff4d4d; /* stronger red for text */
+  color: #d4a017; /* warm golden yellow for text */
   font-family: "Satoshi", sans-serif;
 }
 
