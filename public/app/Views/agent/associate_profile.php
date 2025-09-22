@@ -902,10 +902,14 @@
                 // Overview Tab
                 $fullName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
                 if ($fullName === '') $fullName = 'Agent';?>
-                <h2>Profile Overview</h2>
+                
+                <header class="content-header">
+                    <h2>Profile Overview</h2>
+                </header>
+
+                <button id="editProfileBtn">Edit Profile</button>
                 <div class="overview-container">
                     <div class="profile-view">
-                        <button id="editProfileBtn">Edit Profile</button>
 
                         <!-- Basic Info -->
                         <div class="overview-card">
@@ -937,30 +941,15 @@
                             <div class="info-row"><strong>Last Updated:</strong> <span><?= htmlspecialchars($user['updated_at'] ?? '-') ?></span></div>
                         </div>
 
-                        <!-- Delete Account -->
+                        <!-- Danger Zone in new grid row -->
                         <div class="overview-card danger-zone">
                             <h3>Danger Zone</h3>
+                            <p class="danger-note">⚠️ Once deleted, this account <strong>cannot be recovered</strong>. Please proceed with caution.</p>
                             <button type="button" id="openDeleteModal" class="delete-btn">Delete Agent Account</button>
                         </div>
-
-                        <!-- Modal (placed at the end of body, outside any container) -->
-                        <div id="deleteModal" class="modal" style="display:none;">
-                            <div class="modal-content">
-                                <h4>Confirm Account Deletion</h4>
-                                <p>Are you sure you want to delete this agent account? This action cannot be undone.</p>
-                                <form id="deleteAgentForm" method="POST" action="/BatEstateExplorer/public/api/delete_agent.php">
-                                    <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
-                                    <button type="submit" id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
-                                    <button type="button" id="cancelDeleteBtn">Cancel</button>
-                                    <div id="deleteSpinner" class="spinner" style="display:none;">
-                                        <div class="loader"></div>
-                                        <span>Deleting account...</span>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
                     </div>  
-                    
+
+                    <!-- Edit Form (full width) -->
                     <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php" style="display:none;">
                         <label>First Name</label>
                         <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" required>
@@ -980,6 +969,24 @@
 
                     <div id="profileMessage"></div>
                 </div>
+
+                <!-- Modal (outside container so it overlays everything) -->
+                <div id="deleteModal" class="modal" style="display:none;">
+                    <div class="modal-content">
+                        <h4>Confirm Account Deletion</h4>
+                        <p>Are you sure you want to delete this agent account? This action cannot be undone.</p>
+                        <form id="deleteAgentForm" method="POST" action="/BatEstateExplorer/public/api/delete_agent.php">
+                            <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
+                            <button type="submit" id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
+                            <button type="button" id="cancelDeleteBtn">Cancel</button>
+                            <div id="deleteSpinner" class="spinner" style="display:none;">
+                                <div class="loader"></div>
+                                <span>Deleting account...</span>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
             <?php endswitch; ?>
         </section>
     </div>

@@ -1,5 +1,27 @@
 /* ===========================
-   Profile Overview Container
+   Content Header
+=========================== */
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.content-header h2 {
+  background: #fff;
+  padding: 0.75rem 2rem;
+  font-family: 'Satoshi', sans-serif;
+  margin-bottom: 1.5rem;
+  font-size: 2.5rem;
+  color: #111827;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  display: inline-block;
+}
+
+/* ===========================
+   Profile Overview Layout
 =========================== */
 .overview-container {
   display: grid;
@@ -8,9 +30,8 @@
   align-items: start;
 }
 
-/* Profile view uses grid flow */
 .profile-view {
-  display: contents; /* let child cards flow inside the grid */
+  display: contents; /* lets cards flow directly into the grid */
 }
 
 .profile-edit {
@@ -32,17 +53,17 @@
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-  min-height: 280px; /* 🔑 consistent card heights */
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  min-height: 282px;
 }
 
 .overview-card h3 {
   font-family: 'Satoshi-Bold', sans-serif;
   font-size: 1.2rem;
-  margin-bottom: 1rem;
   color: #111;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .info-row {
@@ -59,14 +80,31 @@
   min-width: 150px;
 }
 
-/* Danger zone */
+/* ===========================
+   Danger Zone
+=========================== */
 .overview-card.danger-zone {
-  border: 1px solid #f87171;
+  grid-column: 1;   /* ✅ forces it into the first column */
+  grid-row: auto;   /* ✅ drops it into its own row */
+  align-self: start;
+
   background: #fef2f2;
+  border: 1px solid #f87171;
+  min-height: auto;   /* make it shrink to fit content */
+  padding: 1rem;
 }
+
 
 .overview-card.danger-zone h3 {
   color: #b91c1c;
+  border-bottom: none;
+}
+
+.danger-note {
+  font-size: 0.9rem;
+  color: #991b1b;
+  margin: 0 0 1rem;
+  line-height: 1.4;
 }
 
 /* ===========================
@@ -85,10 +123,10 @@
 }
 
 #editProfileBtn {
-  grid-column: span 2;
-  justify-self: end;
+  justify-self: start;
   background: #111;
   color: #fff;
+  margin-bottom: 1.5rem;
 }
 
 #editProfileBtn:hover {
@@ -121,8 +159,7 @@
 =========================== */
 .modal {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  inset: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -134,8 +171,8 @@
   background: #fff;
   padding: 2rem;
   border-radius: 16px;
-  max-width: 500px;
   width: 90%;
+  max-width: 500px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.15);
   text-align: center;
 }
@@ -147,9 +184,9 @@
 }
 
 .modal-content p {
-  margin-bottom: 1.5rem;
   font-size: 0.95rem;
   color: #444;
+  margin-bottom: 1.5rem;
 }
 
 /* ===========================
@@ -158,22 +195,22 @@
 .spinner {
   margin-top: 1rem;
   display: flex;
-  gap: 0.5rem;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
 }
 
 .spinner .loader {
+  width: 18px;
+  height: 18px;
   border: 3px solid #f3f3f3;
   border-top: 3px solid #111;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ===========================
@@ -190,12 +227,12 @@
   border-radius: 10px;
   font-family: 'Satoshi-Regular', sans-serif;
   font-size: 0.95rem;
-  outline: none;
   transition: border-color 0.2s ease;
 }
 
 .profile-edit input:focus {
   border-color: #008dff;
+  outline: none;
 }
 
 /* ===========================

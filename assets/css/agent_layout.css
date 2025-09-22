@@ -1,8 +1,13 @@
+html, body {
+  height: 100%;
+  background: #f5f6f8ff;
+}
+
 /* =========================
    Agent Dashboard Topbar
 ========================= */
 .dashboard-content {
-  margin-top: 60px;
+  margin-top: 1.5rem;
 }
 
 .navbar {

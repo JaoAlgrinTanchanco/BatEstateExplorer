@@ -34,9 +34,9 @@
   display: grid;
   grid-template-columns: 240px 1fr; /* Sidebar fixed, content flexible */
   gap: 1.5rem;
+  margin-top: 3.5rem;
   min-height: calc(100vh - 90px);
   padding: 0 1.5rem 1.5rem 1.5rem;
-  font-family: 'Satoshi', sans-serif;
 }
 
 
@@ -44,7 +44,7 @@
    Sidebar Wrapper
 =========================== */
 .agent-sidebar-wrapper {
-  height: calc(100vh - 90px); /* subtract topbar + margin */
+  height: calc(100vh - 65px); /* subtract topbar + margin */
   margin-top: 1.5rem;
   display: flex;
   flex-direction: column;
