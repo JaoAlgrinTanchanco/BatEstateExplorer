@@ -267,7 +267,9 @@
         <!-- Content Section -->
         <section class="dashboard-content">
             <?php switch ($tab): case 'my_listings': ?>
-                <h2>My Listings</h2>
+                <header class="content-header">
+                    <h2>My Listings</h2>
+                </header>
 
                 <div class="listing-container">
                 <?php if (!empty($listings)): ?>
@@ -330,7 +332,7 @@
                                                         <img src="/BatEstateExplorer/<?= $img['image_path'] ?>" alt="Property Image">
                                                         <input type="hidden" name="existing_images[]" value="<?= $img['image_path'] ?>">
                                                         <label class="primary-label2">
-                                                            <input type="radio" name="primary_image" value="<?= $img['image_path'] ?>" <?= isset($img['is_primary']) && $img['is_primary'] ? 'checked' : '' ?>> Primary
+                                                            <input type="radio" name="primary_image" style="color: #fff;" value="<?= $img['image_path'] ?>" <?= isset($img['is_primary']) && $img['is_primary'] ? 'checked' : '' ?>> Primary
                                                         </label>
                                                         <button type="button" class="remove-img-btn2" onclick="markImageForRemoval(this, '<?= $img['image_path'] ?>')">×</button>
                                                     </div>
@@ -342,7 +344,7 @@
                                     </div>
 
                                     <div class="form-group2">
-                                        <label for="newImages-<?= $property['id'] ?>"><strong>Add New Images</strong></label>
+                                        <label class="newImage" for="newImages-<?= $property['id'] ?>">Add New Images</label>
                                         <input id="newImages-<?= $property['id'] ?>" type="file" name="new_images[]" multiple accept="image/*">
                                     </div>
 
