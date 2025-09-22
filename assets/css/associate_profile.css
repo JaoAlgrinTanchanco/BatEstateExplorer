@@ -147,232 +147,173 @@
     background: #cc3b3e;
 }
 
-/* ===========================
-   Edit Modal - Two Column Layout with Scrollable Images
-=========================== */
+/* =========================
+   Edit Modal Styles
+========================= */
 
-/* Modal Background */
+/* Modal Overlay */
 .edit-modal-wrapper2 {
-    display: none;
+    display: none; /* hidden by default */
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0,0,0,0.5);
     z-index: 10000;
-    padding: 2rem;
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+/* Modal Content */
+.edit-modal-content2 {
+    background: #fff;
+    border-radius: 12px;
+    max-width: 700px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    position: relative;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    max-height: 90vh;
     overflow-y: auto;
 }
 
-/* Modal Box */
-.edit-modal-content2 {
-    background: #fff;
-    border-radius: 20px;
-    max-width: 900px;
-    width: 90%;
-    margin: 2rem auto;
-    padding: 2rem;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.15);
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-    position: relative;
-    animation: fadeInUp 0.3s ease;
-}
-
 /* Close Button */
-.edit-modal-content2 .close2 {
+.close2 {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 12px;
+    right: 16px;
     font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
     cursor: pointer;
+    transition: color 0.2s ease;
+}
+.close2:hover { color: #e74c3c; }
+
+/* Modal Title */
+.edit-modal-content2 h2 {
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #111;
 }
 
-/* Modal Columns */
-.modal-columns2 {
-    display: flex;
-    gap: 2rem;
+/* Form Grid - 2-column fields */
+.form-grid2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.8rem;
 }
 
-/* ===========================
-   Left Column: Scrollable Images
-=========================== */
-.modal-left2 {
-    flex: 1;
+/* Full-width fields */
+.form-full2 { grid-column: 1 / -1; }
+
+/* Form Group - compact */
+.form-group2 {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.form-group2 label {
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+    font-size: 0.9rem;
 }
 
-/* Scrollable gallery only for existing images */
-.modal-left2 .image-gallery2 {
+/* Inputs, selects, textarea - compact */
+.form-group2 input,
+.form-group2 select,
+.form-group2 textarea {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    outline: none;
+}
+.form-group2 input:focus,
+.form-group2 select:focus,
+.form-group2 textarea:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+}
+
+/* Description textarea - compact */
+.form-group2 textarea {
+    min-height: 70px;
+    resize: vertical;
+}
+
+/* Submit Button */
+.form-group2 button {
+    padding: 0.5rem 1rem;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+.form-group2 button:hover { background: #0056b3; }
+
+/* Image Gallery - compact horizontal scroll */
+.image-gallery2 {
     display: flex;
     flex-wrap: nowrap;
     gap: 0.5rem;
     overflow-x: auto;
-    overflow-y: hidden;
     padding-bottom: 0.5rem;
-    -ms-overflow-style: none;  /* IE/Edge */
-    scrollbar-width: none;      /* Firefox */
-    white-space: nowrap;
 }
 
-.modal-left2 .image-gallery2::-webkit-scrollbar {
-    display: none; /* Chrome/Safari/Opera */
-}
-
-.modal-left2 .image-item2 {
-    flex: 0 0 auto;
+.image-item2 {
     position: relative;
-    display: inline-block;
+    width: 90px;
+    height: 90px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
 }
-
-.modal-left2 .image-item2 img {
-    width: 180px;   /* larger width */
-    height: 240px;  /* 3:4 ratio */
-    object-fit:
-
-
-/* ===========================
-   Responsive Layout
-=========================== */
-@media (max-width: 768px) {
-    .listing-card {
-        flex-direction: column;
-        align-items: center;
-        gap: 1.5rem;
-    }
-
-    .listing-thumb {
-        width: 100%;
-        height: 250px;
-    }
-
-    .listing-card .details {
-        width: 100%;
-    }
-
-    .info-row.actions {
-        justify-content: center;
-    }
-}
-
-/* Responsive: stack vertically on small screens */
-@media (max-width: 768px) {
-    .listing-card {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .listing-thumb {
-        width: 100%;
-        height: 250px;
-    }
-
-    .listing-card .details {
-        width: 100%;
-    }
-
-    .info-row.actions {
-        justify-content: center;
-    }
-}
-
-/* ===========================
-   Edit Modal
-=========================== */
-.edit-modal {
-    display: none; /* hidden by default */
-    position: fixed;
-    top: 0;
-    left: 0;
+.image-item2 img {
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.55);
-    z-index: 9999;
-    overflow-y: auto;
-    padding: 2rem;
-}
-
-.edit-modal .modal-content {
-    background: #fff;
-    border-radius: 20px;
-    max-width: 700px;
-    margin: 3rem auto;
-    padding: 2rem;
-    position: relative;
-}
-
-.edit-modal .close {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    font-size: 1.5rem;
-    cursor: pointer;
-}
-
-/* Form elements */
-.edit-modal label {
-    display: block;
-    font-weight: 600;
-    margin-top: 1rem;
-    margin-bottom: 0.3rem;
-}
-
-.edit-modal input, 
-.edit-modal textarea, 
-.edit-modal select {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border-radius: 12px;
-    border: 1px solid #ccc;
-    font-family: 'Satoshi', sans-serif;
-    font-size: 0.95rem;
-}
-
-.edit-modal button {
-    margin-top: 1.5rem;
-    padding: 0.6rem 1.2rem;
-    border-radius: 20px;
-    border: none;
-    background: #111;
-    color: #fff;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.edit-modal button:hover {
-    background: #333;
-}
-
-/* Image gallery */
-.image-gallery {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.image-item {
-    position: relative;
-}
-
-.image-item img {
-    width: 100px;
-    height: 80px;
     object-fit: cover;
-    border-radius: 12px;
 }
 
-.remove-img-btn {
+/* Primary radio */
+.primary-label2 {
+    position: absolute;
+    bottom: 3px;
+    left: 3px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    padding: 2px 4px;
+    font-size: 0.7rem;
+    border-radius: 4px;
+}
+
+/* Remove image button */
+.remove-img-btn2 {
     position: absolute;
     top: 2px;
     right: 2px;
-    background: #ff4d4f;
-    color: #fff;
+    background: rgba(231, 76, 60, 0.9);
     border: none;
-    border-radius: 50%;
+    color: #fff;
+    font-weight: bold;
     width: 20px;
     height: 20px;
-    font-size: 0.8rem;
+    border-radius: 50%;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.remove-img-btn2:hover { background: #c0392b; }
+
+/* File input */
+input[type="file"] { border: none; padding: 0; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .form-grid2 { grid-template-columns: 1fr; }
 }

@@ -309,131 +309,124 @@
                             </div>
                         </div>
 
-                    <!-- Edit Modal -->
-                    <div id="editModal-<?= $property['id'] ?>" class="edit-modal-wrapper2">
-                        <div class="edit-modal-content2">
-                            <!-- Close Button -->
-                            <span class="close2" onclick="closeModal(<?= $property['id'] ?>)">&times;</span>
+                        <!-- Edit Modal -->
+                        <div id="editModal-<?= $property['id'] ?>" class="edit-modal-wrapper2">
+                            <div class="edit-modal-content2">
+                                <!-- Close Button -->
+                                <span class="close2" onclick="closeModal(<?= $property['id'] ?>)">&times;</span>
 
-                            <!-- Title -->
-                            <h2>Edit Listing: <?= htmlspecialchars($property['title']) ?></h2>
+                                <!-- Title -->
+                                <h2>Edit Listing: <?= htmlspecialchars($property['title']) ?></h2>
 
-                            <form id="editForm-<?= $property['id'] ?>" method="POST" action="/BatEstateExplorer/public/api/update_property.php" enctype="multipart/form-data">
-                                <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
+                                <form id="editForm-<?= $property['id'] ?>" method="POST" action="/BatEstateExplorer/public/api/update_property.php" enctype="multipart/form-data">
+                                    <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
 
-                                <!-- Two-column Layout -->
-                                <div class="modal-columns2">
-                                    <!-- Left Column: Images -->
-                                    <div class="modal-left2">
-                                        <div class="form-group2">
-                                            <label><strong>Existing Images</strong></label>
-                                            <div class="image-gallery2">
-                                                <?php if (!empty($property['images'])): ?>
-                                                    <?php foreach ($property['images'] as $img): ?>
-                                                        <div class="image-item2">
-                                                            <img src="/BatEstateExplorer/<?= $img['image_path'] ?>" alt="Property Image">
-                                                            <input type="hidden" name="existing_images[]" value="<?= $img['image_path'] ?>">
-                                                            <label class="primary-label2">
-                                                                <input type="radio" name="primary_image" value="<?= $img['image_path'] ?>" <?= isset($img['is_primary']) && $img['is_primary'] ? 'checked' : '' ?>> Primary
-                                                            </label>
-                                                            <button type="button" class="remove-img-btn2" onclick="markImageForRemoval(this, '<?= $img['image_path'] ?>')">×</button>
-                                                        </div>
-                                                    <?php endforeach; ?>
-                                                <?php else: ?>
-                                                    <p>No images uploaded yet.</p>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-
-                                        <div class="form-group2">
-                                            <label for="newImages-<?= $property['id'] ?>"><strong>Add New Images</strong></label>
-                                            <input id="newImages-<?= $property['id'] ?>" type="file" name="new_images[]" multiple accept="image/*">
+                                    <!-- Images on top -->
+                                    <div class="form-group2">
+                                        <label><strong>Existing Images</strong></label>
+                                        <div class="image-gallery2">
+                                            <?php if (!empty($property['images'])): ?>
+                                                <?php foreach ($property['images'] as $img): ?>
+                                                    <div class="image-item2">
+                                                        <img src="/BatEstateExplorer/<?= $img['image_path'] ?>" alt="Property Image">
+                                                        <input type="hidden" name="existing_images[]" value="<?= $img['image_path'] ?>">
+                                                        <label class="primary-label2">
+                                                            <input type="radio" name="primary_image" value="<?= $img['image_path'] ?>" <?= isset($img['is_primary']) && $img['is_primary'] ? 'checked' : '' ?>> Primary
+                                                        </label>
+                                                        <button type="button" class="remove-img-btn2" onclick="markImageForRemoval(this, '<?= $img['image_path'] ?>')">×</button>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            <?php else: ?>
+                                                <p>No images uploaded yet.</p>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
 
-                                    <!-- Right Column: Form Fields -->
-                                    <div class="modal-right2">
-                                        <div class="form-grid2">
-                                            <div class="form-group2">
-                                                <label>Property Name</label>
-                                                <input type="text" name="title" value="<?= htmlspecialchars($property['title']) ?>" required>
-                                            </div>
+                                    <div class="form-group2">
+                                        <label for="newImages-<?= $property['id'] ?>"><strong>Add New Images</strong></label>
+                                        <input id="newImages-<?= $property['id'] ?>" type="file" name="new_images[]" multiple accept="image/*">
+                                    </div>
 
-                                            <div class="form-group2">
-                                                <label>Property Type</label>
-                                                <select name="property_type" required>
-                                                    <option value="Property" <?= $property['property_type']=='Property'?'selected':'' ?>>Property</option>
-                                                    <option value="Lot" <?= $property['property_type']=='Lot'?'selected':'' ?>>Lot</option>
-                                                </select>
-                                            </div>
+                                    <!-- Form fields in 2-column grid -->
+                                    <div class="form-grid2">
+                                        <div class="form-group2">
+                                            <label>Property Name</label>
+                                            <input type="text" name="title" value="<?= htmlspecialchars($property['title']) ?>" required>
+                                        </div>
 
-                                            <div class="form-group2">
-                                                <label>Location</label>
-                                                <select name="location" required>
-                                                    <option value="">Select Location</option>
-                                                    <?php foreach ($locations as $loc): ?>
-                                                        <option value="<?= $loc ?>" <?= $property['location'] == $loc ? 'selected' : '' ?>><?= $loc ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </div>
+                                        <div class="form-group2">
+                                            <label>Property Type</label>
+                                            <select name="property_type" required>
+                                                <option value="Property" <?= $property['property_type']=='Property'?'selected':'' ?>>Property</option>
+                                                <option value="Lot" <?= $property['property_type']=='Lot'?'selected':'' ?>>Lot</option>
+                                            </select>
+                                        </div>
 
-                                            <div class="form-group2">
-                                                <label>Price</label>
-                                                <input type="number" step="0.01" name="price" value="<?= $property['price'] ?>" required>
-                                            </div>
+                                        <div class="form-group2">
+                                            <label>Location</label>
+                                            <select name="location" required>
+                                                <option value="">Select Location</option>
+                                                <?php foreach ($locations as $loc): ?>
+                                                    <option value="<?= $loc ?>" <?= $property['location'] == $loc ? 'selected' : '' ?>><?= $loc ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
 
-                                            <div class="form-group2">
-                                                <label>Bedrooms</label>
-                                                <input type="number" name="bedrooms" value="<?= $property['bedrooms'] ?>">
-                                            </div>
+                                        <div class="form-group2">
+                                            <label>Price</label>
+                                            <input type="number" step="0.01" name="price" value="<?= $property['price'] ?>" required>
+                                        </div>
 
-                                            <div class="form-group2">
-                                                <label>Bathrooms</label>
-                                                <input type="number" name="bathrooms" value="<?= $property['bathrooms'] ?>">
-                                            </div>
+                                        <div class="form-group2">
+                                            <label>Bedrooms</label>
+                                            <input type="number" name="bedrooms" value="<?= $property['bedrooms'] ?>">
+                                        </div>
 
-                                            <div class="form-group2">
-                                                <label>Lot Size (sqm)</label>
-                                                <input type="number" step="0.01" name="lot_size" value="<?= $property['lot_size'] ?>">
-                                            </div>
+                                        <div class="form-group2">
+                                            <label>Bathrooms</label>
+                                            <input type="number" name="bathrooms" value="<?= $property['bathrooms'] ?>">
+                                        </div>
 
-                                            <div class="form-group2">
-                                                <label>Status</label>
-                                                <select name="status" disabled>
-                                                    <option value="available" <?= ($property['status'] == 'available') ? 'selected' : '' ?>>Available</option>
-                                                    <option value="sold" <?= ($property['status'] == 'sold') ? 'selected' : '' ?>>Sold</option>
-                                                </select>
-                                            </div>
+                                        <div class="form-group2">
+                                            <label>Lot Size (sqm)</label>
+                                            <input type="number" step="0.01" name="lot_size" value="<?= $property['lot_size'] ?>">
+                                        </div>
 
-                                            <div class="form-group2">
-                                                <label>Listing Type</label>
-                                                <select name="listing_type" onchange="toggleSoldBy(this, <?= $property['id'] ?>)">
-                                                    <option value="owned" <?= ($listingTypeSelected=='owned')?'selected':'' ?>>Owned</option>
-                                                    <option value="sold_by" <?= ($listingTypeSelected=='sold_by')?'selected':'' ?>>Sold By</option>
-                                                </select>
-                                            </div>
+                                        <div class="form-group2">
+                                            <label>Status</label>
+                                            <select name="status" disabled>
+                                                <option value="available" <?= ($property['status'] == 'available') ? 'selected' : '' ?>>Available</option>
+                                                <option value="sold" <?= ($property['status'] == 'sold') ? 'selected' : '' ?>>Sold</option>
+                                            </select>
+                                        </div>
 
-                                            <div class="form-group2" id="soldByContainer-<?= $property['id'] ?>" style="display: <?= ($listingTypeSelected=='sold_by')?'block':'none' ?>;">
-                                                <label>Agent Email</label>
-                                                <input type="email" name="sold_by_email" placeholder="Enter agent email" value="<?= ($listingTypeSelected=='sold_by')?$property['sold_by_email']:'' ?>">
-                                            </div>
+                                        <div class="form-group2">
+                                            <label>Listing Type</label>
+                                            <select name="listing_type" onchange="toggleSoldBy(this, <?= $property['id'] ?>)">
+                                                <option value="owned" <?= ($listingTypeSelected=='owned')?'selected':'' ?>>Owned</option>
+                                                <option value="sold_by" <?= ($listingTypeSelected=='sold_by')?'selected':'' ?>>Sold By</option>
+                                            </select>
+                                        </div>
 
-                                            <!-- Description spans full width -->
-                                            <div class="form-group2 form-full2">
-                                                <label>Description</label>
-                                                <textarea name="description"><?= htmlspecialchars($property['description']) ?></textarea>
-                                            </div>
+                                        <div class="form-group2" id="soldByContainer-<?= $property['id'] ?>" style="display: <?= ($listingTypeSelected=='sold_by')?'block':'none' ?>;">
+                                            <label>Agent Email</label>
+                                            <input type="email" name="sold_by_email" placeholder="Enter agent email" value="<?= ($listingTypeSelected=='sold_by')?$property['sold_by_email']:'' ?>">
+                                        </div>
 
-                                            <!-- Submit Button spans full width -->
-                                            <div class="form-group2 form-full2">
-                                                <button type="button" onclick="confirmEdit(<?= $property['id'] ?>)">Update Listing</button>
-                                            </div>
+                                        <!-- Full-width description -->
+                                        <div class="form-group2 form-full2">
+                                            <label>Description</label>
+                                            <textarea name="description"><?= htmlspecialchars($property['description']) ?></textarea>
+                                        </div>
+
+                                        <!-- Full-width submit button -->
+                                        <div class="form-group2 form-full2">
+                                            <button type="button" onclick="confirmEdit(<?= $property['id'] ?>)">Update Listing</button>
                                         </div>
                                     </div>
-                                </div>
-                            </form>
+                                </form>
+                            </div>
                         </div>
-                    </div>
 
                     <?php endforeach; ?>
                 <?php else: ?>
