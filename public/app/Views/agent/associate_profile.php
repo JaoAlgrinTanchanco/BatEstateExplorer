@@ -323,7 +323,6 @@
 
                                     <!-- Images on top -->
                                     <div class="form-group2">
-                                        <label><strong>Existing Images</strong></label>
                                         <div class="image-gallery2">
                                             <?php if (!empty($property['images'])): ?>
                                                 <?php foreach ($property['images'] as $img): ?>
@@ -390,14 +389,6 @@
                                         <div class="form-group2">
                                             <label>Lot Size (sqm)</label>
                                             <input type="number" step="0.01" name="lot_size" value="<?= $property['lot_size'] ?>">
-                                        </div>
-
-                                        <div class="form-group2">
-                                            <label>Status</label>
-                                            <select name="status" disabled>
-                                                <option value="available" <?= ($property['status'] == 'available') ? 'selected' : '' ?>>Available</option>
-                                                <option value="sold" <?= ($property['status'] == 'sold') ? 'selected' : '' ?>>Sold</option>
-                                            </select>
                                         </div>
 
                                         <div class="form-group2">
