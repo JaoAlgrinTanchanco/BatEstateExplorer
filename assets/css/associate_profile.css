@@ -8,18 +8,18 @@
 }
 
 /* ===========================
-   Listing Card - Horizontal Layout
+   Listing Card - Modern Layout
 =========================== */
 .listing-card {
     display: flex;
-    gap: 2rem; /* spacing between image and details */
+    gap: 1.5rem; /* spacing between image and details */
     background: #fff;
     border-radius: 20px;
     padding: 1.5rem;
     box-shadow: 0 8px 24px rgba(0,0,0,0.08);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     align-items: flex-start;
-    width: 100%; /* full width */
+    width: 100%;
 }
 
 .listing-card:hover {
@@ -27,26 +27,73 @@
     box-shadow: 0 12px 32px rgba(0,0,0,0.12);
 }
 
-/* Image on the left, always square */
+/* ===========================
+   Image Thumbnail & Overlay
+=========================== */
 .listing-thumb {
-    flex: 0 0 300px; /* width of image */
-    aspect-ratio: 1 / 1; /* perfect square */
+    position: relative;
+    flex: 0 0 227px;
+    aspect-ratio: 1 / 1;
     border-radius: 16px;
     overflow: hidden;
+    cursor: pointer;
 }
 
 .listing-thumb img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.3s ease, filter 0.3s ease;
 }
 
-/* Details on the right */
+/* Overlay container */
+.listing-thumb .overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    opacity: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Satoshi', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    border-radius: 16px;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+    gap: 0.5rem;
+}
+
+/* Show overlay on hover & dim image */
+.listing-thumb:hover img {
+    filter: brightness(50%);
+}
+
+.listing-thumb:hover .overlay {
+    opacity: 1;
+}
+
+/* Overlay text separated by | */
+.listing-thumb .overlay span {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.listing-thumb .overlay span + span::before {
+    content: "|";
+    margin: 0 0.5rem;
+    color: #fff;
+}
+
+/* ===========================
+   Details Section
+=========================== */
 .listing-card .details {
-    flex: 1; /* take remaining space */
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
 }
 
 /* Info Rows */
@@ -56,13 +103,14 @@
     font-family: 'Satoshi', sans-serif;
     font-size: 1rem;
     color: #111;
+    margin-bottom: 0.5rem;
 }
 
 .info-row strong {
     font-weight: 600;
 }
 
-/* Actions row */
+/* Actions row (optional if used) */
 .info-row.actions {
     display: flex;
     justify-content: flex-start;
@@ -70,6 +118,7 @@
     margin-top: auto;
 }
 
+/* Buttons fallback if needed */
 .btn-edit, .btn-delete {
     padding: 0.5rem 1rem;
     border-radius: 14px;
@@ -97,7 +146,9 @@
     background: #cc3b3e;
 }
 
-/* Responsive: stack vertically on small screens */
+/* ===========================
+   Responsive Layout
+=========================== */
 @media (max-width: 768px) {
     .listing-card {
         flex-direction: column;
@@ -107,7 +158,7 @@
 
     .listing-thumb {
         width: 100%;
-        height: 250px; /* taller on mobile */
+        height: 250px;
     }
 
     .listing-card .details {
@@ -118,7 +169,6 @@
         justify-content: center;
     }
 }
-
 
 /* Responsive: stack vertically on small screens */
 @media (max-width: 768px) {

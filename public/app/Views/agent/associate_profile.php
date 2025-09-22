@@ -280,40 +280,34 @@
                             $first_img_src = "/BatEstateExplorer/" . $property['images'][0]['image_path'];
                         }
                     ?>
-                    <div class="listing-card">
-                        <?php if ($first_img_src): ?>
-                            <div class="listing-thumb">
-                                <img src="<?= $first_img_src ?>" alt="Property Image">
-                            </div>
-                        <?php endif; ?>
+                        <div class="listing-card">
+                            <?php if ($first_img_src): ?>
+                                <div class="listing-thumb">
+                                    <img src="<?= $first_img_src ?>" alt="Property Image">
 
-                        <div class="details">
-                            <div class="info-row"><strong>Title:</strong> <span><?= htmlspecialchars($property['title']) ?></span></div>
-                            <div class="info-row"><strong>Location:</strong> <span><?= htmlspecialchars($property['location']) ?></span></div>
-                            <div class="info-row"><strong>Price:</strong> <span>₱<?= number_format($property['price'], 2) ?></span></div>
-                            <div class="info-row"><strong>Bedrooms:</strong> <span><?= htmlspecialchars($property['bedrooms']) ?></span></div>
-                            <div class="info-row"><strong>Bathrooms:</strong> <span><?= htmlspecialchars($property['bathrooms']) ?></span></div>
-                            <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($property['status']) ?></span></div>
+                                    <!-- Overlay buttons -->
+                                    <div class="overlay">
+                                        <span onclick="openModal(<?= $property['id'] ?>)">Edit</span>
+                                        <span onclick="if(confirm('Are you sure you want to delete this listing?')) this.closest('form').submit()">Delete</span>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
 
-                            <?php
-                            $listingTypeSelected = !empty($property['sold_by_agent_id']) ? 'sold_by' : 'owned';
-                            $ownershipLabel = $listingTypeSelected === 'sold_by' ? "Sold by: {$property['sold_by_email']}" : "Owned";
-                            ?>
-                            <div class="info-row"><strong>Listing Type:</strong> <span><?= $ownershipLabel ?></span></div>
+                            <div class="details">
+                                <div class="info-row"><strong>Title:</strong> <span><?= htmlspecialchars($property['title']) ?></span></div>
+                                <div class="info-row"><strong>Location:</strong> <span><?= htmlspecialchars($property['location']) ?></span></div>
+                                <div class="info-row"><strong>Price:</strong> <span>₱<?= number_format($property['price'], 2) ?></span></div>
+                                <div class="info-row"><strong>Bedrooms:</strong> <span><?= htmlspecialchars($property['bedrooms']) ?></span></div>
+                                <div class="info-row"><strong>Bathrooms:</strong> <span><?= htmlspecialchars($property['bathrooms']) ?></span></div>
+                                <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($property['status']) ?></span></div>
 
-                            <div class="info-row actions">
-                                <a href="javascript:void(0)" class="btn-edit" onclick="openModal(<?= $property['id'] ?>)">Edit</a>
-                                
-                                <form method="POST" action="/BatEstateExplorer/public/api/delete_listing.php" style="display:inline;">
-                                    <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
-                                    <button type="submit" class="btn-delete" 
-                                            onclick="return confirm('Are you sure you want to delete this listing?')">
-                                        Delete
-                                    </button>
-                                </form>
+                                <?php
+                                $listingTypeSelected = !empty($property['sold_by_agent_id']) ? 'sold_by' : 'owned';
+                                $ownershipLabel = $listingTypeSelected === 'sold_by' ? "Sold by: {$property['sold_by_email']}" : "Owned";
+                                ?>
+                                <div class="info-row"><strong>Listing Type:</strong> <span><?= $ownershipLabel ?></span></div>
                             </div>
                         </div>
-                </div>
 
                         <!-- Edit Modal -->
                         <div id="editModal-<?= $property['id'] ?>" class="edit-modal">
