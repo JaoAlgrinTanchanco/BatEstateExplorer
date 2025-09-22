@@ -2,19 +2,19 @@
    Profile Overview Container
 =========================== */
 .overview-container {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
+  align-items: start;
 }
 
-/* Profile view vs edit */
+/* Profile view uses grid flow */
 .profile-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  display: contents; /* let child cards flow inside the grid */
 }
 
 .profile-edit {
+  grid-column: span 2;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -32,6 +32,10 @@
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  min-height: 280px; /* 🔑 consistent card heights */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .overview-card h3 {
@@ -81,7 +85,8 @@
 }
 
 #editProfileBtn {
-  align-self: flex-end;
+  grid-column: span 2;
+  justify-self: end;
   background: #111;
   color: #fff;
 }
@@ -196,17 +201,12 @@
 /* ===========================
    Responsive
 =========================== */
-@media (max-width: 768px) {
-  .info-row {
-    flex-direction: column;
-    gap: 0.2rem;
-  }
-
-  .info-row strong {
-    min-width: auto;
+@media (max-width: 1024px) {
+  .overview-container {
+    grid-template-columns: 1fr;
   }
 
   #editProfileBtn {
-    align-self: stretch;
+    justify-self: stretch;
   }
 }

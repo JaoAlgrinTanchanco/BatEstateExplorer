@@ -928,29 +928,6 @@
                             <div class="info-row"><strong>Training:</strong> <span><?= htmlspecialchars($user['training'] ?? '-') ?></span></div>
                         </div>
 
-                        <!-- Documents -->
-                        <div class="overview-card">
-                            <h3>Documents</h3>
-                            <?php
-                            $docs = [
-                                'Broker License' => 'broker_license_path',
-                                'PRC License' => 'prc_license_path',
-                                'Resume' => 'resume_path',
-                                'Valid ID' => 'valid_id_path',
-                                'Additional Docs' => 'additional_docs_path'
-                            ];
-                            foreach ($docs as $label => $field):
-                            ?>
-                                <div class="info-row"><strong><?= $label ?>:</strong>
-                                    <?php if (!empty($user[$field])): ?>
-                                        <a href="<?= htmlspecialchars($user[$field]) ?>" target="_blank">View</a>
-                                    <?php else: ?>
-                                        -
-                                    <?php endif; ?>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-
                         <!-- Account Status -->
                         <div class="overview-card">
                             <h3>Account Status</h3>
