@@ -31,6 +31,7 @@
    Dashboard Layout
 =========================== */
 .dashboard-container {
+  background: #f5f6f8ff;
   display: grid;
   grid-template-columns: 240px 1fr; /* Sidebar fixed, content flexible */
   gap: 1.5rem;

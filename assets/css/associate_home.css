@@ -10,6 +10,8 @@
 }
 
 body {
+  height: 100%;
+  min-height: 100vh;
   font-family: 'Satoshi', sans-serif;
   background: #fff;
   color: #222;
@@ -21,7 +23,7 @@ body {
   width: 100%;
   max-width: 1300px;
   padding: 0 1rem 0 1rem;
-  margin: 0 auto 2rem; /* center + space below */
+  margin: 3.5rem auto 2rem; /* center + space below */
   border-radius: 16px;
   overflow: hidden;
 }
