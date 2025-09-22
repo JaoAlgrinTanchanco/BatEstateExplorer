@@ -269,7 +269,7 @@
             <?php switch ($tab): case 'my_listings': ?>
                 <h2>My Listings</h2>
 
-                <div class="overview-container">
+                <div class="listing-container">
                 <?php if (!empty($listings)): ?>
                     <?php foreach ($listings as $property): 
                         $ownership = ($property['agent_id'] == $agent_id) ? 'Owned' : 'Shared';
