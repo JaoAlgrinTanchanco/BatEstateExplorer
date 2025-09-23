@@ -223,6 +223,7 @@
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_sidebar.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_overview.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_listing.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_add_listing.css">
 <script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt&currency=PHP"></script>
 <div class="dashboard-container">
 
@@ -558,8 +559,14 @@
             <?php break; ?>
 
             <?php case 'analytics': ?>
-                    <h2>Performance Analytics</h2>
-                    <div class="analytics-top">
+                <header class="content-header">
+                    <h2>Add Listings</h2>
+                </header>
+                <div class="analytics-wrapper">
+
+                    <!-- Analytics Summary Card -->
+                    <div class="card analytics-summary">
+                        <h2>Performance Analytics</h2>
                         <h1><?= $avg_rating ?></h1>
                         <div class="stars">
                             <?php for($i=1; $i<=5; $i++): ?>
@@ -569,34 +576,40 @@
                         <p><?= $total_reviews ?> Review<?= $total_reviews != 1 ? 's' : '' ?></p>
                     </div>
 
-                    <div class="review-cards">
+                    <!-- Reviews Card -->
+                    <div class="card analytics-reviews">
+                        <h3>Property Reviews</h3>
+
                         <?php if (!empty($reviews)): ?>
                             <?php foreach($reviews as $r): 
                                 $user_name = trim($r['first_name'] . ' ' . $r['last_name']);
-                                $image_path = !empty($r['image_path']) ? "/BatEstateExplorer/" . $r['image_path'] : '/assets/images/default.jpg';
+                                $image_path = !empty($r['image_path']) 
+                                    ? "/BatEstateExplorer/" . $r['image_path'] 
+                                    : '/assets/images/default.jpg';
                             ?>
                             <div class="review-card">
                                 <div class="review-left">
                                     <h4><?= htmlspecialchars($user_name) ?></h4>
-                                    <p><?= htmlspecialchars($r['email']) ?></p>
+                                    <p class="review-email"><?= htmlspecialchars($r['email']) ?></p>
                                     <div class="stars">
                                         <?php for($i=1; $i<=5; $i++): ?>
                                             <span class="star <?= $i <= $r['rating'] ? 'filled' : '' ?>">★</span>
                                         <?php endfor; ?>
                                     </div>
-                                    <p><?= nl2br(htmlspecialchars($r['review_text'])) ?></p>
+                                    <p class="review-text"><?= nl2br(htmlspecialchars($r['review_text'])) ?></p>
                                 </div>
                                 <div class="review-right">
                                     <img src="<?= htmlspecialchars($image_path) ?>" alt="<?= htmlspecialchars($r['title']) ?>">
-                                    <p><?= htmlspecialchars($r['title']) ?></p>
+                                    <p class="review-title"><?= htmlspecialchars($r['title']) ?></p>
                                 </div>
                             </div>
                             <?php endforeach; ?>
                         <?php else: ?>
-                            <p>No reviews found for your properties.</p>
+                            <p class="no-reviews">No reviews found for your properties.</p>
                         <?php endif; ?>
                     </div>
-    
+
+                </div>
             <?php break; ?>
 
             <?php case 'company_listings': ?>
