@@ -243,25 +243,28 @@
 }
 
 /* ===========================
-   Responsive
+   Responsive (≤768px)
 =========================== */
 @media (max-width: 768px) {
+  /* Layout */
   .dashboard-container {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* stack layout */
+    padding: 0 1rem 1rem;       /* consistent side spacing */
   }
 
   .role {
     border-radius: 0;
   }
 
+  /* Sidebar */
   .sidebar-toggle {
-    display: flex; /* <-- this makes it visible on all screens */
+    display: flex; /* visible on small screens */
   }
 
   .agent-sidebar-wrapper {
     position: fixed;
     top: 0;
-    left: -300px; /* hidden by default */
+    left: -240px; /* hidden by default */
     width: 240px;
     height: 100%;
     margin: 0;
@@ -269,16 +272,21 @@
     box-shadow: 2px 0 24px rgba(0,0,0,0.15);
     transition: left 0.3s ease;
     z-index: 9999;
+    background: #fff; /* ensure background covers content */
   }
 
   .agent-sidebar-wrapper.open {
     left: 0;
   }
 
+  /* Right Side */
   .right-side {
-    padding-top: 1rem;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 -0.5rem; /* safe inner spacing */
   }
 
+  /* Header */
   .dashboard-header {
     padding: 1rem 1.5rem;
   }
@@ -287,6 +295,7 @@
     font-size: 1.3rem;
   }
 
+  /* Tabs */
   .dashboard-tabs {
     gap: 0.5rem;
   }
@@ -296,3 +305,4 @@
     font-size: 0.85rem;
   }
 }
+
