@@ -1,4 +1,3 @@
-document.addEventListener('DOMContentLoaded', () => {
     // =========================
     // Notification helper
     // =========================
@@ -25,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         notif.querySelector('.notification__close').addEventListener('click', () => notif.remove());
         setTimeout(() => notif.remove(), 5000);
     }
-
+document.addEventListener('DOMContentLoaded', () => {
     // =========================
     // Bedrooms/Bathrooms toggle
     // =========================
@@ -364,42 +363,74 @@ function confirmEdit(propertyId){
 
 let selectedPropertyId = null;
 window.currentEmail = null;
-window.searchClient = function(){
+
+window.searchClient = function() {
     const email = document.getElementById('searchEmail').value.trim();
     if(!email) return notify('error','Please enter an email');
+
     fetch(`/BatEstateExplorer/public/api/give_privilege.php?email=${encodeURIComponent(email)}`)
-        .then(res=>res.json())
-        .then(data=>{
-            if(data.error) return notify('error',data.error);
-            document.getElementById('userNameEmail').textContent = `${data.name||''} (${data.email})`;
-            document.getElementById('privilegeModal').style.display='block';
+        .then(res => res.json())
+        .then(data => {
+            if(data.error || !data.email) {
+                // Notify if no client found
+                window.currentEmail = null;
+                document.getElementById('userNameEmail').textContent = '';
+                document.getElementById('grantPrivilegeSection').style.opacity = '0.5';
+                document.getElementById('grantPrivilegeSection').style.pointerEvents = 'none';
+                document.getElementById('givePrivilegeBtn').disabled = true;
+
+                return notify('error', data.error || 'Client not found.');
+            }
+
+            // Set current email and show user name
             window.currentEmail = data.email;
+            document.getElementById('userNameEmail').textContent = `${data.name||''} (${data.email})`;
+
+            // Enable the grant privilege section
+            const section = document.getElementById('grantPrivilegeSection');
+            const giveBtn = document.getElementById('givePrivilegeBtn');
+            section.style.opacity = '1';
+            section.style.pointerEvents = 'auto';
+            giveBtn.disabled = false;
+
+            notify('success','Client found! Select a property to grant privilege.');
         })
-        .catch(()=>notify('error','Search client error.'));
-};
-window.selectProperty = function(card, propertyId){
-    document.querySelectorAll('.property-card').forEach(c=>c.classList.remove('selected'));
-    card.classList.add('selected'); selectedPropertyId = propertyId;
-};
-window.closePrivilegeModal = function(){
-    document.getElementById('privilegeModal').style.display='none'; selectedPropertyId=null;
-};
-window.givePrivilege = function(){
-    if(!selectedPropertyId) return notify('error','Please select a property first.');
-    if(!window.currentEmail) return notify('error','No client selected.');
-    fetch('/BatEstateExplorer/public/api/give_privilege.php',{
-        method:'POST',
-        headers:{'Content-Type':'application/x-www-form-urlencoded'},
-        body:`email=${encodeURIComponent(window.currentEmail)}&property_id=${encodeURIComponent(selectedPropertyId)}`
-    })
-    .then(res=>res.json())
-    .then(data=>{
-        if(data.success){ notify('success','Privilege granted successfully!'); closePrivilegeModal(); }
-        else notify('error',data.error||'Something went wrong.');
-    })
-    .catch(()=>notify('error','Give privilege error.'));
+        .catch(() => notify('error','Search client error.'));
 };
 
+window.selectProperty = function(card, propertyId) {
+    if(!window.currentEmail) return; // disabled if no email selected
+
+    document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedPropertyId = propertyId;
+};
+
+window.givePrivilege = function() {
+    if(!selectedPropertyId) return notify('error','Please select a property first.');
+    if(!window.currentEmail) return notify('error','No client selected.');
+
+    // Optional: simple confirmation modal
+    if(!confirm('Are you sure you want to grant this privilege?')) return;
+
+    fetch('/BatEstateExplorer/public/api/give_privilege.php', {
+        method: 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body: `email=${encodeURIComponent(window.currentEmail)}&property_id=${encodeURIComponent(selectedPropertyId)}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success){
+            notify('success','Privilege granted successfully!');
+            // Reset selection
+            selectedPropertyId = null;
+            document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
+        } else notify('error', data.error || 'Something went wrong.');
+    })
+    .catch(() => notify('error','Give privilege error.'));
+};
+
+//
 function markImageForRemoval(button, imagePath){
     button.closest('.image-item').style.opacity='0.5';
     const hiddenInput = document.createElement('input');

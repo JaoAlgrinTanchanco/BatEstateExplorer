@@ -638,49 +638,47 @@
             <?php break; ?>
 
             <?php case 'review_privileges': ?>
-                    <header class="content-header">
-                        <h2>Review Privileges</h2>
-                    </header>
+                <header class="content-header">
+                    <h2>Review Privileges</h2>
+                </header>
 
-                    <div class="overview-container">
-                        <div class="overview-card">
-                            <label for="searchEmail">Search Client by Email:</label>
-                            <input type="email" id="searchEmail" placeholder="Enter email..." />
-                            <button onclick="searchClient()">Search</button>
-                        </div>
+                <div class="privilege-container">
+                    <div class="privilege-card">
+                        <label for="searchEmail">Search Client by Email:</label>
+                        <input type="email" id="searchEmail" placeholder="Enter email..." />
+                        <button id="searchBtn" onclick="searchClient()">Search</button>
+                    </div>
+                </div>
+
+                <!-- Grant Privilege Section (disabled by default) -->
+                <div id="grantPrivilegeSection" class="grant-privilege" style="opacity:0.5; pointer-events:none;">
+                    <h2>Grant Review Privilege</h2>
+                    <p id="userNameEmail"></p>
+
+                    <h3>Select a Property</h3>
+                    <div id="propertyList" class="property-list">
+                        <?php if (!empty($listings)): ?>
+                            <?php foreach ($listings as $property): 
+                                // Check if property has images
+                                $first_img_src = !empty($property['images']) && !empty($property['images'][0]['image_path'])
+                                    ? "/BatEstateExplorer/" . $property['images'][0]['image_path'] 
+                                    : "/BatEstateExplorer/assets/images/no-image.png"; // fallback placeholder
+                            ?>
+                                <div class="property-card" onclick="selectProperty(this, <?= $property['id'] ?>)">
+                                    <img src="<?= $first_img_src ?>" alt="Property Image">
+                                    <div class="overlay">
+                                        <h4><?= htmlspecialchars($property['title']) ?></h4>
+                                        <p><?= htmlspecialchars($property['location']) ?></p>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <p>No properties found.</p>
+                        <?php endif; ?>
                     </div>
 
-                    <!-- Privilege Modal -->
-                    <div id="privilegeModal" class="edit-modal">
-                        <div class="modal-content">
-                            <span class="close" onclick="closePrivilegeModal()">&times;</span>
-                            <h2>Grant Review Privilege</h2>
-                            <p id="userNameEmail"></p>
-
-                            <h3>Select a Property</h3>
-                            <div id="propertyList" class="property-list">
-                                <?php if (!empty($listings)): ?>
-                                    <?php foreach ($listings as $property): 
-                                        $first_img_src = !empty($property['images']) 
-                                            ? "/BatEstateExplorer/" . $property['images'][0]['image_path'] 
-                                            : "/BatEstateExplorer/assets/img/no-image.png"; 
-                                    ?>
-                                        <div class="property-card" 
-                                            onclick="selectProperty(this, <?= $property['id'] ?>)">
-                                            <img src="<?= $first_img_src ?>" alt="Property Image">
-                                            <h4><?= htmlspecialchars($property['title']) ?></h4>
-                                            <p><?= htmlspecialchars($property['location']) ?></p>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <p>No properties found.</p>
-                                <?php endif; ?>
-                            </div>
-
-                            <button onclick="givePrivilege()">Give Privilege</button>
-                            <button onclick="closePrivilegeModal()">Exit</button>
-                        </div>
-                    </div>
+                    <button id="givePrivilegeBtn" onclick="givePrivilege()" disabled>Give Privilege</button>
+                </div>
             <?php break; ?>
 
             <?php case 'wallet': ?>
