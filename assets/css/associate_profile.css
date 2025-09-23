@@ -1,491 +1,245 @@
 /* ===========================
-   Overview Container - Single Column
+   Add Listing Form - Modern Grid Look
 =========================== */
-.listing-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-    align-items: start;
+/* Remove flex from form and let grid handle layout */
+#addListingForm {
+  display: block; /* ✅ instead of flex */
+  width: 100%;
+  font-family: "Satoshi", sans-serif;
+}
+
+/* 3-column grid layout */
+.addListing-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* Cards will now occupy grid slots equally */
+.form-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Wide sections (like Description / Uploads) */
+.form-card.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Labels */
+#addListingForm label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+  display: block;
+  color: #333;
+}
+
+/* Inputs */
+#addListingForm input,
+#addListingForm select,
+#addListingForm textarea {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#addListingForm input:focus,
+#addListingForm select:focus,
+#addListingForm textarea:focus {
+  border-color: #008dff;
+  box-shadow: 0 0 0 2px rgba(0,141,255,0.15);
+}
+
+/* Textarea larger */
+#addListingForm textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* Full-width elements */
+#description,
+.drag-drop-area,
+.image-preview,
+.btn-submit {
+  grid-column: 1 / -1;
 }
 
 /* ===========================
-   Listing Card - Modern Layout
+   Drag & Drop Upload
 =========================== */
-.listing-card {
-    display: flex;
-    gap: 1.5rem; /* spacing between image and details */
-    background: #fff;
-    border-radius: 20px;
-    padding: 1.5rem;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    align-items: flex-start;
-    width: 100%;
+.drag-drop-area {
+  border: 2px dashed #ddd;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  background: #fafafa;
 }
 
-.listing-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+.drag-drop-area:hover,
+.drag-drop-area:focus {
+  border-color: #008dff;
+  background: #f0f8ff;
+}
+
+.drag-drop-area p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
 }
 
 /* ===========================
-   Image Thumbnail & Overlay
+   Image Preview Grid
 =========================== */
-.listing-thumb {
-    position: relative;
-    flex: 0 0 227px;
-    aspect-ratio: 1 / 1;
-    border-radius: 16px;
-    overflow: hidden;
-    cursor: pointer;
+.image-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.5rem;
 }
 
-.listing-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease, filter 0.3s ease;
+.image-preview img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  transition: transform 0.3s ease;
 }
 
-/* Overlay container */
-.listing-thumb .overlay {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    opacity: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Satoshi', sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #fff;
-    border-radius: 16px;
-    transition: opacity 0.3s ease;
-    cursor: pointer;
-    gap: 0.5rem;
-}
-
-/* Show overlay on hover & dim image */
-.listing-thumb:hover img {
-    filter: brightness(90%);
-}
-
-.listing-thumb:hover .overlay {
-    opacity: 1;
-}
-
-/* Overlay text separated by | */
-.listing-thumb .overlay span {
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-.listing-thumb .overlay span + span::before {
-    content: "|";
-    margin: 0 0.5rem;
-    color: #fff;
+.image-preview img:hover {
+  transform: scale(1.05);
 }
 
 /* ===========================
-   Details Section
+   Submit Button
 =========================== */
-.listing-card .details {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+.btn-submit {
+  background: #111;
+  color: #fff;
+  padding: 0.8rem 1.25rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.15s ease;
+}
+.btn-submit:hover {
+  background: #333;
+  transform: translateY(-2px);
 }
 
-/* Info Rows */
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    font-family: 'Satoshi', sans-serif;
-    font-size: 1rem;
-    color: #111;
-    margin-bottom: 0.5rem;
+/* ===========================
+   Listing Fee Modal
+=========================== */
+.deposit-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(17,17,17,0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 10000;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.25s ease;
 }
 
-.info-row strong {
-    font-weight: 600;
+.deposit-modal.active {
+  display: flex;
 }
 
-/* Actions row (optional if used) */
-.info-row.actions {
-    display: flex;
-    justify-content: flex-start;
-    gap: 0.5rem;
-    margin-top: auto;
+.deposit-modal .modal-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 20px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  animation: fadeInUp 0.3s ease;
+  position: relative;
 }
 
-/* Buttons fallback if needed */
-.btn-edit, .btn-delete {
-    padding: 0.5rem 1rem;
-    border-radius: 14px;
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.btn-edit {
-    background: #008dff;
-    color: #fff;
-}
-
-.btn-edit:hover {
-    background: #006fcc;
-}
-
-.btn-delete {
-    background: #ff4d4f;
-    color: #fff;
-}
-
-.btn-delete:hover {
-    background: #cc3b3e;
-}
-
-/* =========================
-   Edit Modal Styles - Modern Look
-========================= */
-
-/* Modal Overlay */
-.edit-modal-wrapper2 {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(17,17,17,0.55);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    z-index: 10000;
-    overflow-y: auto;
-    transition: opacity 0.25s ease;
-}
-
-.edit-modal-wrapper2.active {
-    display: block;
-}
-
-/* Modal Content */
-.edit-modal-content2 {
-    background: #fff;
-    border-radius: 20px;
-    max-width: 750px;
-    width: 100%;
-    margin: 2rem auto;
-    padding: 2rem;
-    position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    animation: fadeInUp 0.3s ease;
-}
-
-/* Modal Animation */
 @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Close Button */
-.close2 {
-    position: absolute;
-    top: 16px;
-    right: 20px;
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #333;
-    cursor: pointer;
-    transition: color 0.2s ease, transform 0.2s ease;
+/* Modal Close */
+.deposit-modal .close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #333;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
-.close2:hover { 
-    color: #e74c3c; 
-    transform: translateY(-2px);
+.deposit-modal .close:hover {
+  color: #e74c3c;
+  transform: translateY(-2px);
 }
 
 /* Modal Title */
-.edit-modal-content2 h2 {
-    margin-bottom: 1.5rem;
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #111;
-    font-family: 'Satoshi-Bold', sans-serif;
+.modal-title {
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #111;
+  font-family: 'Satoshi-Bold', sans-serif;
 }
 
-/* Form Grid - 2-column fields including description */
-.form-grid2 {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
+/* Wallet Info + Note */
+.wallet-info p {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+.note small {
+  display: block;
+  margin-top: 1rem;
+  color: #777;
+  font-size: 0.85rem;
+  line-height: 1.4;
 }
 
-/* Full-width items (buttons, description) */
-.form-full2 { grid-column: 1 / -1; }
-
-/* Form Group */
-.form-group2 {
-    display: flex;
-    flex-direction: column;
-}
-.form-group2 label {
-    font-weight: 600;
-    margin-bottom: 0.3rem;
-    font-size: 0.95rem;
-    text-align: left;
+/* Modal Footer */
+.modal-footer {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
 }
 
-/* Inputs, selects, textarea */
-.form-group2 input,
-.form-group2 select,
-.form-group2 textarea {
-    padding: 0.6rem;
-    font-size: 0.95rem;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-    outline: none;
-    font-family: 'Satoshi', sans-serif;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.form-group2 input:focus,
-.form-group2 select:focus,
-.form-group2 textarea:focus {
-    border-color: #008dff;
-    box-shadow: 0 0 0 2px rgba(0,141,255,0.2);
+.modal-footer .btn {
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
-/* Description textarea */
-.form-group2 textarea {
-    min-height: 120px;
-    resize: vertical;
-}
 
-/* Submit Button */
-.form-group2 button {
-    padding: 0.7rem 1.4rem;
-    background: #111;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    font-family: 'Satoshi-Medium', sans-serif;
-    cursor: pointer;
-    transition: background 0.25s ease, transform 0.15s ease;
-}
-.form-group2 button:hover {
-    background: #333;
-    transform: translateY(-2px);
-}
-
-/* Image Gallery */
-.image-gallery2 {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 0.75rem;
-    overflow-x: auto;
-    padding-bottom: 0.5rem;
-}
-
-.image-item2 {
-    position: relative;
-    width: 180px;
-    height: 180px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-.image-item2 img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-}
-.image-item2:hover img {
-    transform: scale(1.05);
-}
-
-/* Primary radio */
-.primary-label2 {
-    position: absolute;
-    bottom: 5px;
-    left: 5px;
-    background: rgba(0,0,0,0.6);
-    color: #fff;
-    padding: 2px 6px;
-    font-size: 0.75rem;
-    border-radius: 6px;
-}
-
-/* Remove image button */
-.remove-img-btn2 {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    background: rgba(231,76,60,0.9);
-    border: none;
-    color: #fff;
-    font-weight: bold;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.remove-img-btn2:hover { background: #c0392b; }
-
-.newImage{
-    margin-top: 1rem;
-}
-
-/* =========================
-   File Input - Modern Style
-========================= */
-input[type="file"] {
-    display: block;
-    width: 100%;
-    padding: 0.6rem 1rem;
-    border: 2px dashed #ddd;
-    border-radius: 12px;
-    background: #fafafa;
-    font-family: 'Satoshi', sans-serif;
-    font-size: 0.95rem;
-    color: #555;
-    cursor: pointer;
-    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-}
-
-input[type="file"]::file-selector-button {
-    padding: 0.5rem 1rem;
-    margin-right: 0.5rem;
-    border: none;
-    border-radius: 10px;
-    background: #111;
-    color: #fff;
-    font-family: 'Satoshi-Medium', sans-serif;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background 0.25s ease, transform 0.15s ease;
-}
-
-input[type="file"]::file-selector-button:hover {
-    background: #006fcc;
-    transform: translateY(-2px);
-}
-
-input[type="file"]:focus {
-    outline: none;
-    border-color: #008dff;
-    box-shadow: 0 0 0 2px rgba(0,141,255,0.2);
-}
-
-/* =========================
-   Responsive Styles
-========================= */
-
-/* Mobile (≤768px) */
-@media (max-width: 768px) {
-  .listing-container {
-    grid-template-columns: 1fr; /* one per row */
-    gap: 1rem;
-    justify-content: center;
-  }
-
-  .listing-card {
-    flex-direction: row; /* image left, details right */
-    gap: 0.75rem;
-    align-items: flex-start;
-    /* max-width: 320px; */
-    width: 100%;
-  }
-
-  .listing-thumb {
-    flex: 0 0 140px;
-    aspect-ratio: 1 / 1;
-  }
-
-  .listing-card .details {
-    font-size: 10px;
-    line-height: 1.2;
-  }
-
-  .image-item2 {
-    width: 120px;
-    height: 120px;
-  }
-
-  .edit-modal-content2 {
-    width: 95%;
-    padding: 1.5rem;
-  }
-
-  .form-grid2 {
-    grid-template-columns: 1fr; /* stack form fields */
-    gap: 0.6rem;
-  }
-}
-
-/* Tablets (769px–1024px) */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .listing-container {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  .listing-card {
-    flex-direction: row;
-    gap: 1rem;
-  }
-
-  .listing-thumb {
-    flex: 0 0 180px;
-  }
-
-  .image-item2 {
-    width: 150px;
-    height: 150px;
-  }
-}
-
-/* Medium-Large Screens (1025px–1280px) */
-@media (min-width: 1025px) and (max-width: 1280px) {
-  .listing-container {
-    grid-template-columns: repeat(1, 1fr);
-    gap: 1.5rem;
-  }
-
-  .listing-thumb {
-    flex: 0 0 200px;
-  }
-
-  .image-item2 {
-    width: 160px;
-    height: 160px;
-  }
-}
-
-/* Large Desktop (1281px–1440px) */
-@media (min-width: 1281px) and (max-width: 1440px) {
-  .listing-container {
+/* Responsive: stack on tablets/mobile */
+@media (max-width: 1024px) {
+  .addListing-container {
     grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
-  }
-
-  .listing-thumb {
-    flex: 0 0 227px;
-  }
-
-  .image-item2 {
-    width: 180px;
-    height: 180px;
   }
 }
-
-/* Extra Large Screens (>1440px) */
-@media (min-width: 1441px) {
-  .listing-container {
-    grid-template-columns: repeat(2, 1fr); /* can change to 4 if you want */
-    gap: 2rem;
+@media (max-width: 768px) {
+  .addListing-container {
+    grid-template-columns: 1fr;
   }
 }

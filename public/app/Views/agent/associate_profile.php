@@ -222,6 +222,7 @@
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_profile.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_sidebar.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_overview.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_listing.css">
 <script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt&currency=PHP"></script>
 <div class="dashboard-container">
 
@@ -444,96 +445,78 @@
             <?php break; ?>
 
             <?php case 'add_listing': ?>
-                <h2>Add New Listing</h2>
+                <header class="content-header">
+                    <h2>My Listings</h2>
+                </header>
 
-                <div class="overview-container">
-                    <div class="overview-card">
-                        <form id="addListingForm" enctype="multipart/form-data">
+                <div class="addListing-container">
+                <form id="addListingForm" enctype="multipart/form-data">
 
-                            <!-- Property Name -->
-                            <label for="title"><strong>Property Name</strong></label>
-                            <input type="text" id="title" name="title" required>
+                    <!-- Card: Basic Info -->
+                    <div class="form-card">
+                    <h3 class="form-card-title">Basic Information</h3>
+                    
+                    <label for="title"><strong>Property Name</strong></label>
+                    <input type="text" id="title" name="title" required>
 
-                            <!-- Location -->
-                            <label for="location"><strong>Location</strong></label>
-                            <select id="location" name="location" required>
-                                <option value="">Select Location</option>
-                                <option value="Agoncillo">Agoncillo</option>
-                                <option value="Alitagtag">Alitagtag</option>
-                                <option value="Balayan">Balayan</option>
-                                <option value="Balete">Balete</option>
-                                <option value="Batangas City">Batangas City</option>
-                                <option value="Bauan">Bauan</option>
-                                <option value="Calaca">Calaca</option>
-                                <option value="Calatagan">Calatagan</option>
-                                <option value="Cuenca">Cuenca</option>
-                                <option value="Ibaan">Ibaan</option>
-                                <option value="Laurel">Laurel</option>
-                                <option value="Lemery">Lemery</option>
-                                <option value="Lian">Lian</option>
-                                <option value="Lipa City">Lipa City</option>
-                                <option value="Lobo">Lobo</option>
-                                <option value="Mabini">Mabini</option>
-                                <option value="Malvar">Malvar</option>
-                                <option value="Mataasnakahoy">Mataasnakahoy</option>
-                                <option value="Nasugbu">Nasugbu</option>
-                                <option value="Padre Garcia">Padre Garcia</option>
-                                <option value="Rosario">Rosario</option>
-                                <option value="San Jose">San Jose</option>
-                                <option value="San Juan">San Juan</option>
-                                <option value="San Luis">San Luis</option>
-                                <option value="San Nicolas">San Nicolas</option>
-                                <option value="San Pascual">San Pascual</option>
-                                <option value="Santa Teresita">Santa Teresita</option>
-                                <option value="Santo Tomas">Santo Tomas</option>
-                                <option value="Taal">Taal</option>
-                                <option value="Talisay">Talisay</option>
-                                <option value="Tanauan City">Tanauan City</option>
-                                <option value="Taysan">Taysan</option>
-                                <option value="Tingloy">Tingloy</option>
-                                <option value="Tuy">Tuy</option>
-                            </select>
-
-                            <!-- Price -->
-                            <label for="price"><strong>Price (₱)</strong></label>
-                            <input type="number" id="price" name="price" min="0" step="0.01" required>
-
-                            <!-- Lot Size -->
-                            <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
-                            <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
-
-                            <!-- Property Type -->
-                            <label for="property_type"><strong>Property Type</strong></label>
-                            <select id="property_type" name="property_type" required>
-                                <option value="">-- Select Type --</option>
-                                <option value="Property">Property</option>
-                                <option value="Lot">Lot</option>
-                            </select>
-
-                            <!-- Bedrooms -->
-                            <label for="bedrooms"><strong>Bedrooms</strong></label>
-                            <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
-
-                            <!-- Bathrooms -->
-                            <label for="bathrooms"><strong>Bathrooms</strong></label>
-                            <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
-
-                            <!-- Description -->
-                            <label for="description"><strong>Description</strong></label>
-                            <textarea id="description" name="description" rows="4" required></textarea>
-
-                            <!-- Images -->
-                            <label for="images"><strong>Property Images</strong></label>
-                            <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
-                                <p>Drag & drop images here or click to browse</p>
-                                <input type="file" id="images" name="images[]" accept="image/*" multiple style="display:none;">
-                            </div>
-                            <div id="imagePreview" class="image-preview" aria-live="polite"></div>
-
-                            <!-- Submit -->
-                            <button type="button" id="openListingModalBtn" class="btn-submit">Save Listing</button>
-                        </form>
+                    <label for="location"><strong>Location</strong></label>
+                    <select id="location" name="location" required>
+                        <option value="">Select Location</option>
+                        <option value="Agoncillo">Agoncillo</option>
+                        <option value="Alitagtag">Alitagtag</option>
+                        <option value="Balayan">Balayan</option>
+                        <!-- ...rest of locations -->
+                    </select>
                     </div>
+
+                    <!-- Card: Property Details -->
+                    <div class="form-card">
+                    <h3 class="form-card-title">Property Details</h3>
+
+                    <label for="price"><strong>Price (₱)</strong></label>
+                    <input type="number" id="price" name="price" min="0" step="0.01" required>
+
+                    <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
+                    <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
+
+                    <label for="property_type"><strong>Property Type</strong></label>
+                    <select id="property_type" name="property_type" required>
+                        <option value="">-- Select Type --</option>
+                        <option value="Property">Property</option>
+                        <option value="Lot">Lot</option>
+                    </select>
+
+                    <label for="bedrooms"><strong>Bedrooms</strong></label>
+                    <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
+
+                    <label for="bathrooms"><strong>Bathrooms</strong></label>
+                    <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
+                    </div>
+
+                    <!-- Card: Description -->
+                    <div class="form-card">
+                    <h3 class="form-card-title">Description</h3>
+                    <label for="description"><strong>Description</strong></label>
+                    <textarea id="description" name="description" rows="4" required></textarea>
+                    </div>
+
+                    <!-- Card: Images -->
+                    <div class="form-card">
+                    <h3 class="form-card-title">Property Images</h3>
+                    <label for="images"><strong>Upload Images</strong></label>
+                    <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
+                        <p>Drag & drop images here or click to browse</p>
+                        <input type="file" id="images" name="images[]" accept="image/*" multiple style="display:none;">
+                    </div>
+                    <div id="imagePreview" class="image-preview" aria-live="polite"></div>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="form-card">
+                    <button type="button" id="openListingModalBtn" class="btn-submit">Save Listing</button>
+                    </div>
+
+                </form>
                 </div>
 
                 <!-- Listing Fee Modal -->

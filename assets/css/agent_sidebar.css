@@ -282,8 +282,7 @@
   /* Right Side */
   .right-side {
     width: 100%;
-    margin: 0 auto;
-    padding: 0 -0.5rem; /* safe inner spacing */
+    margin-right: -1rem;
   }
 
   /* Header */
