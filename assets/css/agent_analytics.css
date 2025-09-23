@@ -8,7 +8,26 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-/* ====== Analytics Top Card ====== */
+/* ====== Analytics Summary Wrapper - Centered with fixed width ====== */
+.analytics-summary-wrapper {
+  max-width: 600px;       /* same width as wallet/agent cards */
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1rem;          /* optional padding */
+}
+
+/* Make the summary card inside this wrapper full width */
+.analytics-summary-wrapper .analytics-summary {
+  width: 100%;
+}
+
+/* Reviews card stays full width */
+.analytics-reviews {
+  width: 100%;
+  margin-top: 1.5rem;    /* spacing from summary card */
+}
+
+/* ====== Analytics Top Card Content ====== */
 .analytics-top {
   text-align: center;
 }
@@ -27,6 +46,7 @@
   color: #111;
 }
 
+/* ====== Stars Styling ====== */
 .review-left .star {
   font-size: 1.5rem;    /* bigger */
   color: #ddd;          /* unfilled stars light gray */

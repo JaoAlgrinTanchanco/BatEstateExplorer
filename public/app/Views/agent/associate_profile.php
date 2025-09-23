@@ -566,21 +566,24 @@
                 <header class="content-header">
                     <h2>Analytics</h2>
                 </header>
+
                 <div class="analytics-wrapper">
 
-                    <!-- Analytics Summary Card -->
-                    <div class="card analytics-summary">
-                        <h2>Performance Analytics</h2>
-                        <h1><?= $avg_rating ?></h1>
-                        <div class="stars">
-                            <?php for($i=1; $i<=5; $i++): ?>
-                                <span class="star <?= $i <= round($avg_rating) ? 'filled' : '' ?>">★</span>
-                            <?php endfor; ?>
+                    <!-- Analytics Summary Card Wrapper (centered) -->
+                    <div class="analytics-summary-wrapper">
+                        <div class="card analytics-summary">
+                            <h2>Performance Analytics</h2>
+                            <h1><?= $avg_rating ?></h1>
+                            <div class="stars">
+                                <?php for($i = 1; $i <= 5; $i++): ?>
+                                    <span class="star <?= $i <= round($avg_rating) ? 'filled' : '' ?>">★</span>
+                                <?php endfor; ?>
+                            </div>
+                            <p><?= $total_reviews ?> Review<?= $total_reviews != 1 ? 's' : '' ?></p>
                         </div>
-                        <p><?= $total_reviews ?> Review<?= $total_reviews != 1 ? 's' : '' ?></p>
                     </div>
 
-                    <!-- Reviews Card -->
+                    <!-- Reviews Card (full width) -->
                     <div class="card analytics-reviews">
                         <h3>Property Reviews</h3>
 
@@ -596,7 +599,7 @@
                                     <h4><?= htmlspecialchars($user_name) ?></h4>
                                     <p class="review-email"><?= htmlspecialchars($r['email']) ?></p>
                                     <div class="stars">
-                                        <?php for($i=1; $i<=5; $i++): ?>
+                                        <?php for($i = 1; $i <= 5; $i++): ?>
                                             <span class="star <?= $i <= $r['rating'] ? 'filled' : '' ?>">★</span>
                                         <?php endfor; ?>
                                     </div>

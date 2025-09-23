@@ -43,8 +43,18 @@ require_once __DIR__ . '/../../../../components/notification.php';
         </nav>
 
         <div class="sidebar-footer">
-          <a href="../../auth/logout.php"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+          <a href="javascript:void(0);" id="sidebarLogoutBtn">
+            <i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
+          </a>
         </div>
+
+        <script>
+          // Open admin logout modal when sidebar logout clicked
+          document.getElementById('sidebarLogoutBtn').addEventListener('click', function() {
+            document.getElementById('logoutModalAdmin').classList.add('active-admin');
+          });
+        </script>
+
       </div>
     </div>
 
@@ -57,17 +67,40 @@ require_once __DIR__ . '/../../../../components/notification.php';
     </div>
   </div>
 
-  <!-- Logout Confirmation Modal -->
-  <div id="logoutModal" class="modal">
-    <div class="modal-content">
-      <h2>Confirm Logout</h2>
-      <p>Are you sure you want to log out?</p>
-      <div class="modal-actions">
-        <button id="cancelLogout" class="cancel-btn2">Cancel</button>
-        <a href="../../auth/logout.php" id="confirmLogout" class="approve-btn">Logout</a>
+<!-- Logout Confirmation Modal -->
+<div id="logoutModalAdmin" class="modal-admin">
+  <div class="modal-content-admin">
+    <h4>Confirm Logout</h4>
+    <p>Are you sure you want to log out of your account?</p>
+    <form id="logoutFormAdmin" method="POST" action="../../auth/logout.php">
+      <div class="modal-actions-admin">
+        <button type="button" id="cancelLogoutAdmin" class="cancel-btn-admin">Cancel</button>
+        <button type="submit" class="delete-btn-admin">Yes, Logout</button>
       </div>
-    </div>
+      <div id="logoutSpinnerAdmin" class="spinner-admin">
+        <div class="loader"></div>
+        <span>Logging out...</span>
+      </div>
+    </form>
   </div>
+</div>
+
+<script>
+  // Open modal function (if needed)
+  function openLogoutModalAdmin() {
+    document.getElementById('logoutModalAdmin').classList.add('active-admin');
+  }
+
+  // Cancel button closes modal
+  document.getElementById('cancelLogoutAdmin').addEventListener('click', function() {
+    document.getElementById('logoutModalAdmin').classList.remove('active-admin');
+  });
+
+  // Show spinner on form submit
+  document.getElementById('logoutFormAdmin').addEventListener('submit', function() {
+    document.getElementById('logoutSpinnerAdmin').style.display = 'flex';
+  });
+</script>
 
   <script src="/BatEstateExplorer/assets/js/admin_dashboard.js"></script>
 

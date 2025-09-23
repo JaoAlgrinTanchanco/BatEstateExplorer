@@ -316,72 +316,136 @@ tr:hover td {
   transition: transform 0.3s ease;
 }
 
-//modal
-/* Logout Modal */
-.modal {
-  display: none;
+/* =========================
+   Admin Logout Modal
+========================= */
+.modal-admin {
+  display: none; /* hidden by default */
   position: fixed;
   inset: 0;
   background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   justify-content: center;
   align-items: center;
   z-index: 9999;
   font-family: 'Satoshi-Regular', sans-serif !important;
+  animation: fadeIn 0.3s ease forwards;
 }
 
-.modal-content {
-  background: #fff;
-  padding: 1.5rem 2rem;
-  border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.25);
-  max-width: 400px;
-  width: 90%;
-  text-align: center; /* center text */
-}
-
-.modal-content h2 {
-  font-size: 1.25rem;
-  margin-bottom: 0.5rem;
-  color: #111827;
-}
-
-.modal-content p {
-  font-size: 0.95rem;
-  margin-bottom: 1.5rem;
-  color: #374151;
-}
-
-/* Buttons */
-.modal-actions {
+.modal-admin.active-admin {
   display: flex;
-  justify-content: center; /* center horizontally */
-  gap: 1rem;
 }
 
-.cancel-btn2 {
-  padding: 0.5rem 1rem;
+.modal-content-admin {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 20px;
+  max-width: 450px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  text-align: center;
+  position: relative;
+  animation: fadeInUp 0.3s ease;
+}
+
+.modal-content-admin h4 {
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+  font-family: 'Satoshi-Bold', sans-serif;
+  color: #111;
+}
+
+.modal-content-admin p {
+  margin-bottom: 1.5rem;
+  color: #444;
+  line-height: 1.5;
+}
+
+.modal-actions-admin {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.delete-btn-admin {
+  background: #111;
+  color: #fff;
+  padding: 0.7rem 1.5rem;
   border: none;
-  border-radius: 50px; /* fully rounded */
-  background: #fff !important;
-  color: #111 !important;
+  border-radius: 12px;
+  font-family: 'Satoshi-Medium', sans-serif;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.cancel-btn:hover { background: #f3f4f6 !important; }
-
-.approve-btn {
-  padding: 0.5rem 1rem;
-  border-radius: 50px; /* fully rounded */
-  background: #fff;  /* gray for logout (switched) */
-  color: #dc2626;
-  cursor: pointer;
+  transition: background 0.25s ease, transform 0.15s ease;
   text-decoration: none;
   display: inline-block;
-  transition: background 0.2s ease;
 }
 
-.approve-btn:hover { background: #f3f4f6; }
+.delete-btn-admin:hover {
+  background: #b91c1c;
+  transform: translateY(-2px);
+}
+
+.cancel-btn-admin {
+  padding: 0.7rem 1.5rem;
+  border-radius: 12px;
+  background: #e5e7eb;
+  color: #111;
+  border: none;
+  cursor: pointer;
+  font-family: 'Satoshi-Medium', sans-serif;
+  transition: background 0.25s ease, transform 0.15s ease;
+}
+
+.cancel-btn-admin:hover {
+  background: #d1d5db;
+  transform: translateY(-2px);
+}
+
+/* Spinner inside modal */
+.spinner-admin {
+  display: none;
+  margin-top: 1rem;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.spinner-admin .loader {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #ddd;
+  border-top: 3px solid #111;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Modal animation */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal-content-admin {
+    padding: 1.5rem;
+    width: 95%;
+  }
+}
 
 
 /* Responsive: <=1024px */
