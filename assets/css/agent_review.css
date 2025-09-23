@@ -1,0 +1,394 @@
+/* =========================
+   Review Privileges Page
+=========================== */
+
+/* Page Header */
+.content-header h2 {
+    font-family: 'Satoshi-Bold', sans-serif;
+    font-size: 2rem;
+    color: #111827;
+    margin-bottom: 1.5rem;
+}
+
+/* privilege container for search */
+.privilege-container {
+    display: flex;
+    justify-content: flex-start;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.privilege-card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.privilege-card label {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.privilege-card input[type="email"] {
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 0.9rem;
+}
+
+.privilege-card button {
+    padding: 0.5rem 1rem;
+    background: #111;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.3s ease;
+}
+
+.privilege-card button:hover {
+    background: #333;
+}
+
+/* =========================
+   Grant Privilege Section
+=========================== */
+.grant-privilege {
+    background: #fff;
+    border-radius: 15px;
+    padding: 1.5rem 2rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    transition: opacity 0.3s ease, pointer-events 0.3s ease;
+}
+
+.grant-privilege h2 {
+    font-family: 'Satoshi-Bold', sans-serif;
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    color: #111827;
+}
+
+.grant-privilege h3 {
+    font-family: 'Satoshi-Bold', sans-serif;
+    font-size: 1.2rem;
+    margin: 1rem 0 0.5rem 0;
+}
+
+.grant-privilege p#userNameEmail {
+    font-family: 'Satoshi', sans-serif;
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+/* =========================
+   Property List Grid
+=========================== */
+.property-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 200px); /* auto-fit cards in row */
+    grid-auto-rows: 200px;                           /* each card is 250px tall */
+    gap: 1rem;                                       /* spacing between cards */
+    justify-content: center;                         /* center grid in container */
+    margin-bottom: 1.5rem;
+}
+
+/* =========================
+   Property Card (Full Image + Overlay)
+=========================== */
+.property-card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 30px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Image covers the entire card */
+.property-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+/* Overlay for details */
+.property-card .overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: auto;               /* only cover content */
+    background: #fff;
+    color: #111;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* align content to top */
+    padding: 1rem;
+    transform: translateY(100%); /* hide initially */
+    transition: transform 0.3s ease;
+    text-align: left;           /* left-aligned text */
+    border-top-left-radius: 20px; 
+    border-top-right-radius: 20px;
+}
+
+/* Show overlay on hover */
+.property-card:hover .overlay {
+    transform: translateY(0); /* slide overlay upward */
+}
+
+/* Slight zoom effect on hover */
+.property-card:hover img {
+    transform: scale(1.05);
+}
+
+/* Overlay text */
+.property-card .overlay h4 {
+    font-family: 'Satoshi-Bold', sans-serif;
+    font-size: 1.2rem; /* increased from 1rem */
+    margin: 0.25rem 0;
+}
+
+.property-card .overlay p {
+    font-family: 'Satoshi', sans-serif;
+    font-size: 1rem; /* increased from 0.85rem */
+    margin: 0.25rem 0 0 0;
+}
+
+/* Selected card effect */
+.property-card.selected {
+    border: 3px dashed #111;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+/* =========================
+   Grant Button
+=========================== */
+#givePrivilegeBtn {
+    background: #111;
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'Satoshi-Bold', sans-serif;
+    font-size: 1rem;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+#givePrivilegeBtn:hover:not(:disabled) {
+    background: #333;
+    transform: translateY(-2px);
+}
+
+#givePrivilegeBtn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* =========================
+   Select Input Style
+=========================== */
+select {
+    border: 2px dashed #111;  /* thicker dashed border */
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+select:focus {
+    outline: none;
+    border-color: #333;
+}
+
+/* =========================
+   Responsive Adjustments
+=========================== */
+@media (max-width: 768px) {
+    .privilege-container {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .property-list {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 0.5rem;
+    }
+
+    .property-card {
+        min-width: 180px;
+        flex: 0 0 auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .grant-privilege {
+        padding: 1rem 1rem;
+    }
+
+    .property-card img {
+        height: 100px;
+    }
+
+    .grant-privilege h2 {
+        font-size: 1.5rem;
+    }
+
+    .grant-privilege h3 {
+        font-size: 1.1rem;
+    }
+}
+
+/* =========================
+   Responsive Adjustments
+=========================== */
+@media (max-width: 1024px) {
+    /* Slightly smaller property cards for tablets */
+    .property-list {
+        grid-template-columns: repeat(auto-fill, 180px);
+        grid-auto-rows: 180px;
+    }
+}
+
+@media (max-width: 768px) {
+    .privilege-container {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    /* Make property list a smaller grid */
+    .property-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 140px); /* smaller cards */
+        grid-auto-rows: 140px;
+        gap: 0.75rem;
+        justify-content: center;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+    }
+
+    .property-card {
+        min-width: 140px;
+        height: 140px;
+    }
+
+    .grant-privilege {
+        padding: 1.25rem 1.5rem;
+    }
+}
+
+@media (max-width: 600px) {
+    /* Two-column grid that fills width */
+    .property-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* two columns */
+        grid-auto-rows: auto;                  /* height adjusts to content */
+        gap: 0.75rem;
+        padding: 0;
+    }
+
+    .property-card {
+        width: 100%;                
+        height: auto;               
+        min-height: 150px;          
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    /* Image covers the entire card */
+    .property-card img {
+        width: 100%;
+        height: 100%;               /* full card height */
+        object-fit: cover;          /* cover card fully */
+        display: block;
+        transition: transform 0.3s ease;
+    }
+
+    /* Overlay adjustments for smaller cards */
+    .property-card .overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: auto;               /* only cover content */
+        background: rgba(0,0,0,0.6); /* semi-transparent to show image */
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        padding: 0.5rem 0.75rem;    /* smaller padding */
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+        transform: translateY(100%); /* hide initially */
+        transition: transform 0.3s ease;
+        text-align: left;
+    }
+
+    .property-card .overlay h4 {
+        font-size: 1rem;             /* slightly smaller */
+        margin-bottom: 0.25rem;
+    }
+
+    .property-card .overlay p {
+        font-size: 0.85rem;          /* slightly smaller */
+        margin: 0;
+    }
+
+    /* Hover effect */
+    .property-card:hover .overlay {
+        transform: translateY(0);   /* slide overlay up */
+    }
+
+    .property-card:hover img {
+        transform: scale(1.05);     /* zoom effect */
+    }
+}
+
+@media (max-width: 480px) {
+    .grant-privilege {
+        padding: 1rem;
+    }
+
+    .grant-privilege h2 {
+        font-size: 1.4rem;
+    }
+
+    .grant-privilege h3 {
+        font-size: 1rem;
+    }
+
+    .property-card img {
+        height: 100px;
+    }
+
+    .property-card .overlay h4 {
+        font-size: 1rem;
+    }
+
+    .property-card .overlay p {
+        font-size: 0.9rem;
+    }
+
+    .privilege-card input[type="email"] {
+        font-size: 0.85rem;
+    }
+
+    .privilege-card button {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.75rem;
+    }
+}
