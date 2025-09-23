@@ -305,3 +305,18 @@
   }
 }
 
+@media (max-width: 600px) {
+  /* Dashboard container */
+  .dashboard-container {
+    grid-template-columns: 1fr; /* single column layout */
+    padding: 0 0.5rem 1rem;     /* smaller padding to avoid overflow */
+    overflow-x: hidden;         /* prevent horizontal scroll from container */
+  }
+
+  /* Right side content */
+  .right-side {
+    width: 100%; 
+    margin-right: 0;            /* remove negative margin */
+    min-width: 0;               /* allow shrink */
+  }
+}
