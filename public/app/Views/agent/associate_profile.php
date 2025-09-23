@@ -561,7 +561,7 @@
 
             <?php case 'analytics': ?>
                 <header class="content-header">
-                    <h2>Add Listings</h2>
+                    <h2>Analytics</h2>
                 </header>
                 <div class="analytics-wrapper">
 
