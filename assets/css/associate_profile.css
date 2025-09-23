@@ -1,9 +1,8 @@
 /* ===========================
    Add Listing Form - Modern Grid Look
 =========================== */
-/* Remove flex from form and let grid handle layout */
 #addListingForm {
-  display: block; /* ✅ instead of flex */
+  display: block;
   width: 100%;
   font-family: "Satoshi", sans-serif;
 }
@@ -16,7 +15,7 @@
   margin-top: 1.5rem;
 }
 
-/* Cards will now occupy grid slots equally */
+/* Cards */
 .form-card {
   background: #fff;
   border: 1px solid #eee;
@@ -25,18 +24,14 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
-}
-
-/* Wide sections (like Description / Uploads) */
-.form-card.full-width {
-  grid-column: 1 / -1;
+  min-height: 300px; /* keeps cards consistent */
 }
 
 /* Labels */
 #addListingForm label {
   font-weight: 600;
   font-size: 0.9rem;
-  margin-bottom: 0.4rem;
+  margin: 0.4rem 0 0.4rem 0;
   display: block;
   color: #333;
 }
@@ -50,10 +45,19 @@
   border: 1px solid #ddd;
   border-radius: 10px;
   font-size: 0.9rem;
-  margin-bottom: 1rem;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
+
+#addListingForm textarea {
+  width: 100%;
+  height: 100%!important;   /* set actual height */
+  min-height: 120px !important;
+
+  margin-bottom: 1.5rem;
+  resize: vertical;           /* allow user resizing */
+}
+
 
 #addListingForm input:focus,
 #addListingForm select:focus,
@@ -62,18 +66,41 @@
   box-shadow: 0 0 0 2px rgba(0,141,255,0.15);
 }
 
-/* Textarea larger */
-#addListingForm textarea {
-  min-height: 120px;
-  resize: vertical;
+/* Description Card */
+/* Make textarea fill the card height */
+.form-card.description-card {
+  display: flex;
+  flex-direction: column;
 }
 
-/* Full-width elements */
-#description,
-.drag-drop-area,
-.image-preview,
-.btn-submit {
-  grid-column: 1 / -1;
+.form-card.description-card textarea {
+  flex: 1;                 /* let it expand inside the card */
+  width: 100%;
+  resize: vertical;        /* allow vertical resize */
+  padding: 0.65rem 0.8rem;
+  text-align: center;      /* center text horizontally */
+  line-height: 1.4;
+}
+
+/* Center placeholder text inside textarea */
+.form-card.description-card textarea::placeholder {
+  line-height: normal;
+  text-align: center;
+  color: #888;
+}
+
+/* Upload Card */
+.form-card.upload-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-card.upload-card .drag-drop-area {
+  flex: 1;                /* fill height */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
 /* ===========================
@@ -87,18 +114,24 @@
   cursor: pointer;
   transition: border-color 0.3s ease, background 0.3s ease;
   background: #fafafa;
+  width: 100%;
+  height: 100%;              /* full height inside card */
+  display: flex;             /* flex to center content */
+  justify-content: center;
+  align-items: center;
+}
+
+.drag-drop-area p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+  width: 100%;
 }
 
 .drag-drop-area:hover,
 .drag-drop-area:focus {
   border-color: #008dff;
   background: #f0f8ff;
-}
-
-.drag-drop-area p {
-  margin: 0;
-  color: #666;
-  font-size: 0.9rem;
 }
 
 /* ===========================
@@ -128,6 +161,7 @@
    Submit Button
 =========================== */
 .btn-submit {
+  margin-top: auto;       /* pushes it down */
   background: #111;
   color: #fff;
   padding: 0.8rem 1.25rem;
@@ -231,8 +265,9 @@
   font-weight: 600;
 }
 
-
-/* Responsive: stack on tablets/mobile */
+/* ===========================
+   Responsive
+=========================== */
 @media (max-width: 1024px) {
   .addListing-container {
     grid-template-columns: repeat(2, 1fr);

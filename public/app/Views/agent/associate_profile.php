@@ -449,10 +449,10 @@
                     <h2>My Listings</h2>
                 </header>
 
-                <div class="addListing-container">
                 <form id="addListingForm" enctype="multipart/form-data">
+                <div class="addListing-container">
 
-                    <!-- Card: Basic Info -->
+                    <!-- Card: Basic Info (with property images) -->
                     <div class="form-card">
                     <h3 class="form-card-title">Basic Information</h3>
                     
@@ -467,6 +467,14 @@
                         <option value="Balayan">Balayan</option>
                         <!-- ...rest of locations -->
                     </select>
+
+                    <!-- Property Images inside Basic Info -->
+                    <label for="images"><strong>Upload Images</strong></label>
+                    <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
+                        <p>Drag & drop images here or click to browse</p>
+                        <input type="file" id="images" name="images[]" accept="image/*" multiple style="display:none;">
+                    </div>
+                    <div id="imagePreview" class="image-preview" aria-live="polite"></div>
                     </div>
 
                     <!-- Card: Property Details -->
@@ -493,31 +501,18 @@
                     <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
                     </div>
 
-                    <!-- Card: Description -->
+                    <!-- Card: Description (with submit button) -->
                     <div class="form-card">
                     <h3 class="form-card-title">Description</h3>
                     <label for="description"><strong>Description</strong></label>
                     <textarea id="description" name="description" rows="4" required></textarea>
-                    </div>
 
-                    <!-- Card: Images -->
-                    <div class="form-card">
-                    <h3 class="form-card-title">Property Images</h3>
-                    <label for="images"><strong>Upload Images</strong></label>
-                    <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
-                        <p>Drag & drop images here or click to browse</p>
-                        <input type="file" id="images" name="images[]" accept="image/*" multiple style="display:none;">
-                    </div>
-                    <div id="imagePreview" class="image-preview" aria-live="polite"></div>
-                    </div>
-
-                    <!-- Submit -->
-                    <div class="form-card">
+                    <!-- Submit Button moved here -->
                     <button type="button" id="openListingModalBtn" class="btn-submit">Save Listing</button>
                     </div>
 
-                </form>
                 </div>
+                </form>
 
                 <!-- Listing Fee Modal -->
                 <div id="listingFeeModal" class="deposit-modal" onclick="closeListingFeeModal(event)">
