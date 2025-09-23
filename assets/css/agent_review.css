@@ -2,14 +2,6 @@
    Review Privileges Page
 =========================== */
 
-/* Page Header */
-.content-header h2 {
-    font-family: 'Satoshi-Bold', sans-serif;
-    font-size: 2rem;
-    color: #111827;
-    margin-bottom: 1.5rem;
-}
-
 /* privilege container for search */
 .privilege-container {
     display: flex;

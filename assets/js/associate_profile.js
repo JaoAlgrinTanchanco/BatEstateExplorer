@@ -456,3 +456,6 @@ sidebarToggle.addEventListener('click', () => {
     icon.classList.replace('fa-arrow-left', 'fa-arrow-right');
   }
 });
+
+const balanceEl = document.getElementById('walletBalance');
+balanceEl.innerText = parseFloat(balanceEl.innerText.replace(/,/g, '')).toLocaleString('en-PH', { minimumFractionDigits: 2 });
