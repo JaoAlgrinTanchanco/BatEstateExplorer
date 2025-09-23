@@ -431,13 +431,36 @@ window.givePrivilege = function() {
 };
 
 //
-function markImageForRemoval(button, imagePath){
-    button.closest('.image-item').style.opacity='0.5';
+function markImageForRemoval(button, imagePath) {
+    const imgItem = button.closest('.image-item, .image-item2'); // match either class
+    if(!imgItem) {
+        console.warn('No parent with class .image-item or .image-item2 found for remove button.');
+        return;
+    }
+    imgItem.style.opacity = '0.5';
+
+    const form = button.closest('form');
+    if(!form) {
+        console.warn('No parent form found for remove button.');
+        return;
+    }
+
+    let container = form.querySelector('[id^="removeImages-"]');
+    if(!container) {
+        // fallback: create container if missing
+        container = document.createElement('div');
+        container.id = `removeImages-${form.id}`;
+        form.appendChild(container);
+        console.warn('Created missing remove images container:', container.id);
+    }
+
     const hiddenInput = document.createElement('input');
-    hiddenInput.type='hidden'; hiddenInput.name='remove_images[]'; hiddenInput.value=imagePath;
-    const container = button.closest('form').querySelector('[id^="removeImages-"]');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'remove_images[]';
+    hiddenInput.value = imagePath;
     container.appendChild(hiddenInput);
-    button.disabled=true;
+
+    button.disabled = true;
 }
 
 const sidebarToggle = document.getElementById('sidebarToggle');

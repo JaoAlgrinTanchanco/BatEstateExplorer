@@ -1,20 +1,19 @@
 /* =========================
-   Wallet Page Styles - Tabular Card Version
+   Wallet Page - Modern Tabular Cards
 =========================== */
-/* Wallet Balance Section */
+
+/* ---------- Wallet Balance ---------- */
 .wallet-balance-section {
     background: #fff;
-    border-radius: 12px;
+    border-radius: 16px;
     border: 1px solid #ddd;
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.75rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    margin-bottom: 1.5rem;
-    max-width: 600px; /* constrain width on large screens */
-    margin-left: auto;
-    margin-right: auto;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+    margin: 1.5rem auto;
+    max-width: 600px;
 }
 
 .wallet-balance-section h3 {
@@ -23,17 +22,17 @@
     margin: 0;
 }
 
-/* Deposit Button Circle */
+/* ---------- Deposit Button ---------- */
 .btn-circle {
     border-radius: 50%;
-    width: 45px;
-    height: 45px;
+    width: 48px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: #111;
     color: #fff;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     cursor: pointer;
     transition: background 0.3s ease, transform 0.2s ease;
 }
@@ -43,49 +42,51 @@
     transform: translateY(-2px);
 }
 
-/* Agent Info Card */
+/* ---------- Agent Info Card ---------- */
 .agent-info {
     background: #fff;
-    border-radius: 12px;
+    border-radius: 16px;
     border: 1px solid #ddd;
-    padding: 1rem 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    max-width: 600px; /* constrain width */
-    margin-left: auto;
-    margin-right: auto;
+    padding: 1.25rem 1.75rem;
+    margin: 1.5rem auto;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+    max-width: 600px;
 }
 
 .agent-info p {
     font-family: 'Satoshi', sans-serif;
     font-size: 1rem;
-    margin: 0.25rem 0;
+    margin: 0.3rem 0;
 }
 
-/* Transactions Container */
+/* ---------- Transactions Container ---------- */
 .transaction-cards-container {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
     max-height: 60vh;
     overflow-y: auto;
     padding: 0.5rem;
 }
 
-/* Individual Transaction Card */
+/* ---------- Individual Transaction Card ---------- */
 .transaction-card {
     background: #fff;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 1rem 1.5rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
     display: flex;
-    flex-direction: row; /* horizontal layout */
-    gap: 1rem;
-    align-items: center;
     flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
 }
 
-/* Transaction Card Columns */
+.transaction-card .transaction-property {
+    flex: 1.5;
+    font-weight: 600;
+    color: #111;
+}
+
 .transaction-card p {
     margin: 0 !important;
     font-size: 0.85rem;
@@ -96,30 +97,21 @@
     padding-right: 0.5rem;
 }
 
-/* Remove border from last column */
 .transaction-card p:last-child {
     border-right: none;
     padding-right: 0;
 }
 
-/* Transaction Title / Property */
-.transaction-card .transaction-property {
-    flex: 1.5; /* larger portion for property/description */
-    font-weight: 600;
-    color: #111;
-}
-
-/* Amount Badge */
+/* ---------- Transaction Amounts ---------- */
 .transaction-amount {
     font-weight: 600;
     min-width: 130px;
-    text-align: center !important; /* centers the text */
     font-size: 14px;
-    padding: 4px 8px;
+    padding: 6px 12px;
     border-radius: 50px;
-    margin-left: auto;   /* center in flex/grid */
-    margin-right: auto;  /* center in flex/grid */
+    text-align: center !important;
     display: inline-block;
+    margin: 0 auto;
 }
 
 .transaction-amount.positive {
@@ -132,7 +124,7 @@
     color: #dc3545;
 }
 
-/* No Transactions Message */
+/* ---------- No Transactions Message ---------- */
 .transaction-cards-container .no-transactions {
     text-align: center;
     font-style: italic;
@@ -140,25 +132,37 @@
     padding: 1rem 0;
 }
 
-/* Deposit Modal */
+/* =========================
+   Deposit Modal - Modern Style
+=========================== */
 .deposit-modal {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.6);
+    background: rgba(17, 24, 39, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     justify-content: center;
     align-items: center;
     z-index: 9999;
+    font-family: 'Satoshi-Regular', sans-serif !important;
+    animation: fadeIn 0.3s ease forwards;
+}
+
+.deposit-modal.active {
+    display: flex;
 }
 
 .modal-content {
     background: #fff;
     padding: 2rem;
-    border-radius: 12px;
-    max-width: 400px;
+    border-radius: 20px;
+    max-width: 450px;
     width: 90%;
     position: relative;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    text-align: center;
+    animation: fadeInUp 0.3s ease;
 }
 
 .modal-content .close {
@@ -169,27 +173,40 @@
     cursor: pointer;
 }
 
-/* Deposit Modal Amount Buttons - Uniform Size */
+.modal-content h4 {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+    font-family: 'Satoshi-Bold', sans-serif;
+    color: #111;
+}
+
+.modal-content p {
+    margin-bottom: 1.5rem;
+    color: #444;
+    line-height: 1.5;
+}
+
+/* ---------- Amount Buttons ---------- */
 .deposit-amounts {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.75rem;
     margin-bottom: 1rem;
-    justify-content: center; /* center buttons */
+    justify-content: center;
 }
 
 .deposit-amounts button {
-    flex: 1 1 30%;       /* 3 buttons per row on desktop */
+    flex: 1 1 30%;
     min-width: 80px;
     max-width: 100px;
     height: 50px;
-    border: 1px solid #111;
-    border-radius: 8px;
+    margin: 0;
+    border-radius: 12px;
     background: #fff;
     cursor: pointer;
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Satoshi-Medium', sans-serif;
     font-size: 0.95rem;
-    transition: background 0.3s ease, transform 0.2s ease;
+    transition: background 0.25s ease, transform 0.15s ease, color 0.25s ease;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -206,102 +223,105 @@
 #selectedAmount {
     width: 100%;
     padding: 0.5rem 0.75rem;
-    border-radius: 8px;
+    border-radius: 12px;
     border: 1px solid #ccc;
     font-size: 1rem;
     text-align: center;
     background: #f5f5f5;
+    margin-bottom: 1rem;
 }
+
+/* Modal Actions */
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.delete-btn {
+    background: #28a745;
+    color: #fff;
+    padding: 0.7rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Satoshi-Medium', sans-serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.25s ease, transform 0.15s ease;
+}
+
+.delete-btn:hover {
+    background: #218838;
+    transform: translateY(-2px);
+}
+
+.cancel-btn {
+    padding: 0.7rem 1.5rem;
+    border-radius: 12px;
+    background: #e5e7eb;
+    color: #111;
+    border: none;
+    cursor: pointer;
+    font-family: 'Satoshi-Medium', sans-serif;
+    transition: background 0.25s ease, transform 0.15s ease;
+}
+
+.cancel-btn:hover {
+    background: #d1d5db;
+    transform: translateY(-2px);
+}
+
+/* Spinner */
+.spinner {
+    display: none;
+    margin-top: 1rem;
+    gap: 0.5rem;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.spinner .loader {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #ddd;
+    border-top: 3px solid #111;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* ---------- Animations ---------- */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* =========================
-   Responsive Adjustments
+   Responsive
 =========================== */
-
-/* Large tablets and below */
 @media (max-width: 992px) {
-    .transaction-card {
-        gap: 0.8rem;
-    }
+    .transaction-card { gap: 0.8rem; }
 }
 
-/* Tablets and small desktops */
 @media (max-width: 768px) {
-    .wallet-balance-section {
-        flex-direction: row;
-        align-items: flex-start;
-        gap: 0.75rem;
-    }
-
-    .btn-circle {
-        align-self: flex-end;
-    }
-
-    .agent-info {
-        padding: 1rem;
-    }
-
-    .transaction-cards-container {
-        display: flex;
-        overflow-x: auto;
-        gap: 0.5rem;
-    }
-
-    .transaction-card {
-        min-width: 800px;
-        flex: 0 0 auto;
-    }
+    .wallet-balance-section { flex-direction: row; align-items: flex-start; gap: 0.75rem; }
+    .btn-circle { align-self: flex-end; }
+    .agent-info { padding: 1rem; }
+    .transaction-cards-container { display: flex; overflow-x: auto; gap: 0.5rem; }
+    .transaction-card { min-width: 800px; flex: 0 0 auto; }
+    .deposit-amounts button { flex: 1 1 45%; min-width: 70px; max-width: 90px; height: 45px; font-size: 0.85rem; }
 }
 
-/* Mobile devices */
 @media (max-width: 480px) {
-    .transaction-card {
-        min-width: 500px;
-        padding: 0.75rem 1rem;
-        gap: 0.4rem;
-    }
-
-    .transaction-card .transaction-property {
-        font-size: 0.9rem;
-    }
-
-    .transaction-card p {
-        font-size: 0.8rem;
-    }
-
-    .deposit-amounts button {
-        flex: 1 1 45%;
-        min-width: 70px;
-        max-width: 90px;
-        height: 45px;
-        font-size: 0.85rem;
-    }
-
-    .wallet-balance-section h3 {
-        font-size: 1.5rem;
-    }
-
-    .btn-circle {
-        width: 40px;
-        height: 40px;
-        font-size: 1rem;
-    }
+    .transaction-card { min-width: 500px; padding: 0.75rem 1rem; gap: 0.4rem; }
+    .transaction-card .transaction-property { font-size: 0.9rem; }
+    .transaction-card p { font-size: 0.8rem; }
+    .wallet-balance-section h3 { font-size: 1.5rem; }
+    .btn-circle { width: 40px; height: 40px; font-size: 1rem; }
 }
 
-/* Extra small screens */
 @media (max-width: 360px) {
-    .deposit-amounts button {
-        flex: 1 1 100%;
-        min-width: auto;
-        max-width: none;
-        height: 40px;
-        font-size: 0.8rem;
-    }
-
-    .wallet-balance-section {
-        padding: 0.75rem 1rem;
-    }
-
-    .agent-info {
-        padding: 0.75rem 1rem;
-    }
+    .deposit-amounts button { flex: 1 1 100%; height: 40px; font-size: 0.8rem; }
+    .wallet-balance-section, .agent-info { padding: 0.75rem 1rem; }
 }
