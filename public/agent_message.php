@@ -108,31 +108,7 @@ $chat_header = $user_id ? $contact_name : "Select a conversation";
 <head>
 <meta charset="UTF-8">
 <title>Chat with <?= htmlspecialchars($contact_name) ?></title>
-<style>
-/* Your CSS remains the same */
-body{margin:0;font-family:Arial,sans-serif;background:#f0f2f5}
-.chat-container{display:flex;height:100vh;overflow:hidden}
-.conversations-list{width:300px;border-right:1px solid #ddd;overflow-y:auto;padding:10px;background:#fff}
-.conversations-list h3{margin-top:0;font-size:1.2rem;color:#333;border-bottom:1px solid #eee;padding-bottom:5px}
-.conversation-item{padding:10px;border-bottom:1px solid #eee;cursor:pointer;transition:background .2s}
-.conversation-item:hover{background:#f1f1f1}
-.conversation-item.unread{background:#e6f0ff;font-weight:bold}
-.chat-window{flex:1;display:flex;flex-direction:column;background:#f9f9f9}
-.chat-header{font-size:18px;background:#f5f5f5;border-bottom:1px solid #ddd;padding:15px;font-weight:bold;color:#333}
-.messages{flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
-.message{max-width:60%;padding:10px 15px;border-radius:12px;word-break:break-word;position:relative}
-.message.you{background:#007bff;color:#fff;margin-left:auto;border-bottom-right-radius:0}
-.message.agent{background:#e4e6eb;color:#000;margin-right:auto;border-bottom-left-radius:0}
-.message .sender{font-weight:bold;font-size:.85rem;display:flex;align-items:center;gap:5px}
-.message .timestamp{font-size:.7rem;color:#666}
-.chat-input{display:flex;border-top:1px solid #ddd;padding:10px;background:#fff}
-.chat-input input[type="text"]{flex:1;padding:10px;border:1px solid #ccc;border-radius:20px;outline:none}
-.chat-input button{padding:10px 20px;margin-left:10px;border:none;background:#007bff;color:#fff;border-radius:20px;cursor:pointer;transition:background .2s}
-.chat-input button:hover{background:#0056b3}
-.messages::-webkit-scrollbar{width:6px}
-.messages::-webkit-scrollbar-thumb{background:rgba(0,0,0,.2);border-radius:3px}
-.messages::-webkit-scrollbar-track{background:transparent}
-</style>
+<link rel="stylesheet" href="../assets/css/agent_message.css">
 </head>
 <body>
 
