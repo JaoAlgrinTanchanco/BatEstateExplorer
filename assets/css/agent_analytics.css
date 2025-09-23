@@ -1,0 +1,126 @@
+/* ====== General Card ====== */
+.card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* ====== Analytics Top Card ====== */
+.analytics-top {
+  text-align: center;
+}
+
+.analytics-top h2 {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.analytics-top h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin: 0;
+  color: #111;
+}
+
+.review-left .star {
+  font-size: 1.5rem;    /* bigger */
+  color: #ddd;          /* unfilled stars light gray */
+  margin: 0 0.05rem;
+}
+
+.review-left .star.filled {
+  color: #000;          /* filled stars black */
+}
+
+/* ====== Review Cards ====== */
+.review-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.review-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 1.25rem;
+}
+
+.review-card:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.review-left {
+  flex: 2;
+}
+
+.review-left h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #222;
+}
+
+.review-left p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.review-left .stars {
+  margin: 0.4rem 0;
+}
+
+.review-left .star {
+  font-size: 1.1rem;
+  color: #fff; /* unfilled stars are white */
+  text-shadow: 0 0 1px #000; /* optional for contrast */
+}
+
+.review-left .star.filled {
+  color: #000; /* filled stars are black */
+}
+
+.review-right {
+  flex: 1;
+  text-align: center;
+}
+
+.review-right img {
+  width: 100%;
+  max-width: 120px;
+  border-radius: 10px;
+  object-fit: cover;
+  margin-bottom: 0.5rem;
+}
+
+.review-right p {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+/* ====== Responsive ====== */
+@media (max-width: 768px) {
+  .review-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .review-left, .review-right {
+    flex: unset;
+    width: 100%;
+  }
+
+  .review-right img {
+    max-width: 100px;
+  }
+}

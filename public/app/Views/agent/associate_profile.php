@@ -224,6 +224,7 @@
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_overview.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_listing.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_add_listing.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_analytics.css">
 <script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt&currency=PHP"></script>
 <div class="dashboard-container">
 
@@ -613,47 +614,25 @@
             <?php break; ?>
 
             <?php case 'company_listings': ?>
-                <h2>Company Listings: <?= htmlspecialchars($company_name) ?></h2>
-                <p>List of all properties from your company.</p>
+                <header class="content-header">
+                    <h2>Company Listings</h2>
+                </header>
+                <p class="company">Company: <?= htmlspecialchars($company_name) ?></p>
 
-                <!-- Scrollable container -->
-                <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd;">
-                    <table border="1" cellpadding="8" cellspacing="0" width="100%">
-                        <thead style="position: sticky; top: 0; background: #f5f5f5; z-index: 1;">
-                            <tr>
-                                <th>Property</th>
-                                <th>Location</th>
-                                <th>Price</th>
-                                <th>Bedrooms</th>
-                                <th>Bathrooms</th>
-                                <th>Size (sqm)</th>
-                                <th>Status</th>
-                                <th>Created By</th>
-                                <th>Sold By</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (!empty($company_listings)): ?>
-                                <?php foreach ($company_listings as $row): ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars($row['title']); ?></td>
-                                        <td><?= htmlspecialchars($row['location']); ?></td>
-                                        <td>₱<?= number_format($row['price'], 2); ?></td>
-                                        <td><?= (int)$row['bedrooms']; ?></td>
-                                        <td><?= (int)$row['bathrooms']; ?></td>
-                                        <td><?= number_format($row['sqm'], 2); ?></td>
-                                        <td><?= ucfirst($row['status']); ?></td>
-                                        <td><?= !empty($row['created_by']) ? htmlspecialchars($row['created_by']) : 'N/A'; ?></td>
-                                        <td><?= !empty($row['sold_by']) ? htmlspecialchars($row['sold_by']) : 'N/A'; ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="9" style="text-align:center;">No company listings found.</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                <div class="company-listings-container">
+                    <?php foreach ($company_listings as $row): ?>
+                        <div class="company-listing-card">
+                            <p class="listing-title"><?= htmlspecialchars($row['title']); ?></p>
+                            <p><?= htmlspecialchars($row['location']); ?></p>
+                            <p>Price: ₱<?= number_format($row['price'], 2); ?></p>
+                            <p>Bedrooms: <?= (int)$row['bedrooms']; ?></p>
+                            <p>Bathrooms: <?= (int)$row['bathrooms']; ?></p>
+                            <p>Size (sqm): <?= number_format($row['sqm'], 2); ?></p>
+                            <p><?= ucfirst($row['status']); ?></p>
+                            <p>By: <?= !empty($row['created_by']) ? htmlspecialchars($row['created_by']) : 'N/A'; ?></p>
+                            <p>Sold By: <?= !empty($row['sold_by']) ? htmlspecialchars($row['sold_by']) : 'N/A'; ?></p>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             <?php break; ?>
 
