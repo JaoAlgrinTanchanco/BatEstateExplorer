@@ -446,7 +446,7 @@
 
             <?php case 'add_listing': ?>
                 <header class="content-header">
-                    <h2>My Listings</h2>
+                    <h2>Add Listings</h2>
                 </header>
 
                 <form id="addListingForm" enctype="multipart/form-data">
@@ -462,10 +462,17 @@
                     <label for="location"><strong>Location</strong></label>
                     <select id="location" name="location" required>
                         <option value="">Select Location</option>
-                        <option value="Agoncillo">Agoncillo</option>
-                        <option value="Alitagtag">Alitagtag</option>
-                        <option value="Balayan">Balayan</option>
-                        <!-- ...rest of locations -->
+                        <?php
+                        $locations = [
+                            "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
+                            "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
+                            "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
+                            "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
+                        ];
+
+                        foreach ($locations as $loc): ?>
+                            <option value="<?= $loc ?>"><?= $loc ?></option>
+                        <?php endforeach; ?>
                     </select>
 
                     <!-- Property Images inside Basic Info -->
@@ -516,7 +523,7 @@
 
                 <!-- Listing Fee Modal -->
                 <div id="listingFeeModal" class="deposit-modal" onclick="closeListingFeeModal(event)">
-                    <div class="modal-content" onclick="event.stopPropagation()">
+                    <div class="modal-content3" onclick="event.stopPropagation()">
                         <span class="close" onclick="closeListingFeeModal()">&times;</span>
                         <h2 class="modal-title">Listing Fee Payment</h2>
                         

@@ -177,93 +177,139 @@
   transform: translateY(-2px);
 }
 
-/* ===========================
-   Listing Fee Modal
-=========================== */
+/* =========================
+   Listing Fee Modal Styles
+========================= */
 .deposit-modal {
-  display: none;
+  display: none; /* hidden by default */
   position: fixed;
   inset: 0;
-  background: rgba(17,17,17,0.55);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.6);
   z-index: 10000;
   justify-content: center;
   align-items: center;
-  transition: opacity 0.25s ease;
+  padding: 1rem;
 }
 
-.deposit-modal.active {
-  display: flex;
-}
-
-.deposit-modal .modal-content {
+.deposit-modal .modal-content3 {
+    font-family: "Satoshi", sans-serif;
   background: #fff;
-  padding: 2rem;
-  border-radius: 20px;
+  border-radius: 16px;
   max-width: 500px;
-  width: 90%;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-  animation: fadeInUp 0.3s ease;
+  width: 100%;
+  padding: 2rem;
   position: relative;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  animation: fadeInScale 0.3s ease;
 }
 
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Modal Close */
+/* Close Button */
 .deposit-modal .close {
   position: absolute;
-  top: 16px;
-  right: 20px;
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #333;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.8rem;
+  color: #555;
   cursor: pointer;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition: color 0.2s ease;
 }
 .deposit-modal .close:hover {
-  color: #e74c3c;
-  transform: translateY(-2px);
+  color: #000;
 }
 
-/* Modal Title */
+/* Title */
+
 .modal-title {
-  margin-bottom: 1.5rem;
-  font-size: 1.6rem;
+  font-size: 1.6rem;   /* slightly larger */
   font-weight: 700;
-  color: #111;
-  font-family: 'Satoshi-Bold', sans-serif;
+  margin-bottom: 1.5rem;
+  color: #333;
+  text-align: left;   /* aligned to flex-start */
 }
 
-/* Wallet Info + Note */
+/* Wallet info - bigger & consistent */
 .wallet-info p {
-  margin: 0.5rem 0;
-  font-size: 0.95rem;
+    font-family: sans-serif;
+  margin: 0.75rem 0;
+  font-size: 1rem;   /* bigger font */
+  font-weight: 500;
+  color: #222;
 }
+.wallet-info strong {
+  font-weight: 700;
+  color: #000;
+}
+
 .note small {
   display: block;
-  margin-top: 1rem;
-  color: #777;
+  background: #f9fafb;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid #ffc107;
+  border-radius: 6px;
   font-size: 0.85rem;
+  color: #555;
   line-height: 1.4;
 }
 
-/* Modal Footer */
+/* Footer */
 .modal-footer {
-  margin-top: 1.5rem;
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .modal-footer .btn {
-  padding: 0.75rem 1.25rem;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  border-radiu
 }
+
+// remove image button
+/* Each preview wrapper */
+.img-wrap {
+  position: relative;
+  display: inline-block;
+  margin: 6px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* The image itself */
+.img-wrap img.thumb {
+  display: block;
+  width: 150px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* Remove button */
+.img-wrap .remove-img {
+  position: absolute;
+
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  z-index: 2;
+}
+
+.img-wrap .remove-img:hover {
+  background: rgba(220, 53, 69, 0.85); /* red hover effect */
+}
+
 
 /* ===========================
    Responsive
