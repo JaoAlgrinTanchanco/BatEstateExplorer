@@ -9,8 +9,10 @@ $isAjax = (
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
 ) || (!empty($_POST['ajax']) && $_POST['ajax'] === '1');
 
-// Get filter values
+// Request source
 $request = $isAjax ? $_POST : $_GET;
+
+// Filters
 $location      = $request['location'] ?? '';
 $property_type = $request['property_type'] ?? '';
 $price_range   = $request['price_range'] ?? '';
@@ -18,59 +20,110 @@ $bedrooms      = $request['bedrooms'] ?? '';
 $bathrooms     = $request['bathrooms'] ?? '';
 $size          = $request['size'] ?? '';
 
-// Build SQL query
+// Pagination
+$page   = isset($request['page']) && is_numeric($request['page']) ? (int) $request['page'] : 1;
+$limit  = 35;
+$offset = ($page - 1) * $limit;
+
+// ===============
+// Count query
+// ===============
+$countSql = "SELECT COUNT(*) as total
+             FROM properties p
+             WHERE 1=1";
+
+$params = [];
+$types  = "";
+
+// Apply filters for COUNT
+if ($location !== '') { $countSql .= " AND p.location = ?"; $params[] = $location; $types .= "s"; }
+if ($property_type !== '') { $countSql .= " AND p.property_type = ?"; $params[] = $property_type; $types .= "s"; }
+if ($bedrooms !== '') { $countSql .= " AND p.bedrooms >= ?"; $params[] = (int)$bedrooms; $types .= "i"; }
+if ($bathrooms !== '') { $countSql .= " AND p.bathrooms >= ?"; $params[] = (int)$bathrooms; $types .= "i"; }
+if ($price_range !== '') {
+    if ($price_range === '5000000+') {
+        $countSql .= " AND p.price >= 5000000";
+    } elseif (strpos($price_range, '-') !== false) {
+        [$min, $max] = array_map('floatval', explode('-', $price_range));
+        $countSql .= " AND p.price BETWEEN ? AND ?";
+        $params[] = $min; $params[] = $max; $types .= "dd";
+    }
+}
+if ($size !== '') {
+    if ($size === '200+') {
+        $countSql .= " AND p.sqm >= 200";
+    } elseif (strpos($size, '-') !== false) {
+        [$min, $max] = array_map('floatval', explode('-', $size));
+        $countSql .= " AND p.sqm BETWEEN ? AND ?";
+        $params[] = $min; $params[] = $max; $types .= "dd";
+    }
+}
+
+// Run count query
+$countStmt = $conn->prepare($countSql);
+if ($countStmt === false) { echo "<p>Server error.</p>"; exit; }
+
+if (!empty($params)) {
+    $bind_names = [$types];
+    foreach ($params as &$val) $bind_names[] = &$val;
+    call_user_func_array([$countStmt, 'bind_param'], $bind_names);
+}
+
+$countStmt->execute();
+$countResult = $countStmt->get_result();
+$totalResults = $countResult ? (int)$countResult->fetch_assoc()['total'] : 0;
+$totalPages   = (int) ceil($totalResults / $limit);
+
+// ===============
+// Main query
+// ===============
 $sql = "SELECT p.*, pi.image_path
         FROM properties p
         LEFT JOIN property_images pi 
           ON p.id = pi.property_id AND pi.is_primary = 1
         WHERE 1=1";
 
+// Apply same filters
 $params = [];
-$types = "";
-
-// Apply filters only if set
+$types  = "";
 if ($location !== '') { $sql .= " AND p.location = ?"; $params[] = $location; $types .= "s"; }
 if ($property_type !== '') { $sql .= " AND p.property_type = ?"; $params[] = $property_type; $types .= "s"; }
 if ($bedrooms !== '') { $sql .= " AND p.bedrooms >= ?"; $params[] = (int)$bedrooms; $types .= "i"; }
 if ($bathrooms !== '') { $sql .= " AND p.bathrooms >= ?"; $params[] = (int)$bathrooms; $types .= "i"; }
-
-// Price filter
 if ($price_range !== '') {
     if ($price_range === '5000000+') {
         $sql .= " AND p.price >= 5000000";
     } elseif (strpos($price_range, '-') !== false) {
         [$min, $max] = array_map('floatval', explode('-', $price_range));
         $sql .= " AND p.price BETWEEN ? AND ?";
-        $params[] = $min;
-        $params[] = $max;
-        $types .= "dd";
+        $params[] = $min; $params[] = $max; $types .= "dd";
     }
 }
-
-// Size filter
 if ($size !== '') {
     if ($size === '200+') {
         $sql .= " AND p.sqm >= 200";
     } elseif (strpos($size, '-') !== false) {
         [$min, $max] = array_map('floatval', explode('-', $size));
         $sql .= " AND p.sqm BETWEEN ? AND ?";
-        $params[] = $min;
-        $params[] = $max;
-        $types .= "dd";
+        $params[] = $min; $params[] = $max; $types .= "dd";
     }
 }
 
-$sql .= " ORDER BY p.created_at DESC";
+$sql .= " ORDER BY p.created_at DESC LIMIT ? OFFSET ?";
 
 // Prepare statement
 $stmt = $conn->prepare($sql);
 if ($stmt === false) { echo "<p>Server error.</p>"; exit; }
 
-// Bind parameters
+// Bind filters + pagination
 if (!empty($params)) {
-    $bind_names = [$types];
+    $bind_names = [$types . "ii"];
     foreach ($params as &$val) $bind_names[] = &$val;
+    $bind_names[] = &$limit;
+    $bind_names[] = &$offset;
     call_user_func_array([$stmt, 'bind_param'], $bind_names);
+} else {
+    $stmt->bind_param("ii", $limit, $offset);
 }
 
 // Execute
@@ -78,6 +131,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 ?>
+
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_search.css">
 
@@ -132,11 +186,11 @@ $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
                     'label' => 'Price Range',
                     'options' => [
                         '' => 'Any Price',
-                        '0-500000' => '₱0 - ₱500K',          // Small lots, starter homes
-                        '500000-1500000' => '₱500K - ₱1.5M', // Affordable houses
-                        '1500000-3000000' => '₱1.5M - ₱3M',  // Standard residential
-                        '3000000-5000000' => '₱3M - ₱5M',    // Bigger homes, prime locations
-                        '5000000+' => '₱5M+'                  // High-end properties
+                        '0-500000' => '₱0 - ₱500K',
+                        '500000-1500000' => '₱500K - ₱1.5M',
+                        '1500000-3000000' => '₱1.5M - ₱3M',
+                        '3000000-5000000' => '₱3M - ₱5M',
+                        '5000000+' => '₱5M+'
                     ]
                 ],
 
@@ -176,116 +230,148 @@ $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
         <?php endif; ?>
     </div>
 
+    <!-- Pagination -->
+    <div class="pagination">
+        <?php
+        // Build base query string without page param
+        $query = $_GET;
+        unset($query['page']);
+
+        // Previous (disabled if on first page)
+        if ($page > 1) {
+            $query['page'] = $page - 1;
+            echo '<a class="prev" href="?' . http_build_query($query) . '">&laquo; Prev</a>';
+        } else {
+            echo '<span class="prev disabled">&laquo; Prev</span>';
+        }
+
+        // Page numbers
+        for ($i = 1; $i <= $totalPages; $i++) {
+            $query['page'] = $i;
+            $class = $i === $page ? 'active' : '';
+            echo '<a class="' . $class . '" href="?' . http_build_query($query) . '">' . $i . '</a>';
+        }
+
+        // Next (disabled if on last page)
+        if ($page < $totalPages) {
+            $query['page'] = $page + 1;
+            echo '<a class="next" href="?' . http_build_query($query) . '">Next &raquo;</a>';
+        } else {
+            echo '<span class="next disabled">Next &raquo;</span>';
+        }
+        ?>
+    </div>
+
     <?php render_agent_property_card([], true); ?>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
 
-    // --- Selects & labels ---
-    const filters = ['location', 'property_type', 'price_range', 'bedrooms', 'bathrooms', 'size'];
-    const searchBtn = document.getElementById('searchForm1');
+        // --- Selects & labels ---
+        const filters = ['location', 'property_type', 'price_range', 'bedrooms', 'bathrooms', 'size'];
+        const searchBtn = document.getElementById('searchForm1');
 
-    filters.forEach(f => {
-        const selectEl = document.getElementById(f);
-        if (!selectEl) return;
-        const valueSpan = selectEl.closest('.search-field').querySelector('.value');
+        filters.forEach(f => {
+            const selectEl = document.getElementById(f);
+            if (!selectEl) return;
+            const valueSpan = selectEl.closest('.search-field').querySelector('.value');
 
-        const updateLabel = () => {
-            valueSpan.textContent = selectEl.value === "" ? valueSpan.dataset.default : selectEl.options[selectEl.selectedIndex].text;
-        };
-        updateLabel();
-
-        selectEl.addEventListener('change', () => {
+            const updateLabel = () => {
+                valueSpan.textContent = selectEl.value === "" ? valueSpan.dataset.default : selectEl.options[selectEl.selectedIndex].text;
+            };
             updateLabel();
-            filterProperties();
-        });
-    });
 
-    // --- Filter function ---
-    const filterProperties = () => {
-        const location = (document.getElementById('location')?.value || '').toLowerCase();
-        const property_type = (document.getElementById('property_type')?.value || '').toLowerCase();
-        const price_range = document.getElementById('price_range')?.value || '';
-        const bedrooms = document.getElementById('bedrooms')?.value || '';
-        const bathrooms = document.getElementById('bathrooms')?.value || '';
-        const size = document.getElementById('size')?.value || '';
-
-        const cards = Array.from(document.querySelectorAll('#propertiesGrid .property-card'));
-        let anyVisible = false;
-
-        cards.forEach(card => {
-            let show = true;
-            const cardLocation = (card.querySelector('.property-location')?.textContent || '').toLowerCase();
-            const cardPrice = parseFloat(card.dataset.price || 0) || 0;
-            const cardBedrooms = parseInt(card.dataset.bedrooms || '0', 10) || 0;
-            const cardBathrooms = parseInt(card.dataset.bathrooms || '0', 10) || 0;
-            const cardSize = parseFloat(card.dataset.size || 0) || 0;
-            const cardType = (card.dataset.type || '').toLowerCase();
-
-            if (location && !cardLocation.includes(location)) show = false;
-            if (property_type && cardType !== property_type) show = false;
-
-            if (price_range) {
-                if (price_range.includes('-')) {
-                    let [min, max] = price_range.split('-').map(Number);
-                    if (cardPrice < min || cardPrice > max) show = false;
-                } else if (price_range.endsWith('+')) {
-                    let min = Number(price_range.replace('+','')) || 0;
-                    if (cardPrice < min) show = false;
-                }
-            }
-
-            if (bedrooms && cardBedrooms < parseInt(bedrooms, 10)) show = false;
-            if (bathrooms && cardBathrooms < parseInt(bathrooms, 10)) show = false;
-
-            if (size) {
-                if (size.includes('-')) {
-                    let [min, max] = size.split('-').map(Number);
-                    if (cardSize < min || cardSize > max) show = false;
-                } else if (size.endsWith('+')) {
-                    let min = Number(size.replace('+','')) || 0;
-                    if (cardSize < min) show = false;
-                }
-            }
-
-            card.style.display = show ? '' : 'none';
-            if (show) anyVisible = true;
-        });
-
-        const grid = document.getElementById('propertiesGrid');
-        let msg = grid.querySelector('.no-results');
-        if (!anyVisible) {
-            if (!msg) {
-                msg = document.createElement('p');
-                msg.className = 'no-results';
-                msg.textContent = 'No properties match your filters.';
-                grid.appendChild(msg);
-            } else {
-                msg.style.display = '';
-            }
-        } else if (msg) {
-            msg.style.display = 'none';
-        }
-    };
-
-    // --- Reset button functionality ---
-    if (searchBtn) {
-        // Change icon to refresh/rotate
-        searchBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i>';
-        searchBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            filters.forEach(f => {
-                const selectEl = document.getElementById(f);
-                if (selectEl) selectEl.value = '';
-                const valueSpan = selectEl.closest('.search-field').querySelector('.value');
-                if (valueSpan) valueSpan.textContent = valueSpan.dataset.default;
+            selectEl.addEventListener('change', () => {
+                updateLabel();
+                filterProperties();
             });
-            filterProperties();
         });
-    }
 
-    // Run initial filter on page load
-    filterProperties();
-});
+        // --- Filter function ---
+        const filterProperties = () => {
+            const location = (document.getElementById('location')?.value || '').toLowerCase();
+            const property_type = (document.getElementById('property_type')?.value || '').toLowerCase();
+            const price_range = document.getElementById('price_range')?.value || '';
+            const bedrooms = document.getElementById('bedrooms')?.value || '';
+            const bathrooms = document.getElementById('bathrooms')?.value || '';
+            const size = document.getElementById('size')?.value || '';
+
+            const cards = Array.from(document.querySelectorAll('#propertiesGrid .property-card'));
+            let anyVisible = false;
+
+            cards.forEach(card => {
+                let show = true;
+                const cardLocation = (card.querySelector('.property-location')?.textContent || '').toLowerCase();
+                const cardPrice = parseFloat(card.dataset.price || 0) || 0;
+                const cardBedrooms = parseInt(card.dataset.bedrooms || '0', 10) || 0;
+                const cardBathrooms = parseInt(card.dataset.bathrooms || '0', 10) || 0;
+                const cardSize = parseFloat(card.dataset.size || 0) || 0;
+                const cardType = (card.dataset.type || '').toLowerCase();
+
+                if (location && !cardLocation.includes(location)) show = false;
+                if (property_type && cardType !== property_type) show = false;
+
+                if (price_range) {
+                    if (price_range.includes('-')) {
+                        let [min, max] = price_range.split('-').map(Number);
+                        if (cardPrice < min || cardPrice > max) show = false;
+                    } else if (price_range.endsWith('+')) {
+                        let min = Number(price_range.replace('+','')) || 0;
+                        if (cardPrice < min) show = false;
+                    }
+                }
+
+                if (bedrooms && cardBedrooms < parseInt(bedrooms, 10)) show = false;
+                if (bathrooms && cardBathrooms < parseInt(bathrooms, 10)) show = false;
+
+                if (size) {
+                    if (size.includes('-')) {
+                        let [min, max] = size.split('-').map(Number);
+                        if (cardSize < min || cardSize > max) show = false;
+                    } else if (size.endsWith('+')) {
+                        let min = Number(size.replace('+','')) || 0;
+                        if (cardSize < min) show = false;
+                    }
+                }
+
+                card.style.display = show ? '' : 'none';
+                if (show) anyVisible = true;
+            });
+
+            const grid = document.getElementById('propertiesGrid');
+            let msg = grid.querySelector('.no-results');
+            if (!anyVisible) {
+                if (!msg) {
+                    msg = document.createElement('p');
+                    msg.className = 'no-results';
+                    msg.textContent = 'No properties match your filters.';
+                    grid.appendChild(msg);
+                } else {
+                    msg.style.display = '';
+                }
+            } else if (msg) {
+                msg.style.display = 'none';
+            }
+        };
+
+        // --- Reset button functionality ---
+        if (searchBtn) {
+            // Change icon to refresh/rotate
+            searchBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i>';
+            searchBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                filters.forEach(f => {
+                    const selectEl = document.getElementById(f);
+                    if (selectEl) selectEl.value = '';
+                    const valueSpan = selectEl.closest('.search-field').querySelector('.value');
+                    if (valueSpan) valueSpan.textContent = valueSpan.dataset.default;
+                });
+                filterProperties();
+            });
+        }
+
+        // Run initial filter on page load
+        // filterProperties();
+    });
 </script>
