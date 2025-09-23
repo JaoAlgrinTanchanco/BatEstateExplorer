@@ -283,17 +283,19 @@
                         }
                     ?>
                         <div class="listing-card">
-                            <?php if ($first_img_src): ?>
-                                <div class="listing-thumb">
+                            <div class="listing-thumb">
+                                <?php if ($first_img_src): ?>
                                     <img src="<?= $first_img_src ?>" alt="Property Image">
+                                <?php else: ?>
+                                    <img src="/BatEstateExplorer/assets/images/no-image.png" alt="No Image Available">
+                                <?php endif; ?>
 
-                                    <!-- Overlay buttons -->
-                                    <div class="overlay">
-                                        <span onclick="openModal(<?= $property['id'] ?>)">Edit</span>
-                                        <span onclick="if(confirm('Are you sure you want to delete this listing?')) this.closest('form').submit()">Delete</span>
-                                    </div>
+                                <!-- Overlay buttons -->
+                                <div class="overlay">
+                                    <span onclick="openModal(<?= $property['id'] ?>)">Edit</span>
+                                    <span onclick="if(confirm('Are you sure you want to delete this listing?')) this.closest('form').submit()">Delete</span>
                                 </div>
-                            <?php endif; ?>
+                            </div>
 
                             <div class="details">
                                 <div class="info-row"><strong>Title:</strong> <span><?= htmlspecialchars($property['title']) ?></span></div>
@@ -367,8 +369,18 @@
                                             <label>Location</label>
                                             <select name="location" required>
                                                 <option value="">Select Location</option>
-                                                <?php foreach ($locations as $loc): ?>
-                                                    <option value="<?= $loc ?>" <?= $property['location'] == $loc ? 'selected' : '' ?>><?= $loc ?></option>
+                                        <?php
+                                        $locations = [
+                                            "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
+                                            "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
+                                            "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
+                                            "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
+                                        ];
+
+                                        foreach ($locations as $loc): ?>
+                                            <option value="<?= $loc ?>" <?= $property['location'] == $loc ? 'selected' : '' ?>>
+                                                <?= $loc ?>
+                                            </option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
