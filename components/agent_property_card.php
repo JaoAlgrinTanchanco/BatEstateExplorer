@@ -84,36 +84,54 @@ if (!function_exists('render_agent_property_card')) {
     </div>
 </div>
 
-<!-- Modal -->
+<!-- Combined Modal -->
 <div id="propertyModal" class="modal" style="display:none;">
-  <div class="custom-modal-content">
-    <button class="close">&times;</button>
+    <div class="custom-modal-content">
+        <button class="close">&times;</button>
 
-    <!-- Left Side -->
-    <div class="modal-left">
-      <div class="property-main-image" style="background-image: url('');"></div>
-      <div class="property-name"></div>
-      <div class="property-images"></div>
+        <!-- Left side: images -->
+        <div class="modal-left">
+            <div class="property-main-image" style="background-image: url('');"></div>
+            <div class="property-name"></div>
+            <div class="property-images"></div>
+        </div>
+
+        <!-- Right side: details + reviews + actions -->
+        <div class="modal-right">
+            <div class="details">
+                <section><span class="label">Price:</span> <span class="value price"></span></section>
+                <section><span class="label">Location:</span> <span class="value location"></span></section>
+                <section><span class="label">Property Type:</span> <span class="value property-type"></span></section>
+                <section><span class="label">Bedrooms:</span> <span class="value bedrooms"></span></section>
+                <section><span class="label">Bathrooms:</span> <span class="value bathrooms"></span></section>
+                <section><span class="label">Area:</span> <span class="value sqm"></span></section>
+                <section><span class="label">Lot Size:</span> <span class="value lot_size"></span></section>
+                <section><span class="label">Status:</span> <span class="value status"></span></section>
+                <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>
+                <section class="desc">
+                    <span class="label">Description:</span>
+                    <div class="property-description"></div>
+                </section>
+            </div>
+            <!-- Actions -->
+            <!-- <div class="modal-actions">
+                <button class="btn btn-primary message-agent-btn"><i class="fas fa-envelope"></i> Message</button>
+                <button id="saveFavoriteBtn" class="btn btn-outline"><i class="fas fa-heart"></i> Save</button>
+                <button id="leaveReviewBtn" class="btn btn-success" style="display:none;">
+                <i class="fas fa-star"></i> Review
+                </button>
+            </div> -->
+        </div>
+
+        <div class="modal-review">
+            <div class="modal-reviews">
+                <h3>Reviews</h3>
+                <div id="modalPastReviews">
+                    <p>Reviews will load here when modal opens.</p>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <!-- Right Side -->
-    <div class="modal-right">
-      <section><span class="label">Location:</span> <span class="value location"></span></section>
-      <section><span class="label">Price:</span> <span class="value price"></span></section>
-      <section><span class="label">Property Type:</span> <span class="value property-type"></span></section>
-      <section><span class="label">Bedrooms:</span> <span class="value bedrooms"></span></section>
-      <section><span class="label">Bathrooms:</span> <span class="value bathrooms"></span></section>
-      <section><span class="label">Area:</span> <span class="value sqm"></span></section>
-      <section><span class="label">Lot Size:</span> <span class="value lot_size"></span></section>
-      <section><span class="label">Status:</span> <span class="value status"></span></section>
-      <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>
-
-      <section class="desc">
-        <span class="label">Description:</span>
-        <div class="property-description"></div>
-      </section>
-    </div>
-  </div>
 </div>
 
 <?php
@@ -125,6 +143,7 @@ if (!function_exists('render_agent_property_card')) {
 ?>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
 <script>
