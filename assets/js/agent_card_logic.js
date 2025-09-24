@@ -49,6 +49,7 @@
     currentPropertyId = propertyId;
     const modal = document.getElementById("propertyModal");
     const reviewContainer = modal.querySelector(".property-reviews") || null;
+    const reviewBtn = modal.querySelector("#leaveReviewBtn");
 
     try {
       const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
@@ -67,7 +68,6 @@
         `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`
       ).join("");
 
-      // Thumbnail click to change main image
       thumbs.querySelectorAll("img").forEach(imgEl => {
         imgEl.addEventListener("click", () => {
           modal.querySelector(".property-main-image").style.backgroundImage = `url('${imgEl.src}')`;
@@ -90,7 +90,7 @@
         : "-";
       modal.querySelector(".property-description").textContent = prop.description || "No description available.";
 
-      // === Past Reviews (if container exists) ===
+      // === Past Reviews ===
       if (reviewContainer) {
         reviewContainer.innerHTML = (prop.past_reviews && prop.past_reviews.length)
           ? prop.past_reviews.map(r => `
@@ -104,13 +104,32 @@
           : `<p>No reviews yet.</p>`;
       }
 
-      // Show modal
+      // === Review Button Visibility ===
+      if (reviewBtn) {
+        if (data.has_privilege) {
+          reviewBtn.style.display = "inline-block";
+          reviewBtn.onclick = () => openReviewModal(prop.id);
+        } else {
+          reviewBtn.style.display = "none";
+          reviewBtn.onclick = null;
+        }
+      }
+
+      // === Show modal ===
       modal.style.display = "flex";
 
     } catch (err) {
       console.error(err);
       notify("error", "Failed to load property details.");
     }
+  }
+
+  // ===== Open Review Modal =====
+  function openReviewModal(propertyId) {
+    const reviewModal = document.getElementById("reviewModal");
+    if (!reviewModal) return;
+    document.getElementById("reviewPropertyId").value = propertyId;
+    reviewModal.style.display = "flex";
   }
 
   // ===== Open modal from card click =====
@@ -128,4 +147,6 @@
 
   // Expose for external use
   window.openPropertyModal = openPropertyModal;
+  window.openReviewModal = openReviewModal;
+
 })();

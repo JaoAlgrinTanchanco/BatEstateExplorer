@@ -37,52 +37,31 @@
       document.getElementById("modalBathrooms").textContent = prop.bathrooms;
       document.getElementById("modalDescription").textContent = prop.description || "No description available.";
 
-      // ===== Leave Review Button per Property Privilege =====
-      const reviewBtn = document.getElementById("leaveReviewBtn");
-      if (reviewBtn) {
-        if (data.has_privilege) {
-          reviewBtn.style.display = "inline-block"; // Show button
-          reviewBtn.onclick = () => openReviewModal(prop.id); // Assign click handler
-        } else {
-          reviewBtn.style.display = "none"; // Hide button
-          reviewBtn.onclick = null; // Remove click handler
-        }
-      }
-
       // Show modal
       document.getElementById("propertyModal").style.display = "flex";
-
     } catch (err) {
       console.error(err);
       alert("Failed to load property details.");
     }
   }
 
-  // ===== Review modal helper =====
-  function openReviewModal(propertyId) {
-    const reviewModal = document.getElementById("reviewModal");
-    if (!reviewModal) return;
-    document.getElementById("reviewPropertyId").value = propertyId;
-    reviewModal.style.display = "flex";
-  }
-
-  // Use event delegation for clicks
+  // Use event delegation for view-details buttons
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.view-details-btn');
-    if (btn) openPropertyModal(btn.dataset.id);
-
+    if (btn) {
+      openPropertyModal(btn.dataset.id);
+    }
+    // modal close
     const closeBtn = e.target.closest('.modal-close');
     if (closeBtn) {
-      closeBtn.closest('.modal').style.display = 'none';
+      document.getElementById("propertyModal").style.display = "none";
     }
-
+    // click outside modal content to close
     if (e.target.id === 'propertyModal') {
       e.target.style.display = 'none';
     }
   });
 
-  // Expose functions for debugging or external use
+  // expose for debug if needed
   window.openPropertyModal = openPropertyModal;
-  window.openReviewModal = openReviewModal;
-
 })();

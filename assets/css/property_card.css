@@ -286,6 +286,10 @@
 /* ===========================
    Modal Actions - Flexible Full-Width Buttons
 =========================== */
+#leaveReviewBtn{
+  display: flex;
+  flex-direction: row;
+}
 .modal-actions {
   margin-top: auto;         /* pushes buttons to bottom */
   display: flex;
