@@ -9,14 +9,9 @@ if (!function_exists('render_property_card')) {
 
         $propertyId = (int)($property['id'] ?? 0);
 
-        // --- Fetch property images, primary first ---
+        // --- Fetch property images ---
         $images = ['/BatEstateExplorer/assets/images/bg4.jpg'];
-        $stmtImg = $conn->prepare("
-            SELECT image_path 
-            FROM property_images 
-            WHERE property_id = ? 
-            ORDER BY is_primary DESC, id ASC
-        ");
+        $stmtImg = $conn->prepare("SELECT image_path FROM property_images WHERE property_id = ? ORDER BY id ASC");
         if ($stmtImg) {
             $stmtImg->bind_param("i", $propertyId);
             $stmtImg->execute();
@@ -57,7 +52,7 @@ if (!function_exists('render_property_card')) {
         $bathrooms = (int)($property['bathrooms'] ?? 0);
         $createdAt = strtotime($property['created_at'] ?? 'now');
 
-        // --- Render card if not modal-only ---
+        // --- Render card ---
         if (!$modalOnly):
 ?>
 <div class="property-card"
@@ -72,11 +67,11 @@ if (!function_exists('render_property_card')) {
      data-date="<?= $createdAt ?>"
      data-image="<?= $image ?>">
 
-    <div class="property-image" style="position:relative; overflow:hidden;">
-        <img src="<?= $image ?>" alt="Property Image" style="width:100%; transition:opacity 0.5s ease;">
+    <!-- Agent-style overlay -->
+    <div class="property-image">
+        <img src="<?= $image ?>" alt="Property Image">
     </div>
-
-    <div class="property-content">
+    <div class="property-overlay">
         <h3><?= $title ?></h3>
         <p class="property-location"><i class="fas fa-map-marker-alt"></i> <?= $location ?></p>
         <p class="property-price">₱<?= $price ?></p>
@@ -97,67 +92,53 @@ if (!function_exists('render_property_card')) {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
+<!-- Combined Modal -->
 <div id="propertyModal" class="modal" style="display:none;">
-    <div class="modal-content" style="display:flex; gap:20px; max-width:1000px; margin:auto;">
-        <span class="modal-close">&times;</span>
-        <div class="modal-body" style="flex:2;">
-            <div class="modal-image">
-                <div class="modal-swiper-container">
-                    <div class="swiper-wrapper" id="modalImageWrapper"></div>
-                    <div class="modal-swiper-button-next"></div>
-                    <div class="modal-swiper-button-prev"></div>
-                    <div class="modal-swiper-pagination"></div>
-                </div>
-            </div>
-            <div class="modal-details">
-                <h2 id="modalTitle"></h2>
-                <p id="modalLocation"></p>
-                <p id="modalPrice" class="price"></p>
-                <div class="features">
-                    <span><i class="fas fa-bed"></i> <span id="modalBedrooms"></span> Beds</span>
-                    <span><i class="fas fa-bath"></i> <span id="modalBathrooms"></span> Baths</span>
-                </div>
-                <p><strong>Description:</strong></p>
-                <p id="modalDescription"></p>
-                <div class="modal-actions">
-                    <button class="btn btn-primary message-agent-btn"><i class="fas fa-envelope"></i> Message Agent</button>
-                    <button id="saveFavoriteBtn" class="btn btn-outline"><i class="fas fa-heart"></i> Save to Favorites</button>
-                    <button id="leaveReviewBtn" class="btn btn-success" style="display:none;"><i class="fas fa-star"></i> Leave a Review</button>
-                </div>
-            </div>
-        </div>
-        <div id="modalReviewsCard" style="flex:1; background:#fff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:15px; max-height:600px; overflow-y:auto;">
-            <h3 style="margin-top:0;">Past Reviews</h3>
-            <div id="modalPastReviews"><p>Reviews will load here when modal opens.</p></div>
-        </div>
-    </div>
-</div>
+    <div class="custom-modal-content">
+        <button class="close">&times;</button>
 
-<div id="reviewModal" class="modal" style="display:none;">
-    <div class="modal-content">
-        <span class="modal-close" onclick="document.getElementById('reviewModal').style.display='none'">&times;</span>
-        <h3>Leave a Review</h3>
-        <form id="reviewForm">
-            <label>Rating:</label>
-            <select name="rating" required>
-                <option value="">Select...</option>
-                <option value="5">⭐⭐⭐⭐⭐</option>
-                <option value="4">⭐⭐⭐⭐</option>
-                <option value="3">⭐⭐⭐</option>
-                <option value="2">⭐⭐</option>
-                <option value="1">⭐</option>
-            </select>
-            <label>Your Review:</label>
-            <textarea name="review_text" rows="4" required></textarea>
-            <input type="hidden" name="property_id" id="reviewPropertyId">
-            <button type="submit" class="btn btn-success">Submit</button>
-        </form>
+        <!-- Left side: images -->
+        <div class="modal-left">
+            <div class="property-main-image" style="background-image: url('');"></div>
+            <div class="property-name"></div>
+            <div class="property-images"></div>
+        </div>
+
+        <!-- Right side: details + actions + reviews -->
+        <div class="modal-right">
+            <section><span class="label">Location:</span> <span class="value location"></span></section>
+            <section><span class="label">Price:</span> <span class="value price"></span></section>
+            <section><span class="label">Property Type:</span> <span class="value property-type"></span></section>
+            <section><span class="label">Bedrooms:</span> <span class="value bedrooms"></span></section>
+            <section><span class="label">Bathrooms:</span> <span class="value bathrooms"></span></section>
+            <section><span class="label">Area:</span> <span class="value sqm"></span></section>
+            <section><span class="label">Lot Size:</span> <span class="value lot_size"></span></section>
+            <section><span class="label">Status:</span> <span class="value status"></span></section>
+            <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>
+            <section><span class="label">Description:</span><div class="property-description"></div></section>
+
+            <!-- User actions -->
+            <div class="modal-actions" style="margin-top:15px;">
+                <button class="btn btn-primary message-agent-btn"><i class="fas fa-envelope"></i> Message Agent</button>
+                <button id="saveFavoriteBtn" class="btn btn-outline"><i class="fas fa-heart"></i> Save to Favorites</button>
+                <button id="leaveReviewBtn" class="btn btn-success"><i class="fas fa-star"></i> Leave a Review</button>
+            </div>
+
+            <!-- Past reviews -->
+            <div id="modalReviewsCard" style="background:#fff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:15px; max-height:400px; overflow-y:auto; margin-top:15px;">
+                <h3>Past Reviews</h3>
+                <div id="modalPastReviews">
+                    <p>Reviews will load here when modal opens.</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-<?php echo file_get_contents($_SERVER['DOCUMENT_ROOT'].'/BatEstateExplorer/assets/js/property_card_logic.js'); ?>
+<?php echo file_get_contents($_SERVER['DOCUMENT_ROOT'].'/BatEstateExplorer/assets/js/agent_card_logic.js'); ?>
 </script>
+
 <?php
         endif;
     }
