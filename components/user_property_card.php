@@ -159,12 +159,21 @@ if (!function_exists('render_property_card')) {
 </div>
 
 <!-- Review Modal -->
-<div id="reviewModal" class="modal" style="display:none;">
-  <div class="custom-modal-content" style="max-width:400px; padding:2rem;">
-    <button class="close">&times;</button>
-    <h3>Post a Review</h3>
-    <form id="postReviewForm">
+<div id="reviewModal" class="modal" hidden>
+  <div class="reviewModal-content">
+    <!-- Close Button -->
+    <button class="modal-close close">&times;</button>
+
+    <!-- Modal Header -->
+    <header class="modal-header">
+      <h3>Post a Review</h3>
+    </header>
+
+    <!-- Review Form -->
+    <form id="postReviewForm" class="modal-form">
       <input type="hidden" name="property_id" id="reviewPropertyId" value="">
+
+      <!-- Rating Stars -->
       <div class="rating-stars">
         <span data-value="1">&#9733;</span>
         <span data-value="2">&#9733;</span>
@@ -172,11 +181,16 @@ if (!function_exists('render_property_card')) {
         <span data-value="4">&#9733;</span>
         <span data-value="5">&#9733;</span>
       </div>
-      <textarea name="review_text" placeholder="Write your review..." rows="3" required></textarea>
-      <button type="submit" class="btn btn-success" style="margin-top:10px;">Post Review</button>
+
+      <!-- Review Textarea -->
+      <textarea name="review_text" placeholder="Write your review..." rows="4" required></textarea>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn btn-success">Post Review</button>
     </form>
   </div>
 </div>
+
 
 <script>
 <?php echo file_get_contents($_SERVER['DOCUMENT_ROOT'].'/BatEstateExplorer/assets/js/agent_card_logic.js'); ?>

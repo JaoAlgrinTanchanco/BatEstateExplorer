@@ -7,17 +7,26 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// --- Get logged in user ID and POST data ---
+// --- Read and decode the JSON payload from the request body ---
+$json = file_get_contents('php://input');
+$data = json_decode($json, true);
+
+if (json_last_error() !== JSON_ERROR_NONE) {
+    echo json_encode(['error' => 'Invalid JSON input.']);
+    exit;
+}
+
+// --- Get logged-in user ID and payload data ---
 $user_id     = (int)($_SESSION['user_id'] ?? 0);
-$property_id = (int)($_POST['property_id'] ?? 0);
-$rating      = (int)($_POST['rating'] ?? 0);
-$review_text = trim($_POST['review_text'] ?? '');
+$property_id = (int)($data['property_id'] ?? 0);
+$rating      = (int)($data['rating'] ?? 0);
+$review_text = trim($data['review_text'] ?? '');
 
 // --- Validate input ---
-if (!$user_id || !$property_id || !$rating || !$review_text) {
+if (!$user_id || !$property_id || !$rating || empty($review_text)) {
     echo json_encode([
         'error' => 'All fields are required.',
-        'debug' => compact('user_id', 'property_id', 'rating', 'review_text', 'session')
+        'debug' => compact('user_id', 'property_id', 'rating', 'review_text')
     ]);
     exit;
 }
@@ -33,7 +42,10 @@ $stmt->close();
 $privileges = json_decode($user['privileges'] ?? '[]', true);
 if (!is_array($privileges)) $privileges = [];
 
-// Use integer comparison for property_id
+// Convert privileges to integers to match property_id type
+$privileges = array_map('intval', $privileges);
+
+// Check if user can review this property
 if (!in_array($property_id, $privileges, true)) {
     echo json_encode(['error' => 'You are not allowed to review this property.']);
     exit;
