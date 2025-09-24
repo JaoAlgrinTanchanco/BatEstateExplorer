@@ -111,7 +111,7 @@
    Buttons
 =========================== */
 #editProfileBtn,
-.delete-btn,
+.delete-btn-overview,
 .profile-edit button {
   padding: 0.6rem 1.2rem;
   border: none;
@@ -134,12 +134,12 @@
   transform: translateY(-2px);
 }
 
-.delete-btn {
+.delete-btn-overview {
   background: #dc2626;
   color: #fff;
 }
 
-.delete-btn:hover {
+.delete-btn-overview:hover {
   background: #b91c1c;
   transform: translateY(-2px);
 }
@@ -339,17 +339,17 @@
   color: #111;
 }
 
-.modal-content .delete-btn {
+.modal-content .delete-btn-overview {
   background: #dc2626;
   color: #fff;
 }
 
-.modal-content .delete-btn:hover {
+.modal-content .delete-btn-overview:hover {
   background: #b91c1c;
   transform: translateY(-2px);
 }
 
-.modal-content button:hover:not(.delete-btn) {
+.modal-content button:hover:not(.delete-btn-overview) {
   transform: translateY(-2px);
 }
 
