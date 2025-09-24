@@ -1,81 +1,119 @@
 <?php
-// Ensure we have a logged-in user
-if (!isset($user) || !is_array($user)) {
-    die('Access denied.');
-}
+// ==================================================
+// 1. Ensure user is logged in
+// ==================================================
+if (!isset($user) || !is_array($user)) die('Access denied.');
 
 require_once __DIR__ . '/../../../../components/notification.php';
 
-// Build a safe first-name for the welcome card
-$rawFirst = null;
-if (!empty($user['first_name'])) {
-    $rawFirst = $user['first_name'];
-} elseif (!empty($user['name'])) {
+// ==================================================
+// 2. Build safe first name for welcome card
+// ==================================================
+$rawFirst = $user['first_name'] ?? null;
+if (!$rawFirst && !empty($user['name'])) {
     $parts = preg_split('/\s+/', trim($user['name']));
     $rawFirst = $parts[0] ?? null;
-} elseif (!empty($user['username'])) {
-    $rawFirst = $user['username'];
-} elseif (!empty($user['email'])) {
-    $local = strstr($user['email'], '@', true);
-    $rawFirst = $local ?: $user['email'];
 }
+if (!$rawFirst && !empty($user['username'])) $rawFirst = $user['username'];
+if (!$rawFirst && !empty($user['email'])) $rawFirst = strstr($user['email'], '@', true) ?: $user['email'];
 $agentFirst = htmlspecialchars($rawFirst ?: 'Agent', ENT_QUOTES, 'UTF-8');
 
-// --- Properties: ALL active listings for the homepage feed ---
-if (!isset($conn)) {
-    die('DB connection missing.');
+// ==================================================
+// 3. Check DB connection
+// ==================================================
+if (!isset($conn)) die('DB connection missing.');
+
+// ==================================================
+// 4. Fetch properties
+// ==================================================
+$categoryLimit = 10; // max 10 per category
+$specificTowns = ['Lipa City', 'Tanauan City', 'Santo Tomas'];
+
+// --- a) Featured Batangas City ---
+$sqlBatangas = "SELECT id, title, location, price, bedrooms, bathrooms, images, created_at
+                FROM properties
+                WHERE status = 'available' AND location = 'Batangas City'
+                ORDER BY created_at DESC
+                LIMIT $categoryLimit";
+$resultBatangas = $conn->query($sqlBatangas);
+$batangasProperties = $resultBatangas ? $resultBatangas->fetch_all(MYSQLI_ASSOC) : [];
+
+// --- b) Town-specific properties ---
+$townProperties = [];
+foreach ($specificTowns as $town) {
+    $escapedTown = $conn->real_escape_string($town);
+    $sqlTown = "SELECT id, title, location, price, bedrooms, bathrooms, images, created_at
+                FROM properties
+                WHERE status = 'available' AND location = '$escapedTown'
+                ORDER BY created_at DESC
+                LIMIT $categoryLimit";
+    $resultTown = $conn->query($sqlTown);
+    if ($resultTown && $resultTown->num_rows > 0) {
+        while ($property = $resultTown->fetch_assoc()) {
+            $townProperties[$town][] = $property;
+        }
+    }
 }
 
-$sql = "SELECT id, title, location, price, bedrooms, bathrooms, created_at 
-        FROM properties 
-        WHERE status IN ('available', 'sold')
-        ORDER BY created_at DESC";
-$result = $conn->query($sql);
-
-// Include modular card
+// ==================================================
+// 5. Include modular property card
+// ==================================================
 require_once __DIR__ . '/../../../../components/agent_property_card.php';
-
 ?>
 
-<!-- user_home.php -->
+<!-- CSS -->
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_home.css">
+
+<!-- Welcome Banner -->
 <div class="welcome-card">
-  <h2>Welcome back, <?= $agentFirst ?>!</h2>
-  <p>Here’s a quick overview of your latest listings and tools.</p>
-  
-  <div class="action-buttons">
-    <a href="agent_dashboard.php?view=associate_search" class="btn btn-primary">
-      <i class="fa-solid fa-search"></i> Search Properties
-    </a>
-    <a href="agent_dashboard.php?view=associate_profile" class="btn btn-secondary">
-      <i class="fa-solid fa-user"></i> Manage Profile
-    </a>
-    <a href="agent_dashboard.php?view=associate_profile" class="btn btn-success">
-      <i class="fa-solid fa-plus"></i> Add New Property
-    </a>
-  </div>
+    <img src="/BatEstateExplorer/assets/images/Frame 6.png" alt="Welcome Banner" class="welcome-image">
 </div>
 
+<!-- Properties Section -->
 <section class="properties">
-  <div class="container">
-    <h3 class="section-title">Latest Properties</h3>
+    <div class="container">
 
-    <div class="properties-grid">
-        <?php if ($result && $result->num_rows > 0): ?>
-            <?php while ($property = $result->fetch_assoc()): ?>
-                <?php render_agent_property_card($property); ?>
-            <?php endwhile; ?>
-        <?php else: ?>
-            <p>No properties available at the moment.</p>
+        <!-- Featured Batangas City -->
+        <?php if (!empty($batangasProperties)): ?>
+            <div class="town-section">
+                <h3 class="section-title">Batangas City - Featured</h3>
+                <div class="town-grid-wrapper">
+                    <div class="town-grid">
+                        <?php foreach ($batangasProperties as $property): ?>
+                            <?php render_agent_property_card($property); ?>
+                        <?php endforeach; ?>
+                        <!-- See More text link -->
+                        <a href="/BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_search&location=Batangas+City" class="see-more-text">See More</a>
+                    </div>
+                </div>
+            </div>
         <?php endif; ?>
+
+        <!-- Town-specific Sections -->
+        <?php foreach ($specificTowns as $town): ?>
+            <?php if (!empty($townProperties[$town])): ?>
+                <div class="town-section">
+                    <h3 class="section-title"><?= htmlspecialchars($town) ?></h3>
+                    <div class="town-grid-wrapper">
+                        <div class="town-grid">
+                            <?php foreach ($townProperties[$town] as $property): ?>
+                                <?php render_agent_property_card($property); ?>
+                            <?php endforeach; ?>
+                            <!-- See More as text link -->
+                            <a href="/BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_search&location=<?= urlencode($town) ?>" class="see-more-text">See More</a>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+        <?php endforeach; ?>
+
     </div>
-  </div>
 </section>
 
 <?php
-// Render the modal only once
+// Render modal only once
 render_agent_property_card([], true);
 ?>
-
 
 <!-- Swiper CSS & JS -->
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css"/>

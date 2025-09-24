@@ -148,7 +148,15 @@
     ];
 ?>
 
-<link rel="stylesheet" href="/BatEstateExplorer/assets/css/direct_profile.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_profile.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_sidebar.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_overview.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_listing.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_add_listing.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_analytics.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/company_listing.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_review.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_wallet.css">
 <script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt&currency=PHP"></script>
 <div class="dashboard-container">
     <!-- Header -->
