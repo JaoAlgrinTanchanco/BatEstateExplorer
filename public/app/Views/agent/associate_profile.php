@@ -931,4 +931,4 @@
         
 </div>
 
-<script src="/BatEstateExplorer/assets/js/associate_profile.js"></script>
+<script src="/BatEstateExplorer/assets/js/agent_profile.js"></script>

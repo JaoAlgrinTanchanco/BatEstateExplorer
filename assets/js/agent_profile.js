@@ -482,3 +482,140 @@ sidebarToggle.addEventListener('click', () => {
 
 const balanceEl = document.getElementById('walletBalance');
 balanceEl.innerText = parseFloat(balanceEl.innerText.replace(/,/g, '')).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+// =========================
+// Delete Modal (Direct)
+// =========================
+const openDeleteModal = document.getElementById('openDeleteModal');
+if (openDeleteModal) {
+    openDeleteModal.addEventListener('click', () => {
+        const deleteModal = document.getElementById('deleteModal');
+        if (deleteModal) deleteModal.style.display = 'flex';
+    });
+}
+
+const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+if (cancelDeleteBtn) {
+    cancelDeleteBtn.addEventListener('click', () => {
+        const deleteModal = document.getElementById('deleteModal');
+        if (deleteModal) deleteModal.style.display = 'none';
+    });
+}
+
+const deleteAgentForm = document.getElementById('deleteAgentForm');
+if (deleteAgentForm) {
+    deleteAgentForm.addEventListener('submit', () => {
+        const deleteSpinner = document.getElementById('deleteSpinner');
+        if (deleteSpinner) deleteSpinner.style.display = 'flex';
+    });
+}
+
+// =========================
+// Trim Agent Transactions (Direct)
+// =========================
+const TRIM_AGENT_API = '/BatEstateExplorer/public/api/agent_trim_transact.php';
+
+async function trimAgentTransactions() {
+    try {
+        const res = await fetch(TRIM_AGENT_API, { method: 'POST', credentials: 'same-origin' });
+        const data = await res.json();
+        if (!data.success) {
+            console.warn('Agent trim API failed:', data.error, data.debug);
+        } else {
+            console.log(`Agent trim complete. Deleted: ${data.deleted_count}`, data.details || {});
+        }
+    } catch (err) {
+        console.error('Error calling trimAgentTransactions:', err);
+    }
+}
+
+// Call on load + when wallet tab becomes visible
+trimAgentTransactions();
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        trimAgentTransactions();
+    }
+});
+
+// =========================
+// Client Search & Privilege (Direct)
+// =========================
+
+function searchClient() {
+    const email = document.getElementById('searchEmail')?.value.trim();
+    if (!email) return notify('error', 'Please enter an email');
+
+    fetch(`/BatEstateExplorer/public/api/give_privilege.php?email=${encodeURIComponent(email)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) return notify('error', data.error);
+
+            const nameEmailEl = document.getElementById('userNameEmail');
+            if (nameEmailEl) nameEmailEl.textContent = `${data.name || ''} (${data.email})`;
+
+            const modal = document.getElementById('privilegeModal');
+            if (modal) modal.style.display = 'block';
+
+            window.currentEmail = data.email;
+        })
+        .catch(err => {
+            console.error('Search client error:', err);
+            notify('error', 'Failed to search client.');
+        });
+}
+
+function selectProperty(card, propertyId) {
+    document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
+    card?.classList.add('selected');
+    selectedPropertyId = propertyId;
+}
+
+function closePrivilegeModal() {
+    const modal = document.getElementById('privilegeModal');
+    if (modal) modal.style.display = 'none';
+    selectedPropertyId = null;
+}
+
+function givePrivilege() {
+    if (!selectedPropertyId) return notify('error', 'Please select a property first.');
+
+    fetch('/BatEstateExplorer/public/api/give_privilege.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `email=${encodeURIComponent(window.currentEmail)}&property_id=${encodeURIComponent(selectedPropertyId)}`
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                notify('success', 'Privilege granted successfully!');
+                closePrivilegeModal();
+            } else {
+                notify('error', data.error || 'Something went wrong.');
+            }
+        })
+        .catch(err => {
+            console.error('Give privilege error:', err);
+            notify('error', 'Failed to grant privilege.');
+        });
+}
+
+// =========================
+// Mark Image for Removal (Direct)
+// =========================
+function markImageForRemoval(button, imagePath) {
+    const container = button.closest('form').querySelector('[id^="removeImages-"]');
+    if (!container) return;
+
+    // Mark image visually
+    button.closest('.image-item').style.opacity = '0.5';
+
+    // Append hidden input
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'remove_images[]';
+    hiddenInput.value = imagePath;
+    container.appendChild(hiddenInput);
+
+    // Disable button to prevent duplicate marking
+    button.disabled = true;
+}

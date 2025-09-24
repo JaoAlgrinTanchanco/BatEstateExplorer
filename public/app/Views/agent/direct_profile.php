@@ -860,4 +860,4 @@
     </div>
 </div>
 
-<script src="/BatEstateExplorer/assets/js/direct_profile.js"></script>
+<script src="/BatEstateExplorer/assets/js/agent_profile.js"></script>
