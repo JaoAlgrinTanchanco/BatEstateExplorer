@@ -43,6 +43,24 @@ if (!function_exists('render_property_card')) {
             $stmt->close();
         }
 
+        // --- Check if current user can review THIS property ---
+        $canReview = false;
+        $uid = $_SESSION['user_id'] ?? $_SESSION['user']['id'] ?? null;
+        if ($uid) {
+            $uid = (int)$uid;
+            $stmtPriv = $conn->prepare("SELECT privileges FROM users WHERE id = ? LIMIT 1");
+            if ($stmtPriv) {
+                $stmtPriv->bind_param("i", $uid);
+                $stmtPriv->execute();
+                $resPriv = $stmtPriv->get_result();
+                if ($rowPriv = $resPriv->fetch_assoc()) {
+                    $privileges = json_decode($rowPriv['privileges'], true) ?: [];
+                    $canReview = in_array($propertyId, $privileges, true) || in_array((string)$propertyId, $privileges, true);
+                }
+                $stmtPriv->close();
+            }
+        }
+
         // --- Sanitize fields ---
         $image = htmlspecialchars($property['images'][0]);
         $title = htmlspecialchars($property['title'] ?? '');
@@ -67,7 +85,6 @@ if (!function_exists('render_property_card')) {
      data-date="<?= $createdAt ?>"
      data-image="<?= $image ?>">
 
-    <!-- Agent-style overlay -->
     <div class="property-image">
         <img src="<?= $image ?>" alt="Property Image">
     </div>
@@ -124,12 +141,13 @@ if (!function_exists('render_property_card')) {
             <div class="modal-actions">
                 <button class="btn btn-primary message-agent-btn"><i class="fas fa-envelope"></i> Message</button>
                 <button id="saveFavoriteBtn" class="btn btn-outline"><i class="fas fa-heart"></i> Save</button>
-                <button id="leaveReviewBtn" class="btn btn-success"><i class="fas fa-star"></i> Review</button>
+                <button id="leaveReviewBtn" class="btn btn-success" style="display:none;">
+                <i class="fas fa-star"></i> Review
+                </button>
             </div>
         </div>
 
         <div class="modal-review">
-            <!-- Past Reviews -->
             <div class="modal-reviews">
                 <h3>Past Reviews</h3>
                 <div id="modalPastReviews">
@@ -140,10 +158,29 @@ if (!function_exists('render_property_card')) {
     </div>
 </div>
 
+<!-- Review Modal -->
+<div id="reviewModal" class="modal" style="display:none;">
+  <div class="custom-modal-content" style="max-width:400px; padding:2rem;">
+    <button class="close">&times;</button>
+    <h3>Post a Review</h3>
+    <form id="postReviewForm">
+      <input type="hidden" name="property_id" id="reviewPropertyId" value="">
+      <div class="rating-stars">
+        <span data-value="1">&#9733;</span>
+        <span data-value="2">&#9733;</span>
+        <span data-value="3">&#9733;</span>
+        <span data-value="4">&#9733;</span>
+        <span data-value="5">&#9733;</span>
+      </div>
+      <textarea name="review_text" placeholder="Write your review..." rows="3" required></textarea>
+      <button type="submit" class="btn btn-success" style="margin-top:10px;">Post Review</button>
+    </form>
+  </div>
+</div>
+
 <script>
 <?php echo file_get_contents($_SERVER['DOCUMENT_ROOT'].'/BatEstateExplorer/assets/js/agent_card_logic.js'); ?>
 </script>
-
 <?php
         endif;
     }

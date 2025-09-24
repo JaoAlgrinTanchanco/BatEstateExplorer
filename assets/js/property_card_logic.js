@@ -2,6 +2,7 @@
   let modalSwiper = null;
   let currentPropertyId = null;
   let saveBtn = null;
+  let selectedRating = 0;
 
   const userToken = window.AppConfig?.userToken || "";
   const currentUserId = window.AppConfig?.userId || 0;
@@ -14,13 +15,11 @@
       container.className = 'notification-container';
       document.body.appendChild(container);
     }
-
     const notif = document.createElement('div');
     notif.className = `notification ${type}`;
     const icon = type === 'success'
       ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path fill="#fff" d="M9 16.17 4.83 12l-1.42 1.41L9 19l12-12-1.41-1.41z"/></svg>'
       : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path fill="#fff" d="m13 13h-2v-6h2zm0 4h-2v-2h2z"/></svg>';
-
     notif.innerHTML = `
       <div class="notification__icon">${icon}</div>
       <div class="notification__title">${message}</div>
@@ -31,7 +30,6 @@
       </div>
     `;
     container.appendChild(notif);
-
     notif.querySelector('.notification__close').addEventListener('click', () => fadeOut(notif));
     setTimeout(() => fadeOut(notif), 5000);
 
@@ -45,17 +43,14 @@
   document.querySelectorAll('.property-card').forEach(card => {
     const images = JSON.parse(card.dataset.images || '[]');
     if (images.length < 2) return;
-
     const imgEl = card.querySelector('.property-image img');
     let index = 0, interval = null;
-
     card.addEventListener('mouseenter', () => {
       interval = setInterval(() => {
         index = (index + 1) % images.length;
         imgEl.src = images[index];
       }, 1500);
     });
-
     card.addEventListener('mouseleave', () => {
       clearInterval(interval);
       imgEl.src = images[0];
@@ -83,13 +78,9 @@
       // Destroy old Swiper
       if (modalSwiper) { modalSwiper.destroy(true, true); modalSwiper = null; }
 
-      // Initialize modal Swiper (unique selectors)
       modalSwiper = new Swiper(".modal-swiper-container", {
         loop: images.length > 1,
-        navigation: {
-          nextEl: ".modal-swiper-next",
-          prevEl: ".modal-swiper-prev"
-        },
+        navigation: { nextEl: ".modal-swiper-next", prevEl: ".modal-swiper-prev" },
         pagination: { el: ".modal-swiper-pagination", clickable: true },
         autoplay: { delay: 4000, disableOnInteraction: false },
       });
@@ -112,19 +103,21 @@
           </div>`).join('')
         : `<p>No reviews yet.</p>`;
 
-      // Leave review button
+      // ===== Leave Review Button per Property Privilege =====
       const reviewBtn = document.getElementById("leaveReviewBtn");
-      if (data.has_privilege) {
-        reviewBtn.style.display = "inline-block";
-        reviewBtn.onclick = () => openReviewModal(prop.id);
-      } else {
-        reviewBtn.style.display = "none";
-        reviewBtn.onclick = null;
+      if (reviewBtn) {
+        if (data.has_privilege) {
+          reviewBtn.style.display = "inline-block";
+          reviewBtn.onclick = () => openReviewModal(prop.id);
+        } else {
+          reviewBtn.style.display = "none";
+          reviewBtn.onclick = null;
+        }
       }
 
-      // Message agent
-      const messageBtn = document.querySelector(".message-agent-btn");
-      messageBtn.dataset.agentId = prop.agent_id || "";
+      // Message agent button
+      const messageBtn = document.querySelector("#propertyModal .message-agent-btn");
+      if (messageBtn) messageBtn.dataset.agentId = prop.agent_id || "";
 
       // Show modal
       document.getElementById("propertyModal").style.display = "flex";
@@ -145,6 +138,56 @@
     document.getElementById("reviewModal").style.display = "flex";
   }
 
+  // ===== Star rating =====
+  const stars = document.querySelectorAll('#reviewModal .rating-stars span');
+  stars.forEach(star => {
+    star.addEventListener('click', () => {
+      selectedRating = parseInt(star.dataset.value) || 0;
+      stars.forEach(s => s.classList.remove('selected'));
+      for (let j = 0; j < selectedRating; j++) stars[j].classList.add('selected');
+    });
+  });
+
+  // ===== Submit review =====
+  document.getElementById("postReviewForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    formData.set("rating", selectedRating);
+
+    try {
+      const res = await fetch("/BatEstateExplorer/public/api/submit_review.php", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.success) {
+        notify("success", "Review submitted successfully!");
+        document.getElementById("reviewModal").style.display = "none";
+        e.target.reset();
+        selectedRating = 0;
+        stars.forEach(s => s.classList.remove('selected'));
+
+        const reviewContainer = document.getElementById("modalPastReviews");
+        const userName = data.user_name || "You";
+        const dateNow = new Date().toLocaleDateString();
+        const newReviewHTML = `
+          <div class="review-card" style="margin-bottom:10px;">
+            <strong>${userName}</strong>
+            <span style="float:right;">${formData.get("rating")}⭐</span>
+            <p>${formData.get("review_text")}</p>
+            <small>${dateNow}</small>
+          </div>
+        `;
+        if (reviewContainer.querySelector("p")?.textContent.includes("No reviews yet")) {
+          reviewContainer.innerHTML = newReviewHTML;
+        } else {
+          reviewContainer.insertAdjacentHTML("afterbegin", newReviewHTML);
+        }
+
+      } else notify("error", data.error || "Failed to submit review.");
+    } catch (err) {
+      console.error(err);
+      notify("error", "Error submitting review.");
+    }
+  });
+
   // ===== Save / Unsave =====
   function initSaveButton() {
     saveBtn = document.getElementById("saveFavoriteBtn");
@@ -159,7 +202,7 @@
     try {
       const res = await fetch("/BatEstateExplorer/public/api/save_property.php", {
         method: "POST",
-        headers: {"Content-Type":"application/x-www-form-urlencoded"},
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: `property_id=${propertyId}&action=check&user_token=${encodeURIComponent(userToken)}`
       });
       const data = await res.json();
@@ -178,32 +221,20 @@
     const action = saveBtn.dataset.saved === "true" ? "unsave" : "save";
     try {
       const res = await fetch("/BatEstateExplorer/public/api/save_property.php", {
-        method:"POST",
-        headers:{"Content-Type":"application/x-www-form-urlencoded"},
-        body:`property_id=${currentPropertyId}&action=${action}&user_token=${encodeURIComponent(userToken)}`
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `property_id=${currentPropertyId}&action=${action}&user_token=${encodeURIComponent(userToken)}`
       });
       const data = await res.json();
       if (data.success) {
         updateSaveButton(data.saved);
         if (data.message && data.message !== "Property already saved.") notify("success", data.message);
       } else notify("error", data.error || "Failed to update saved status.");
-    } catch (err) { console.error(err); notify("error", "Error updating saved status."); }
+    } catch (err) {
+      console.error(err);
+      notify("error", "Error updating saved status.");
+    }
   }
-
-  // ===== Submit review =====
-  document.getElementById("reviewForm")?.addEventListener("submit", async e => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    try {
-      const res = await fetch("/BatEstateExplorer/public/api/submit_review.php", { method:"POST", body: formData });
-      const data = await res.json();
-      if (data.success) {
-        notify("success", "Review submitted successfully!");
-        document.getElementById("reviewModal").style.display = "none";
-        e.target.reset();
-      } else notify("error", data.error || "Failed to submit review.");
-    } catch (err) { console.error(err); notify("error", "Error submitting review."); }
-  });
 
   // ===== Message agent =====
   document.addEventListener("click", e => {
