@@ -38,9 +38,14 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
           <a href="agent_dashboard.php?view=associate_home" class="nav-link <?= ($view === 'associate_home') ? 'active' : '' ?>"><i class="fa-solid fa-house"></i> Home</a>
           <a href="agent_dashboard.php?view=associate_profile" class="nav-link <?= ($view === 'associate_profile') ? 'active' : '' ?>"><i class="fa-solid fa-user"></i> Profile</a>
           <a href="agent_dashboard.php?view=associate_search" class="nav-link <?= ($view === 'associate_search') ? 'active' : '' ?>"><i class="fa-solid fa-search"></i> Search</a>
+        <?php elseif ($user['user_type'] === 'direct_agent'): ?>
+          <a href="agent_dashboard.php?view=direct_home" class="nav-link <?= ($view === 'direct_home') ? 'active' : '' ?>"><i class="fa-solid fa-house"></i> Home</a>
+          <a href="agent_dashboard.php?view=direct_profile" class="nav-link <?= ($view === 'direct_profile') ? 'active' : '' ?>"><i class="fa-solid fa-user"></i> Profile</a>
+          <a href="agent_dashboard.php?view=direct_search" class="nav-link <?= ($view === 'direct_search') ? 'active' : '' ?>"><i class="fa-solid fa-search"></i> Search</a>
         <?php endif; ?>
-        <a href="/BatEstateExplorer/public/agent_message.php" class="nav-link"><i class="fa-solid fa-envelope"></i> Messages</a>
-        <button type="button" class="nav-link logout-btn"> <i class="fa-solid fa-right-from-bracket"></i> Logout </button>
+
+        <a href="/BatEstateExplorer/public/agent_message.php" class="nav-link" target="_blank"><i class="fa-solid fa-envelope"></i> Messages</a>
+        <button type="button" class="nav-link logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
       </div>
     </div>
 
