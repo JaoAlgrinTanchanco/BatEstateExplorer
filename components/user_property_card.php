@@ -79,7 +79,6 @@ if (!function_exists('render_property_card')) {
             <span><i class="fas fa-bed"></i> <?= $bedrooms ?> Beds</span>
             <span><i class="fas fa-bath"></i> <?= $bathrooms ?> Baths</span>
         </div>
-        <button class="btn btn-outline view-details-btn" data-id="<?= $propertyId ?>">View Details</button>
     </div>
 </div>
 <?php
@@ -104,7 +103,7 @@ if (!function_exists('render_property_card')) {
             <div class="property-images"></div>
         </div>
 
-        <!-- Right side: details + actions + reviews -->
+        <!-- Right side: details + reviews + actions -->
         <div class="modal-right">
             <section><span class="label">Location:</span> <span class="value location"></span></section>
             <section><span class="label">Price:</span> <span class="value price"></span></section>
@@ -115,17 +114,21 @@ if (!function_exists('render_property_card')) {
             <section><span class="label">Lot Size:</span> <span class="value lot_size"></span></section>
             <section><span class="label">Status:</span> <span class="value status"></span></section>
             <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>
-            <section><span class="label">Description:</span><div class="property-description"></div></section>
-
-            <!-- User actions -->
-            <div class="modal-actions" style="margin-top:15px;">
-                <button class="btn btn-primary message-agent-btn"><i class="fas fa-envelope"></i> Message Agent</button>
-                <button id="saveFavoriteBtn" class="btn btn-outline"><i class="fas fa-heart"></i> Save to Favorites</button>
-                <button id="leaveReviewBtn" class="btn btn-success"><i class="fas fa-star"></i> Leave a Review</button>
+            <section>
+                <span class="label">Description:</span>
+                <div class="property-description"></div>
+            </section>
+            <!-- Actions -->
+            <div class="modal-actions">
+                <button class="btn btn-primary message-agent-btn"><i class="fas fa-envelope"></i> Message</button>
+                <button id="saveFavoriteBtn" class="btn btn-outline"><i class="fas fa-heart"></i> Save</button>
+                <button id="leaveReviewBtn" class="btn btn-success"><i class="fas fa-star"></i> Review</button>
             </div>
+        </div>
 
-            <!-- Past reviews -->
-            <div id="modalReviewsCard" style="background:#fff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:15px; max-height:400px; overflow-y:auto; margin-top:15px;">
+        <div class="modal-review">
+            <!-- Past Reviews -->
+            <div class="modal-reviews">
                 <h3>Past Reviews</h3>
                 <div id="modalPastReviews">
                     <p>Reviews will load here when modal opens.</p>

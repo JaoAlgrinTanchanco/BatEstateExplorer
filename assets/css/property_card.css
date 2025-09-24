@@ -218,6 +218,7 @@
   background: #fff;
   border-radius: 15px;
   padding: 1.5rem;
+  position: relative;
 }
 
 .modal-right section {
@@ -270,119 +271,61 @@
 }
 
 /* ===========================
-   Modal Actions (Buttons)
+   Modal Actions - Flexible Full-Width Buttons
 =========================== */
 .modal-actions {
+  margin-top: auto;         /* pushes buttons to bottom */
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 15px;
+  flex-wrap: nowrap;
 }
 
+/* Make buttons flexible and icons centered */
 .modal-actions .btn {
-  padding: 8px 14px;
-  font-size: 0.9rem;
-  border-radius: 8px;
+  flex: 1 1 0;              /* grow to fill available space */
+  padding: 10px 16px;       /* small button */
+  font-size: 13px;
+  border-radius: 6px;
   font-weight: 600;
-  transition: all 0.25s ease;
   cursor: pointer;
-}
-
-.modal-actions .btn-primary {
-  background-color: #3498db;
+  display: flex;
+  align-items: center;      /* vertically center icon */
+  justify-content: center;  /* horizontally center text */
+  gap: 6px;
   color: #fff;
-  border: none;
+  background-color: #000;
+  border: 1px solid #fff;
+  line-height: 1;
+  transition: all 0.25s ease;
 }
 
-.modal-actions .btn-primary:hover {
-  background-color: #2980b9;
+.modal-actions .btn i {
+  display: flex;
+  align-items: center;      
+  justify-content: center;
+  font-size: 0.85rem;
+  line-height: 1;
 }
 
-.modal-actions .btn-outline {
-  background-color: transparent;
-  color: #3498db;
-  border: 2px solid #3498db;
+.modal-actions .btn:hover {
+  background-color: #fff;
+  color: #111;
+  border: 1px solid #111;
 }
 
-.modal-actions .btn-outline:hover {
-  background-color: #3498db;
-  color: #fff;
-}
-
-.modal-actions .btn-success {
-  background-color: #27ae60;
-  color: #fff;
-  border: none;
-}
-
-.modal-actions .btn-success:hover {
-  background-color: #1e8449;
-}
-
-/* ===========================
-   Past Reviews Card
-=========================== */
-#modalReviewsCard {
-  background: #f9f9f9;
-  border-radius: 12px;
-  padding: 15px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  max-height: 400px;
-  overflow-y: auto;
-  margin-top: 20px;
-}
-
-#modalReviewsCard h3 {
-  margin-top: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin-bottom: 10px;
-}
-
-.review-item {
-  border-bottom: 1px solid #ddd;
-  padding: 8px 0;
-  font-size: 0.9rem;
-  line-height: 1.4;
-}
-
-.review-item:last-child {
-  border-bottom: none;
-}
-
-.review-item .review-author {
-  font-weight: 600;
-  color: #34495e;
-}
-
-.review-item .review-date {
-  font-size: 0.75rem;
-  color: #888;
-  margin-left: 5px;
-}
-
-.review-item .review-text {
-  margin-top: 4px;
-  color: #555;
-}
-
-/* Scrollbar Styling */
-#modalReviewsCard::-webkit-scrollbar {
-  width: 6px;
-}
-
-#modalReviewsCard::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.2);
-  border-radius: 3px;
-}
-
-#modalReviewsCard::-webkit-scrollbar-track {
-  background: transparent;
+/* Mobile: stack buttons and fill width */
+@media (max-width: 576px) {
+  .modal-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .modal-actions .btn {
+    flex: 1 1 auto;
+    width: 100%;
+  }
 }
 
 
-/* Responsive adjustments for mobile */
 /* ===========================
    Responsive Adjustments
 =========================== */
