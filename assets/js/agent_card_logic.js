@@ -19,6 +19,14 @@
     setTimeout(() => notif.remove(), 5000);
   }
 
+  function renderStars(rating) {
+    let stars = "";
+    for (let i = 1; i <= 5; i++) {
+      stars += `<i class="fas fa-star ${i <= rating ? "filled" : ""}"></i>`;
+    }
+    return `<div class="review-stars">${stars}</div>`;
+  }
+
 (() => {
   let currentPropertyId = null;
   let selectedRating = 0;
@@ -120,7 +128,7 @@
           reviewContainer.innerHTML = reviewData.reviews.map(r => `
             <div class="review-card" style="margin-bottom:10px;">
               <strong>${r.user_name}</strong>
-              <span style="float:right;">${r.rating}⭐</span>
+              <div style="float:right;">${renderStars(r.rating)}</div>
               <p>${r.review_text}</p>
               <small>${new Date(r.created_at).toLocaleDateString()}</small>
             </div>
@@ -214,7 +222,7 @@
             reviewContainer.innerHTML = reviewData.reviews.map(r => `
               <div class="review-card" style="margin-bottom:10px;">
                 <strong>${r.user_name}</strong>
-                <span style="float:right;">${r.rating}⭐</span>
+                <div style="float:right;">${renderStars(r.rating)}</div>
                 <p>${r.review_text}</p>
                 <small>${new Date(r.created_at).toLocaleDateString()}</small>
               </div>

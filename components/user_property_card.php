@@ -106,6 +106,7 @@ if (!function_exists('render_property_card')) {
             define('PROPERTY_MODAL_INCLUDED', true);
 ?>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
 <!-- Combined Modal -->
@@ -123,8 +124,8 @@ if (!function_exists('render_property_card')) {
         <!-- Right side: details + reviews + actions -->
         <div class="modal-right">
             <div class="details">
-                <section><span class="label">Location:</span> <span class="value location"></span></section>
                 <section><span class="label">Price:</span> <span class="value price"></span></section>
+                <section><span class="label">Location:</span> <span class="value location"></span></section>
                 <section><span class="label">Property Type:</span> <span class="value property-type"></span></section>
                 <section><span class="label">Bedrooms:</span> <span class="value bedrooms"></span></section>
                 <section><span class="label">Bathrooms:</span> <span class="value bathrooms"></span></section>
@@ -149,7 +150,7 @@ if (!function_exists('render_property_card')) {
 
         <div class="modal-review">
             <div class="modal-reviews">
-                <h3>Past Reviews</h3>
+                <h3>Reviews</h3>
                 <div id="modalPastReviews">
                     <p>Reviews will load here when modal opens.</p>
                 </div>
