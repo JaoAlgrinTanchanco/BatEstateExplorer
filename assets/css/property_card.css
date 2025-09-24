@@ -212,9 +212,8 @@
 .modal-right {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
   color: #000;
-  min-height: 578px;
+  min-height: 100%;
   background: #fff;
   border-radius: 15px;
   padding: 1.5rem;
@@ -237,11 +236,25 @@
   color: #333;
 }
 
-.property-description {
+/* Details div fills the remaining space above buttons */
+.modal-right .details {
+  flex: 1 1 auto;          /* grow to fill available space */
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;         /* scroll if content overflows */
+}
+
+/* Description section fills remaining vertical space in details */
+.modal-right .details section.desc {
+  flex: 1 1 auto;          /* take remaining height */
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-right .details section.desc .property-description {
+  flex: 1 1 auto;
+  overflow-y: auto;
   margin-top: 0.5rem;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: #444;
 }
 
 /* Close Button */
@@ -313,17 +326,77 @@
   border: 1px solid #111;
 }
 
-/* Mobile: stack buttons and fill width */
-@media (max-width: 576px) {
-  .modal-actions {
-    flex-direction: column;
-    gap: 8px;
-  }
-  .modal-actions .btn {
-    flex: 1 1 auto;
-    width: 100%;
-  }
+
+/* ===========================
+   Modal Reviews Section - Spanning Bottom
+=========================== */
+.modal-review {
+  grid-column: 1 / -1;       /* span both columns */
+  background: #f9f9f9;
+  border-radius: 15px;
+  padding: 1rem 1.5rem;
+
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 300px;         /* optional scrollable area */
+  overflow-y: auto;
 }
+
+.modal-review h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+#modalPastReviews {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Individual Review Card */
+.review-item {
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.review-item .review-author {
+  font-weight: 600;
+  color: #34495e;
+}
+
+.review-item .review-date {
+  font-size: 0.75rem;
+  color: #888;
+  margin-left: 5px;
+}
+
+.review-item .review-text {
+  margin-top: 4px;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+/* Scrollbar Styling */
+.modal-review::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-review::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+
+.modal-review::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
 
 
 /* ===========================
@@ -336,14 +409,17 @@
     flex: 0 1 260px;
     border-radius: 16px;
   }
+
   .property-overlay {
     padding: 14px 16px;
     border-top-left-radius: 22px;
     border-top-right-radius: 22px;
   }
+
   .property-overlay h3 {
     font-size: 18px;
   }
+
   .property-price {
     font-size: 1.05rem;
   }
@@ -351,6 +427,12 @@
   #propertyModal .custom-modal-content {
     grid-template-columns: 1fr 1fr;
     max-width: 720px;
+    gap: 0.75rem;
+  }
+
+  /* Ensure description and details fill space */
+  #propertyModal .modal-right .details {
+    max-height: calc(100% - 60px); /* adjust according to button height */
   }
 }
 
@@ -360,32 +442,49 @@
     flex: 0 1 160px;
     border-radius: 12px;
   }
+
   .property-overlay {
     padding: 10px 12px;
     gap: 6px;
     border-top-left-radius: 16px;
     border-top-right-radius: 16px;
   }
+
   .property-overlay h3 {
     font-size: 16px;
   }
+
   .property-location {
     font-size: 0.75rem;
   }
+
   .property-price {
     font-size: 0.9rem;
   }
+
   .property-features span {
     font-size: 0.7rem;
     padding: 3px 8px;
     border-radius: 10px;
   }
 
+  /* Modal adjustments */
   #propertyModal .custom-modal-content {
     grid-template-columns: 1fr;
     padding: 1rem;
     max-width: 95%;
   }
+
+  /* Keep action buttons in row */
+  #propertyModal .modal-actions {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  #propertyModal .modal-actions .btn {
+    flex: 1 1 0; /* stretch equally but keep row */
+  }
+
   #propertyModal .close {
     right: 1rem;
     top: 1rem;

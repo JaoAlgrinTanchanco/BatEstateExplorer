@@ -105,19 +105,21 @@ if (!function_exists('render_property_card')) {
 
         <!-- Right side: details + reviews + actions -->
         <div class="modal-right">
-            <section><span class="label">Location:</span> <span class="value location"></span></section>
-            <section><span class="label">Price:</span> <span class="value price"></span></section>
-            <section><span class="label">Property Type:</span> <span class="value property-type"></span></section>
-            <section><span class="label">Bedrooms:</span> <span class="value bedrooms"></span></section>
-            <section><span class="label">Bathrooms:</span> <span class="value bathrooms"></span></section>
-            <section><span class="label">Area:</span> <span class="value sqm"></span></section>
-            <section><span class="label">Lot Size:</span> <span class="value lot_size"></span></section>
-            <section><span class="label">Status:</span> <span class="value status"></span></section>
-            <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>
-            <section>
-                <span class="label">Description:</span>
-                <div class="property-description"></div>
-            </section>
+            <div class="details">
+                <section><span class="label">Location:</span> <span class="value location"></span></section>
+                <section><span class="label">Price:</span> <span class="value price"></span></section>
+                <section><span class="label">Property Type:</span> <span class="value property-type"></span></section>
+                <section><span class="label">Bedrooms:</span> <span class="value bedrooms"></span></section>
+                <section><span class="label">Bathrooms:</span> <span class="value bathrooms"></span></section>
+                <section><span class="label">Area:</span> <span class="value sqm"></span></section>
+                <section><span class="label">Lot Size:</span> <span class="value lot_size"></span></section>
+                <section><span class="label">Status:</span> <span class="value status"></span></section>
+                <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>
+                <section class="desc">
+                    <span class="label">Description:</span>
+                    <div class="property-description"></div>
+                </section>
+            </div>
             <!-- Actions -->
             <div class="modal-actions">
                 <button class="btn btn-primary message-agent-btn"><i class="fas fa-envelope"></i> Message</button>

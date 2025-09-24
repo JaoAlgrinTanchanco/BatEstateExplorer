@@ -108,7 +108,7 @@ if (!function_exists('render_agent_property_card')) {
       <section><span class="label">Status:</span> <span class="value status"></span></section>
       <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>
 
-      <section>
+      <section class="desc">
         <span class="label">Description:</span>
         <div class="property-description"></div>
       </section>
