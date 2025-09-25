@@ -834,8 +834,8 @@
                             <label>Phone</label>
                             <input type="text" name="phone" value="<?= htmlspecialchars($user['phone']) ?>">
 
-                            <label>Email</label>
-                            <input type="email" name="email" value="<?= htmlspecialchars($user['email']) ?>" autocomplete="email" required>
+                            <label for="address">Address</label>
+                            <textarea name="address" id="address" rows="3"><?= htmlspecialchars($current_user['address']) ?></textarea>
 
                             <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
                                 <button type="submit">Save Changes</button>

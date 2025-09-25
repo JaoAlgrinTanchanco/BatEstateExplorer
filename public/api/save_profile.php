@@ -30,44 +30,27 @@ if (!$user) {
 $firstName = trim($_POST['first_name'] ?? '');
 $lastName  = trim($_POST['last_name'] ?? '');
 $phone     = trim($_POST['phone'] ?? '');
-$email     = trim($_POST['email'] ?? '');
 $address   = trim($_POST['address'] ?? '');
 $status    = $user['status'];
-$userType  = $user['user_type']; // ✅ preserve current user_type
+$userType  = $user['user_type']; // preserve current user_type
 
-if (!$firstName || !$lastName || !$email) {
+if (!$firstName || !$lastName) {
     $_SESSION['notification'] = [
         'type' => 'error',
-        'message' => 'First name, last name, and email are required.'
+        'message' => 'First name and last name are required.'
     ];
     redirectWithAgentType('overview');
 }
 
-// Check email uniqueness
-$stmt = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
-$stmt->bind_param("si", $email, $userId);
-$stmt->execute();
-if ($stmt->get_result()->num_rows > 0) {
-    $_SESSION['notification'] = [
-        'type' => 'error',
-        'message' => 'Email already in use.'
-    ];
-    redirectWithAgentType('overview');
-}
-$stmt->close();
-
-// Update user (password untouched)
+// Update user (do not touch email)
 $stmt = $conn->prepare("
     UPDATE users SET
-        first_name = ?, last_name = ?, phone = ?, email = ?,
-        address = ?, user_type = ?, status = ?, updated_at = NOW()
+        first_name = ?, last_name = ?, phone = ?, address = ?, updated_at = NOW()
     WHERE id = ?
 ");
-
 $stmt->bind_param(
-    "sssssssi",
-    $firstName, $lastName, $phone, $email,
-    $address, $userType, $status, $userId
+    "ssssi",
+    $firstName, $lastName, $phone, $address, $userId
 );
 
 if ($stmt->execute()) {
@@ -89,13 +72,13 @@ redirectWithAgentType('overview');
 
 
 // ==========================
-// Helper: Redirect by agent type (✅ using users.user_type)
+// Helper: Redirect by agent type
 // ==========================
 function redirectWithAgentType($tab = 'overview') {
     global $conn;
 
     $userId = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
-    $agentType = 'direct';
+    $agentType = 'normal_user';
 
     if ($userId) {
         $stmt = $conn->prepare("SELECT user_type FROM users WHERE id = ? LIMIT 1");
@@ -103,14 +86,26 @@ function redirectWithAgentType($tab = 'overview') {
         $stmt->execute();
         $result = $stmt->get_result();
         if ($row = $result->fetch_assoc()) {
-            if ($row['user_type'] === 'associate_agent') {
+            $userType = $row['user_type'];
+            if ($userType === 'associate_agent') {
                 $agentType = 'associate';
+            } elseif ($userType === 'direct_agent') {
+                $agentType = 'direct';
             }
         }
         $stmt->close();
     }
 
-    $view = $agentType === 'associate' ? 'associate_profile' : 'direct_profile';
-    header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab={$tab}");
+    // Redirect based on user type
+    if ($agentType === 'associate') {
+        $view = 'associate_profile';
+        header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab={$tab}");
+    } elseif ($agentType === 'direct') {
+        $view = 'direct_profile';
+        header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab={$tab}");
+    } else {
+        // normal user
+        header("Location: /BatEstateExplorer/public/controllers/user_dashboard.php?view=profile&tab={$tab}");
+    }
     exit;
 }

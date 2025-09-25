@@ -65,6 +65,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const editProfileBtn = document.getElementById("editProfileBtn");
   const profileModal = document.getElementById("profileModal");
   const modalCloseBtn = document.getElementById("modalCloseBtn");
+  const cancelEditBtn = document.getElementById("cancelEditBtn");
+
+  // Cancel button closes modal
+  cancelEditBtn?.addEventListener("click", () => {
+      profileModal?.classList.remove("active");
+  });
+
+  // Close button already has:
+  modalCloseBtn?.addEventListener("click", () => profileModal?.classList.remove("active"));
+
+  // Optional: clicking outside modal content
+  profileModal?.addEventListener("click", (e) => {
+      if (e.target === profileModal) profileModal?.classList.remove("active");
+  });
+
 
   editProfileBtn?.addEventListener("click", () => {
     profileDropdownMenu?.classList.remove("active");

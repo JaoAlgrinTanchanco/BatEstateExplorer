@@ -139,50 +139,55 @@
   </div>
 </div>
 
-<!-- Profile Update Modal -->
+<!-- Edit Profile Modal -->
 <div id="profileModal" class="modal">
-  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <button class="modal-close" id="modalCloseBtn" aria-label="Close">&times;</button>
-    <h2 id="modalTitle">Update Profile</h2>
-    <form class="profile-update" method="POST" action="">
-      <label for="first_name">First Name</label>
-      <input type="text" name="first_name" id="first_name" required 
-             value="<?= htmlspecialchars($current_user['first_name']) ?>" />
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <button class="modal-close" id="modalCloseBtn" aria-label="Close">&times;</button>
+        <h4 id="modalTitle">Edit Profile</h4>
+        <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php">
+            
+            <label for="first_name">First Name</label>
+            <input type="text" name="first_name" id="first_name" required
+                   value="<?= htmlspecialchars($current_user['first_name']) ?>">
 
-      <label for="last_name">Last Name</label>
-      <input type="text" name="last_name" id="last_name" required 
-             value="<?= htmlspecialchars($current_user['last_name']) ?>" />
+            <label for="last_name">Last Name</label>
+            <input type="text" name="last_name" id="last_name" required
+                   value="<?= htmlspecialchars($current_user['last_name']) ?>">
 
-      <label for="phone">Phone Number</label>
-      <input type="tel" name="phone" id="phone" 
-             value="<?= htmlspecialchars($current_user['phone']) ?>" />
+            <label for="phone">Phone</label>
+            <input type="tel" name="phone" id="phone"
+                   value="<?= htmlspecialchars($current_user['phone']) ?>">
 
-      <label for="address">Address</label>
-      <textarea name="address" id="address" rows="3"><?= htmlspecialchars($current_user['address']) ?></textarea>
+            <label for="address">Address</label>
+            <textarea name="address" id="address" rows="3"><?= htmlspecialchars($current_user['address']) ?></textarea>
 
-      <button type="submit">Update Profile</button>
-    </form>
-  </div>
+            <div class="button-group">
+                <button type="submit">Save Changes</button>
+                <button type="button" id="cancelEditBtn">Cancel</button>
+            </div>
+        </form>
+    </div>
 </div>
 
+
 <!-- Delete Account Modal -->
-<div id="deleteAccountModal" class="modal" style="display:none;">
-  <div class="modal-overlay"></div>
-  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
-    <h2 id="deleteModalTitle">Delete Account</h2>
+<div id="deleteAccountModal" class="modal-agent">
+  <div class="modal-content-agent" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+    <h4 id="deleteModalTitle">Delete Account</h4>
     <p id="deleteModalMessage">Are you sure you want to delete your account? This action cannot be undone.</p>
-    
-    <div class="modal-actions" id="deleteModalActions">
-      <button id="cancelDeleteBtn" class="btn">Cancel</button>
-      <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+
+    <div class="modal-actions-agent" id="deleteModalActions">
+      <button id="cancelDeleteBtn" class="cancel-btn-agent">Cancel</button>
+      <button id="confirmDeleteBtn" class="delete-btn-agent">Delete</button>
     </div>
 
-    <div id="deleteLoading" style="display:none; text-align:center; margin-top:15px;">
-      <i class="fas fa-spinner fa-spin" style="font-size:20px; margin-right:8px;"></i>
+    <div class="spinner-agent" id="deleteLoading">
+      <span class="loader"></span>
       <span>Deleting account...</span>
     </div>
   </div>
 </div>
+
 
 <!-- Page-specific JS -->
 <script src="/BatEstateExplorer/assets/js/user_profile.js"></script>
