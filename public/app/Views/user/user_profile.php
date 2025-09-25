@@ -1,6 +1,7 @@
 <?php
   require_once __DIR__ . '/../../../../config/database.php';
   require_once __DIR__ . '/../../../../components/user_property_card.php';
+  require_once __DIR__ . '/../../../../components/notification.php';
 
   // Redirect if not logged in
   if (!is_logged_in()) {

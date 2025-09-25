@@ -1,76 +1,92 @@
+/* ==========================
+   Notification Container
+========================== */
 .notification-container {
-  position: fixed;
-  top: 60px;
-  right: 20px;
-  z-index: 2147483647;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  pointer-events: auto;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 400px;
 }
 
+/* ==========================
+   Notification Card
+========================== */
 .notification {
-  width: 450px; 
-  padding: 16px 24px;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: start;
-  background-color: #EF665B; /* error color, can change for success */
-  box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
-  opacity: 1;
-  transition: opacity 0.5s ease; /* only fade now */
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    font-family: 'Satoshi', sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    transition: transform 0.2s ease, opacity 0.5s ease, box-shadow 0.3s ease;
 }
 
-/* Fade out class */
-.notification.fade-out {
-  opacity: 0;
-}
-
-/* Show class (optional, for initial appearance) */
-.notification.show {
-  opacity: 1;
-}
-
-/* Icon */
-.notification__icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 12px;
-  flex-shrink: 0;
-}
-
-.notification__icon svg {
-  display: block;
-  vertical-align: middle;
-}
-
-/* Title */
-.notification__title {
-  font-weight: 600;
-  font-size: 16px;
-  color: #fff;
-  flex: 1;
-  display: flex;
-  align-items: center;
-}
-
-/* Close button */
-.notification__close {
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
-  margin-left: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Colors by type */
+/* ==========================
+   Success Notification
+========================== */
 .notification.success {
-  background-color: #4CAF50;
+    background-color: rgb(240 253 244); /* soft green background */
+    border: 2px solid rgb(74 222 128); /* thinner green border */
+    color: rgb(22 101 52); /* dark green text */
+    box-shadow: 0 0 10px rgba(74,222,128,0.4);
 }
 
+/* ==========================
+   Error Notification
+========================== */
 .notification.error {
-  background-color: #EF665B;
+    background-color: rgb(254 242 242); /* soft red background */
+    border: 2px solid rgb(239 68 68); /* thinner red border */
+    color: rgb(153 27 27); /* dark red text */
+    box-shadow: 0 0 10px rgba(239,68,68,0.4);
+}
+
+/* ==========================
+   Icon
+========================== */
+.notification__icon {
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.75rem;
+    fill: currentColor; /* makes icon match text color */
+}
+
+/* ==========================
+   Message / Content
+========================== */
+.notification__title {
+    flex: 1;
+}
+
+/* ==========================
+   Close Button
+========================== */
+.notification__close {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+    fill: currentColor; /* makes close icon match text color */
+}
+.notification__close:hover {
+    transform: rotate(90deg);
+}
+
+/* ==========================
+   Fade Out
+========================== */
+.notification.fade-out {
+    opacity: 0;
+    transform: translateX(100%);
 }
