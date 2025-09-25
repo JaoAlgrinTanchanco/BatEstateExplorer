@@ -31,28 +31,6 @@
   let currentPropertyId = null;
   let selectedRating = 0;
 
-  // ===== Card hover auto-swipe =====
-  document.querySelectorAll(".property-card").forEach(card => {
-    const images = JSON.parse(card.dataset.images || "[]");
-    if (images.length < 2) return;
-
-    const imgEl = card.querySelector(".property-image img");
-    let index = 0, interval = null;
-
-    card.addEventListener("mouseenter", () => {
-      interval = setInterval(() => {
-        index = (index + 1) % images.length;
-        imgEl.src = images[index];
-      }, 1500);
-    });
-
-    card.addEventListener("mouseleave", () => {
-      clearInterval(interval);
-      imgEl.src = images[0];
-      index = 0;
-    });
-  });
-
   // ===== Open Property Modal =====
   async function openPropertyModal(propertyId) {
     currentPropertyId = propertyId;

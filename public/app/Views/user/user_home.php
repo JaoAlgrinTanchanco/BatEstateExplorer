@@ -68,10 +68,6 @@ foreach ($specificTowns as $town) {
     }
 }
 
-// ==================================================
-// 3. Include user property card
-// ==================================================
-require_once __DIR__ . '/../../../../components/user_property_card.php';
 ?>
 
 <!-- CSS -->
