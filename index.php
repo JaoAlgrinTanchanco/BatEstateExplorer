@@ -105,7 +105,7 @@ if (isset($_SESSION['flash_message'])) {
             <div class="properties-grid">
                 <div class="property-card scroll-animation">
                     <div class="property-image scroll-animation">
-                        <img src="assets/images/bg4.jpg" alt="Luxury Home">
+                        <img src="assets/images/aa.jpeg" alt="Luxury Home">
                         <div class="property-badge">Featured</div>
                     </div>
                     <div class="property-content scroll-animation">
@@ -122,7 +122,7 @@ if (isset($_SESSION['flash_message'])) {
                 </div>
                 <div class="property-card scroll-animation">
                     <div class="property-image scroll-animation">
-                        <img src="assets/images/bg4.jpg" alt="Townhouse">
+                        <img src="assets/images/bb.jpeg" alt="Townhouse">
                         <div class="property-badge">New</div>
                     </div>
                     <div class="property-content scroll-animation">
@@ -139,7 +139,7 @@ if (isset($_SESSION['flash_message'])) {
                 </div>
                 <div class="property-card scroll-animation">
                     <div class="property-image scroll-animation">
-                        <img src="assets/images/bg4.jpg" alt="Apartment">
+                        <img src="assets/images/cc.jpeg" alt="Apartment">
                         <div class="property-badge">Hot Deal</div>
                     </div>
                     <div class="property-content scroll-animation">
@@ -212,7 +212,7 @@ if (isset($_SESSION['flash_message'])) {
                     </div>
                 </div>
                 <div class="about-image scroll-animation">
-                    <img src="assets/images/bg4.jpg" alt="About BatEstate Explorer">
+                    <img src="assets/images/dd.jpeg" alt="About BatEstate Explorer">
                 </div>
             </div>
         </div>
