@@ -19,7 +19,7 @@ if (!$current_user_id) die("Agent not logged in.");
 // 1️⃣ Get user_id from URL (conversation switch)
 $user_id = $_GET['user_id'] ?? null;
 
-// 2️⃣ If agent_id is provided (from modal button), resolve to user_id
+// 2️⃣ If agent_id provided, resolve to user_id
 $agent_id = $_GET['agent_id'] ?? null;
 if ($agent_id) {
     $stmt = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
@@ -32,9 +32,8 @@ if ($agent_id) {
     $stmt->close();
 }
 
-// 3️⃣ Prepare conversation header and contact info
+// 3️⃣ Fetch conversation contact info
 if ($user_id) {
-    // Fetch user info for the conversation
     $stmt = $conn->prepare("
         SELECT id, first_name, last_name, email 
         FROM users 
@@ -60,7 +59,7 @@ if ($user_id) {
     $chat_header = "No conversation selected";
 }
 
-// Fetch all users for conversation list
+// Fetch all contacts for conversation list
 $contacts_list = [];
 $sql = "
     SELECT DISTINCT u.id, CONCAT(u.first_name,' ',u.last_name) AS name
@@ -78,7 +77,7 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// Fetch messages only if a conversation is selected
+// Fetch messages
 $messages = [];
 if ($contact) {
     $stmt = $conn->prepare("
@@ -96,7 +95,6 @@ if ($contact) {
     $stmt->close();
 }
 
-// Prepare names for messages
 $contact_names = $contacts_list;
 $contact_names[$current_user_id] = 'You';
 
@@ -107,7 +105,7 @@ $chat_header = $user_id ? $contact_name : "Select a conversation";
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Chat with <?= htmlspecialchars($contact_name) ?></title>
+<title>Chat with <?= htmlspecialchars($contact_name ?? 'Client') ?></title>
 <link rel="stylesheet" href="../assets/css/agent_message.css">
 </head>
 <body>
@@ -115,18 +113,21 @@ $chat_header = $user_id ? $contact_name : "Select a conversation";
 <div class="chat-container">
 
     <!-- Conversations List -->
-<div class="conversations-list">
-    <h3>Conversations</h3>
+    <div class="conversations-list">
+        <h3>Conversations</h3>
         <?php foreach ($contacts_list as $id => $name): ?>
-            <div class="conversation-item <?= ($id === $contact['id']) ? 'unread' : '' ?>" data-user-id="<?= $id ?>">
+            <div class="conversation-item <?= ($id == ($contact['id'] ?? 0)) ? 'active' : '' ?>" data-user-id="<?= $id ?>">
                 <?= htmlspecialchars($name) ?>
             </div>
         <?php endforeach; ?>
     </div>
 
     <!-- Chat Window -->
-    <div class="chat-window" data-user-id="<?= $contact['id'] ?>">
-        <div class="chat-header"><?= htmlspecialchars($chat_header) ?></div>
+    <div class="chat-window" data-user-id="<?= $contact['id'] ?? '' ?>">
+        <div class="chat-header">
+            <button id="sidebarToggle" class="sidebar-toggle">☰</button>
+            <?= htmlspecialchars($chat_header) ?>
+        </div>
         <div class="messages" id="messages">
             <?php foreach ($messages as $msg):
                 $isYou = $msg['sender_id'] === $current_user_id;
@@ -147,6 +148,8 @@ $chat_header = $user_id ? $contact_name : "Select a conversation";
 
 </div>
 
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const sendBtn = document.getElementById('sendBtn');
@@ -155,14 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatWindow = document.querySelector('.chat-window');
     const receiverId = chatWindow.dataset.userId;
 
-    // Disable input if no conversation selected
     const canSend = receiverId && receiverId !== "";
-    if (!canSend) {
-        sendBtn.disabled = true;
-        messageInput.disabled = true;
-    }
 
-    // Send message function
     const sendMessage = () => {
         const message = messageInput.value.trim();
         if (!message || !canSend) return;
@@ -177,7 +174,28 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 const msgDiv = document.createElement('div');
                 msgDiv.classList.add('message', 'you');
-                msgDiv.innerHTML = `<div class="sender">You:</div><div class="text">${data.message.text}</div>`;
+
+                const rawDate = data.message.created_at
+                    ? new Date(data.message.created_at)
+                    : new Date();
+
+                const options = {
+                    month: 'short',
+                    day: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                };
+                const timestamp = rawDate.toLocaleString('en-US', options).replace(',', '');
+
+                msgDiv.innerHTML = `
+                    <div class="sender">
+                        You <span class="timestamp">${timestamp}</span>:
+                    </div>
+                    <div class="text">${data.message.text}</div>
+                `;
+
                 messagesContainer.appendChild(msgDiv);
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 messageInput.value = '';
@@ -188,10 +206,24 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => console.error(err));
     };
 
-    // Event listeners
-    sendBtn.addEventListener('click', sendMessage);
-    messageInput.addEventListener('keypress', e => {
+    sendBtn?.addEventListener('click', sendMessage);
+    messageInput?.addEventListener('keypress', e => {
         if (e.key === 'Enter') sendMessage();
+    });
+
+    // Sidebar toggle
+    const sidebar = document.querySelector('.conversations-list');
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggleBtn = document.getElementById('sidebarToggle');
+
+    toggleBtn?.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('active');
+    });
+
+    overlay?.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
     });
 
     // Switch conversations
@@ -200,12 +232,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const userId = item.dataset.userId;
             if (userId) {
                 window.location.href = `/BatEstateExplorer/public/agent_message.php?user_id=${userId}`;
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
             }
         });
     });
 });
 </script>
-
 
 </body>
 </html>

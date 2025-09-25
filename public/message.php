@@ -16,10 +16,10 @@ function decryptMessage($encrypted_base64) {
 $current_user_id = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
 if (!$current_user_id) die("User not logged in.");
 
-// 1️⃣ Get user_id from URL (conversation switch)
+// 1️⃣ Get user_id from URL
 $user_id = $_GET['user_id'] ?? null;
 
-// 2️⃣ If agent_id is provided (from modal button), resolve to user_id
+// 2️⃣ If agent_id provided, resolve to user_id
 $agent_id = $_GET['agent_id'] ?? null;
 if ($agent_id) {
     $stmt = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
@@ -27,17 +27,17 @@ if ($agent_id) {
     $stmt->execute();
     $res = $stmt->get_result();
     if ($row = $res->fetch_assoc()) {
-        $user_id = (int)$row['user_id']; // overwrite or set user_id
+        $user_id = (int)$row['user_id'];
     }
     $stmt->close();
 }
 
-// 3️⃣ Fallback: if no user_id found, display "Select a conversation"
+// 3️⃣ Fallback if no user_id
 if (!$user_id) {
-    $agent = null;           // No agent selected
+    $agent = null;
     $agent_name = "No conversation selected";
-    $messages = [];          // Empty messages
-    $receiver_disabled = true; // Flag to disable input
+    $messages = [];
+    $receiver_disabled = true;
 } else {
     // 4️⃣ Fetch agent info
     $stmt = $conn->prepare("
@@ -79,21 +79,23 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// Fetch conversation messages with this agent
+// Fetch conversation messages
 $messages = [];
-$stmt = $conn->prepare("
-    SELECT sender_id, message, created_at
-    FROM messages
-    WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
-    ORDER BY created_at ASC
-");
-$stmt->bind_param("iiii", $current_user_id, $agent['id'], $agent['id'], $current_user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $messages[] = $row;
+if ($agent) {
+    $stmt = $conn->prepare("
+        SELECT sender_id, message, created_at
+        FROM messages
+        WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+        ORDER BY created_at ASC
+    ");
+    $stmt->bind_param("iiii", $current_user_id, $agent['id'], $agent['id'], $current_user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $messages[] = $row;
+    }
+    $stmt->close();
 }
-$stmt->close();
 
 $agent_names = $agents_list;
 $agent_names[$current_user_id] = 'You';
@@ -104,31 +106,7 @@ $agent_names[$current_user_id] = 'You';
 <head>
 <meta charset="UTF-8">
 <title>Chat with <?= htmlspecialchars($agent_name) ?></title>
-<style>
-/* Your CSS remains the same */
-body{margin:0;font-family:Arial,sans-serif;background:#f0f2f5}
-.chat-container{display:flex;height:100vh;overflow:hidden}
-.conversations-list{width:300px;border-right:1px solid #ddd;overflow-y:auto;padding:10px;background:#fff}
-.conversations-list h3{margin-top:0;font-size:1.2rem;color:#333;border-bottom:1px solid #eee;padding-bottom:5px}
-.conversation-item{padding:10px;border-bottom:1px solid #eee;cursor:pointer;transition:background .2s}
-.conversation-item:hover{background:#f1f1f1}
-.conversation-item.unread{background:#e6f0ff;font-weight:bold}
-.chat-window{flex:1;display:flex;flex-direction:column;background:#f9f9f9}
-.chat-header{font-size:18px;background:#f5f5f5;border-bottom:1px solid #ddd;padding:15px;font-weight:bold;color:#333}
-.messages{flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
-.message{max-width:60%;padding:10px 15px;border-radius:12px;word-break:break-word;position:relative}
-.message.you{background:#007bff;color:#fff;margin-left:auto;border-bottom-right-radius:0}
-.message.agent{background:#e4e6eb;color:#000;margin-right:auto;border-bottom-left-radius:0}
-.message .sender{font-weight:bold;font-size:.85rem;display:flex;align-items:center;gap:5px}
-.message .timestamp{font-size:.7rem;color:#666}
-.chat-input{display:flex;border-top:1px solid #ddd;padding:10px;background:#fff}
-.chat-input input[type="text"]{flex:1;padding:10px;border:1px solid #ccc;border-radius:20px;outline:none}
-.chat-input button{padding:10px 20px;margin-left:10px;border:none;background:#007bff;color:#fff;border-radius:20px;cursor:pointer;transition:background .2s}
-.chat-input button:hover{background:#0056b3}
-.messages::-webkit-scrollbar{width:6px}
-.messages::-webkit-scrollbar-thumb{background:rgba(0,0,0,.2);border-radius:3px}
-.messages::-webkit-scrollbar-track{background:transparent}
-</style>
+<link rel="stylesheet" href="../assets/css/agent_message.css">
 </head>
 <body>
 
@@ -138,15 +116,18 @@ body{margin:0;font-family:Arial,sans-serif;background:#f0f2f5}
     <div class="conversations-list">
         <h3>Conversations</h3>
         <?php foreach ($agents_list as $id => $name): ?>
-            <div class="conversation-item <?= ($id === $agent['id']) ? 'unread' : '' ?>" data-user-id="<?= $id ?>">
+            <div class="conversation-item <?= ($id == ($agent['id'] ?? 0)) ? 'active' : '' ?>" data-user-id="<?= $id ?>">
                 <?= htmlspecialchars($name) ?>
             </div>
         <?php endforeach; ?>
     </div>
 
     <!-- Chat Window -->
-    <div class="chat-window" data-user-id="<?= $agent['id'] ?>">
-        <div class="chat-header"><?= htmlspecialchars($agent_name) ?></div>
+    <div class="chat-window" data-user-id="<?= $agent['id'] ?? '' ?>">
+        <div class="chat-header">
+            <button id="sidebarToggle" class="sidebar-toggle">☰</button>
+            <?= htmlspecialchars($agent_name) ?>
+        </div>
         <div class="messages" id="messages">
             <?php foreach ($messages as $msg):
                 $isYou = $msg['sender_id'] === $current_user_id;
@@ -163,10 +144,10 @@ body{margin:0;font-family:Arial,sans-serif;background:#f0f2f5}
             <input type="text" id="messageInput" placeholder="Type your message..." <?= ($receiver_disabled ?? false) ? 'disabled' : '' ?>>
             <button id="sendBtn" <?= ($receiver_disabled ?? false) ? 'disabled' : '' ?>>Send</button>
         </div>
-
     </div>
-
 </div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <script>
 const sendBtn = document.getElementById('sendBtn');
@@ -175,7 +156,7 @@ const messagesContainer = document.getElementById('messages');
 const chatWindow = document.querySelector('.chat-window');
 const receiverId = chatWindow.dataset.userId;
 
-sendBtn.addEventListener('click', () => {
+sendBtn?.addEventListener('click', () => {
     const message = messageInput.value.trim();
     if (!message) return;
 
@@ -186,27 +167,65 @@ sendBtn.addEventListener('click', () => {
     })
     .then(res=>res.json())
     .then(data=>{
-        if(data.success){
+        if (data.success) {
             const msgDiv = document.createElement('div');
-            msgDiv.classList.add('message','you');
-            msgDiv.innerHTML = `<div class="sender">You:</div><div class="text">${data.message.text}</div>`;
+            msgDiv.classList.add('message', 'you');
+
+            const rawDate = data.message.created_at
+                ? new Date(data.message.created_at)
+                : new Date();
+
+            const options = {
+                month: 'short',
+                day: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            };
+            const timestamp = rawDate.toLocaleString('en-US', options).replace(',', '');
+
+            msgDiv.innerHTML = `
+                <div class="sender">
+                    You <span class="timestamp">${timestamp}</span>:
+                </div>
+                <div class="text">${data.message.text}</div>
+            `;
+
             messagesContainer.appendChild(msgDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
             messageInput.value = '';
-        }else alert(data.error);
+        } else alert(data.error);
     }).catch(err=>console.error(err));
 });
 
-messageInput.addEventListener('keypress', e => { if(e.key==='Enter') sendBtn.click(); });
+messageInput?.addEventListener('keypress', e => { if(e.key==='Enter') sendBtn.click(); });
+
+// Sidebar toggle
+const sidebar = document.querySelector('.conversations-list');
+const overlay = document.getElementById('sidebarOverlay');
+const toggleBtn = document.getElementById('sidebarToggle');
+
+toggleBtn?.addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('active');
+});
+
+overlay?.addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('active');
+});
 
 // Switch conversations
 document.querySelectorAll('.conversation-item').forEach(item=>{
     item.addEventListener('click', ()=>{
         const userId = item.dataset.userId;
         window.location.href = `/BatEstateExplorer/public/message.php?user_id=${userId}`;
+        // Close drawer on mobile
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
     });
 });
-
 </script>
 
 </body>
