@@ -1,124 +1,132 @@
 <?php
 // user_layout.php
 
-// $title (string) - Page title
-// $current_user (array|null) - Logged-in user data
-// $content (string) - HTML content of the page
+if (!isset($page_title)) $page_title = "User Dashboard";
+$user = $_SESSION['user'] ?? null; // Logged-in user
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?= htmlspecialchars($title ?? 'BatEstate User Panel') ?></title>
-    <link rel="stylesheet" href="../../assets/css/user_dashboard.css" />
-    <link rel="stylesheet" href="../../assets/css/property_card.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
+  <meta charset="UTF-8">
+  <title><?= htmlspecialchars($page_title) ?></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/agent_layout.css">
+  <link rel="stylesheet" href="../../assets/css/property_card.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
-    <div class="dashboard-container">
-        <nav class="topbar">
-            <div class="topbar-left">
-                <h2>🏠 BatEstate</h2>
-                <p>User Panel</p>
-            </div>
 
-            <ul class="topbar-nav">
-                <li>
-                    <a href="user_dashboard.php?view=home" <?= ($title === 'User Dashboard | BatEstate') ? 'class="active"' : '' ?>>
-                        <i class="fa-solid fa-home"></i> Home
-                    </a>
-                </li>
-                <li>
-                    <a href="user_dashboard.php?view=profile" <?= ($title === 'User Profile | BatEstate') ? 'class="active"' : '' ?>>
-                        <i class="fa-solid fa-user"></i> Profile
-                    </a>
-                </li>
-                <li>
-                    <a href="user_dashboard.php?view=search" <?= ($title === 'Search Properties | BatEstate') ? 'class="active"' : '' ?>>
-                        <i class="fa-solid fa-search"></i> Search Properties
-                    </a>
-                </li>
-            </ul>
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-container">
+    <!-- Logo / Left -->
+    <div class="nav-logo">
+      <img src="/BatEstateExplorer/assets/images/vector 1.png" alt="BatEstate Explorer Logo" class="nav-logo-img">
+      <span>BatEstate Explorer</span>
+    </div>
 
-            <div class="topbar-buttons">
-                <a href="user_dashboard.php?view=become_direct_agent">Become Direct Agent</a>
-                <a href="user_dashboard.php?view=become_associate_agent">Become Associate Agent</a>
+    <!-- Mobile burger -->
+    <button class="nav-burger" aria-label="Toggle Menu">
+      <i class="fa-solid fa-bars"></i>
+    </button>
 
-                <!-- Message Icon -->
-                <a href="http://localhost/BatEstateExplorer/public/message.php" 
-                title="Messages" 
-                target="_blank"
-                style="
-                        display:inline-flex;
-                        align-items:center;
-                        justify-content:center;
-                        width:40px;
-                        height:40px;
-                        border-radius:50%;
-                        background-color:#007bff;
-                        color:white;
-                        text-decoration:none;
-                        margin-left:10px;
-                        font-size:1.2rem;
-                        transition:background 0.2s;
-                    "
-                onmouseover="this.style.backgroundColor='#0056b3';"
-                onmouseout="this.style.backgroundColor='#007bff';"
-                >
-                    <i class="fa-solid fa-message"></i>
-                </a>
-            </div>
+    <!-- Mobile dropdown links -->
+    <div class="nav-dropdown">
+      <div class="nav-links-mobile">
+        <a href="user_dashboard.php?view=home" class="nav-link <?= ($view === 'home') ? 'active' : '' ?>"><i class="fa-solid fa-house"></i> Home</a>
+        <a href="user_dashboard.php?view=profile" class="nav-link <?= ($view === 'profile') ? 'active' : '' ?>"><i class="fa-solid fa-user"></i> Profile</a>
+        <a href="user_dashboard.php?view=search" class="nav-link <?= ($view === 'search') ? 'active' : '' ?>"><i class="fa-solid fa-search"></i> Search</a>
+        <a href="/BatEstateExplorer/public/message.php" class="nav-link" target="_blank"><i class="fa-solid fa-envelope"></i> Messages</a>
+        <button type="button" class="nav-link logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+      </div>
+    </div>
 
-            <div class="user-info-logout">
-                <form action="../../auth/logout.php" method="POST" class="logout-form" style="display:inline;">
-                    <button type="submit" class="logout-button" title="Logout" style="
-                        background-color: #dc3545;
-                        border: none;
-                        color: white;
-                        padding: 0.4rem 0.8rem;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        font-size: 1rem;
-                        font-family: inherit;
-                    ">
-                        Logout
-                    </button>
-                </form>
-            </div>
-        </nav>
+    <!-- Center links -->
+    <div class="nav-center">
+      <a href="user_dashboard.php?view=home" class="nav-link <?= ($view === 'home') ? 'active' : '' ?>"><i class="fa-solid fa-house"></i> Home</a>
+      <a href="user_dashboard.php?view=profile" class="nav-link <?= ($view === 'profile') ? 'active' : '' ?>"><i class="fa-solid fa-user"></i> Profile</a>
+      <a href="user_dashboard.php?view=search" class="nav-link <?= ($view === 'search') ? 'active' : '' ?>"><i class="fa-solid fa-search"></i> Search</a>
+    </div>
 
-        <div class="main-content" style="padding: 60px;">
-            <?= $content ?>
-        </div>
+    <!-- Right -->
+    <div class="nav-right">
+      <a href="/BatEstateExplorer/public/message.php" target="_blank" class="glow-link"><i class="fa-solid fa-envelope"></i> Messages</a>
+      <button type="button" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </div>
+  </div>
+</nav>
 
-             <!-- Footer -->
-    <footer class="site-footer">
-        <div class="footer-container">
-            <p>&copy; <?= date('Y') ?> BatEstate Explorer. All rights reserved.</p>
-            <ul class="footer-links">
-                <li><a href="#">Privacy Policy</a></li>
-                <li><a href="#">Terms of Service</a></li>
-                <li><a href="#">Contact Us</a></li>
-            </ul>
-        </div>
-    </footer>
+<main class="dashboard-content">
+  <?= $content ?? '' ?>
+</main>
+
+<!-- Logout Modal -->
+<div id="logoutModal" class="modal-agent">
+  <div class="modal-content-agent">
+    <h4>Confirm Logout</h4>
+    <p>Are you sure you want to log out?</p>
+    <form id="logoutForm" method="POST" action="../../auth/logout.php">
+      <div class="modal-actions-agent">
+        <button type="submit" class="delete-btn-agent">Yes, Logout</button>
+        <button type="button" id="cancelLogoutBtn" class="cancel-btn-agent">Cancel</button>
+      </div>
+      <div id="logoutSpinner" class="spinner-agent">
+        <div class="loader"></div>
+        <span>Logging out...</span>
+      </div>
+    </form>
+  </div>
 </div>
 
-<!-- ✅ Global JS config for all views -->
 <script>
-    window.AppConfig = {
-        userToken: "<?= $_SESSION['user']['token'] ?? '' ?>",
-        userId: <?= (int)($_SESSION['user']['id'] ?? 0) ?>,
-        userType: "<?= $_SESSION['user']['user_type'] ?? '' ?>"
-    };
+document.addEventListener('DOMContentLoaded', function() {
+  const logoutModal = document.getElementById('logoutModal');
+  const cancelBtn = document.getElementById('cancelLogoutBtn');
+  const logoutForm = document.getElementById('logoutForm');
+  const spinner = document.getElementById('logoutSpinner');
+
+  document.querySelectorAll('.logout-btn').forEach(btn => {
+    btn.addEventListener('click', () => logoutModal.classList.add('active-agent'));
+  });
+
+  cancelBtn.addEventListener('click', () => logoutModal.classList.remove('active-agent'));
+
+  logoutForm.addEventListener('submit', () => spinner.style.display = 'flex');
+});
 </script>
 
-<!-- Load page-specific JS after config -->
-<?php if (!empty($pageScript)): ?>
-    <script src="<?= htmlspecialchars($pageScript) ?>"></script>
-<?php endif; ?>
-<?php include __DIR__ . "/../../../../components/notification.php"; ?>
+<script src="/BatEstateExplorer/assets/js/agents.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Footer -->
+<footer class="footer scroll-animation">
+  <div class="container scroll-animation">
+    <div class="footer-content scroll-animation">
+      <div class="footer-section scroll-animation">
+        <h3>BatEstate Explorer</h3>
+        <p>Your trusted partner in finding the perfect property.</p>
+      </div>
+      <div class="footer-section scroll-animation">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="#home">Home</a></li>
+          <li><a href="#properties">Properties</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-section scroll-animation">
+        <h4>Contact Info</h4>
+        <p><i class="fas fa-envelope"></i> info@batestate.com</p>
+        <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+      </div>
+    </div>
+    <div class="footer-bottom scroll-animation">
+      <p>&copy; <?= date('Y') ?> BatEstate Explorer. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
 
 </body>
 </html>

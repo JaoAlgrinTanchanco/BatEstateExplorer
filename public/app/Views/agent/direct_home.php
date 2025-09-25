@@ -62,7 +62,7 @@ require_once __DIR__ . '/../../../../components/agent_property_card.php';
 ?>
 
 <!-- CSS -->
-<link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_home.css">
+<link rel="stylesheet" href="/BatEstateExplorer/assets/css/home.css">
 
 <!-- Welcome Banner -->
 <div class="welcome-card">
