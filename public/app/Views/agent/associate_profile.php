@@ -591,12 +591,11 @@
                         </div>
                     </div>
 
-                    <!-- Reviews Card (full width) -->
-                    <div class="card analytics-reviews">
-                        <h3>Property Reviews</h3>
-
+                    <!-- Property Reviews Card -->
+                    <h3>Property Reviews</h3>
+                    <div class="card analytics-reviews review-cards">
                         <?php if (!empty($reviews)): ?>
-                            <?php foreach($reviews as $r): 
+                            <?php foreach ($reviews as $r): 
                                 $user_name = trim($r['first_name'] . ' ' . $r['last_name']);
                                 $image_path = !empty($r['image_path']) 
                                     ? "/BatEstateExplorer/" . $r['image_path'] 
@@ -604,18 +603,20 @@
                             ?>
                             <div class="review-card">
                                 <div class="review-left">
-                                    <h4><?= htmlspecialchars($user_name) ?></h4>
-                                    <p class="review-email"><?= htmlspecialchars($r['email']) ?></p>
-                                    <div class="stars">
+                                    <div class="review-header">
+                                        <h4><?= htmlspecialchars($user_name) ?></h4>
+                                        <p class="review-email"><?= htmlspecialchars($r['email']) ?>:</p>
+                                        <span class="review-title"><?= htmlspecialchars($r['title']) ?></span>
+                                    </div>
+                                    <div class="review-stars">
                                         <?php for($i = 1; $i <= 5; $i++): ?>
                                             <span class="star <?= $i <= $r['rating'] ? 'filled' : '' ?>">★</span>
                                         <?php endfor; ?>
                                     </div>
-                                    <p class="review-text"><?= nl2br(htmlspecialchars($r['review_text'])) ?></p>
+                                    <div class="review-text"><?= nl2br(htmlspecialchars($r['review_text'])) ?></div>
                                 </div>
                                 <div class="review-right">
                                     <img src="<?= htmlspecialchars($image_path) ?>" alt="<?= htmlspecialchars($r['title']) ?>">
-                                    <p class="review-title"><?= htmlspecialchars($r['title']) ?></p>
                                 </div>
                             </div>
                             <?php endforeach; ?>

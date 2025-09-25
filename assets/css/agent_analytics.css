@@ -2,29 +2,30 @@
 .card {
   background: #fff;
   border: 1px solid #eee;
-  border-radius: 12px;
+  border-radius: 20px;
   padding: 1.5rem;
-  margin-bottom: 2rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-/* ====== Analytics Summary Wrapper - Centered with fixed width ====== */
+/* ====== Analytics Summary Wrapper ====== */
 .analytics-summary-wrapper {
-  max-width: 600px;       /* same width as wallet/agent cards */
-  margin-left: auto;
-  margin-right: auto;
-  padding: 1rem;          /* optional padding */
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
 }
 
-/* Make the summary card inside this wrapper full width */
 .analytics-summary-wrapper .analytics-summary {
   width: 100%;
 }
 
-/* Reviews card stays full width */
 .analytics-reviews {
+  padding: 0;
+  margin-top: 1.5rem;
+  background: none; 
+  box-shadow: none;
   width: 100%;
-  margin-top: 1.5rem;    /* spacing from summary card */
+  height: 496px;        /* full height of parent container */
+  overflow-y: auto;    /* enable vertical scrolling */
 }
 
 /* ====== Analytics Top Card Content ====== */
@@ -47,100 +48,179 @@
 }
 
 /* ====== Stars Styling ====== */
-.review-left .star {
-  font-size: 1.5rem;    /* bigger */
-  color: #ddd;          /* unfilled stars light gray */
-  margin: 0 0.05rem;
+.star {
+  font-size: 2.5rem;
+  color: #ddd;
+  margin-right: 0.05rem;
 }
 
-.review-left .star.filled {
-  color: #000;          /* filled stars black */
+.star.filled {
+  color: #FFD700;
 }
 
-/* ====== Review Cards ====== */
+/* ====== Review Cards Wrapper ====== */
 .review-cards {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
+/* ====== Single Review Card ====== */
 .review-card {
+  background: #fff;
   display: flex;
   justify-content: space-between;
   gap: 1.5rem;
-  border-top: 1px solid #f0f0f0;
-  padding-top: 1.25rem;
+  padding: 1rem;
+  border-radius: 20px;
 }
 
 .review-card:first-child {
   border-top: none;
-  padding-top: 0;
 }
 
+/* ====== Left Section (Text Content) ====== */
 .review-left {
   flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.review-left h4 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #222;
+/* Name and Email in one line */
+.review-left .review-header {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 1rem; /* force font size */
+    font-weight: 500;
+    color: #222; /* default color for name */
 }
 
-.review-left p {
-  margin: 0.25rem 0;
+.review-left .review-header h4 {
+    margin: 0;
+    font-size: 1rem; /* override bootstrap h4 */
+    font-weight: 600;
+    color: #222;
+    position: relative;
+}
+
+.review-left .review-header p {
+    margin: 0;
+    font-size: 0.95rem; /* slightly smaller than name */
+    color: #888; /* gray for email */
+    font-weight: 400;
+}
+
+.review-left .review-header h4::after {
+    content: "|";
+    margin: 0 0.3rem;
+    color: #555;
+}
+
+/* Stars row */
+.review-left .review-stars {
+  display: flex;
+  align-items: center;
+}
+
+.review-left .review-stars .star {
+  font-size: 1.2rem;
+  color: #ddd;
+}
+
+.review-left .review-stars .star.filled {
+  color: #FFD700;
+}
+
+/* Description row */
+.review-left .review-text {
   font-size: 0.9rem;
-  color: #444;
+  color: #333;
+  line-height: 1.4;
 }
 
-.review-left .stars {
-  margin: 0.4rem 0;
-}
-
-.review-left .star {
-  font-size: 1.1rem;
-  color: #fff; /* unfilled stars are white */
-  text-shadow: 0 0 1px #000; /* optional for contrast */
-}
-
-.review-left .star.filled {
-  color: #000; /* filled stars are black */
-}
-
+/* ====== Right Section (Title + Image in Row, flex-end) ====== */
 .review-right {
   flex: 1;
-  text-align: center;
-}
-
-.review-right img {
-  width: 100%;
-  max-width: 120px;
-  border-radius: 10px;
-  object-fit: cover;
-  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: row;       /* title + image in a row */
+  align-items: flex-end;     /* align to bottom of card */
+  justify-content: flex-end; /* push content to right */
+  gap: 0.5rem;
 }
 
 .review-right p {
   font-size: 0.9rem;
   font-weight: 500;
   color: #333;
+  margin: 0;
 }
 
-/* ====== Responsive ====== */
+.review-right img {
+  width: 100px;
+  height: auto;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+/* ====== Responsive Adjustments ====== */
 @media (max-width: 768px) {
+  /* Small screens - only adjust minor elements, keep row layout */
   .review-card {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+    flex-direction: row; /* keep cards in a row */
+    align-items: flex-start;
+    text-align: left;
   }
 
   .review-left, .review-right {
     flex: unset;
-    width: 100%;
+    width: auto;
+  }
+
+  .review-left .review-header {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .review-right {
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin-top: 0;
   }
 
   .review-right img {
-    max-width: 100px;
+    max-width: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Very small screens - allow minimal wrapping if needed */
+  .review-left .review-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
+
+  .review-left .review-header h4::after {
+    display: none; /* remove the "|" on very small screens */
+  }
+
+  .review-left .review-stars {
+    justify-content: flex-start;
+  }
+
+  .review-right {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.25rem;
+  }
+
+  .review-right img {
+    max-width: 70px;
   }
 }
