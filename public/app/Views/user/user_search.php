@@ -1,7 +1,7 @@
 <?php
     require_once __DIR__ . '/../../../../config/database.php';
     require_once __DIR__ . '/../../../../components/notification.php';
-    require_once __DIR__ . '/../../../../components/agent_property_card.php';
+    require_once __DIR__ . '/../../../../components/user_property_card.php';
 
     //
     // ================================
@@ -243,7 +243,7 @@
             <?php foreach ($properties as $property):
                 $property['data_type'] = $property['property_type'];
                 $property['data_size'] = $property['sqm'];
-                render_agent_property_card($property);
+                render_property_card($property);
             endforeach; ?>
         <?php else: ?>
             <p>No properties available at the moment.</p>
@@ -282,7 +282,7 @@
         ?>
     </div>
 
-    <?php render_agent_property_card([], true); ?>
+    <?php render_property_card([], true); ?>
 </div>
 
 <script>

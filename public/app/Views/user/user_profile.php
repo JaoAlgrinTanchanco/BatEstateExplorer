@@ -94,30 +94,34 @@
     </div>
   </div>
 
-  <!-- 3-dot menu -->
   <div class="profile-actions">
-    <button class="dots-btn" id="profileDotsBtn" title="Options">
+    <button class="dots-btn" id="profileDotsBtn" title="Options" aria-expanded="false" aria-controls="profileDropdownMenu">
       <i class="fa-solid fa-ellipsis"></i>
     </button>
 
     <div class="popup-menu" id="profileDropdownMenu">
-      <div class="menu-item" id="editProfileBtn">
+      
+      <div class="menu-item" id="editProfileBtn" role="button" tabindex="0">
         <i class="fa-solid fa-user-pen"></i><span>Edit Profile</span>
       </div>
       
-      <div class="menu-item" id="becomeDirectAgent">
+      <a href="/BatEstateExplorer/auth/agent_registration.php?type=direct_agent"
+        class="menu-item <?= $disableAgentOptions ? 'disabled' : '' ?>" 
+        id="becomeDirectAgent"
+        aria-disabled="<?= $disableAgentOptions ? 'true' : 'false' ?>">
         <i class="fa-solid fa-user-tie"></i>
-        <a href="/BatEstateExplorer/auth/agent_registration.php?type=direct_agent"
-           class="<?= $disableAgentOptions ? 'disabled' : '' ?>">Become Direct Agent</a>
-      </div>
+        <span>Become Direct Agent</span>
+      </a>
 
-      <div class="menu-item" id="becomeAssociateAgent">
+      <a href="/BatEstateExplorer/auth/agent_registration.php?type=associate_agent"
+        class="menu-item <?= $disableAgentOptions ? 'disabled' : '' ?>" 
+        id="becomeAssociateAgent"
+        aria-disabled="<?= $disableAgentOptions ? 'true' : 'false' ?>">
         <i class="fa-solid fa-user-plus"></i>
-        <a href="/BatEstateExplorer/auth/agent_registration.php?type=associate_agent"
-           class="<?= $disableAgentOptions ? 'disabled' : '' ?>">Become Associate Agent</a>
-      </div>
+        <span>Become Associate Agent</span>
+      </a>
 
-      <div class="menu-item" id="deleteAccount">
+      <div class="menu-item" id="deleteAccount" role="button" tabindex="0">
         <i class="fa-solid fa-trash"></i><span>Delete Account</span>
       </div>
     </div>
