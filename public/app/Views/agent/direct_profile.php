@@ -854,7 +854,7 @@
                             <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
                             <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
                                 <button type="submit" id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
-                                <button type="button" id="cancelDeleteBtn">Cancel</button>
+                                <button type="button" id="cancelDeleteBtn" class="cancel-btn">Cancel</button>
                             </div>
                             <div id="deleteSpinner" class="spinner" style="display:none;">
                                 <div class="loader"></div>

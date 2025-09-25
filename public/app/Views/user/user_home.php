@@ -75,7 +75,7 @@ foreach ($specificTowns as $town) {
 
 <!-- Welcome Banner -->
 <div class="welcome-card">
-    <img src="/BatEstateExplorer/assets/images/Frame 6.png" alt="Welcome Banner" class="welcome-image">
+    <img src="/BatEstateExplorer/assets/images/Frame 7.png" alt="Welcome Banner" class="welcome-image">
 </div>
 
 <!-- Properties Section -->

@@ -302,7 +302,7 @@
                                         method="POST" 
                                         style="display:inline;">
                                         <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
-                                        <button type="button" onclick="deleteListing(<?= $property['id'] ?>)" class="delete-btn">
+                                        <button type="button" onclick="deleteListing(<?= $property['id'] ?>)" class="delete-listing-btn">
                                             Delete
                                         </button>
                                     </form>

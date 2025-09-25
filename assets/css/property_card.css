@@ -506,8 +506,8 @@
   width: 35px;
   height: 35px;
   border-radius: 50%;
-  background: #fff;
-  color: #000;
+  background: #111;
+  color: #fff;
   font-size: 1.5rem;
   font-weight: 700;
   border: none;
@@ -520,7 +520,8 @@
 }
 
 #reviewModal .modal-close:hover {
-  background: #f0f0f0;
+  background: #fff;
+  color: #111;
   transform: scale(1.1);
 }
 
@@ -567,7 +568,7 @@
   border-radius: 12px;
   font-size: 1rem;
   font-weight: 600;
-  background-color: #27ae60;
+  background-color: #111;
   color: #fff;
   border: none;
   cursor: pointer;
@@ -575,7 +576,7 @@
 }
 
 #reviewModal .btn-success:hover {
-  background-color: #219150;
+  background-color: #666;
 }
 
 /* Animations */

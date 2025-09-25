@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
                 // Step 2: Save listing
-                return fetch('/BatEstateExplorer/public/api/associate_save_listing.php', { method:'POST', body: formData });
+                return fetch('/BatEstateExplorer/public/api/save_listing.php', { method:'POST', body: formData });
             })
             .then(res => res.json())
             .then(saveData => {

@@ -248,6 +248,15 @@
   // Expose functions globally
   window.openPropertyModal = openPropertyModal;
   window.openReviewModal = openReviewModal;
+
+  // ===== Close Review Modal via Close Button =====
+document.addEventListener("click", e => {
+  if (e.target.classList.contains("modal-close")) {
+    const modal = e.target.closest(".modal");
+    if (modal) closeModal(modal);
+  }
+});
+
 })();
 
 (() => {
