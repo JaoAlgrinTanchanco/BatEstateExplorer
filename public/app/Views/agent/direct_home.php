@@ -83,7 +83,7 @@ require_once __DIR__ . '/../../../../components/agent_property_card.php';
                             <?php render_agent_property_card($property); ?>
                         <?php endforeach; ?>
                         <!-- See More text link -->
-                        <a href="/BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_search&location=Batangas+City" class="see-more-text">See More</a>
+                        <a href="/BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_search&location=Batangas+City" class="see-more-text">See More</a>
                     </div>
                 </div>
             </div>
@@ -100,7 +100,7 @@ require_once __DIR__ . '/../../../../components/agent_property_card.php';
                                 <?php render_agent_property_card($property); ?>
                             <?php endforeach; ?>
                             <!-- See More as text link -->
-                            <a href="/BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_search&location=<?= urlencode($town) ?>" class="see-more-text">See More</a>
+                            <a href="/BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_search&location=<?= urlencode($town) ?>" class="see-more-text">See More</a>
                         </div>
                     </div>
                 </div>
