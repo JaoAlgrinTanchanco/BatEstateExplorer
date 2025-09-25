@@ -53,15 +53,56 @@ function send_otp($email, $otp) {
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
         $mail->Username   = 'johnanseldoton@gmail.com';
-        $mail->Password   = 'smcnahgndykgieab'; // your Gmail App Password
+        $mail->Password   = 'smcnahgndykgieab'; // Gmail App Password
         $mail->SMTPSecure = 'tls';
         $mail->Port       = 587;
 
         $mail->setFrom('johnanseldoton@gmail.com', 'BatEstate');
         $mail->addAddress($email);
         $mail->isHTML(true);
-        $mail->Subject = 'Password Reset OTP';
-        $mail->Body    = "Your OTP is: <b>$otp</b>. Expires in 5 minutes.";
+        $mail->CharSet = 'UTF-8'; // for emoji & special chars
+        $mail->Encoding = 'base64';
+        $mail->Subject = 'Password Reset OTP - BatEstate';
+
+        // ✅ Embed your local logo
+        $mail->addEmbeddedImage(
+            'C:/xampp/htdocs/BatEstateExplorer/assets/images/Vector 1.png', // local path
+            'batestate_logo', // CID
+            'logo.png' // name
+        );
+
+        // Styled HTML body with logo on top
+        $mail->Body = '
+        <div style="font-family: Arial, sans-serif; background:#f9fafc; padding:30px;">
+            <table style="max-width:600px; margin:auto; background:#ffffff; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.08); padding:20px;">
+                <tr>
+                    <td style="text-align:center; padding-bottom:20px;">
+                        <img src="cid:batestate_logo" alt="BatEstate Logo" style="max-width:120px; margin-bottom:15px;">
+                        <h2 style="color:#111; margin:0;">BatEstate Security</h2>
+                        <p style="color:#555; font-size:14px; margin-top:5px;">Password Reset Verification</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-size:15px; color:#333; line-height:1.6;">
+                        <p>Hello,</p>
+                        <p>We received a request to reset your BatEstate account password. Please use the OTP below to proceed:</p>
+                        <div style="text-align:center; margin:25px 0;">
+                            <span style="display:inline-block; font-size:24px; font-weight:bold; letter-spacing:5px; color:#111; background:#f1f1f1; padding:15px 25px; border-radius:8px;">' . $otp . '</span>
+                        </div>
+                        <p>This OTP will expire in <b>5 minutes</b>. If you did not request this, you can safely ignore this email.</p>
+                        <p style="margin-top:25px;">Thank you,<br><b>The BatEstate Team</b></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align:center; font-size:12px; color:#999; padding-top:20px; border-top:1px solid #eee;">
+                        © ' . date("Y") . ' BatEstate. All rights reserved.
+                    </td>
+                </tr>
+            </table>
+        </div>';
+
+        $mail->AltBody = "Your OTP is: $otp (valid for 5 minutes). If you did not request this, please ignore.";
+
         $mail->send();
         return true;
     } catch (Exception $e) {
@@ -146,12 +187,7 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['new_p
 <head>
 <meta charset="UTF-8">
 <title>Change Password</title>
-<!-- <link rel="stylesheet" href="../assets/css/signup.css"> -->
-<style>
-form { background: #fff; padding: 20px; border-radius: 8px; max-width: 400px; margin: auto; }
-input { width: 100%; padding: 10px; margin: 10px 0; }
-button { padding: 10px 20px; margin-right: 10px; }
-</style>
+<link rel="stylesheet" href="../assets/css/change_pass.css">
 <script>
 function startTimer(duration, display, resendBtn) {
     let timer = duration;
@@ -180,7 +216,7 @@ window.onload = function () {
 </script>
 </head>
 <body>
-
+<div class="change-wrapper">
 <h2>Change Password</h2>
 <!-- Back to Sign Up link -->
 <p style="text-align: center; margin-bottom: 20px;">
@@ -222,6 +258,6 @@ window.onload = function () {
     <button type="submit" name="back" value="1">Back</button>
 </form>
 <?php endif; ?>
-
+</div>
 </body>
 </html>
