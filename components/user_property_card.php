@@ -110,7 +110,7 @@ if (!function_exists('render_property_card')) {
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
 <!-- Combined Modal -->
-<div id="propertyModal" class="modal" style="display:none;">
+<div id="propertyModal" class="custom-modal" style="display:none;">
     <div class="custom-modal-content">
         <button class="close">&times;</button>
 

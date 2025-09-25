@@ -85,7 +85,7 @@ if (!function_exists('render_agent_property_card')) {
 </div>
 
 <!-- Combined Modal -->
-<div id="propertyModal" class="modal" style="display:none;">
+<div id="propertyModal" class="custom-modal" style="display:none;">
     <div class="custom-modal-content">
         <button class="close">&times;</button>
 

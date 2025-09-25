@@ -110,71 +110,96 @@
   color: #fff;
 }
 
-/* ===========================
-   Final Modal - Corrected Naming
-=========================== */
-
+/* =======================================
+   Final Modal - Fixed Dimensions (1335px total)
+======================================= */
 /* Modal backdrop and container */
-#propertyModal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 9999;
-  overflow-y: auto;
-  backdrop-filter: blur(4px);
-  font-family: 'Satoshi', sans-serif;
+#propertyModal.custom-modal {
+ display: none;
+ position: fixed;
+ top: 0;
+ left: 0;
+ width: 100%;
+ height: 100%;
+ background: rgba(0, 0, 0, 0.55);
+ z-index: 9999;
+ /* 1. Use flexbox to center the content */
+ display: flex; 
+ justify-content: center; /* Centers horizontally */
+ align-items: center;  /* Centers vertically */
+ overflow-y: auto; /* Fallback for very short screens */
+ backdrop-filter: blur(4px);
+ font-family: 'Satoshi', sans-serif;
 }
 
 #propertyModal .custom-modal-content {
-  
-  border-radius: 20px;
-  width: auto;
-  margin: auto; /* Adjusted to move the modal down */
-  display: grid;
-  grid-template-columns: auto 1fr 1fr;
-  gap: 1rem;
-  position: relative;
-  align-items: start;
+ /* Sum of column widths (585 + 359 + 359) + 2 gaps (16px + 16px) = 1335px */
+ max-width: 1335px; 
+  width: 95%; /* Ensures it shrinks on screens smaller than 1335px */
+ height: 595px; /* Locked height */
+ /* 2. Remove margin-top and margin-bottom to let flexbox center it */
+ margin: 0 auto; 
+ 
+ display: grid;
+ /* Columns locked to specified widths: Left (359), Right (585), Review (359) */
+ grid-template-columns: 585px 359px 359px; 
+ gap: 16px; /* Explicit gap size */
+ 
+ border-radius: 20px;
+ position: relative;
+ align-items: start;
 }
 
-/* Close Button */
+/* Close Button - positioned relative to the content container */
 #propertyModal .close {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  font-size: 1.6rem;
+  top: -20px; 
+  right: -20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+  border: none;
+  font-size: 1.75rem;
   font-weight: 700;
-  color: #000;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 10;
+  transition: all 0.2s ease;
 }
 
 #propertyModal .close:hover {
-  color: #444;
+  background: #fff;
+  color: #111;
+  transform: scale(1.1);
 }
 
-/* Modal Left Column */
+/* ---------------------------------- */
+/* Modal Left Column (Image Gallery) */
+/* ---------------------------------- */
 .modal-left {
+  width: 585px; /* UPDATED Locked width */
+  height: 595px; /* Locked height */
+  overflow-y: hidden; 
+  
   display: flex;
   flex-direction: column;
   background: #fff;
   border-radius: 15px;
   padding: 1.5rem;
   text-align: center;
-  min-height: auto;        /* adjust to content */
-  min-width: 358px;
-  max-width: 585px;        /* set maximum width */
-  width: 100%;             /* allow it to shrink on smaller screens */
   box-sizing: border-box;
 }
 
 .property-main-image {
+  flex-shrink: 0; 
   width: 100%;
-  aspect-ratio: 4 / 3; /* Changed to a landscape ratio */
-  height: auto; /* Ensures height adjusts with the new ratio */
+  aspect-ratio: 4 / 3;
+  height: auto; 
   background-size: cover;
   background-position: center;
   border-radius: 15px;
@@ -192,18 +217,18 @@
 .property-images {
   display: flex;
   gap: 0.5rem;
-  overflow-x: auto;       /* horizontal scroll */
-  overflow-y: hidden;     /* hide vertical scrollbar */
-  white-space: nowrap;    /* keep images in a row */
-  width: 100%;            /* full width of container */
-  padding: 0.5rem 0;      /* optional padding top/bottom */
-  scroll-behavior: smooth; /* smooth scrolling when using JS or gestures */
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  width: 100%;
+  padding: 0.5rem 0;
+  scroll-behavior: smooth;
 }
 
 .property-images img {
-  flex: 0 0 auto;         /* prevents shrinking, keeps image width */
-  width: 80px;           /* default image width, can adjust */
-  height: 80px;           /* fixed height to keep row uniform */
+  flex: 0 0 auto;
+  width: 80px;
+  height: 80px;
   object-fit: cover;
   border-radius: 8px;
   cursor: pointer;
@@ -217,7 +242,6 @@
   transform: scale(1.05);
 }
 
-/* Optional: hide scrollbar for cleaner look */
 .property-images::-webkit-scrollbar {
   height: 6px;
 }
@@ -231,16 +255,23 @@
   background: transparent;
 }
 
-/* Modal Right Column */
+
+/* ---------------------------------- */
+/* Modal Right Column (Details) */
+/* ---------------------------------- */
 .modal-right {
+  width: 359px; /* UPDATED Locked width */
+  height: 595px; /* Locked height */
+  overflow-y: hidden; /* Prevents scrollbar on the column itself */
+
   display: flex;
   flex-direction: column;
   color: #000;
-  min-height: 100%;
   background: #fff;
   border-radius: 15px;
   padding: 1.5rem;
   position: relative;
+  box-sizing: border-box;
 }
 
 .modal-right section {
@@ -259,17 +290,15 @@
   color: #333;
 }
 
-/* Details div fills the remaining space above buttons */
 .modal-right .details {
-  flex: 1 1 auto;          /* grow to fill available space */
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;         /* scroll if content overflows */
+  overflow-y: auto; /* Scrollable area for content */
 }
 
-/* Description section fills remaining vertical space in details */
 .modal-right .details section.desc {
-  flex: 1 1 auto;          /* take remaining height */
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
 }
@@ -280,31 +309,6 @@
   margin-top: 0.5rem;
 }
 
-/* Close Button */
-#propertyModal .close {
-  position: absolute;
-  top: 0;
-  right: -3.5rem;
-  width: 40px;               /* circular width */
-  height: 40px;              /* circular height */
-  border-radius: 50%;        /* make it circular */
-  background: #fff;          /* white background */
-  color: #000;               /* X color */
-  border: none;              /* remove default border */
-  font-size: 1.75rem;         /* size of the × */
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;             /* center the × */
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* subtle shadow */
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-
-#propertyModal .close:hover {
-  background: #f0f0f0;       /* slightly darker on hover */
-  transform: scale(1.1);      /* small pop effect */
-}
 
 /* ===========================
    Modal Actions - Flexible Full-Width Buttons
@@ -313,24 +317,24 @@
   display: flex;
   flex-direction: row;
 }
+
 .modal-actions {
-  margin-top: auto;         /* pushes buttons to bottom */
+  margin-top: auto;
   display: flex;
   gap: 10px;
   flex-wrap: nowrap;
 }
 
-/* Make buttons flexible and icons centered */
 .modal-actions .btn {
-  flex: 1 1 0;              /* grow to fill available space */
-  padding: 10px 16px;       /* small button */
+  flex: 1 1 0;
+  padding: 10px 16px;
   font-size: 13px;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
-  align-items: center;      /* vertically center icon */
-  justify-content: center;  /* horizontally center text */
+  align-items: center;
+  justify-content: center;
   gap: 6px;
   color: #fff;
   background-color: #000;
@@ -341,7 +345,7 @@
 
 .modal-actions .btn i {
   display: flex;
-  align-items: center;      
+  align-items: center;
   justify-content: center;
   font-size: 0.85rem;
   line-height: 1;
@@ -354,10 +358,14 @@
 }
 
 
-/* ===========================
-   Modal Reviews Section - Spanning Bottom
-=========================== */
+/* ---------------------------------- */
+/* Modal Reviews Section */
+/* ---------------------------------- */
 .modal-review {
+  width: 359px; /* Locked width */
+  height: 595px; /* Locked height */
+  overflow-y: auto; /* Scrollable area for reviews */
+  
   background: #f9f9f9;
   border-radius: 15px;
   padding: 1rem 1.5rem;
@@ -366,11 +374,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-
-  height: 100%;       /* same height as modal-right */
-  overflow-y: auto;   /* scrollable content */
+  box-sizing: border-box;
 }
-
 
 .modal-review h3 {
   margin: 0 0 1.5rem 0;
@@ -425,7 +430,7 @@
   background: transparent;
 }
 
-//rating
+/* Review Stars */
 .review-stars {
   display: inline-flex;
   align-items: center;
@@ -433,12 +438,12 @@
 }
 
 .review-stars i {
-  color: #ccc; /* empty star */
+  color: #ccc;
   font-size: 14px;
 }
 
 .review-stars i.filled {
-  color: #f5b50a; /* gold filled star */
+  color: #f5b50a;
 }
 
 .rating-stars span {
@@ -579,37 +584,50 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-//* ===========================
-   Responsive Adjustments
-=========================== */
+/* *************************************** */
+/* RESPONSIVE ADJUSTMENTS (CRITICAL OVERRIDES) */
+/* *************************************** */
 
-/* Review Modal - Mobile */
-@media (max-width: 576px) {
-  #reviewModal .reviewModal-content {
-    padding: 1rem;
-    max-width: 90%;
-  }
-
-  #reviewModal .modal-header h3 {
-    font-size: 1.2rem;
-  }
-
-  #reviewModal .rating-stars {
-    font-size: 1.3rem;
-  }
-}
-
-/* Large screens - reduce to 2 columns */
+/* --- Desktop/Large Tablet Breakpoint (<= 1300px) --- */
+/* Reduces the main modal to 2 columns and limits overall width */
 @media (max-width: 1300px) {
   #propertyModal .custom-modal-content {
+    /* Switch to 2 columns and use fractional units (fr) for scaling */
     grid-template-columns: 1fr 1fr;
     max-width: 1100px;
+    height: auto; /* Allow height to adjust based on content */
     gap: 1rem;
+  }
+  
+  /* Resetting fixed dimensions for scaling */
+  .modal-left,
+  .modal-right,
+  .modal-review {
+    width: auto;
+    height: auto; 
+    overflow-y: auto; /* All columns must be scrollable if content is long */
+  }
+
+  /* Force the review column to span two columns and move to the bottom */
+  .modal-review {
+    grid-column: span 2; 
+    order: 3;
+  }
+  
+  /* Ensure details and images scale evenly */
+  .modal-left {
+    order: 1;
+  }
+
+  .modal-right {
+    order: 2;
   }
 }
 
-/* Tablets (landscape / medium screens) */
+/* --- Tablet Breakpoint (<= 992px) --- */
+/* Further adjusts property card sizing and modal layout for tablets */
 @media (max-width: 992px) {
+  /* Property Card Adjustments */
   .property-card {
     flex: 0 1 260px;
     border-radius: 16px;
@@ -629,32 +647,44 @@
     font-size: 1.05rem;
   }
 
+  /* Modal Content Adjustments (2 columns, tighter fit) */
   #propertyModal .custom-modal-content {
-    grid-template-columns: 1fr 1fr; /* 2 columns */
     max-width: 720px;
     gap: 0.75rem;
   }
-
+  
   #propertyModal .modal-right .details {
-    max-height: calc(100% - 60px);
+    /* Ensures details section maintains height */
+    max-height: calc(100% - 60px); 
   }
 }
 
-/* Tablets (portrait / small tablets) */
+/* --- Mobile Landscape/Small Tablet Breakpoint (<= 768px) --- */
+/* Stacks the main property modal content into a single column */
 @media (max-width: 768px) {
   #propertyModal .custom-modal-content {
-    grid-template-columns: 1fr; /* stack into 1 column */
+    grid-template-columns: 1fr; /* Stack into 1 column */
     max-width: 95%;
     gap: 1rem;
   }
 
-  #propertyModal .modal-review {
-    order: 3; /* force reviews under details */
+  /* All three columns stack */
+  .modal-left,
+  .modal-right,
+  .modal-review {
+    grid-column: span 1; /* Reset to single column span */
+    order: initial;
+  }
+
+  .modal-review {
+    order: 3; /* Keep reviews last */
   }
 }
 
-/* Mobile */
+/* --- Mobile Portrait Breakpoint (<= 576px) --- */
+/* Fine-tunes sizes for mobile screens */
 @media (max-width: 576px) {
+  /* Property Card Adjustments */
   .property-card {
     flex: 0 1 160px;
     border-radius: 12px;
@@ -685,23 +715,37 @@
     border-radius: 10px;
   }
 
+  /* Modal Adjustments */
   #propertyModal .custom-modal-content {
-    grid-template-columns: 1fr;
     padding: 1rem;
-    max-width: 95%;
   }
 
   #propertyModal .modal-actions {
-    flex-direction: row;
+    flex-direction: column; /* Stack buttons vertically on small screens */
     gap: 8px;
   }
 
   #propertyModal .modal-actions .btn {
-    flex: 1 1 0;
+    flex: 1 1 auto;
   }
 
   #propertyModal .close {
+    /* Reposition close button slightly on mobile */
     right: 1rem;
     top: 1rem;
+  }
+
+  /* Review Modal Adjustments */
+  #reviewModal .reviewModal-content {
+    padding: 1rem;
+    max-width: 90%;
+  }
+
+  #reviewModal .modal-header h3 {
+    font-size: 1.2rem;
+  }
+
+  #reviewModal .rating-stars {
+    font-size: 1.3rem;
   }
 }

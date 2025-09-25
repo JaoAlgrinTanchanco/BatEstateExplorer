@@ -248,7 +248,7 @@
   document.addEventListener("click", e => {
     const card = e.target.closest(".property-card");
     const reviewBtn = e.target.closest("[id='leaveReviewBtn']");
-    const closeBtn = e.target.closest(".modal .close");
+    const closeBtn = e.target.closest(".custom-modal .close");
 
     // Open property modal
     if (card && !e.target.closest(".modal")) return openPropertyModal(card.dataset.id);
@@ -260,7 +260,7 @@
     }
 
     // Close modal via close button
-    if (closeBtn) return closeModal(closeBtn.closest(".modal"));
+    if (closeBtn) return closeModal(closeBtn.closest(".custom-modal"));
 
     // Close modal by clicking outside content
     if (e.target.id === "propertyModal") closeModal(e.target);
@@ -277,24 +277,6 @@
   const saveBtn = document.getElementById("saveFavoriteBtn");
 
   if (!saveBtn) return;
-
-  // --- Helper to show notifications ---
-  function notify(type, message) {
-    let container = document.querySelector(".notification-container");
-    if (!container) {
-      container = document.createElement("div");
-      container.className = "notification-container";
-      document.body.appendChild(container);
-    }
-
-    const notif = document.createElement("div");
-    notif.className = `notification ${type}`;
-    notif.innerHTML = `<div class="notification__title">${message}</div><div class="notification__close">&times;</div>`;
-    container.appendChild(notif);
-    notif.querySelector(".notification__close").addEventListener("click", () => notif.remove());
-    setTimeout(() => notif.remove(), 5000);
-  }
-
   // --- Update button appearance ---
   function updateSaveButton(saved) {
     if (saved) {
