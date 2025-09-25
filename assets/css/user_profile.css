@@ -1,0 +1,307 @@
+/* ===========================
+   Fonts
+=========================== */
+@font-face {
+  font-family: 'Satoshi';
+  src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi-Bold';
+  src: url('../fonts/Satoshi-Bold.otf') format('opentype');
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi-Medium';
+  src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi-Regular';
+  src: url('../fonts/Satoshi-Regular.otf') format('opentype');
+  font-style: normal;
+}
+/* =========================
+   Container & Layout
+=========================== */
+.profile-container {
+    width: 100%;               /* full viewport width */
+    min-height: 100vh;         /* full viewport height */
+    padding: 2rem 2rem;        /* space on left and right */
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    font-family: 'Satoshi', sans-serif;
+    color: #111;
+    box-sizing: border-box;    /* include padding in width */
+    margin: 0;                 /* remove default margin */
+}
+/* =========================
+   Profile Header
+=========================== */
+.profile-header {
+    width: 800px;               /* fixed width */
+    max-width: 100%;            /* responsive on smaller screens */
+    min-height: 150px;          /* define height */
+    background: #fff;
+    border-radius: 20px;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    margin: 0 auto;             /* centers horizontally */
+    box-sizing: border-box;
+}
+
+.profile-header:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+}
+
+
+/* Profile Info */
+.profile-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #eee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    color: #555;
+    flex-shrink: 0;
+}
+
+.profile-details .profile-name {
+    font-family: 'Satoshi-Bold', sans-serif; /* bold font variant */
+    font-weight: 700;                        /* ensures bold if font variant missing */
+    font-size: 1.5rem;
+    color: #111;
+}
+
+.profile-details span {
+    display: block;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+/* 3-dot menu */
+.profile-actions {
+    position: relative;
+}
+
+.dots-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #555;
+    transition: color 0.3s ease;
+}
+
+.dots-btn:hover {
+    color: #111;
+}
+
+/* Dropdown Menu */
+.popup-menu {
+    position: absolute;
+    top: 110%;
+    right: 0;
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    display: none;
+    flex-direction: column;
+    min-width: 200px;
+    z-index: 10;
+}
+
+.popup-menu .menu-item {
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.popup-menu .menu-item:hover {
+    background: #f5f5f5;
+}
+
+.popup-menu .menu-item a.disabled {
+    color: #aaa;
+    pointer-events: none;
+}
+
+/* =========================
+   Saved Properties Section
+=========================== */
+.saved-properties-section h2 {
+    font-family: 'Satoshi-Bold', sans-serif;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.property-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+/* =========================
+   Profile Update Modal
+=========================== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 20px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+    position: relative;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.profile-update label {
+    font-weight: 600;
+    margin-top: 1rem;
+    display: block;
+    font-size: 0.95rem;
+}
+
+.profile-update input,
+.profile-update textarea {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    margin-top: 0.25rem;
+    font-size: 0.95rem;
+}
+
+.profile-update button {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    border: none;
+    background: #111;
+    color: #fff;
+    font-family: 'Satoshi-Bold', sans-serif;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.profile-update button:hover {
+    background: #333;
+    transform: translateY(-2px);
+}
+
+/* =========================
+   Delete Account Modal
+=========================== */
+.modal-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    top: 0;
+    left: 0;
+    border-radius: inherit;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.modal-actions .btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.modal-actions .btn-danger {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.modal-actions .btn:hover {
+    opacity: 0.85;
+}
+
+/* =========================
+   Responsive
+=========================== */
+@media (max-width: 768px) {
+    .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .property-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-header {
+        padding: 1rem 1rem;
+    }
+
+    .modal-content {
+        padding: 1.25rem;
+    }
+
+    .profile-update button {
+        width: 100%;
+    }
+}
+
+/* =========================
+   Animations
+=========================== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px);}
+    to { opacity: 1; transform: translateY(0);}
+}

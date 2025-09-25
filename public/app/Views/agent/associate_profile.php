@@ -218,8 +218,6 @@
         'phone' => $user['phone'] ?? 'N/A'
     ];
 ?>
-
-<link rel="stylesheet" href="/BatEstateExplorer/assets/css/associate_profile.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_sidebar.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_overview.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_listing.css">
