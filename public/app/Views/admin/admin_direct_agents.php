@@ -12,32 +12,31 @@ function buildUploadUrl($filePath) {
 
     // Decide folder based on filename keywords
     if (strpos($filePath, 'broker_license') !== false || strpos($filePath, 'prc_license') !== false) {
-        // Image files folder
         $baseURL = '/storage/uploads/images/';
     } elseif (
         strpos($filePath, 'resume') !== false ||
         strpos($filePath, 'valid_id') !== false
     ) {
-        // Documents folder
-        $baseURL = '/storage/uploads/images/';
+        $baseURL = '/storage/uploads/documents/';
     } else {
-        // fallback folder - adjust if you want
-        $baseURL = '/storage/uploads/images/';
+        $baseURL = '/storage/uploads/misc/';
     }
 
     return $baseURL . $filename;
 }
 
-// Fetch direct agents with application & company info using JOIN
-$sql = "SELECT
-  u.id, u.email, u.first_name, u.last_name, u.phone, u.address, u.user_type, u.status AS user_status, u.created_at AS user_created_at,
-  a.education, a.school, a.course, a.graduation_year, a.certifications, a.training,
-  a.broker_license_path, a.prc_license_path, a.resume_path, a.valid_id_path, a.additional_docs_path,
-  a.broker_id, a.license_number, a.experience_years, a.specialization, a.status AS app_status,
-  c.name AS company_name
+// ✅ Fetch direct agents directly from users table
+$sql = "SELECT 
+    u.id, u.email, u.first_name, u.last_name, u.phone, u.address,
+    u.user_type, u.status AS user_status, u.created_at, u.updated_at,
+    u.education, u.school, u.course, u.graduation_year, 
+    u.certifications, u.training,
+    u.broker_license_path, u.prc_license_path, u.resume_path, u.valid_id_path, u.additional_docs_path,
+    u.company_id, u.broker_id, u.license_number, u.experience_years, u.specialization, u.bio,
+    u.wallet_balance, u.privileges,
+    c.name AS company_name
 FROM users u
-LEFT JOIN applications a ON u.id = a.user_id
-LEFT JOIN companies c ON a.company_id = c.id
+LEFT JOIN companies c ON u.company_id = c.id
 WHERE u.user_type = 'direct_agent'";
 
 $stmt = $conn->prepare($sql);
@@ -50,13 +49,12 @@ $result = $stmt->get_result();
 
 $direct_agents = [];
 while ($row = $result->fetch_assoc()) {
-    // Adjust paths for each document/image field
-    $row['broker_license_path'] = buildUploadUrl($row['broker_license_path']);
-    $row['prc_license_path'] = buildUploadUrl($row['prc_license_path']);
-    $row['resume_path'] = buildUploadUrl($row['resume_path']);
-    $row['valid_id_path'] = buildUploadUrl($row['valid_id_path']);
+    // ✅ Normalize file paths
+    foreach (['broker_license_path','prc_license_path','resume_path','valid_id_path'] as $field) {
+        $row[$field] = buildUploadUrl($row[$field]);
+    }
 
-    // Additional docs might be multiple paths separated by commas
+    // ✅ Handle additional docs
     if (!empty($row['additional_docs_path'])) {
         $docs = array_filter(array_map('trim', explode(',', $row['additional_docs_path'])));
         $docs = array_map('buildUploadUrl', $docs);
@@ -97,7 +95,7 @@ $stmt->close();
       <?php foreach ($direct_agents as $agent): ?>
         <div class="direct-agent-card"
              data-name="<?php echo htmlspecialchars($agent['first_name'] . ' ' . $agent['last_name']); ?>"
-             data-date="<?php echo $agent['user_created_at']; ?>"
+             data-date="<?php echo $agent['created_at']; ?>"
              data-experience="<?php echo intval($agent['experience_years'] ?? 0); ?>">
           <div class="direct-agent-avatar">
             <i class="fa-solid fa-user"></i>

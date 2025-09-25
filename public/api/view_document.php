@@ -12,12 +12,27 @@ if (!in_array($field, $allowed)) {
     exit("Invalid request");
 }
 
-$filePath = __DIR__ . "/../../storage/uploads/documents/" . basename($_GET['file']);
-if (!file_exists($filePath)) {
+$filename = basename($_GET['file']);
+
+// Try documents first
+$docPath = __DIR__ . "/../../storage/uploads/documents/" . $filename;
+$imgPath = __DIR__ . "/../../storage/uploads/images/" . $filename;
+
+if (file_exists($docPath)) {
+    $filePath = $docPath;
+} elseif (file_exists($imgPath)) {
+    $filePath = $imgPath;
+} else {
     http_response_code(404);
     exit("File not found");
 }
 
-header('Content-Type: application/pdf');
-header('Content-Disposition: inline; filename="' . basename($filePath) . '"');
+// Detect MIME type automatically
+$finfo = finfo_open(FILEINFO_MIME_TYPE);
+$mime = finfo_file($finfo, $filePath);
+finfo_close($finfo);
+
+header("Content-Type: $mime");
+header('Content-Disposition: inline; filename="' . $filename . '"');
 readfile($filePath);
+exit;

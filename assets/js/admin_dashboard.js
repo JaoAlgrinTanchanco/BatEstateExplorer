@@ -107,24 +107,38 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target.matches('.btn-view')) {
         const btn = e.target;
 
-        function docLink(label, path) {
-          return path
-            ? `<div class="detail-row"><div class="detail-label">${label}:</div>
-                <div class="detail-value"><a href="${path}" target="_blank" class="document-link">View Document</a></div></div>`
-            : '';
-        }
+    function docLink(label, path, field) {
+      if (!path) return '';
+      const file = encodeURIComponent(path.split('/').pop()); // get filename only
+      return `
+        <div class="detail-row">
+          <div class="detail-label">${label}:</div>
+          <div class="detail-value">
+            <a href="/BatEstateExplorer/public/api/view_document.php?file=${file}&field=${field}" 
+              target="_blank" class="document-link">View</a>
+          </div>
+        </div>`;
+    }
 
-        let additionalDocsHtml = '';
-        if (btn.dataset.additionalDocsPath) {
-          const docs = btn.dataset.additionalDocsPath
-            .split(',')
-            .map(d => d.trim())
-            .filter(d => d);
-          additionalDocsHtml = docs.map((doc, i) =>
-            `<div class="detail-row"><div class="detail-label">Additional Document ${i + 1}:</div>
-              <div class="detail-value"><a href="${doc}" target="_blank" class="document-link">View Document</a></div></div>`
-          ).join('');
-        }
+    let additionalDocsHtml = '';
+    if (btn.dataset.additionalDocsPath) {
+      const docs = btn.dataset.additionalDocsPath
+        .split(',')
+        .map(d => d.trim())
+        .filter(d => d);
+
+      additionalDocsHtml = docs.map((doc, i) => {
+        const file = encodeURIComponent(doc.split('/').pop());
+        return `
+          <div class="detail-row">
+            <div class="detail-label">Additional Document ${i + 1}:</div>
+            <div class="detail-value">
+              <a href="/BatEstateExplorer/public/api/view_document.php?file=${file}&field=additional_docs_path" 
+                target="_blank" class="document-link">View</a>
+            </div>
+          </div>`;
+      }).join('');
+    }
 
         modalBody.innerHTML = `
           <div class="col-left">
@@ -158,10 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             <section class="documents">
               <h3>Uploaded Documents</h3>
-              ${docLink('Broker License', btn.dataset.brokerLicensePath)}
-              ${docLink('PRC License', btn.dataset.prcLicensePath)}
-              ${docLink('Resume/CV', btn.dataset.resumePath)}
-              ${docLink('Valid ID', btn.dataset.validIdPath)}
+              ${docLink('Broker License', btn.dataset.brokerLicensePath, 'broker_license_path')}
+              ${docLink('PRC License', btn.dataset.prcLicensePath, 'prc_license_path')}
+              ${docLink('Resume/CV', btn.dataset.resumePath, 'resume_path')}
+              ${docLink('Valid ID', btn.dataset.validIdPath, 'valid_id_path')}
               ${additionalDocsHtml || '<div class="detail-row"><div class="detail-value">No additional documents uploaded</div></div>'}
             </section>
 
