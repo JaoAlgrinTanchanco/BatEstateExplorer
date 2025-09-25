@@ -76,17 +76,26 @@
     opacity: 1;
 }
 
-/* Overlay text separated by | */
-.listing-thumb .overlay span {
+/* Overlay actions (Edit / Delete) */
+.listing-thumb .overlay span,
+.listing-thumb .overlay .delete-listing-btn {
     text-decoration: underline;
     cursor: pointer;
+    background: none;
+    border: none;
+    color: inherit;      /* match the overlay text color */
+    font: inherit;       /* inherit font family/size from parent */
+    padding: 0;
 }
 
-.listing-thumb .overlay span + span::before {
+/* Add the | separator between siblings */
+.listing-thumb .overlay span + .delete-listing-btn::before,
+.listing-thumb .overlay .delete-listing-btn + span::before {
     content: "|";
     margin: 0 0.5rem;
     color: #fff;
 }
+
 
 /* ===========================
    Details Section

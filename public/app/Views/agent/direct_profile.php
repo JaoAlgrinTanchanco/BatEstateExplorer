@@ -229,7 +229,15 @@
                                 <!-- Overlay buttons -->
                                 <div class="overlay">
                                     <span onclick="openModal(<?= $property['id'] ?>)">Edit</span>
-                                    <span onclick="if(confirm('Are you sure you want to delete this listing?')) this.closest('form').submit()">Delete</span>
+                                    <form id="deleteForm-<?= $property['id'] ?>" 
+                                        action="/BatEstateExplorer/public/api/delete_listing.php" 
+                                        method="POST" 
+                                        style="display:inline;">
+                                        <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
+                                        <button type="button" onclick="deleteListing(<?= $property['id'] ?>)" class="delete-listing-btn">
+                                            Delete
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
 
@@ -784,7 +792,7 @@
                             ?>
                                 <div class="info-row"><strong><?= $label ?>:</strong>
                                     <?php if (!empty($user[$field])): ?>
-                                        <a href="<?= htmlspecialchars($user[$field]) ?>" target="_blank">View</a>
+                                        <a href="/BatEstateExplorer/public/api/view_document.php?file=<?= urlencode(basename($user[$field])) ?>&field=<?= $field ?>" target="_blank">View</a>
                                     <?php else: ?>
                                         -
                                     <?php endif; ?>

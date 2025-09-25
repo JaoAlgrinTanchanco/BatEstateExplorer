@@ -600,22 +600,40 @@ function givePrivilege() {
 }
 
 // =========================
-// Mark Image for Removal (Direct)
+// Mark Image for Removal (Unified)
 // =========================
 function markImageForRemoval(button, imagePath) {
-    const container = button.closest('form').querySelector('[id^="removeImages-"]');
-    if (!container) return;
+    const imgItem = button.closest('.image-item, .image-item2'); // support both classes
+    if (!imgItem) {
+        console.warn('No parent .image-item or .image-item2 found');
+        return;
+    }
+    imgItem.style.opacity = '0.5';
 
-    // Mark image visually
-    button.closest('.image-item').style.opacity = '0.5';
+    const form = button.closest('form');
+    if (!form) {
+        console.warn('No parent form found for image remove button.');
+        return;
+    }
 
-    // Append hidden input
+    let container = form.querySelector('[id^="removeImages-"]');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = `removeImages-${form.id}`;
+        form.appendChild(container);
+    }
+
     const hiddenInput = document.createElement('input');
     hiddenInput.type = 'hidden';
     hiddenInput.name = 'remove_images[]';
     hiddenInput.value = imagePath;
     container.appendChild(hiddenInput);
 
-    // Disable button to prevent duplicate marking
-    button.disabled = true;
+    button.disabled = true; // prevent multiple clicks
+}
+
+function deleteListing(id) {
+    if (confirm("Are you sure you want to delete this listing?")) {
+        document.getElementById(`deleteForm-${id}`).submit();
+    }
 }

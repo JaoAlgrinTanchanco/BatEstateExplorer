@@ -299,7 +299,15 @@
                                 <!-- Overlay buttons -->
                                 <div class="overlay">
                                     <span onclick="openModal(<?= $property['id'] ?>)">Edit</span>
-                                    <span onclick="if(confirm('Are you sure you want to delete this listing?')) this.closest('form').submit()">Delete</span>
+                                    <form id="deleteForm-<?= $property['id'] ?>" 
+                                        action="/BatEstateExplorer/public/api/delete_listing.php" 
+                                        method="POST" 
+                                        style="display:inline;">
+                                        <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
+                                        <button type="button" onclick="deleteListing(<?= $property['id'] ?>)" class="delete-btn">
+                                            Delete
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
 
