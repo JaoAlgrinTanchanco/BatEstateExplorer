@@ -22,6 +22,7 @@
   src: url('../fonts/Satoshi-Regular.otf') format('opentype');
   font-style: normal;
 }
+
 /* =========================
    Container & Layout
 =========================== */
@@ -35,7 +36,7 @@
     font-family: 'Satoshi', sans-serif;
     color: #111;
     box-sizing: border-box;    /* include padding in width */
-    margin: 0;                 /* remove default margin */
+    margin: 3.5rem 0 0 0;                 /* remove default margin */
 }
 /* =========================
    Profile Header
@@ -56,12 +57,6 @@
     margin: 0 auto;             /* centers horizontally */
     box-sizing: border-box;
 }
-
-.profile-header:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(0,0,0,0.12);
-}
-
 
 /* Profile Info */
 .profile-info {
@@ -268,6 +263,47 @@
 .modal-actions .btn:hover {
     opacity: 0.85;
 }
+
+
+/* Dropdown fade-in/fade-out */
+.popup-menu {
+  display: none; /* hidden by default */
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.popup-menu.active {
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Dropdown menu links */
+.popup-menu .menu-item a {
+    color: #111;             /* dark text */
+    text-decoration: none;   /* remove underline */
+    font-family: 'Satoshi', sans-serif;
+    font-weight: 500;        /* optional */
+    pointer-events: auto;    /* enable clicking */
+}
+
+.popup-menu .menu-item a.disabled {
+    color: #aaa;             /* gray for disabled links */
+    pointer-events: none;    /* disable clicking */
+}
+
+/* Delete Account menu item */
+.popup-menu .menu-item#deleteAccount {
+    color: #e74c3c;       /* red text */
+    font-weight: 600;     /* optional: make it stand out */
+}
+
+.popup-menu .menu-item#deleteAccount:hover {
+    background: rgba(231, 76, 60, 0.1); /* subtle red hover */
+}
+
 
 /* =========================
    Responsive

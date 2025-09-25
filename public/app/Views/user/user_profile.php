@@ -75,7 +75,7 @@
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/user_profile.css">
 
 
-<div class="profile-container" style="margin-top: 80px;">
+<div class="profile-container">
 
 <!-- Profile Header -->
 <div class="profile-header">
