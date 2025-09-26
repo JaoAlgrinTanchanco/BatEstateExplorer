@@ -123,13 +123,13 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
-    overflow: hidden; /* keep it in viewport */
+    overflow: hidden; 
 }
 
 /* Left and Right Columns */
 .dashboard-grid > div {
     border-radius: 20px;
-    overflow-y: auto; /* scroll inside if overflow */
+    overflow-y: auto; 
 }
 
 /* Right column split into two rows */
@@ -147,7 +147,7 @@
     box-shadow: 0 6px 18px rgba(0,0,0,0.06);
     display: flex;
     flex-direction: column;
-    height: 100%; /* fill available grid space */
+    height: 100%; 
     overflow-y: auto;
 }
 
@@ -166,7 +166,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin: 0; /* reset default margin */
+    margin: 0; 
 }
 
 /* ====== Dropdown ====== */
@@ -191,7 +191,7 @@
 
 /* Dropdown menu items */
 .dropdown-menu {
-    display: none; /* hidden by default */
+    display: none; 
     position: absolute;
     right: 0;
     top: 120%;
@@ -237,11 +237,11 @@
     display: none;
     justify-content: center;
     align-items: center;
-    z-index: 5000; /* above everything */
+    z-index: 5000; 
 }
 
 .modal.show {
-    display: flex !important; /* force flex display */
+    display: flex !important; 
 }
 
 .modal-content {
@@ -354,7 +354,7 @@
 /* Chart containers */
 .right-top canvas,
 .right-bottom canvas {
-    max-height: 220px;  /* keeps charts smaller */
+    max-height: 220px; 
     width: 100%;
 }
 
@@ -404,7 +404,7 @@
 
 /* ====== Quick Actions ====== */
 .quick-actions {
-    background: linear-gradient(180deg, #111, #1f2937); /* dark gradient */
+    background: linear-gradient(180deg, #111, #1f2937); 
     height: 100%;
     width: 100%;
     border-radius: 20px;
@@ -439,7 +439,7 @@
 
 /* Buttons */
 .btn {
-    flex: 1 1 calc(33% - 1rem); /* 3 per row, responsive */
+    flex: 1 1 calc(33% - 1rem); 
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -455,12 +455,11 @@
     text-align: center;
 }
 
-/* Individual button themes (muted but modern) */
-.btn-primary { background: #374151; }  /* dark gray */
-.btn-secondary { background: #4b5563; } /* slightly lighter gray */
-.btn-success { background: #6b7280; }   /* mid gray */
 
-/* Hover effect */
+.btn-primary { background: #374151; }  
+.btn-secondary { background: #4b5563; }
+.btn-success { background: #6b7280; }   
+
 .btn:hover {
     opacity: 0.95;
     transform: translateY(-4px);
@@ -468,7 +467,7 @@
 }
 
 /* ====== Responsive ====== */
-/* ====== Fix for ≥1024px (desktop) ====== */
+
 @media (min-width: 1024px) {
     .dashboard-grid,
     .dashboard-grid > div,
@@ -483,7 +482,7 @@
     }
 
     .right-column {
-        min-width: 0;   /* ✅ prevents grid child overflow */
+        min-width: 0;   
     }
 }
 
@@ -495,7 +494,7 @@
     }
 
     .dashboard-grid {
-        grid-template-columns: 1fr; /* stack left + right */
+        grid-template-columns: 1fr; 
     }
 
     .right-column {
@@ -511,21 +510,19 @@
     }
 
     .right-top {
-        grid-template-columns: 1fr; /* stack charts vertically */
-        width: 100%; /* ✅ responsive */
+        grid-template-columns: 1fr; 
+        width: 100%; 
     }
 
-    /* ✅ Stat cards 2x2 layout */
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
     }
 
-    /* ✅ Reduce recent-card height + scrollable */
     .recent-card {
         max-height: 300px;
         overflow-y: auto;
-        overflow-x: hidden; /* ✅ prevent horizontal overflow */
+        overflow-x: hidden; 
     }
 }
 
@@ -552,7 +549,6 @@
         font-size: 1.75rem;
     }
 
-    /* ✅ Keep 2x2 grid on mobile */
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -565,7 +561,7 @@
 
     .chart-container {
         padding: 0.75rem;
-        width: 100%; /* ✅ responsive */
+        width: 100%; 
     }
 
     .chart-container h2 {
@@ -575,10 +571,10 @@
 
     .chart-container canvas {
         max-height: 160px;
-        width: 100% !important; /* ✅ canvas scales down */
+        width: 100% !important;
     }
 
-    /* ✅ Smaller recent-card */
+
     .recent-card {
         max-height: 240px;
         overflow-y: auto;
@@ -600,7 +596,6 @@
         font-size: 0.9rem;
     }
 
-    /* ✅ Stack cards vertically here */
     .stats-grid {
         grid-template-columns: 1fr;
     }
@@ -615,10 +610,9 @@
 
     .chart-container canvas {
         max-height: 140px;
-        width: 100% !important; /* ✅ scale properly */
+        width: 100% !important; 
     }
 
-    /* ✅ Even smaller for very small screens */
     .recent-card {
         max-height: 200px;
         overflow-y: auto;
