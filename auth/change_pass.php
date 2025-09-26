@@ -64,7 +64,7 @@ function send_otp($email, $otp) {
         $mail->Encoding = 'base64';
         $mail->Subject = 'Password Reset OTP - BatEstate';
 
-        // ✅ Embed your local logo
+        // Embed your local logo
         $mail->addEmbeddedImage(
             'C:/xampp/htdocs/BatEstateExplorer/assets/images/Vector 1.png', // local path
             'batestate_logo', // CID

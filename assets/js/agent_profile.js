@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .catch(() => notify('error','Upload failed!'));
         });
 
-        // ✅ Expose reset globally but keep access to closure variables
+        // Expose reset globally but keep access to closure variables
         window.resetImageUpload = () => {
             selectedFiles = [];
             renderPreviews();
@@ -244,26 +244,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Click "Save Listing" -> validate form + images -> show modal
         openListingBtn.addEventListener('click', () => {
-            // 1️⃣ Form validity
+            // Form validity
             if(!listingForm.checkValidity()){
                 listingForm.reportValidity();
                 return;
             }
 
-            // 2️⃣ Must have at least one image
+            // Must have at least one image
             if(!window.selectedFiles || window.selectedFiles.length === 0){
                 notify('error','Please upload at least one property image.');
                 return;
             }
 
-            // 3️⃣ Wallet balance check
+            // Wallet balance check
             const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g,''));
             if(walletBalance < listingFee){
                 notify('error','Insufficient wallet balance. Please deposit first.');
                 return;
             }
 
-            // ✅ All good: open modal
+            // All good: open modal
             openListingFeeModal();
         });
 
@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 🔹 Call immediately when wallet tab is opened or page reloads
+    // Call immediately when wallet tab is opened or page reloads
     trimAgentTransactions();
 
     // Optional: also refresh on tab visibility change

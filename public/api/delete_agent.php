@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_bind_param($stmt, "i", $userId);
 
         if (mysqli_stmt_execute($stmt)) {
-            // ✅ Set success notification BEFORE destroying session
+            // Set success notification BEFORE destroying session
             $_SESSION['notification'] = [
                 'type' => 'success',
                 'message' => 'Account deleted successfully.'
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
 
         } else {
-            // ❌ Error notification
+            // Error notification
             $_SESSION['notification'] = [
                 'type' => 'error',
                 'message' => 'Error deleting account. Please try again.'

@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dropArea.addEventListener('keydown', e => { if (['Enter',' '].includes(e.key)) { e.preventDefault(); fileInput.click(); } });
         fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
 
-        // ✅ Expose reset globally
+        // Expose reset globally
         window.resetImageUpload = () => {
             selectedFiles = [];
             renderPreviews();
@@ -220,13 +220,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         directOpenListingBtn.addEventListener('click', () => {
-            // ✅ Check if form is valid
+            // Check if form is valid
             if (!directListingForm.checkValidity()) {
                 directListingForm.reportValidity();
                 return;
             }
 
-            // ✅ Require at least 1 image
+            // Require at least 1 image
             if (!window.getSelectedFiles || window.getSelectedFiles().length === 0) {
                 notify('error', 'Please upload at least one image.');
                 return;
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // ✅ Make sure the file input contains the selected files
+            // Make sure the file input contains the selected files
             if (window.getSelectedFiles && window.getSelectedFiles().length > 0) {
                 const dataTransfer = new DataTransfer();
                 window.getSelectedFiles().forEach(file => dataTransfer.items.add(file));
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(!feeData.success) throw new Error(feeData.error || 'Failed to process listing fee.');
                 directWalletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
-                // ✅ Submit listing with images
+                // Submit listing with images
                 return fetch('/BatEstateExplorer/public/api/direct_save_listing.php', { method:'POST', body: formData });
             })
             .then(res => res.json())
@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 🔹 Call immediately when wallet tab is opened or page reloads
+    // Call immediately when wallet tab is opened or page reloads
     trimAgentTransactions();
 
     // Optional: also refresh on tab visibility change

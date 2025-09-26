@@ -72,7 +72,7 @@ if ($uid) {
     $debug_info['error'] = 'No user_id in session';
 }
 
-// ✅ Prepare safe response with defaults
+// Prepare safe response with defaults
 $property_data = [
     'id'           => (int)$property['id'],
     'title'        => $property['title'] ?: 'No Title',

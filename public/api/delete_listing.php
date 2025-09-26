@@ -75,7 +75,7 @@ function redirectAfterDelete($conn) {
         exit;
     }
 
-    // ✅ Check user_type from users table
+    // Check user_type from users table
     $stmt = $conn->prepare("SELECT user_type FROM users WHERE id = ? LIMIT 1");
     $stmt->bind_param("i", $userId);
     $stmt->execute();

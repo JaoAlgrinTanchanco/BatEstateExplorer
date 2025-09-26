@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../config/database.php';
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // 🔹 Search user by email
+    // Search user by email
     $email = $_GET['email'] ?? '';
     if (!$email) {
         echo json_encode(['error' => 'Missing email']);
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // 🔹 Give privilege
+    // Give privilege
     $email = $_POST['email'] ?? '';
     $property_id = $_POST['property_id'] ?? '';
 

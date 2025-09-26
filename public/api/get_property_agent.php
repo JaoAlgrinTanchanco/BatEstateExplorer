@@ -15,7 +15,7 @@ if (!isset($_GET['property_id'])) {
 
 $property_id = (int) $_GET['property_id'];
 
-// 🔹 Fetch agent info using agents table
+// Fetch agent info using agents table
 $sql = "
     SELECT 
         p.id AS property_id,

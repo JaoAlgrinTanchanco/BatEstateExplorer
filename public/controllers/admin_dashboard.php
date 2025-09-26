@@ -41,7 +41,7 @@ switch ($view) {
         require __DIR__ . '/../app/Views/admin/admin_performance.php';
         break;
 
-    // 🔹 New Wallet route
+    // New Wallet route
     case 'wallet':
         require __DIR__ . '/../app/Views/admin/admin_wallet.php';
         break;

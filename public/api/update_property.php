@@ -33,7 +33,7 @@ $sold_by_agent_id  = null;
 try {
     $pdo->beginTransaction();
 
-    // 🔹 Fetch current property
+    // Fetch current property
     $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
     $stmt->execute([$property_id]);
     $property = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -41,10 +41,10 @@ try {
         throw new Exception("Property not found.");
     }
 
-    // ✅ Preserve current status unless overridden by backend
+    // Preserve current status unless overridden by backend
     $status = $property['status'];
 
-    // 🔹 If listing marked as sold by another agent
+    // If listing marked as sold by another agent
     if ($listing_type === 'sold_by' && !empty($sold_by_email)) {
         $stmtAgent = $pdo->prepare("
             SELECT a.id 
@@ -59,13 +59,13 @@ try {
 
         if ($agent) {
             $sold_by_agent_id = $agent['id'];
-            $status = 'sold'; // ✅ Force to sold
+            $status = 'sold'; // Force to sold
         } else {
             throw new Exception("Selling agent not found.");
         }
     }
 
-    // 🔹 Update property details (status not touched unless sold_by)
+    // Update property details (status not touched unless sold_by)
     $stmtUpdate = $pdo->prepare("
         UPDATE properties SET
             title = ?, 
@@ -98,7 +98,7 @@ try {
         $property_id
     ]);
 
-    // 🔹 Handle removals
+    // Handle removals
     if (!empty($remove_images)) {
         foreach ($remove_images as $img_path) {
             $full_path = __DIR__ . '/../../' . $img_path;
@@ -109,7 +109,7 @@ try {
         }
     }
 
-    // 🔹 Upload new images
+    // Upload new images
     if (isset($_FILES['new_images']) && is_array($_FILES['new_images']['tmp_name'])) {
         $upload_dir = 'C:\\xampp\\htdocs\\BatEstateExplorer\\storage\\uploads\\property_images\\';
         $file_count = min(count($_FILES['new_images']['tmp_name']), 10);
@@ -135,7 +135,7 @@ try {
         }
     }
 
-    // 🔹 Update primary image
+    // Update primary image
     if ($primary_image) {
         $stmtReset = $pdo->prepare("UPDATE property_images SET is_primary = 0 WHERE property_id = ?");
         $stmtReset->execute([$property_id]);
@@ -146,7 +146,7 @@ try {
 
     $pdo->commit();
 
-    // ✅ Success notification
+    // Success notification
     $_SESSION['notification'] = [
         'type' => 'success',
         'message' => 'Property updated successfully.'
@@ -156,7 +156,7 @@ try {
 } catch (Exception $e) {
     $pdo->rollBack();
 
-    // ❌ Error notification
+    // Error notification
     $_SESSION['notification'] = [
         'type' => 'error',
         'message' => 'Failed to update property: ' . $e->getMessage()

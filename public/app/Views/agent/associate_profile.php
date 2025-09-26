@@ -3,7 +3,7 @@
 
     require_once __DIR__ . '/../../../../components/notification.php';
 
-    // 🔹 Show session flash messages (deprecated since you're moving to centralized notifications, 
+    // Show session flash messages (deprecated since you're moving to centralized notifications, 
     // but leaving here for fallback)
     foreach (['success', 'error'] as $type) {
         if (!empty($_SESSION['flash_' . $type])): ?>
@@ -25,7 +25,7 @@
     $avg_rating    = 0;
     $total_reviews = 0;
 
-    // 🔹 Fetch agent (id + company_id in one go)
+    // Fetch agent (id + company_id in one go)
     $stmt = $conn->prepare("SELECT id, company_id FROM agents WHERE user_id = ?");
     $stmt->bind_param("i", $user['id']);
     $stmt->execute();
@@ -37,7 +37,7 @@
         $agent_id   = (int)$agent['id'];
         $company_id = (int)$agent['company_id'];
 
-        // 🔹 Fetch company info
+        // Fetch company info
         if ($company_id > 0) {
             $companyStmt = $conn->prepare("SELECT name FROM companies WHERE id = ?");
             $companyStmt->bind_param("i", $company_id);
@@ -51,7 +51,7 @@
             }
         }
 
-        // 🔹 Fetch all properties for this agent
+        // Fetch all properties for this agent
         $propsStmt = $conn->prepare("
             SELECT 
                 p.*,
@@ -69,7 +69,7 @@
         $listings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
         $propsStmt->close();
 
-        // 🔹 Attach ALL images (not just primary) to each property
+        // Attach ALL images (not just primary) to each property
         $stmtImg = $conn->prepare("
             SELECT image_path, is_primary
             FROM property_images 
@@ -87,7 +87,7 @@
         }
         $stmtImg->close();
 
-        // 🔹 Fetch average rating + total reviews
+        // Fetch average rating + total reviews
         $stmt = $conn->prepare("
             SELECT AVG(pr.rating) AS avg_rating, COUNT(*) AS total_reviews
             FROM property_reviews pr
@@ -102,7 +102,7 @@
         $total_reviews = $row['total_reviews'] ?? 0;
         $stmt->close();
 
-        // 🔹 Fetch reviews with user info and primary image
+        // Fetch reviews with user info and primary image
         $stmt = $conn->prepare("
             SELECT 
                 pr.rating, 
@@ -127,10 +127,10 @@
         $stmt->close();
     }
 
-    // 🔹 Debug log
+    // Debug log
     echo "<script>console.log('Company ID: {$company_id}, Company Name: " . addslashes($company_name) . "');</script>";
 
-    // 🔹 Fetch all properties from the same company
+    // Fetch all properties from the same company
     $company_listings = [];
     if ($company_id > 0) {
         $propsStmt = $conn->prepare("
@@ -174,7 +174,7 @@
         $propsStmt->close();
     }
 
-    // 🔹 Fetch wallet balance for the logged-in user
+    // Fetch wallet balance for the logged-in user
     $walletBalance = 0.00;
     if (isset($user['id'])) {
         $stmtWallet = $conn->prepare("SELECT wallet_balance FROM users WHERE id = ?");
@@ -189,7 +189,7 @@
     // Format for display
     $walletBalanceFormatted = number_format($walletBalance, 2, '.', ',');
 
-    // 🔹 Fetch last 10 transaction history for the logged-in user
+    // Fetch last 10 transaction history for the logged-in user
     $transactions = [];
     $stmt = $conn->prepare("
         SELECT 
@@ -212,7 +212,7 @@
     }
     $stmt->close();
 
-    // 🔹 Fetch agent info for wallet tab
+    // Fetch agent info for wallet tab
     $agentInfo = [
         'name'  => $user['first_name'] . ' ' . $user['last_name'],
         'phone' => $user['phone'] ?? 'N/A'
@@ -280,7 +280,7 @@
                     <?php foreach ($listings as $property): 
                         $ownership = ($property['agent_id'] == $agent_id) ? 'Owned' : 'Shared';
 
-                        // ✅ Grab first uploaded image if available
+                        // Grab first uploaded image if available
                         $first_img_src = '';
                         if (!empty($property['images'])) {
                             $first_img_src = "/BatEstateExplorer/" . $property['images'][0]['image_path'];

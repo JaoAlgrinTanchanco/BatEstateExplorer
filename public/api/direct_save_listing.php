@@ -3,20 +3,20 @@ session_start();
 header('Content-Type: application/json');
 require_once __DIR__ . '/../../config/pdo_database.php';
 
-// 🔹 Ensure logged-in user
+// Ensure logged-in user
 $user_data = get_logged_in_user($pdo);
 if (!$user_data) {
     echo json_encode(['success' => false, 'error' => 'No logged-in user detected.']);
     exit;
 }
 
-// 🔹 Ensure only direct agents can access
+// Ensure only direct agents can access
 if ($user_data['user_type'] !== 'direct_agent') {
     echo json_encode(['success' => false, 'error' => 'Access denied: only direct agents can save listings.']);
     exit;
 }
 
-// 🔹 Ensure direct agent has an agent_id
+// Ensure direct agent has an agent_id
 $stmt = $pdo->prepare("SELECT id FROM agents WHERE user_id = ?");
 $stmt->execute([$user_data['id']]);
 $agent = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -28,7 +28,7 @@ if (!$agent_id) {
     $agent_id = $pdo->lastInsertId();
 }
 
-// 🔹 Collect form data safely
+// Collect form data safely
 $title         = trim($_POST['title'] ?? '');
 $description   = trim($_POST['description'] ?? '');
 $price         = (float) ($_POST['price'] ?? 0);
@@ -39,7 +39,7 @@ $sqm           = (float) ($_POST['sqm'] ?? 0);
 $lot_size      = (float) ($_POST['lot_size'] ?? 0);
 $property_type = trim($_POST['property_type'] ?? '');
 
-// 🔹 Check at least one image is uploaded
+// Check at least one image is uploaded
 if (!isset($_FILES['images']) || empty($_FILES['images']['tmp_name'])) {
     echo json_encode([
         'success' => false,
@@ -52,7 +52,7 @@ if (!isset($_FILES['images']) || empty($_FILES['images']['tmp_name'])) {
 try {
     $pdo->beginTransaction();
 
-    // 🔹 Insert property (default: pending)
+    // Insert property (default: pending)
     $stmt = $pdo->prepare("
         INSERT INTO properties
         (title, description, property_type, location, price, bedrooms, bathrooms, sqm, lot_size, agent_id, status, created_at)
@@ -64,7 +64,7 @@ try {
     ]);
     $property_id = $pdo->lastInsertId();
 
-    // 🔹 Handle image uploads (limit 10)
+    // Handle image uploads (limit 10)
     $upload_dir = 'C:/xampp/htdocs/BatEstateExplorer/storage/uploads/property_images/';
     $db_path_prefix = 'storage/uploads/property_images/';
 

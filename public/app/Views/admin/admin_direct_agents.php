@@ -25,7 +25,7 @@ function buildUploadUrl($filePath) {
     return $baseURL . $filename;
 }
 
-// ✅ Fetch direct agents directly from users table
+// Fetch direct agents directly from users table
 $sql = "SELECT 
     u.id, u.email, u.first_name, u.last_name, u.phone, u.address,
     u.user_type, u.status AS user_status, u.created_at, u.updated_at,
@@ -49,12 +49,12 @@ $result = $stmt->get_result();
 
 $direct_agents = [];
 while ($row = $result->fetch_assoc()) {
-    // ✅ Normalize file paths
+    // Normalize file paths
     foreach (['broker_license_path','prc_license_path','resume_path','valid_id_path'] as $field) {
         $row[$field] = buildUploadUrl($row[$field]);
     }
 
-    // ✅ Handle additional docs
+    // Handle additional docs
     if (!empty($row['additional_docs_path'])) {
         $docs = array_filter(array_map('trim', explode(',', $row['additional_docs_path'])));
         $docs = array_map('buildUploadUrl', $docs);

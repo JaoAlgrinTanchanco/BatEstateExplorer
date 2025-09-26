@@ -169,7 +169,7 @@ h2 {
    Transactions Section (Fixed Height + Scroll)
 ========================= */
 .transactions-section {
-    height: 450px;       /* 🔹 set height here */
+    height: 450px;      
     display: flex;
     flex-direction: column;
     gap: 15px;

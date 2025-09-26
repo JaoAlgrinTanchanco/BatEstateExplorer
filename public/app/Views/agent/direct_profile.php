@@ -1,16 +1,16 @@
 <?php
     if (!isset($user)) die('Access denied.');
 
-    // 🔹 Use the centralized notification system
+    // Use the centralized notification system
     require_once __DIR__ . '/../../../../components/notification.php';
 
     // Detect active tab
     $tab = $_GET['tab'] ?? 'overview';
 
-    // 🔹 Initialize listings array
+    // Initialize listings array
     $listings = [];
 
-    // 🔹 Determine agent_id
+    // Determine agent_id
     $agent_id = 0;
     if ($user['user_type'] === 'direct') {
         $agent_id = (int)$user['id']; // direct agents: user_id is agent_id
@@ -99,7 +99,7 @@
         }
     }
 
-    // 🔹 Fetch wallet balance for the logged-in user (works for both direct & associate agents)
+    // Fetch wallet balance for the logged-in user (works for both direct & associate agents)
     $walletBalance = 0.00;
     if (isset($user['id'])) {
         $stmtWallet = $conn->prepare("
@@ -118,7 +118,7 @@
     // Format wallet balance for display
     $walletBalanceFormatted = number_format($walletBalance, 2, '.', ',');
 
-    // 🔹 Fetch last 10 transactions for this user (works for both direct & associate agents)
+    // Fetch last 10 transactions for this user (works for both direct & associate agents)
     $transactions = [];
     $stmt = $conn->prepare("
         SELECT 
@@ -141,7 +141,7 @@
     }
     $stmt->close();
 
-    // 🔹 Fetch agent info for wallet tab
+    // Fetch agent info for wallet tab
     $agentInfo = [
         'name'  => trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')),
         'phone' => $user['phone'] ?? 'N/A'
@@ -208,7 +208,7 @@
                     <?php foreach ($listings as $property): 
                         $ownership = ($property['agent_id'] == $agent_id) ? 'Owned' : 'Shared';
 
-                        // ✅ Grab first uploaded image if available
+                        // Grab first uploaded image if available
                         $first_img_src = '';
                         if (!empty($property['images'])) {
                             $first_img_src = "/BatEstateExplorer/" . $property['images'][0]['image_path'];
@@ -384,7 +384,7 @@
             <?php case 'add_listing': ?>
                 <h2>Add New Listing</h2>
 
-                <!-- 🔹 Centralized Notification Component -->
+                <!-- Centralized Notification Component -->
                 <?php require_once __DIR__ . '/../../../../components/notification.php'; ?>
 
                 <form id="addListingForm" 
@@ -496,7 +496,7 @@
 
                 <div class="analytics-wrapper">
 
-                    <!-- 🔹 Summary Card -->
+                    <!-- Summary Card -->
                     <div class="analytics-summary-wrapper">
                         <div class="card analytics-summary">
                             <h1><?= $avg_rating ?></h1>
@@ -570,7 +570,7 @@
                             <?php foreach ($listings as $property): 
                                 $first_img_src = !empty($property['images']) && !empty($property['images'][0]['image_path'])
                                     ? "/BatEstateExplorer/" . $property['images'][0]['image_path'] 
-                                    : "/BatEstateExplorer/assets/images/no-image.png"; // ✅ fallback placeholder
+                                    : "/BatEstateExplorer/assets/images/no-image.png"; // fallback placeholder
                             ?>
                                 <div class="property-card" onclick="selectProperty(this, <?= $property['id'] ?>)">
                                     <img src="<?= $first_img_src ?>" alt="Property Image">

@@ -5,7 +5,7 @@ header('Content-Type: application/json');
 session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
 
-// ✅ Encryption key
+// Encryption key
 define('ENCRYPTION_KEY', '12345678901234567890123456789012'); // 32 chars for AES-256
 
 // Check logged-in user
@@ -38,7 +38,7 @@ if (!$res->fetch_assoc()) {
 }
 $stmt->close();
 
-// 🔹 Encrypt message before storing
+//  Encrypt message before storing
 $iv = random_bytes(16); // 16 bytes IV for AES-256-CBC
 $encrypted = openssl_encrypt($message, 'aes-256-cbc', ENCRYPTION_KEY, 0, $iv);
 $encrypted_message = base64_encode($iv . $encrypted); // prepend IV to ciphertext
