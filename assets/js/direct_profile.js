@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Call immediately when wallet tab is opened or page reloads
+    //  Call immediately when wallet tab is opened or page reloads
     trimAgentTransactions();
 
     // Optional: also refresh on tab visibility change

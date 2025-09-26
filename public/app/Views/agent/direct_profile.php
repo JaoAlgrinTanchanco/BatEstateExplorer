@@ -1,5 +1,5 @@
 <?php
-    if (!isset($user)) die('Access denied.');
+    if (!isset($user)) {die('Access denied.');}
 
     // Use the centralized notification system
     require_once __DIR__ . '/../../../../components/notification.php';
@@ -99,7 +99,7 @@
         }
     }
 
-    // Fetch wallet balance for the logged-in user (works for both direct & associate agents)
+    // 🔹 Fetch wallet balance for the logged-in user (works for both direct & associate agents)
     $walletBalance = 0.00;
     if (isset($user['id'])) {
         $stmtWallet = $conn->prepare("
@@ -384,7 +384,7 @@
             <?php case 'add_listing': ?>
                 <h2>Add New Listing</h2>
 
-                <!-- Centralized Notification Component -->
+                <!-- 🔹 Centralized Notification Component -->
                 <?php require_once __DIR__ . '/../../../../components/notification.php'; ?>
 
                 <form id="addListingForm" 
@@ -496,7 +496,7 @@
 
                 <div class="analytics-wrapper">
 
-                    <!-- Summary Card -->
+                    <!-- 🔹 Summary Card -->
                     <div class="analytics-summary-wrapper">
                         <div class="card analytics-summary">
                             <h1><?= $avg_rating ?></h1>
@@ -835,7 +835,7 @@
                             <input type="text" name="phone" value="<?= htmlspecialchars($user['phone']) ?>">
 
                             <label for="address">Address</label>
-                            <textarea name="address" id="address" rows="3"><?= htmlspecialchars($current_user['address']) ?></textarea>
+                            <textarea name="address" id="address" rows="3"><?= htmlspecialchars($user['address']) ?></textarea>
 
                             <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
                                 <button type="submit">Save Changes</button>

@@ -1,37 +1,39 @@
-  // ===== Notification helper =====
-  function notify(type, message) {
-    let container = document.querySelector(".notification-container");
-    if (!container) {
-      container = document.createElement("div");
-      container.className = "notification-container";
-      document.body.appendChild(container);
-    }
-
-    const notif = document.createElement("div");
-    notif.className = `notification ${type}`;
-    notif.innerHTML = `
-      <div class="notification__title">${message}</div>
-      <div class="notification__close">&times;</div>
-    `;
-    container.appendChild(notif);
-
-    notif.querySelector(".notification__close").addEventListener("click", () => notif.remove());
-    setTimeout(() => notif.remove(), 5000);
+// Notification helper
+function notify(type, message) {
+  let container = document.querySelector(".notification-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.className = "notification-container";
+    document.body.appendChild(container);
   }
 
-  function renderStars(rating) {
-    let stars = "";
-    for (let i = 1; i <= 5; i++) {
-      stars += `<i class="fas fa-star ${i <= rating ? "filled" : ""}"></i>`;
-    }
-    return `<div class="review-stars">${stars}</div>`;
-  }
+  const notif = document.createElement("div");
+  notif.className = `notification ${type}`;
+  notif.innerHTML = `
+    <div class="notification__title">${message}</div>
+    <div class="notification__close">&times;</div>
+  `;
+  container.appendChild(notif);
 
+  notif.querySelector(".notification__close").addEventListener("click", () => notif.remove());
+  setTimeout(() => notif.remove(), 5000);
+}
+
+// Renders the star rating HTML
+function renderStars(rating) {
+  let stars = "";
+  for (let i = 1; i <= 5; i++) {
+    stars += `<i class="fas fa-star ${i <= rating ? "filled" : ""}"></i>`;
+  }
+  return `<div class="review-stars">${stars}</div>`;
+}
+
+// Property and Review Modals Logic
 (() => {
   let currentPropertyId = null;
   let selectedRating = 0;
 
-  // ===== Open Property Modal =====
+  // Open Property Modal
   async function openPropertyModal(propertyId) {
     currentPropertyId = propertyId;
     const modal = document.getElementById("propertyModal");
@@ -41,11 +43,11 @@
     const reviewBtn = modal.querySelector("#leaveReviewBtn");
 
     try {
-      // --- Fetch property details ---
+      // Fetch property details
       const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
       const data = await res.json();
       if (!data.success) {
-        console.error(data.error || "Failed to fetch property.");
+        // Remove debugging line
         return;
       }
 
@@ -53,7 +55,7 @@
       const images = prop.images.length ? prop.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
       modal.dataset.id = prop.id;
 
-      // --- Left Column ---
+      // Set Left Column content
       modal.querySelector(".property-main-image").style.backgroundImage = `url('${images[0]}')`;
       modal.querySelector(".property-name").textContent = prop.title || "No title";
 
@@ -62,6 +64,7 @@
         `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`
       ).join("");
 
+      // Image gallery click handler
       thumbs.querySelectorAll("img").forEach(imgEl => {
         imgEl.addEventListener("click", () => {
           modal.querySelector(".property-main-image").style.backgroundImage = `url('${imgEl.src}')`;
@@ -70,19 +73,19 @@
         });
       });
 
-      // --- Right Column ---
-      modal.querySelector(".location").textContent      = prop.location || "-";
-      modal.querySelector(".price").textContent         = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
+      // Set Right Column content
+      modal.querySelector(".location").textContent = prop.location || "-";
+      modal.querySelector(".price").textContent = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
       modal.querySelector(".property-type").textContent = prop.property_type || "-";
-      modal.querySelector(".bedrooms").textContent      = prop.bedrooms ?? "-";
-      modal.querySelector(".bathrooms").textContent     = prop.bathrooms ?? "-";
-      modal.querySelector(".sqm").textContent           = prop.sqm ?? "-";
-      modal.querySelector(".lot_size").textContent      = prop.lot_size ?? "-";
-      modal.querySelector(".status").textContent        = prop.status || "-";
+      modal.querySelector(".bedrooms").textContent = prop.bedrooms ?? "-";
+      modal.querySelector(".bathrooms").textContent = prop.bathrooms ?? "-";
+      modal.querySelector(".sqm").textContent = prop.sqm ?? "-";
+      modal.querySelector(".lot_size").textContent = prop.lot_size ?? "-";
+      modal.querySelector(".status").textContent = prop.status || "-";
       modal.querySelector(".date_uploaded").textContent = prop.created_at ? new Date(prop.created_at).toLocaleDateString() : "-";
       modal.querySelector(".property-description").textContent = prop.description || "No description available.";
 
-      // --- Review Button Logic ---
+      // Review Button visibility
       if (reviewBtn) {
         if (data.has_privilege) {
           reviewBtn.style.display = "inline-flex";
@@ -93,11 +96,11 @@
         }
       }
 
-      // --- Show modal ---
+      // Show modal
       modal.hidden = false;
       modal.style.display = "flex";
 
-      // --- Fetch Past Reviews ---
+      // Fetch Past Reviews
       if (reviewContainer) {
         const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${prop.id}`);
         const reviewData = await reviewRes.json();
@@ -117,11 +120,11 @@
       }
 
     } catch (err) {
-      console.error("Failed to load property details:", err);
+      // Remove debugging line
     }
   }
 
-  // ===== Open Review Modal =====
+  // Open Review Modal
   function openReviewModal(propertyId) {
     const reviewModal = document.getElementById("reviewModal");
     if (!reviewModal) return;
@@ -130,19 +133,19 @@
     reviewModal.hidden = false;
     reviewModal.style.display = "flex";
 
-    // Reset stars
+    // Reset stars and textarea
     reviewModal.querySelectorAll(".rating-stars span").forEach(star => star.classList.remove("selected"));
     reviewModal.querySelector("textarea[name='review_text']").value = "";
   }
 
-  // ===== Close Modal Helper =====
+  // Close Modal Helper
   function closeModal(modal) {
     if (!modal) return;
     modal.hidden = true;
     modal.style.display = "none";
   }
 
-  // ===== Star Rating =====
+  // Star Rating Interaction (Mouseover/Out/Click)
   document.addEventListener("mouseover", e => {
     if (!e.target.matches(".rating-stars span")) return;
     const stars = Array.from(e.target.parentNode.children);
@@ -164,7 +167,7 @@
     stars.forEach((s, i) => s.classList.toggle("selected", i < selectedRating));
   });
 
-  // ===== Submit Review Form =====
+  // Submit Review Form
   const reviewForm = document.getElementById("postReviewForm");
 
   if (reviewForm) {
@@ -190,7 +193,7 @@
 
         if (data.error) return alert(data.error);
 
-        // Fetch all reviews again to update modal
+        // Fetch all reviews again to update property modal
         const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${propertyId}`);
         const reviewData = await reviewRes.json();
 
@@ -216,19 +219,19 @@
         reviewForm.review_text.value = "";
 
       } catch (err) {
-        console.error(err);
+        // Remove debugging line
         alert("Failed to submit review.");
       }
     });
   }
 
-  // ===== Event Delegation =====
+  // Central Event Delegation for Modals and Buttons
   document.addEventListener("click", e => {
     const card = e.target.closest(".property-card");
     const reviewBtn = e.target.closest("[id='leaveReviewBtn']");
     const closeBtn = e.target.closest(".custom-modal .close");
 
-    // Open property modal
+    // Open property modal from card click
     if (card && !e.target.closest(".modal")) return openPropertyModal(card.dataset.id);
 
     // Open review modal
@@ -237,34 +240,36 @@
       return openReviewModal(propertyId);
     }
 
-    // Close modal via close button
+    // Close modal via 'x' button
     if (closeBtn) return closeModal(closeBtn.closest(".custom-modal"));
 
-    // Close modal by clicking outside content
+    // Close modal by clicking outside content (backdrop)
     if (e.target.id === "propertyModal") closeModal(e.target);
     if (e.target.id === "reviewModal") closeModal(e.target);
   });
 
-  // Expose functions globally
+  // Close Review Modal via 'modal-close' button
+  document.addEventListener("click", e => {
+    if (e.target.classList.contains("modal-close")) {
+      const modal = e.target.closest(".modal");
+      if (modal) closeModal(modal);
+    }
+  });
+
+  // Expose functions globally for external calls
   window.openPropertyModal = openPropertyModal;
   window.openReviewModal = openReviewModal;
 
-  // ===== Close Review Modal via Close Button =====
-document.addEventListener("click", e => {
-  if (e.target.classList.contains("modal-close")) {
-    const modal = e.target.closest(".modal");
-    if (modal) closeModal(modal);
-  }
-});
-
 })();
 
+// Favorite Property Logic
 (() => {
   let currentPropertyId = null;
   const saveBtn = document.getElementById("saveFavoriteBtn");
 
   if (!saveBtn) return;
-  // --- Update button appearance ---
+
+  // Update button appearance (Saved/Save)
   function updateSaveButton(saved) {
     if (saved) {
       saveBtn.classList.add("saved");
@@ -275,7 +280,7 @@ document.addEventListener("click", e => {
     }
   }
 
-  // --- Check if property is already saved ---
+  // Check if property is already saved
   async function checkSaved(propertyId) {
     try {
       const formData = new FormData();
@@ -290,11 +295,11 @@ document.addEventListener("click", e => {
       const data = await res.json();
       if (data.success) updateSaveButton(data.saved);
     } catch (err) {
-      console.error("Failed to check saved property:", err);
+      // Remove debugging line
     }
   }
 
-  // --- Toggle save/unsave ---
+  // Toggle save/unsave status
   async function toggleSave() {
     if (!currentPropertyId) return;
 
@@ -318,19 +323,19 @@ document.addEventListener("click", e => {
         notify("error", data.error || "Failed to update saved status.");
       }
     } catch (err) {
-      console.error(err);
+      // Remove debugging line
       notify("error", "Failed to update saved status.");
     }
   }
 
   saveBtn.addEventListener("click", toggleSave);
 
-  // --- Integrate with property modal ---
+  // Integrate with property modal (check saved status when modal opens)
   const observer = new MutationObserver(() => {
     const modal = document.getElementById("propertyModal");
     if (modal && modal.style.display !== "none") {
       const propId = modal.querySelector(".property-card, .modal-right")?.dataset?.id
-                     || window.currentPropertyId;
+                     || window.currentPropertyId; // Fallback to global exposed ID
       if (propId) {
         currentPropertyId = parseInt(propId);
         checkSaved(currentPropertyId);
@@ -340,7 +345,7 @@ document.addEventListener("click", e => {
 
   observer.observe(document.body, { childList: true, subtree: true });
 
-  // --- Optional: Update button when opening property card from main list ---
+  // Update button when opening property card from main list
   document.addEventListener("click", e => {
     const card = e.target.closest(".property-card");
     if (card) {
@@ -350,43 +355,44 @@ document.addEventListener("click", e => {
   });
 })();
 
+// Message Agent Logic
 (() => {
-document.addEventListener("click", async (e) => {
-  const messageBtn = e.target.closest(".message-agent-btn");
-  if (!messageBtn) return;
+  document.addEventListener("click", async (e) => {
+    const messageBtn = e.target.closest(".message-agent-btn");
+    if (!messageBtn) return;
 
-  e.preventDefault();
+    e.preventDefault();
 
-  const modal = document.getElementById("propertyModal");
-  const propertyId = modal?.dataset.id;
-  if (!propertyId) {
-    notify("Property ID not found.");
-    return;
-  }
-
-  try {
-    const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
-    const data = await res.json();
-
-    if (!data.success) {
-      notify(data.error || "Failed to fetch property details.");
+    const modal = document.getElementById("propertyModal");
+    const propertyId = modal?.dataset.id;
+    if (!propertyId) {
+      notify("error", "Property ID not found.");
       return;
     }
 
-    const agentId = data.property?.agent_id;
-    if (!agentId) {
-      notify("Agent not found for this property.");
-      return;
+    try {
+      const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
+      const data = await res.json();
+
+      if (!data.success) {
+        notify("error", data.error || "Failed to fetch property details.");
+        return;
+      }
+
+      const agentId = data.property?.agent_id;
+      if (!agentId) {
+        notify("error", "Agent not found for this property.");
+        return;
+      }
+
+      // Open the message page in a new tab
+      const url = `/BatEstateExplorer/public/message.php?agent_id=${agentId}`;
+      window.open(url, "_blank");
+
+    } catch (err) {
+      // Remove debugging line
+      notify("error", "Failed to fetch property details.");
     }
-
-    // Open the message page in a new tab
-    const url = `/BatEstateExplorer/public/message.php?agent_id=${agentId}`;
-    window.open(url, "_blank");
-
-  } catch (err) {
-    console.error("Error fetching property details:", err);
-    notify("Failed to fetch property details.");
-  }
-});
+  });
 
 })();

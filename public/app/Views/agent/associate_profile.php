@@ -882,7 +882,7 @@
                         <div class="overview-card danger-zone">
                             <h3>Danger Zone</h3>
                             <p class="danger-note">⚠️ Once deleted, this account <strong>cannot be recovered</strong>. Please proceed with caution.</p>
-                            <button type="button" id="openDeleteModal" class="delete-btn-overview">Delete Agent Account</button>
+                            <button type="button" id="openDeleteModal" class="delete-btn-overview">Delete Account</button>
                         </div>
                     </div>  
 
@@ -903,7 +903,7 @@
                     <input type="text" name="phone" value="<?= htmlspecialchars($user['phone']) ?>">
 
                     <label for="address">Address</label>
-                    <textarea name="address" id="address" rows="3"><?= htmlspecialchars($current_user['address']) ?></textarea>
+                    <textarea name="address" id="address" rows="3"><?= htmlspecialchars($user['address']) ?></textarea>
 
                     <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
                         <button type="submit">Save Changes</button>
@@ -922,7 +922,7 @@
                     <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
                     <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
                         <button type="submit" id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
-                        <button type="button" id="cancelDeleteBtn">Cancel</button>
+                        <button type="button" id="cancelDeleteBtn" class="cancel-btn">Cancel</button>
                     </div>
                     <div id="deleteSpinner" class="spinner" style="display:none;">
                         <div class="loader"></div>

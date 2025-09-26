@@ -147,7 +147,7 @@
     text-align: left; /* Added from duplicate definition */
 }
 
-.profile-edit input {
+.profile-edit input, textarea {
     padding: 0.6rem;
     border: 1px solid #ddd;
     border-radius: 10px;
@@ -156,10 +156,6 @@
     transition: border-color 0.2s ease;
 }
 
-.profile-edit input:focus {
-    border-color: #008dff;
-    outline: none;
-}
 
 /* ===========================
     Buttons (General & Profile Edit)

@@ -1,14 +1,12 @@
-// ================== Sidebar Navigation Highlight ==================
+// Sidebar Navigation Highlight
 document.addEventListener("DOMContentLoaded", () => {
   const navLinks = document.querySelectorAll(".sidebar-nav a");
 
-  // Keep nav link active
   navLinks.forEach(link => {
     link.addEventListener("click", () => {
       navLinks.forEach(l => l.classList.remove("active"));
       link.classList.add("active");
-
-      // Store active link in localStorage so it persists on reload
+      // Store active link for persistence on reload
       localStorage.setItem("activeNav", link.getAttribute("href"));
     });
   });
@@ -21,14 +19,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// ================= Responsive Sidebar =================
-const sidebar   = document.querySelector(".sidebar-wrapper");
+// Responsive Sidebar
+const sidebar = document.querySelector(".sidebar-wrapper");
 const toggleBtn = document.querySelector(".sidebar-toggle-btn");
 const toggleIcon = toggleBtn.querySelector("i");
-const backdrop  = document.querySelector(".sidebar-backdrop");
+const backdrop = document.querySelector(".sidebar-backdrop");
 
-// Gap between sidebar edge and toggle when open
-const toggleGap = 12; // px
+const toggleGap = 12; // Gap between sidebar edge and toggle when open (in px)
 
 function openSidebar() {
   sidebar.classList.add("open");
@@ -58,24 +55,23 @@ backdrop.addEventListener("click", closeSidebar);
 // Handle responsive state on resize
 function handleResize() {
   if (window.innerWidth <= 1024) {
-    // Mobile/Tablet → force expanded sidebar mode (no collapsed hover)
+    // Mobile/Tablet mode: force expanded and start hidden off-canvas
     sidebar.classList.remove("collapsed");
-    closeSidebar(); // start hidden off-canvas
+    closeSidebar();
     toggleBtn.style.display = "flex";
   } else {
-    // Desktop → collapsed by default with hover-expand
+    // Desktop mode: collapsed by default with hover-expand, hide floating toggle
     sidebar.classList.add("collapsed");
     sidebar.classList.remove("open");
     backdrop.classList.remove("show");
-    toggleBtn.style.display = "none"; // hide floating toggle on desktop
+    toggleBtn.style.display = "none";
   }
 }
 
-// Run once at load
-handleResize();
+handleResize(); // Run once at load
 window.addEventListener("resize", handleResize);
 
-// ================== Dropdowns (if any) ==================
+// Dropdowns
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
     toggle.addEventListener('click', function (e) {
@@ -85,8 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-
-// ================== Admin Agents (Direct + Associate) ==================
+// Admin Agents (Direct + Associate)
 document.addEventListener('DOMContentLoaded', () => {
   const agentList = document.getElementById('agentList');
   const agentModal = document.getElementById('agentModal');
@@ -94,51 +89,52 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalCloseBtns = agentModal ? agentModal.querySelectorAll('.close, .cancel-btn') : [];
   const sortSelect = document.getElementById('sort');
 
-  // Close modal buttons
+  // Close modal functionality
   modalCloseBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       if (agentModal) agentModal.style.display = 'none';
     });
   });
 
-  // Agent list actions
+  // Helper function to generate document link HTML
+  function docLink(label, path, field) {
+    if (!path) return '';
+    const file = encodeURIComponent(path.split('/').pop()); // get filename only
+    return `
+      <div class="detail-row">
+        <div class="detail-label">${label}:</div>
+        <div class="detail-value">
+          <a href="/BatEstateExplorer/public/api/view_document.php?file=${file}&field=${field}" 
+            target="_blank" class="document-link">View</a>
+        </div>
+      </div>`;
+  }
+
+  // Agent list actions (View and Remove)
   if (agentList) {
     agentList.addEventListener('click', async (e) => {
       if (e.target.matches('.btn-view')) {
         const btn = e.target;
 
-    function docLink(label, path, field) {
-      if (!path) return '';
-      const file = encodeURIComponent(path.split('/').pop()); // get filename only
-      return `
-        <div class="detail-row">
-          <div class="detail-label">${label}:</div>
-          <div class="detail-value">
-            <a href="/BatEstateExplorer/public/api/view_document.php?file=${file}&field=${field}" 
-              target="_blank" class="document-link">View</a>
-          </div>
-        </div>`;
-    }
+        let additionalDocsHtml = '';
+        if (btn.dataset.additionalDocsPath) {
+          const docs = btn.dataset.additionalDocsPath
+            .split(',')
+            .map(d => d.trim())
+            .filter(d => d);
 
-    let additionalDocsHtml = '';
-    if (btn.dataset.additionalDocsPath) {
-      const docs = btn.dataset.additionalDocsPath
-        .split(',')
-        .map(d => d.trim())
-        .filter(d => d);
-
-      additionalDocsHtml = docs.map((doc, i) => {
-        const file = encodeURIComponent(doc.split('/').pop());
-        return `
-          <div class="detail-row">
-            <div class="detail-label">Additional Document ${i + 1}:</div>
-            <div class="detail-value">
-              <a href="/BatEstateExplorer/public/api/view_document.php?file=${file}&field=additional_docs_path" 
-                target="_blank" class="document-link">View</a>
-            </div>
-          </div>`;
-      }).join('');
-    }
+          additionalDocsHtml = docs.map((doc, i) => {
+            const file = encodeURIComponent(doc.split('/').pop());
+            return `
+              <div class="detail-row">
+                <div class="detail-label">Additional Document ${i + 1}:</div>
+                <div class="detail-value">
+                  <a href="/BatEstateExplorer/public/api/view_document.php?file=${file}&field=additional_docs_path" 
+                    target="_blank" class="document-link">View</a>
+                </div>
+              </div>`;
+          }).join('');
+        }
 
         modalBody.innerHTML = `
           <div class="col-left">
@@ -218,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Sorting
+    // Sorting functionality
     if (sortSelect) {
       sortSelect.addEventListener('change', () => {
         const sortBy = sortSelect.value;
@@ -248,25 +244,25 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Grab sidebar logout link and modal buttons
-  const logoutLink = document.querySelector('.sidebar-footer a');
-  const logoutModal = document.getElementById('logoutModal');
-  const cancelBtn = document.getElementById('cancelLogout');
+// Logout Modal Logic
+const logoutLink = document.querySelector('.sidebar-footer a');
+const logoutModal = document.getElementById('logoutModal');
+const cancelBtn = document.getElementById('cancelLogout');
 
-  // Open modal instead of direct logout
-  logoutLink.addEventListener('click', function(e) {
-    e.preventDefault();
-    logoutModal.style.display = 'flex';
-  });
+// Open modal instead of direct logout
+logoutLink.addEventListener('click', function(e) {
+  e.preventDefault();
+  logoutModal.style.display = 'flex';
+});
 
-  // Close modal on cancel
-  cancelBtn.addEventListener('click', function() {
+// Close modal on cancel
+cancelBtn.addEventListener('click', function() {
+  logoutModal.style.display = 'none';
+});
+
+// Close modal if clicking outside content
+logoutModal.addEventListener('click', function(e) {
+  if (e.target === logoutModal) {
     logoutModal.style.display = 'none';
-  });
-
-  // Close modal if clicking outside content
-  logoutModal.addEventListener('click', function(e) {
-    if (e.target === logoutModal) {
-      logoutModal.style.display = 'none';
-    }
-  });
+  }
+});
