@@ -1,0 +1,406 @@
+/* =========================
+   Agent Dashboard Topbar
+========================= */
+.dashboard-content {
+  margin-top: 1.5rem;
+}
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 0.8rem 1%;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  font-family: 'Satoshi', 'Inter', sans-serif;
+}
+
+.nav-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Left: Logo + role */
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #111;
+}
+
+.nav-logo-img {
+  width: 34px;
+  height: auto;
+}
+
+.agent-role {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #666;
+}
+
+/* Center nav links (desktop only) */
+.nav-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 4rem;
+}
+
+.nav-center .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  color: #444;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.nav-center .nav-link i {
+  font-size: 1rem;
+}
+
+.nav-center .nav-link:hover {
+  color: #000;
+  transform: translateY(-2px);
+}
+
+.nav-center .nav-link.active {
+  color: #111;
+  font-weight: 600;
+  border-bottom: 2px solid #111;
+  padding-bottom: 2px;
+}
+
+/* Right: Messages + Logout (desktop only) */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-right .glow-link,
+.nav-right .logout-btn {
+  background: transparent;
+  border: none;
+  color: #444;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.nav-right .glow-link:hover {
+  color: #111;
+  transform: translateY(-2px);
+}
+
+.nav-right .logout-btn:hover {
+  color: #c0392b;
+  transform: translateY(-2px);
+}
+
+/* Burger Menu */
+.nav-burger {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #111;
+}
+
+/* Burger Menu Dropdown */
+.nav-dropdown {
+  display: none;
+  flex-direction: column;
+  background: #fff;
+  position: absolute;  /* position relative to burger */
+  top: 100%;           /* just below the burger */
+  right: 0;            /* align to the right of burger */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 100;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  min-width: max-content; /* auto width based on content */
+}
+
+.nav-dropdown a,
+.nav-dropdown button {
+  padding: 0.4rem 0.6rem;
+  color: #444;
+  font-weight: 500;
+  text-align: left;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap; /* prevent text wrap */
+}
+
+.nav-dropdown a:hover,
+.nav-dropdown button:hover {
+  color: #111;
+  background: rgba(0,0,0,0.03);
+  border-radius: 5px;
+}
+
+/* Footer */
+.footer {
+  font-family: "Inter", Arial, sans-serif;
+  background: #111;
+  color: #fff;
+  padding: 3rem 8% 1rem;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.footer h3,
+.footer h4 {
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.footer h3 {
+  font-size: 18px;
+}
+
+.footer h4 {
+  font-size: 16px;
+}
+
+.footer a {
+  font-size: 0.9rem;
+  color: #fff;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: #999;
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid #333;
+  font-size: 0.85rem;
+  color: #999;
+}
+
+/* =========================
+   Agent Logout Modal (Admin-style)
+========================= */
+.modal-agent {
+  display: none; /* hidden by default */
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  font-family: 'Satoshi-Regular', sans-serif !important;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.modal-agent.active-agent {
+  display: flex;
+}
+
+.modal-content-agent {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 20px;
+  max-width: 450px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  text-align: center;
+  position: relative;
+  animation: fadeInUp 0.3s ease;
+}
+
+.modal-content-agent h4 {
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+  font-family: 'Satoshi-Bold', sans-serif;
+  color: #111;
+}
+
+.modal-content-agent p {
+  margin-bottom: 1.5rem;
+  color: #444;
+  line-height: 1.5;
+}
+
+.modal-actions-agent {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.delete-btn-agent {
+  background: #111;
+  color: #fff;
+  padding: 0.7rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Satoshi-Medium', sans-serif;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.15s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.delete-btn-agent:hover {
+  background: #b91c1c;
+  transform: translateY(-2px);
+}
+
+.cancel-btn-agent {
+  padding: 0.7rem 1.5rem;
+  border-radius: 12px;
+  background: #e5e7eb;
+  color: #111;
+  border: none;
+  cursor: pointer;
+  font-family: 'Satoshi-Medium', sans-serif;
+  transition: background 0.25s ease, transform 0.15s ease;
+}
+
+.cancel-btn-agent:hover {
+  background: #d1d5db;
+  transform: translateY(-2px);
+}
+
+/* Spinner inside modal */
+.spinner-agent {
+  display: none;
+  margin-top: 1rem;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.spinner-agent .loader {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #ddd;
+  border-top: 3px solid #111;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Modal animation */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal-content-agent {
+    padding: 1.5rem;
+    width: 95%;
+  }
+}
+
+/* =========================
+   Responsive Enhancements
+========================= */
+
+/* ---------------- Tablet Mode (≤992px) ---------------- */
+@media (max-width: 992px) {
+
+  /* Navbar: hide center & right, show burger */
+  .nav-center,
+  .nav-right {
+    display: none;
+  }
+  .nav-burger {
+    display: flex;
+  }
+
+  /* Footer adjustments */
+  .footer {
+    padding: 2rem 5%;
+  }
+  .footer-content {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+  }
+  .footer h3 {
+    font-size: 16px;
+  }
+  .footer h4 {
+    font-size: 15px;
+  }
+  .footer a {
+    font-size: 0.85rem;
+  }
+}
+
+/* ---------------- Mobile Mode (≤768px) ---------------- */
+@media (max-width: 768px) {
+  .nav-container {
+    padding: 0 0.5rem 0 0.5rem;
+  }
+  
+  /* Navbar: adjust center gap for smaller screens */
+  .nav-center {
+    gap: 2rem;
+  }
+
+  /* Footer compact mode */
+  .footer {
+    padding: 2rem 4%;
+  }
+  .footer-content {
+    display: block;          /* stack sections vertically */
+    gap: 1rem;
+  }
+  .footer h3 {
+    font-size: 15px;
+  }
+  .footer h4 {
+    font-size: 14px;
+  }
+  .footer a {
+    font-size: 0.8rem;
+  }
+  .footer-bottom {
+    font-size: 0.8rem;
+    padding-top: 0.8rem;
+  }
+}

@@ -1,0 +1,273 @@
+/* =========================
+   Fonts
+========================= */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Merriweather:wght@700&display=swap');
+
+/* =========================
+   Global Reset
+========================= */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Inter", Arial, sans-serif;
+    background: #f9fafc;
+    color: #111;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* =========================
+   Background Logo
+========================= */
+body::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("../images/Vector 1.png") repeat center;
+    background-size: 30% auto;
+    opacity: 0.03;
+    z-index: 0;
+}
+
+/* =========================
+   Registration Container
+========================= */
+.registration-container {
+    position: relative;
+    z-index: 1;
+    background: #fff;
+    border-radius: 20px;
+    padding: 3rem;
+    max-width: 900px;
+    width: 100%;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    animation: fadeInUp 0.6s ease;
+}
+
+/* Headings */
+.registration-container h1 {
+    font-family: "Merriweather", serif;
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.registration-container p {
+    margin-bottom: 2rem;
+    color: #555;
+    font-size: 0.95rem;
+}
+
+/* Back link */
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    color: #111;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+.back-link:hover {
+    color: #000;
+    text-decoration: underline;
+}
+
+/* =========================
+   Form Styles
+========================= */
+form {
+    width: 100%;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #333;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #111;
+    box-shadow: 0 0 0 4px rgba(17,17,17,0.1);
+}
+
+/* Two-column layout for inputs */
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+}
+
+/* Buttons */
+.submit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.9rem 1.5rem;
+    border: none;
+    border-radius: 30px;
+    background: #111;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+.submit-btn:hover {
+    background: #333;
+}
+
+/* Toggle Password */
+.toggle-password {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0 0 1.5rem 0;
+    font-size: 0.9rem;
+    color: #111;
+    cursor: pointer;
+    user-select: none;
+}
+.toggle-password:hover {
+    color: #000;
+}
+
+/* Links */
+.links, .login-link {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #555;
+}
+.links a, .login-link a {
+    color: #111;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+.links a:hover, .login-link a:hover {
+    color: #000;
+    text-decoration: underline;
+}
+
+/* =========================
+   Animations
+========================= */
+@keyframes fadeInUp {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Stagger items */
+.stagger-item {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 0.6s ease forwards;
+}
+@keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+}
+.stagger-item:nth-child(1) { animation-delay: 0.1s; }
+.stagger-item:nth-child(2) { animation-delay: 0.2s; }
+.stagger-item:nth-child(3) { animation-delay: 0.3s; }
+
+/* =========================
+   Company Select Field
+========================= */
+#company-field {
+    margin-bottom: 1.5rem;
+}
+
+#company_id {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e1e5e9;   /* soft border */
+    border-radius: 12px;
+    font-size: 1rem;
+    background: #fff;
+    appearance: none;             /* remove default arrow for consistency */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+/* Focus state */
+#company_id:focus {
+    outline: none;
+    border-color: #111;
+    box-shadow: 0 0 0 4px rgba(17,17,17,0.1);
+}
+
+/* Optional: add a down arrow icon inside the select */
+#company_id {
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23333' stroke-width='2'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 12px 8px;
+    padding-right: 2.5rem;  /* leave space for the arrow */
+}
+
+
+/* =========================
+   Responsive
+========================= */
+@media (max-width: 992px) {
+    .form-row {
+        grid-template-columns: 1fr; /* stack on smaller screens */
+    }
+    .registration-container {
+        padding: 2rem 1.5rem;
+    }
+    .registration-container h1 {
+        font-size: 1.75rem;
+    }
+    .registration-container p {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 600px) {
+    body {
+        align-items: flex-start;
+        padding: 1rem 0;
+    }
+    .registration-container {
+        padding: 1.5rem 1rem;
+        border-radius: 15px;
+    }
+    .submit-btn {
+        font-size: 0.95rem;
+        padding: 0.8rem 1.2rem;
+    }
+}

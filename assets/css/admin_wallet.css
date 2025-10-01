@@ -1,0 +1,351 @@
+/* ====== Fonts ====== */
+@font-face {
+    font-family: 'Satoshi';
+    src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+    font-weight: 900;
+    font-style: normal;
+}
+@font-face { font-family: 'Satoshi-Bold'; src: url('../fonts/Satoshi-Bold.otf') format('opentype'); font-style: normal; }
+@font-face { font-family: 'Satoshi-Medium'; src: url('../fonts/Satoshi-Medium.otf') format('opentype'); font-style: normal; }
+@font-face { font-family: 'Satoshi-Regular'; src: url('../fonts/Satoshi-Regular.otf') format('opentype'); font-style: normal; }
+
+/* ---------------- Content Header ---------------- */
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+.content-header h1 {
+    background: #fff;
+    padding: 0.75rem 2rem;
+    font-size: 2.5rem;
+    color: #111827;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    display: inline-block;
+}
+/* =========================
+   Root Variables
+========================= */
+:root {
+    --primary-color: #6a67d6;
+    --secondary-color: #a7a2ff;
+    --text-color-dark: #333;
+    --text-color-faded: #888;
+    --card-bg-light: rgba(255, 255, 255, 0.8);
+    --border-color: rgba(255, 255, 255, 0.3);
+    --shadow-light: 0 5px 15px rgba(0, 0, 0, 0.05);
+    --shadow-deep: 0 10px 30px rgba(0, 0, 0, 0.08);
+    --gradient-card-1: linear-gradient(135deg, #a7a2ff, #6a67d6);
+    --positive-amount: #28a745;
+    --negative-amount: #dc3545;
+    --transition-fast: 0.2s ease;
+}
+
+/* =========================
+   Global Reset
+========================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background: var(--bg-color);
+    color: var(--text-color-dark);
+}
+
+/* =========================
+   Dashboard Container
+========================= */
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* =========================
+   Wallet Content
+========================= */
+.wallet-content {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Top cards take natural height */
+.cards-section {
+    flex: 0 0 auto;
+}
+
+h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+/* =========================
+   Top Cards Section
+========================= */
+.top-cards-grid {
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+    align-items: flex-start; /* keeps VISA card at top */
+    width: 100%;
+    min-height: 300px; /* ensures card has space */
+}
+
+.cards-section {
+    flex: 0 0 auto; /* natural height */
+}
+
+/* =========================
+   VISA Card (Top-Aligned, Standard Layout)
+========================= */
+.visa-standard {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* distribute content vertically */
+    flex: 1 1 0;
+    min-width: 300px;
+    max-width: 500px;
+    aspect-ratio: 1.585 / 1; /* realistic card ratio */
+    padding: 25px;
+    border-radius: 30px;
+    color: #fff;
+    background: linear-gradient(200deg, #707070, #000000);
+    position: relative;
+    overflow: hidden;
+}
+
+
+.visa-standard .card-type {
+    font-size: 14px;
+    opacity: 0.8;
+    font-weight: 500;
+}
+
+.visa-standard .card-balance {
+    font-size: 26px; /* bigger font */
+    opacity: 0.95;
+    font-weight: 600;
+}
+
+.visa-standard .card-number-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px; /* small gap between number and eye */
+}
+
+.visa-standard .card-number {
+    font-size: 22px;
+    letter-spacing: 6px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.toggle-number {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.visa-standard .card-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* =========================
+   Transactions Section (Fixed Height + Scroll)
+========================= */
+.transactions-section {
+    height: 450px;      
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding-right: 10px;
+    border-radius: 12px;
+}
+
+/* Scroll only inside the list */
+.transactions-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+/* Scrollbar styles */
+.transactions-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.transactions-list::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.transactions-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.transactions-grid {
+    display: flex;
+    flex-direction: column; 
+    gap: 20px;
+}
+
+.transaction-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    border-radius: 50px;
+    background: var(--card-bg-light);
+    box-shadow: var(--shadow-light);
+}
+
+.transaction-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(106, 103, 214, 0.1);
+    color: #000;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.transaction-info {
+    flex: 1;
+    margin-left: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.transaction-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-color-dark);
+}
+
+.transaction-date-time {
+    font-size: 12px;
+    color: var(--text-color-faded);
+}
+
+.transaction-amount {
+    font-weight: 600;
+    min-width: 130px;
+    text-align: center;
+    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 50px;
+}
+
+.transaction-amount.positive {
+    background: rgba(40, 167, 69, 0.1);
+    color: var(--positive-amount);
+}
+
+.transaction-amount.negative {
+    background: rgba(220, 53, 69, 0.1);
+    color: var(--negative-amount);
+}
+
+/* =========================
+   Responsive Layout
+========================= */
+
+/* Laptops and tablets (1024px and below) */
+@media (max-width: 1024px) {
+
+    /* Header */
+    .content-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 1rem;
+    }
+
+    .content-header h1 {
+        font-size: 2rem;
+        padding: 0.5rem 1.5rem;
+    }
+
+}
+
+/* Mobile devices (768px and below) */
+@media (max-width: 768px) {
+
+    /* Header */
+    .content-header h1 {
+        font-size: 1.75rem;
+        padding: 0.5rem 1.25rem;
+    }
+    .visa-standard .card-number {
+        font-size: 20px;
+        letter-spacing: 3px;
+    }
+    .transaction-amount {
+    min-width: 70px;
+    }
+}
+
+/* Extra small devices (phones < 480px) */
+@media (max-width: 480px) {
+
+    /* Header */
+    .content-header h1 {
+        font-size: 1.5rem;
+        padding: 0.5rem 1rem;
+    }
+
+    /* VISA Card */
+    .visa-standard {
+        padding: 12px;
+        border-radius: 20px;
+    }
+
+    .visa-standard .card-balance {
+        font-size: 20px;
+    }
+
+    .visa-standard .card-number {
+        font-size: 16px;
+        letter-spacing: 3px;
+    }
+
+    .toggle-number svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    /* Transactions */
+    .transactions-list {
+        gap: 12px;
+    }
+
+    .transaction-item {
+        padding: 8px;
+    }
+
+    .transaction-amount {
+        font-size: 13px;
+        padding: 3px 6px;
+    }
+}

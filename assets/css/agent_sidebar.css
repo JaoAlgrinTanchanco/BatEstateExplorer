@@ -1,0 +1,331 @@
+/* ===========================
+   Fonts
+=========================== */
+@font-face {
+  font-family: 'Satoshi-Regular';
+  src: url('../fonts/Satoshi-Regular.otf') format('opentype');
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Satoshi-Medium';
+  src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Satoshi-Bold';
+  src: url('../fonts/Satoshi-Bold.otf') format('opentype');
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+/* ===========================
+   Dashboard Layout
+=========================== */
+.dashboard-container {
+  background: #f5f6f8ff;
+  display: grid;
+  grid-template-columns: 240px 1fr; /* Sidebar fixed, content flexible */
+  gap: 1.5rem;
+  margin-top: 3.5rem;
+  min-height: calc(100vh - 90px);
+  padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+/* ===========================
+   Sidebar Wrapper
+=========================== */
+.agent-sidebar-wrapper {
+  height: calc(100vh - 65px);
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  transition: left 0.3s ease;
+}
+
+/* ===========================
+   Role Strip
+=========================== */
+.role {
+  background: #fff8cc; /* soft light yellow */
+  border: 4px solid #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+
+.role p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #d4a017; /* warm golden yellow for text */
+  font-family: "Satoshi", sans-serif;
+}
+
+/* ===========================
+   Sidebar Content
+=========================== */
+.agent-sidebar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  overflow-y: auto;
+}
+
+/* ===========================
+   Sidebar Header
+=========================== */
+.agent-sidebar .sidebar-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.agent-sidebar .sidebar-header i {
+  font-size: 5.5rem;
+  color: #111;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.agent-sidebar .sidebar-header h2 {
+  font-family: 'Satoshi-Bold', sans-serif;
+  font-size: 2rem;
+  color: #111;
+  margin: 0;
+}
+
+/* ===========================
+   Sidebar Navigation
+=========================== */
+.agent-sidebar .sidebar-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.agent-sidebar .sidebar-nav li {
+  margin-bottom: 0.75rem;
+}
+
+.agent-sidebar .sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  border-radius: 10px;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.agent-sidebar .sidebar-nav a:hover,
+.agent-sidebar .sidebar-nav a.active {
+  background: #f3f4f6;
+  color: #111;
+}
+
+/* ===========================
+   Right Side Content
+=========================== */
+.right-side {
+  width: 100%;
+}
+
+/* ===========================
+   Dashboard Header
+=========================== */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  padding: 0.75rem 2rem;
+  background: #fff;
+  font-family: 'Satoshi-Bold', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  display: inline-block;
+}
+
+/* ===========================
+   Dashboard Tabs
+=========================== */
+.dashboard-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 2rem;
+  padding: 0.5rem 0.2rem;
+}
+
+.dashboard-tabs .tab {
+  padding: 0.6rem 1.2rem;
+  text-decoration: none;
+  border-radius: 50px;
+  background: #f5f5f5;
+  color: #444;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: background 0.25s ease, color 0.25s ease, transform 0.2s ease;
+}
+
+.dashboard-tabs .tab:hover {
+  background: #e9e9e9;
+  color: #111;
+  transform: translateY(-2px);
+}
+
+.dashboard-tabs .tab.active {
+  background: #111;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+/* ===========================
+   Page Header (Main Content)
+=========================== */
+.agent-header h1 {
+  margin-bottom: 1.5rem;
+  font-family: 'Satoshi-Bold', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ===========================
+   Sidebar Toggle Button
+=========================== */
+/* Sidebar Toggle Button */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 4.75rem; /* adjust to match sidebar top + spacing */
+  left: 1rem;   /* default when sidebar is closed */
+  z-index: 10000;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: left 0.3s ease, transform 0.3s ease;
+}
+
+/* Adjust left position when sidebar is open */
+.agent-sidebar-wrapper.open + .sidebar-toggle {
+  left: 16rem; /* sidebar width + 1px gap */
+}
+
+/* ===========================
+   Responsive (≤768px)
+=========================== */
+@media (max-width: 768px) {
+  /* Sidebar toggle smaller */
+  .sidebar-toggle {
+    width: 35px;        /* smaller width */
+    height: 35px;       /* smaller height */
+    font-size: 1rem;    /* smaller icon */
+  }
+  /* Layout */
+  .dashboard-container {
+    grid-template-columns: 1fr; /* single column layout */
+    padding: 0 0.5rem 1rem;     /* smaller padding to avoid overflow */
+    overflow-x: hidden;         /* prevent horizontal scroll from container */
+  }
+
+  .role {
+    border-radius: 0;
+  }
+
+  /* Sidebar */
+  .sidebar-toggle {
+    display: flex; /* visible on small screens */
+  }
+
+  .agent-sidebar-wrapper {
+    position: fixed;
+    top: 0;
+    left: -240px; /* hidden by default */
+    width: 240px;
+    height: 100%;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: 2px 0 24px rgba(0,0,0,0.15);
+    transition: left 0.3s ease;
+    z-index: 9999;
+    background: #fff; /* ensure background covers content */
+  }
+
+  .agent-sidebar-wrapper.open {
+    left: 0;
+  }
+
+  /* Right side content */
+  .right-side {
+    width: 100%; 
+    margin-right: 0;            /* remove negative margin */
+    min-width: 0;               /* allow shrink */
+  }
+
+  /* Header */
+  .dashboard-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.3rem;
+  }
+
+  /* Tabs */
+  .dashboard-tabs {
+    gap: 0.5rem;
+  }
+
+  .dashboard-tabs .tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 600px) {
+  
+  /* Dashboard container */
+  .dashboard-container {
+    grid-template-columns: 1fr; /* single column layout */
+    padding: 0 0.5rem 1rem;     /* smaller padding to avoid overflow */
+    overflow-x: hidden;         /* prevent horizontal scroll from container */
+  }
+
+  /* Right side content */
+  .right-side {
+    width: 100%; 
+    margin-right: 0;            /* remove negative margin */
+    min-width: 0;               /* allow shrink */
+  }
+}
