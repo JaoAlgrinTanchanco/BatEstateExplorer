@@ -131,41 +131,43 @@
                 ?>
             </select>
         </div>
-        <div class="form-group">
-        <label for="specializations">Specialization *</label>
-        <select id="specializations" name="specializations" required>
-            <option value="">Select Specialization</option>
-            <?php
-            $specializations = [
-                'Condominium',
-                'Apartment',
-                'Townhouse',
-                'House and Lot',
-                'Commercial Building',
-                'Lot Only',
-                'Farm Lot',
-                'Industrial Lot',
-                'Beachfront Property',
-                'Resort',
-                'Hotels and Motels',
-                'Dormitory',
-                'Office Space',
-                'Warehouse',
-                'Retail Space',
-                'Mixed-Use Development',
-                'Luxury Estate',
-                'Foreclosed Property',
-                'Subdivision Development',
-                'Others'
-            ];
-            $selectedSpecialization = $old['specializations'] ?? $user['specializations'] ?? '';
-            foreach ($specializations as $spec) {
-                $selected = ($selectedSpecialization === $spec) ? 'selected' : '';
-                echo "<option value=\"{$spec}\" {$selected}>{$spec}</option>";
-            }
-            ?>
-        </select>
+        <div class="form-group specialization-group">
+            <label for="specializationSelect">Specializations *</label>
+
+            <!-- Combo box (select one at a time) -->
+            <select id="specializationSelect" class="form-control">
+                <option value="" disabled selected>Select a specialization</option>
+                <option value="Condominium">Condominium</option>
+                <option value="Apartment">Apartment</option>
+                <option value="Townhouse">Townhouse</option>
+                <option value="House and Lot">House and Lot</option>
+                <option value="Commercial Building">Commercial Building</option>
+                <option value="Lot Only">Lot Only</option>
+                <option value="Farm Lot">Farm Lot</option>
+                <option value="Industrial Lot">Industrial Lot</option>
+                <option value="Beachfront Property">Beachfront Property</option>
+                <option value="Resort">Resort</option>
+                <option value="Hotels and Motels">Hotels and Motels</option>
+                <option value="Dormitory">Dormitory</option>
+                <option value="Office Space">Office Space</option>
+                <option value="Warehouse">Warehouse</option>
+                <option value="Retail Space">Retail Space</option>
+                <option value="Mixed-Use Development">Mixed-Use Development</option>
+                <option value="Luxury Estate">Luxury Estate</option>
+                <option value="Foreclosed Property">Foreclosed Property</option>
+                <option value="Subdivision Development">Subdivision Development</option>
+                <option value="Others">Others</option>
+            </select>
         </div>
+
+        <!-- Separate form group for tags -->
+        <div class="form-group specialization-tags-group">
+        <div class="specialization-tags" id="specializationTags"></div>
+        </div>
+
+        <!-- Hidden field to send selected values to backend -->
+        <input type="hidden" name="specializations" id="specializationInput"
+            value="<?= htmlspecialchars($old_inputs['specializations'] ?? '') ?>">
     </div>
 
     <div class="form-group">
@@ -273,85 +275,126 @@
 <div id="ajax-notification-container" class="notification-container"></div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
+    // === DOM ELEMENTS ===
     const userType = document.getElementById('user_type');
     const docsSection = document.getElementById('required-documents');
     const companyField = document.getElementById('company-field');
     const companySelect = document.getElementById('company_id');
     const form = document.getElementById('agentRegistrationForm');
     const ajaxContainer = document.getElementById('ajax-notification-container');
+    const select = document.getElementById('specializationSelect');
+    const tagsContainer = document.getElementById('specializationTags');
+    const hiddenInput = document.getElementById('specializationInput');
 
-    // Toggle fields based on agent type
+    let selectedTags = [];
+
+    // === SPECIALIZATION TAGS ===
+    select.addEventListener('change', () => {
+        const value = select.value;
+        if (!value || selectedTags.includes(value)) {
+        select.selectedIndex = 0;
+        return;
+        }
+        selectedTags.push(value);
+        renderTags();
+        select.selectedIndex = 0;
+    });
+
+    // Render all selected tags
+    function renderTags() {
+        tagsContainer.innerHTML = '';
+        selectedTags.forEach(tagValue => {
+        const tag = document.createElement('span');
+        tag.className = 'specialization-tag';
+        tag.innerHTML = `
+            ${tagValue}
+            <button type="button" class="remove-tag" data-value="${tagValue}" aria-label="Remove tag">&times;</button>
+        `;
+        tagsContainer.appendChild(tag);
+        });
+        hiddenInput.value = selectedTags.join(', ');
+    }
+
+    // Handle remove button (event delegation)
+    tagsContainer.addEventListener('click', e => {
+        if (e.target.classList.contains('remove-tag')) {
+        const value = e.target.dataset.value;
+        selectedTags = selectedTags.filter(v => v !== value);
+        renderTags();
+        }
+    });
+
+    // === TOGGLE FIELDS BASED ON AGENT TYPE ===
     function toggleFields() {
         const type = userType.value;
-        if(type === 'direct_agent') {
-            docsSection.style.display = 'block';
-            companyField.style.display = 'none';
-            companySelect.required = false;
-            docsSection.querySelectorAll('input[type="file"]').forEach(el => el.required = true);
-        } else if(type === 'associate_agent') {
-            docsSection.style.display = 'none';
-            companyField.style.display = 'block';
-            companySelect.required = true;
-            docsSection.querySelectorAll('input[type="file"]').forEach(el => el.required = false);
-        } else {
-            docsSection.style.display = 'none';
-            companyField.style.display = 'none';
-            companySelect.required = false;
-            docsSection.querySelectorAll('input[type="file"]').forEach(el => el.required = false);
-        }
+
+        const showDocs = type === 'direct_agent';
+        const showCompany = type === 'associate_agent';
+
+        docsSection.style.display = showDocs ? 'block' : 'none';
+        companyField.style.display = showCompany ? 'block' : 'none';
+        companySelect.required = showCompany;
+
+        // Set required state for file inputs
+        docsSection.querySelectorAll('input[type="file"]').forEach(input => {
+        input.required = showDocs;
+        });
     }
 
     toggleFields();
     userType.addEventListener('change', toggleFields);
 
-    // Helper to show AJAX notifications
-    window.showAjaxNotification = (message, type='success') => {
-        if(!ajaxContainer) return;
+    // === AJAX NOTIFICATION HELPER ===
+    window.showAjaxNotification = (message, type = 'success') => {
+        if (!ajaxContainer) return;
+
         const notif = document.createElement('div');
         notif.className = `notification ${type}`;
         notif.innerHTML = `
-            <div class="notification__icon"></div>
-            <div class="notification__title">${message}</div>
-            <div class="notification__close">&times;</div>
+        <div class="notification__icon"></div>
+        <div class="notification__title">${message}</div>
+        <div class="notification__close" aria-label="Close">&times;</div>
         `;
+
         ajaxContainer.appendChild(notif);
 
-        // Auto dismiss
+        // Auto-dismiss after 5 seconds
         setTimeout(() => notif.remove(), 5000);
-        // Close button
+
+        // Manual close
         notif.querySelector('.notification__close').addEventListener('click', () => notif.remove());
     };
 
-    // Handle form submission via AJAX
-    form.addEventListener('submit', async (e) => {
+    // === AJAX FORM SUBMISSION ===
+    form.addEventListener('submit', async e => {
         e.preventDefault();
+
         const formData = new FormData(form);
-        formData.append('ajax', 1); // ensure PHP treats it as AJAX
+        formData.append('ajax', 1);
 
         try {
-            const res = await fetch('../public/api/agent_registration_complete.php', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
+        const res = await fetch('../public/api/agent_registration_complete.php', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
 
-            const data = await res.json();
+        const data = await res.json();
+        window.showAjaxNotification(data.message || 'No message from server.', data.status);
 
-            // Show notification
-            window.showAjaxNotification(data.message || 'No message from server.', data.status);
-
-            if(data.status === 'success') {
-                form.reset();
-                toggleFields();
-            }
-        } catch(err) {
-            window.showAjaxNotification('An error occurred. Please try again.', 'error');
+        if (data.status === 'success') {
+            form.reset();
+            selectedTags = [];
+            renderTags();
+            toggleFields();
+        }
+        } catch (err) {
+        console.error(err);
+        window.showAjaxNotification('An error occurred. Please try again.', 'error');
         }
     });
-});
+    });
 </script>
 
 </body>
