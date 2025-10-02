@@ -204,4 +204,27 @@ window.addEventListener('pageshow', function(event) {
         window.location.reload();
     }
 });
+document.addEventListener("DOMContentLoaded", function () {
+  // Select all close buttons from your modals
+  const closeButtons = document.querySelectorAll(
+    "#modalCloseBtn, #cancelEditBtn, #cancelDeleteBtn"
+  );
+
+  // Add event listener to each
+  closeButtons.forEach((btn) => {
+    btn.addEventListener("click", function () {
+      location.reload(); // reload page when modal is closed
+    });
+  });
+
+  // Optional: If modals can be closed by clicking outside, detect that too
+  const modals = document.querySelectorAll("#profileModal, #deleteAccountModal");
+  modals.forEach((modal) => {
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal) {
+        location.reload();
+      }
+    });
+  });
+});
 </script>
