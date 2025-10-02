@@ -1,28 +1,28 @@
 <?php
-session_start();
-require_once '../config/pdo_database.php';
+    session_start();
+    require_once '../config/pdo_database.php';
 
-// ===== Clear old inputs if user is logged out =====
-if (!isset($_SESSION['user_id'])) {
+    // ===== Clear old inputs if user is logged out =====
+    if (!isset($_SESSION['user_id'])) {
+        unset($_SESSION['old_inputs']);
+    }
+
+    // Get logged-in user info
+    $user_id = $_SESSION['user_id'] ?? null;
+    $user = [];
+
+    if ($user_id) {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    // Get old POST values if redirected after error
+    $old = $_SESSION['old_inputs'] ?? [];
     unset($_SESSION['old_inputs']);
-}
 
-// Get logged-in user info
-$user_id = $_SESSION['user_id'] ?? null;
-$user = [];
-
-if ($user_id) {
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-    $stmt->execute([$user_id]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-}
-
-// Get old POST values if redirected after error
-$old = $_SESSION['old_inputs'] ?? [];
-unset($_SESSION['old_inputs']);
-
-// Get agent type from URL (direct_agent or associate_agent)
-$agent_type_param = $_GET['type'] ?? ($old['user_type'] ?? '');
+    // Get agent type from URL (direct_agent or associate_agent)
+    $agent_type_param = $_GET['type'] ?? ($old['user_type'] ?? '');
 ?>
 
 <!DOCTYPE html>
@@ -132,9 +132,39 @@ $agent_type_param = $_GET['type'] ?? ($old['user_type'] ?? '');
             </select>
         </div>
         <div class="form-group">
-            <label for="specializations">Specializations</label>
-            <input type="text" id="specializations" name="specializations"
-                value="<?= htmlspecialchars($old['specializations'] ?? $user['specializations'] ?? '') ?>" placeholder="e.g., Residential, Commercial, Luxury">
+        <label for="specializations">Specialization *</label>
+        <select id="specializations" name="specializations" required>
+            <option value="">Select Specialization</option>
+            <?php
+            $specializations = [
+                'Condominium',
+                'Apartment',
+                'Townhouse',
+                'House and Lot',
+                'Commercial Building',
+                'Lot Only',
+                'Farm Lot',
+                'Industrial Lot',
+                'Beachfront Property',
+                'Resort',
+                'Hotels and Motels',
+                'Dormitory',
+                'Office Space',
+                'Warehouse',
+                'Retail Space',
+                'Mixed-Use Development',
+                'Luxury Estate',
+                'Foreclosed Property',
+                'Subdivision Development',
+                'Others'
+            ];
+            $selectedSpecialization = $old['specializations'] ?? $user['specializations'] ?? '';
+            foreach ($specializations as $spec) {
+                $selected = ($selectedSpecialization === $spec) ? 'selected' : '';
+                echo "<option value=\"{$spec}\" {$selected}>{$spec}</option>";
+            }
+            ?>
+        </select>
         </div>
     </div>
 
