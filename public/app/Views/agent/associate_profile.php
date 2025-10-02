@@ -939,3 +939,28 @@
 </div>
 
 <script src="/BatEstateExplorer/assets/js/agent_profile.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    // Close buttons for modals
+    const closeButtons = document.querySelectorAll(
+        "#cancelEditBtn, #cancelDeleteBtn"
+    );
+
+    // Add reload on close
+    closeButtons.forEach((btn) => {
+        btn.addEventListener("click", function () {
+        location.reload();
+        });
+    });
+
+    // If user clicks outside of the modal, close & reload
+    const modals = document.querySelectorAll("#editModal, #deleteModal");
+    modals.forEach((modal) => {
+        modal.addEventListener("click", function (e) {
+        if (e.target === modal) {
+            location.reload();
+        }
+        });
+    });
+    });
+</script>
