@@ -67,7 +67,7 @@ try {
             }
         }
 
-        // --- Insert into users ---
+        // --- Insert into users (with profile_image_path) ---
         $insertUser = "
             INSERT INTO users (
                 first_name, last_name, email, password_hash, phone, address,
@@ -76,7 +76,7 @@ try {
                 certifications, training,
                 broker_license_path, prc_license_path, resume_path, valid_id_path, additional_docs_path,
                 company_id, broker_id, license_number, experience_years,
-                specialization, bio
+                specialization, bio, profile_image_path
             ) VALUES (
                 :first_name, :last_name, :email, :password_hash, :phone, :address,
                 :user_type, :status,
@@ -84,7 +84,7 @@ try {
                 :certifications, :training,
                 :broker_license_path, :prc_license_path, :resume_path, :valid_id_path, :additional_docs_path,
                 :company_id, :broker_id, :license_number, :experience_years,
-                :specialization, :bio
+                :specialization, :bio, :profile_image_path
             )
         ";
         $stmt = $pdo->prepare($insertUser);
@@ -113,7 +113,8 @@ try {
             ':license_number' => $application['license_number'] ?? null,
             ':experience_years' => $experience_years,
             ':specialization' => $application['specialization'] ?? null,
-            ':bio' => $application['bio'] ?? null
+            ':bio' => $application['bio'] ?? null,
+            ':profile_image_path' => $application['profile_image_path'] ?? null
         ]);
 
         $new_user_id = $pdo->lastInsertId();
