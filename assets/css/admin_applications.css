@@ -286,8 +286,6 @@
 .detail-section {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding-bottom: 0.75rem;
   border-bottom: 1px solid #e5e7eb;
 }
 .detail-section:last-of-type {
@@ -302,21 +300,26 @@
   border-bottom: 1px solid #e5e7eb;
   padding-bottom: 0.25rem;
 }
+
 .detail-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  align-items: start;
+  margin-bottom: 0.5rem;
 }
+
 .detail-label {
-  width: 160px;
   font-weight: 500;
   color: #374151;
+  text-align: left;
+  padding-right: 0.5rem;
 }
+
 .detail-value {
-  flex: 1 1 auto;
-  min-width: 120px;
   color: #111827;
+  word-break: break-word;
 }
+
 #applicationModal .modal-footer {
   display: flex;
   justify-content: flex-end;

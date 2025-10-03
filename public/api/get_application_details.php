@@ -76,8 +76,27 @@ if ($result && mysqli_num_rows($result) > 0) {
     }
 
     // Map DB fields to modal-friendly fields with fallbacks
-    $application['prc_number']        = !empty($application['license_number']) ? $application['license_number'] : 'N/A';
-    $application['specializations']   = !empty($application['specialization']) ? $application['specialization'] : 'N/A';
+    $application['prc_number'] = !empty($application['license_number']) ? $application['license_number'] : 'N/A';
+
+    // Decode specialization JSON string to array
+    $application['specializations'] = [];
+    if (!empty($application['specialization'])) {
+        // Decode HTML entities first
+        $decoded_json = html_entity_decode($application['specialization']);
+        $decoded = json_decode($decoded_json, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            $application['specializations'] = $decoded;
+        } else {
+            // fallback if it's comma-separated
+            $application['specializations'] = array_map('trim', explode(',', strip_tags($application['specialization'])));
+        }
+    }
+
+    // Remove the raw specialization string
+    unset($application['specialization']);
+
+    // Add bio as experience details
     $application['experience_details'] = !empty($application['bio']) ? $application['bio'] : 'N/A';
 
     header('Content-Type: application/json');

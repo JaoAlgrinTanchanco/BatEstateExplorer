@@ -244,25 +244,26 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Logout Modal Logic
+// Logout Modal Logic (safe version)
 const logoutLink = document.querySelector('.sidebar-footer a');
 const logoutModal = document.getElementById('logoutModal');
 const cancelBtn = document.getElementById('cancelLogout');
 
-// Open modal instead of direct logout
-logoutLink.addEventListener('click', function(e) {
-  e.preventDefault();
-  logoutModal.style.display = 'flex';
-});
+if (logoutLink && logoutModal) {
+  logoutLink.addEventListener('click', function (e) {
+    e.preventDefault();
+    logoutModal.style.display = 'flex';
+  });
 
-// Close modal on cancel
-cancelBtn.addEventListener('click', function() {
-  logoutModal.style.display = 'none';
-});
-
-// Close modal if clicking outside content
-logoutModal.addEventListener('click', function(e) {
-  if (e.target === logoutModal) {
-    logoutModal.style.display = 'none';
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function () {
+      logoutModal.style.display = 'none';
+    });
   }
-});
+
+  logoutModal.addEventListener('click', function (e) {
+    if (e.target === logoutModal) {
+      logoutModal.style.display = 'none';
+    }
+  });
+}
