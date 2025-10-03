@@ -48,6 +48,17 @@
     <h1><i class="fas fa-user-tie"></i> Agent Registration</h1>
     <p>Join our network of professional real estate agents and start your journey with BatEstate Explorer.</p>
 
+    <!-- Profile Picture Upload -->
+    <div class="form-group profile-pic-group">
+        <label>Profile Picture</label>
+        <div class="profile-pic-wrapper">
+            <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
+            <div class="profile-pic-preview" id="profilePicPreview">
+                <span class="upload-text">Upload Here</span>
+            </div>
+        </div>
+    </div>
+
     <form id="agentRegistrationForm" enctype="multipart/form-data">
         <!-- Personal Info -->
         <h3>Personal Information</h3>
@@ -276,124 +287,143 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-    // === DOM ELEMENTS ===
-    const userType = document.getElementById('user_type');
-    const docsSection = document.getElementById('required-documents');
-    const companyField = document.getElementById('company-field');
-    const companySelect = document.getElementById('company_id');
-    const form = document.getElementById('agentRegistrationForm');
-    const ajaxContainer = document.getElementById('ajax-notification-container');
-    const select = document.getElementById('specializationSelect');
-    const tagsContainer = document.getElementById('specializationTags');
-    const hiddenInput = document.getElementById('specializationInput');
+        // === DOM ELEMENTS ===
+        const userType = document.getElementById('user_type');
+        const docsSection = document.getElementById('required-documents');
+        const companyField = document.getElementById('company-field');
+        const companySelect = document.getElementById('company_id');
+        const form = document.getElementById('agentRegistrationForm');
+        const ajaxContainer = document.getElementById('ajax-notification-container');
+        const select = document.getElementById('specializationSelect');
+        const tagsContainer = document.getElementById('specializationTags');
+        const hiddenInput = document.getElementById('specializationInput');
 
-    let selectedTags = [];
+        let selectedTags = [];
 
-    // === SPECIALIZATION TAGS ===
-    select.addEventListener('change', () => {
-        const value = select.value;
-        if (!value || selectedTags.includes(value)) {
-        select.selectedIndex = 0;
-        return;
-        }
-        selectedTags.push(value);
-        renderTags();
-        select.selectedIndex = 0;
-    });
-
-    // Render all selected tags
-    function renderTags() {
-        tagsContainer.innerHTML = '';
-        selectedTags.forEach(tagValue => {
-        const tag = document.createElement('span');
-        tag.className = 'specialization-tag';
-        tag.innerHTML = `
-            ${tagValue}
-            <button type="button" class="remove-tag" data-value="${tagValue}" aria-label="Remove tag">&times;</button>
-        `;
-        tagsContainer.appendChild(tag);
-        });
-        hiddenInput.value = selectedTags.join(', ');
-    }
-
-    // Handle remove button (event delegation)
-    tagsContainer.addEventListener('click', e => {
-        if (e.target.classList.contains('remove-tag')) {
-        const value = e.target.dataset.value;
-        selectedTags = selectedTags.filter(v => v !== value);
-        renderTags();
-        }
-    });
-
-    // === TOGGLE FIELDS BASED ON AGENT TYPE ===
-    function toggleFields() {
-        const type = userType.value;
-
-        const showDocs = type === 'direct_agent';
-        const showCompany = type === 'associate_agent';
-
-        docsSection.style.display = showDocs ? 'block' : 'none';
-        companyField.style.display = showCompany ? 'block' : 'none';
-        companySelect.required = showCompany;
-
-        // Set required state for file inputs
-        docsSection.querySelectorAll('input[type="file"]').forEach(input => {
-        input.required = showDocs;
-        });
-    }
-
-    toggleFields();
-    userType.addEventListener('change', toggleFields);
-
-    // === AJAX NOTIFICATION HELPER ===
-    window.showAjaxNotification = (message, type = 'success') => {
-        if (!ajaxContainer) return;
-
-        const notif = document.createElement('div');
-        notif.className = `notification ${type}`;
-        notif.innerHTML = `
-        <div class="notification__icon"></div>
-        <div class="notification__title">${message}</div>
-        <div class="notification__close" aria-label="Close">&times;</div>
-        `;
-
-        ajaxContainer.appendChild(notif);
-
-        // Auto-dismiss after 5 seconds
-        setTimeout(() => notif.remove(), 5000);
-
-        // Manual close
-        notif.querySelector('.notification__close').addEventListener('click', () => notif.remove());
-    };
-
-    // === AJAX FORM SUBMISSION ===
-    form.addEventListener('submit', async e => {
-        e.preventDefault();
-
-        const formData = new FormData(form);
-        formData.append('ajax', 1);
-
-        try {
-        const res = await fetch('../public/api/agent_registration_complete.php', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-
-        const data = await res.json();
-        window.showAjaxNotification(data.message || 'No message from server.', data.status);
-
-        if (data.status === 'success') {
-            form.reset();
-            selectedTags = [];
+        // === SPECIALIZATION TAGS ===
+        select.addEventListener('change', () => {
+            const value = select.value;
+            if (!value || selectedTags.includes(value)) {
+            select.selectedIndex = 0;
+            return;
+            }
+            selectedTags.push(value);
             renderTags();
-            toggleFields();
+            select.selectedIndex = 0;
+        });
+
+        // Render all selected tags
+        function renderTags() {
+            tagsContainer.innerHTML = '';
+            selectedTags.forEach(tagValue => {
+            const tag = document.createElement('span');
+            tag.className = 'specialization-tag';
+            tag.innerHTML = `
+                ${tagValue}
+                <button type="button" class="remove-tag" data-value="${tagValue}" aria-label="Remove tag">&times;</button>
+            `;
+            tagsContainer.appendChild(tag);
+            });
+            hiddenInput.value = selectedTags.join(', ');
         }
-        } catch (err) {
-        console.error(err);
-        window.showAjaxNotification('An error occurred. Please try again.', 'error');
+
+        // Handle remove button (event delegation)
+        tagsContainer.addEventListener('click', e => {
+            if (e.target.classList.contains('remove-tag')) {
+            const value = e.target.dataset.value;
+            selectedTags = selectedTags.filter(v => v !== value);
+            renderTags();
+            }
+        });
+
+        // === TOGGLE FIELDS BASED ON AGENT TYPE ===
+        function toggleFields() {
+            const type = userType.value;
+
+            const showDocs = type === 'direct_agent';
+            const showCompany = type === 'associate_agent';
+
+            docsSection.style.display = showDocs ? 'block' : 'none';
+            companyField.style.display = showCompany ? 'block' : 'none';
+            companySelect.required = showCompany;
+
+            // Set required state for file inputs
+            docsSection.querySelectorAll('input[type="file"]').forEach(input => {
+            input.required = showDocs;
+            });
         }
-    });
+
+        toggleFields();
+        userType.addEventListener('change', toggleFields);
+
+        // === AJAX NOTIFICATION HELPER ===
+        window.showAjaxNotification = (message, type = 'success') => {
+            if (!ajaxContainer) return;
+
+            const notif = document.createElement('div');
+            notif.className = `notification ${type}`;
+            notif.innerHTML = `
+            <div class="notification__icon"></div>
+            <div class="notification__title">${message}</div>
+            <div class="notification__close" aria-label="Close">&times;</div>
+            `;
+
+            ajaxContainer.appendChild(notif);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => notif.remove(), 5000);
+
+            // Manual close
+            notif.querySelector('.notification__close').addEventListener('click', () => notif.remove());
+        };
+
+        // === AJAX FORM SUBMISSION ===
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            formData.append('ajax', 1);
+
+            try {
+            const res = await fetch('../public/api/agent_registration_complete.php', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            const data = await res.json();
+            window.showAjaxNotification(data.message || 'No message from server.', data.status);
+
+            if (data.status === 'success') {
+                form.reset();
+                selectedTags = [];
+                renderTags();
+                toggleFields();
+                profileInput.value = '';
+                profilePreview.innerHTML = '<span class="upload-text">Upload Here</span>';
+            }
+            } catch (err) {
+            console.error(err);
+            window.showAjaxNotification('An error occurred. Please try again.', 'error');
+            }
+        });
+
+        // PROFILE PICTURE PREVIEW
+        const profileInput = document.getElementById('profile_picture');
+        const profilePreview = document.getElementById('profilePicPreview');
+
+        profilePreview.addEventListener('click', () => profileInput.click());
+
+        profileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                profilePreview.innerHTML = `<img src="${e.target.result}" alt="Profile Picture">`;
+            };
+            reader.readAsDataURL(file);
+        });
     });
 </script>
 
