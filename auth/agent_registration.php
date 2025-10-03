@@ -64,12 +64,12 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="first_name">First Name *</label>
-                <input type="text" id="first_name" name="first_name" required
+                <input type="text" id="first_name" name="first_name"
                     value="<?= htmlspecialchars($old['first_name'] ?? $user['first_name'] ?? '') ?>">
             </div>
             <div class="form-group">
                 <label for="last_name">Last Name *</label>
-                <input type="text" id="last_name" name="last_name" required
+                <input type="text" id="last_name" name="last_name"
                     value="<?= htmlspecialchars($old['last_name'] ?? $user['last_name'] ?? '') ?>">
             </div>
         </div>
@@ -77,35 +77,35 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="email">Email Address *</label>
-                <input type="email" id="email" name="email" required
+                <input type="email" id="email" name="email"
                     value="<?= htmlspecialchars($old['email'] ?? $user['email'] ?? '') ?>">
             </div>
             <div class="form-group">
                 <label for="phone">Phone Number *</label>
-                <input type="tel" id="phone" name="phone" required
+                <input type="tel" id="phone" name="phone"
                     value="<?= htmlspecialchars($old['phone'] ?? $user['phone'] ?? '') ?>">
             </div>
         </div>
 
         <div class="form-group">
             <label for="address">Address *</label>
-            <textarea id="address" name="address" rows="3" required><?= htmlspecialchars($old['address'] ?? $user['address'] ?? '') ?></textarea>
+            <textarea id="address" name="address" rows="3"><?= htmlspecialchars($old['address'] ?? $user['address'] ?? '') ?></textarea>
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label for="password">Password *</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password">
             </div>
             <div class="form-group">
                 <label for="confirm_password">Confirm Password *</label>
-                <input type="password" id="confirm_password" name="confirm_password" required>
+                <input type="password" id="confirm_password" name="confirm_password">
             </div>
         </div>
 
         <div class="form-group">
             <label for="user_type">Agent Type *</label>
-            <select id="user_type" name="user_type" required>
+            <select id="user_type" name="user_type">
                 <option value="">Select Agent Type</option>
                 <option value="direct_agent" <?= ($old['user_type'] ?? $agent_type_param) === 'direct_agent' ? 'selected' : '' ?>>Direct Agent</option>
                 <option value="associate_agent" <?= ($old['user_type'] ?? $agent_type_param) === 'associate_agent' ? 'selected' : '' ?>>Associate Agent</option>
@@ -116,12 +116,12 @@
         <h3>Professional Information</h3>
         <div class="form-row">
             <div class="form-group">
-                <label for="broker_id">Broker ID</label>
+                <label for="broker_id">Broker ID *</label>
                 <input type="text" id="broker_id" name="broker_id"
                     value="<?= htmlspecialchars($old['broker_id'] ?? $user['broker_id'] ?? '') ?>">
             </div>
             <div class="form-group">
-                <label for="prc_number">PRC Number</label>
+                <label for="prc_number">PRC Number *</label>
                 <input type="text" id="prc_number" name="prc_number"
                     value="<?= htmlspecialchars($old['prc_number'] ?? $user['prc_number'] ?? '') ?>">
             </div>
@@ -129,7 +129,7 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label for="experience_years">Years of Experience</label>
+                <label for="experience_years">Years of Experience *</label>
                 <select id="experience_years" name="experience_years">
                     <option value="">Select Experience</option>
                     <?php
@@ -143,8 +143,6 @@
             </div>
             <div class="form-group specialization-group">
                 <label for="specializationSelect">Specializations *</label>
-
-                <!-- Combo box (select one at a time) -->
                 <select id="specializationSelect" class="form-control">
                     <option value="" disabled selected>Select a specialization</option>
                     <option value="Condominium">Condominium</option>
@@ -170,18 +168,15 @@
                 </select>
             </div>
 
-            <!-- Separate form group for tags -->
             <div class="form-group specialization-tags-group">
-            <div class="specialization-tags" id="specializationTags"></div>
+                <div class="specialization-tags" id="specializationTags"></div>
             </div>
-
-            <!-- Hidden field to send selected values to backend -->
             <input type="hidden" name="specializations" id="specializationInput"
                 value="<?= htmlspecialchars($old_inputs['specializations'] ?? '') ?>">
         </div>
 
         <div class="form-group">
-            <label for="experience_details">Experience Details</label>
+            <label for="experience_details">Experience Details (Optional)</label>
             <textarea id="experience_details" name="experience_details" rows="4"
                 placeholder="Describe your real estate experience and achievements"><?= htmlspecialchars($old['experience_details'] ?? $user['experience_details'] ?? '') ?></textarea>
         </div>
@@ -190,7 +185,7 @@
         <h3>Educational Background</h3>
         <div class="form-row">
             <div class="form-group">
-                <label for="education">Education Level</label>
+                <label for="education">Education Level *</label>
                 <select id="education" name="education">
                     <?php
                     $edu_levels = ['High School','Associate','Bachelor','Master','PhD'];
@@ -202,7 +197,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="school">School/University</label>
+                <label for="school">School/University *</label>
                 <input type="text" id="school" name="school"
                     value="<?= htmlspecialchars($old['school'] ?? $user['school'] ?? '') ?>">
             </div>
@@ -210,12 +205,12 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label for="course">Course/Major</label>
+                <label for="course">Course/Major *</label>
                 <input type="text" id="course" name="course"
                     value="<?= htmlspecialchars($old['course'] ?? $user['course'] ?? '') ?>">
             </div>
             <div class="form-group">
-                <label for="graduation_year">Graduation Year</label>
+                <label for="graduation_year">Graduation Year (Applicable if graduated)</label>
                 <input type="number" id="graduation_year" name="graduation_year" min="1950" max="2030"
                     value="<?= htmlspecialchars($old['graduation_year'] ?? $user['graduation_year'] ?? '') ?>">
             </div>
@@ -224,11 +219,11 @@
         <!-- Certifications & Training -->
         <h3>Certifications & Training</h3>
         <div class="form-group">
-            <label for="certifications">Professional Certifications</label>
+            <label for="certifications">Professional Certifications (Optional)</label>
             <textarea id="certifications" name="certifications" rows="3"><?= htmlspecialchars($old['certifications'] ?? $user['certifications'] ?? '') ?></textarea>
         </div>
         <div class="form-group">
-            <label for="training">Additional Training</label>
+            <label for="training">Additional Training (Optional)</label>
             <textarea id="training" name="training" rows="3"><?= htmlspecialchars($old['training'] ?? $user['training'] ?? '') ?></textarea>
         </div>
 

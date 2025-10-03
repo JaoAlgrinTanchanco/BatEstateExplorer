@@ -2,14 +2,14 @@
 session_start();
 require_once __DIR__ . '/../../config/pdo_database.php';
 
-// --- Security: check admin login ---
+// --- Security check ---
 if (!is_logged_in() || !is_admin()) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
 
-// --- Read input JSON ---
+// --- Parse input ---
 $input = json_decode(file_get_contents('php://input'), true);
 if (!$input || !isset($input['id'], $input['action'])) {
     http_response_code(400);
@@ -18,7 +18,7 @@ if (!$input || !isset($input['id'], $input['action'])) {
 }
 
 $id = (int) $input['id'];
-$action = $input['action'];
+$action = strtolower($input['action']);
 
 if (!in_array($action, ['approve', 'reject'])) {
     http_response_code(400);
@@ -48,27 +48,35 @@ try {
             default => 'user'
         };
 
-        // Normalize fields
-        $company_id = (int)($application['company_id'] ?? 0);
-        $experience_years = (int)($application['experience_years'] ?? 0);
+        $company_id = !empty($application['company_id']) ? (int)$application['company_id'] : null;
+        $experience_years = !empty($application['experience_years']) ? (int)$application['experience_years'] : 0;
 
-        // --- Check if user with same email exists ---
+        // --- Check for existing user ---
         $stmt = $pdo->prepare("SELECT id, user_type FROM users WHERE email = ?");
         $stmt->execute([$application['email']]);
         $existingUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($existingUser) {
             if ($existingUser['user_type'] === 'user') {
-                // Delete old user safely
-                $delStmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
-                $delStmt->execute([$existingUser['id']]);
+                $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$existingUser['id']]);
             } else {
                 throw new Exception("Email {$application['email']} is already an {$existingUser['user_type']}");
             }
         }
 
-        // --- Insert into users (with profile_image_path) ---
-        $insertUser = "
+        // --- Convert specialization to JSON ---
+        $specialization_json = null;
+        if (!empty($application['specialization'])) {
+            if (is_string($application['specialization'])) {
+                $items = array_map('trim', explode(',', $application['specialization']));
+                $specialization_json = json_encode($items, JSON_UNESCAPED_UNICODE);
+            } elseif (is_array($application['specialization'])) {
+                $specialization_json = json_encode($application['specialization'], JSON_UNESCAPED_UNICODE);
+            }
+        }
+
+        // --- Insert into users ---
+        $insertUserSQL = "
             INSERT INTO users (
                 first_name, last_name, email, password_hash, phone, address,
                 user_type, status,
@@ -87,7 +95,7 @@ try {
                 :specialization, :bio, :profile_image_path
             )
         ";
-        $stmt = $pdo->prepare($insertUser);
+        $stmt = $pdo->prepare($insertUserSQL);
         $stmt->execute([
             ':first_name' => $application['first_name'] ?? '',
             ':last_name' => $application['last_name'] ?? '',
@@ -108,11 +116,11 @@ try {
             ':resume_path' => $application['resume_path'] ?? '',
             ':valid_id_path' => $application['valid_id_path'] ?? '',
             ':additional_docs_path' => $application['additional_docs_path'] ?? '',
-            ':company_id' => $company_id ?: null,
+            ':company_id' => $company_id,
             ':broker_id' => $application['broker_id'] ?? null,
             ':license_number' => $application['license_number'] ?? null,
             ':experience_years' => $experience_years,
-            ':specialization' => $application['specialization'] ?? null,
+            ':specialization' => $specialization_json,
             ':bio' => $application['bio'] ?? null,
             ':profile_image_path' => $application['profile_image_path'] ?? null
         ]);
@@ -120,18 +128,17 @@ try {
         $new_user_id = $pdo->lastInsertId();
 
         // --- Insert into agents ---
-        $insertAgent = "
+        $stmt = $pdo->prepare("
             INSERT INTO agents (user_id, company_id, broker_id, license_number, experience_years, specialization, bio)
             VALUES (:user_id, :company_id, :broker_id, :license_number, :experience_years, :specialization, :bio)
-        ";
-        $stmt = $pdo->prepare($insertAgent);
+        ");
         $stmt->execute([
             ':user_id' => $new_user_id,
-            ':company_id' => $company_id ?: null,
+            ':company_id' => $company_id,
             ':broker_id' => $application['broker_id'] ?? null,
             ':license_number' => $application['license_number'] ?? null,
             ':experience_years' => $experience_years,
-            ':specialization' => $application['specialization'] ?? null,
+            ':specialization' => $specialization_json,
             ':bio' => $application['bio'] ?? null
         ]);
     }

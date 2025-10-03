@@ -60,16 +60,43 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') respond('error','Invalid request meth
 
 try {
     // Collect and sanitize inputs
-    $fields = ['first_name','last_name','email','password','user_type','phone','address','company_id','broker_id','prc_number','experience_years','specializations','experience_details','education','school','course','graduation_year','certifications','training'];
+    $fields = [
+        'first_name','last_name','email','password','user_type','phone','address',
+        'company_id','broker_id','prc_number','experience_years','specializations','experience_details',
+        'education','school','course','graduation_year','certifications','training'
+    ];
     $old_inputs = [];
     foreach ($fields as $f) $old_inputs[$f] = isset($_POST[$f]) ? sanitize($_POST[$f]) : '';
     $old_inputs['company_id'] = !empty($_POST['company_id']) ? (int)$_POST['company_id'] : null;
 
-    // Required fields validation
-    foreach (['first_name','last_name','email','password','user_type'] as $r) {
-        if (empty($old_inputs[$r])) throw new Exception("All required fields must be filled.");
+    // === REQUIRED FIELDS VALIDATION ===
+    $required_fields = [
+        // Personal Information
+        'first_name',
+        'last_name',
+        'email',
+        'password',
+        'user_type',
+        'phone',
+        'address',
+
+        // Professional Information
+        'experience_years',  // required
+        // 'experience_details' is optional
+
+        // Educational Background
+        'education',
+        'school',
+        'course'
+    ];
+
+    foreach ($required_fields as $f) {
+        if (empty($old_inputs[$f])) throw new Exception("The field '$f' is required.");
     }
-    if ($old_inputs['user_type'] === 'associate_agent' && !$old_inputs['company_id']) throw new Exception("Company selection is required for associate agents.");
+
+    // Associate agent must select company
+    if ($old_inputs['user_type'] === 'associate_agent' && !$old_inputs['company_id']) 
+        throw new Exception("Company selection is required for associate agents.");
 
     // Check existing users and pending applications
     $stmt = $pdo->prepare("SELECT id,user_type FROM users WHERE email=?"); 
@@ -88,7 +115,11 @@ try {
     $profileDir = $_SERVER['DOCUMENT_ROOT'].'/BatEstateExplorer/storage/uploads/profile_images/';
     foreach([$docsDir,$imgsDir,$profileDir] as $dir) if(!file_exists($dir)) mkdir($dir,0755,true);
 
-    $allowedTypes = ['image/jpeg','image/jpg','image/png','application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    $allowedTypes = [
+        'image/jpeg','image/jpg','image/png',
+        'application/pdf','application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
 
     // Handle required docs for direct agents
     $broker_license = $prc_license = $resume = $valid_id = null;
@@ -101,18 +132,18 @@ try {
         }
     }
 
-    // Handle profile picture
+    // Profile picture is now optional
     $profile_picture = null;
     if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] !== UPLOAD_ERR_NO_FILE) {
         $profile_picture = handleUpload($_FILES['profile_picture'], 'pfp', $docsDir, $profileDir, ['image/jpeg','image/jpg','image/png'], $debug);
         if (!$profile_picture) $debug[] = "Profile picture handling returned null";
-    } else $debug[] = "No profile picture uploaded";
+    }
 
     // Specializations
     $specializations = trim($old_inputs['specializations']);
     $specializations = !empty($specializations) ? json_encode(array_map('trim', explode(',', $specializations))) : null;
 
-    // Insert application with profile picture path
+    // Insert application
     $pdo->beginTransaction();
     $stmt = $pdo->prepare("INSERT INTO applications (
         first_name, last_name, email, password_hash, phone, address,
@@ -121,13 +152,14 @@ try {
         agent_type, company_id, broker_id, license_number, experience_years, specialization, bio,
         profile_image_path
     ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+
     $stmt->execute([
         $old_inputs['first_name'],$old_inputs['last_name'],$old_inputs['email'],$password_hash,
-        $old_inputs['phone'],$old_inputs['address'],$old_inputs['education']?:null,$old_inputs['school']?:null,$old_inputs['course']?:null,
-        $old_inputs['graduation_year']?:null,$old_inputs['certifications']?:null,$old_inputs['training']?:null,
+        $old_inputs['phone'],$old_inputs['address'],$old_inputs['education'],$old_inputs['school'],$old_inputs['course'],
+        $old_inputs['graduation_year'],$old_inputs['certifications']?:null,$old_inputs['training']?:null,
         $broker_license,$prc_license,$resume,$valid_id,
         $old_inputs['user_type'],$old_inputs['company_id'],$old_inputs['broker_id']?:null,
-        $old_inputs['prc_number']?:null,$old_inputs['experience_years']?:null,$specializations,$old_inputs['experience_details']?:null,
+        $old_inputs['prc_number']?:null,$old_inputs['experience_years'],$specializations,$old_inputs['experience_details'],
         $profile_picture
     ]);
 
@@ -142,3 +174,4 @@ try {
     $debug[] = "Exception: ".$e->getMessage();
     respond('error',$e->getMessage(),$old_inputs,$debug);
 }
+?>
