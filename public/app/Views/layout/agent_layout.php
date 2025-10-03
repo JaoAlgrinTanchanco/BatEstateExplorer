@@ -122,35 +122,35 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
 </footer>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const logoutModal = document.getElementById('logoutModal');
-  const cancelBtn = document.getElementById('cancelLogoutBtn');
-  const logoutForm = document.getElementById('logoutForm');
-  const spinner = document.getElementById('logoutSpinner');
+  document.addEventListener('DOMContentLoaded', function() {
+    const logoutModal = document.getElementById('logoutModal');
+    const cancelBtn = document.getElementById('cancelLogoutBtn');
+    const logoutForm = document.getElementById('logoutForm');
+    const spinner = document.getElementById('logoutSpinner');
 
-  if (!logoutModal) return; // modal not present on this page
+    if (!logoutModal) return; // modal not present on this page
 
-  // Open modal for all logout buttons
-  document.querySelectorAll('.logout-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      logoutModal.classList.add('active');
+    // Open modal for all logout buttons
+    document.querySelectorAll('.logout-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        logoutModal.classList.add('active-agent'); // <-- use correct class
+      });
     });
+
+    // Close modal
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        logoutModal.classList.remove('active-agent'); // <-- match open
+      });
+    }
+
+    // Show spinner on submit
+    if (logoutForm && spinner) {
+      logoutForm.addEventListener('submit', () => {
+        spinner.style.display = 'flex';
+      });
+    }
   });
-
-  // Close modal
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', () => {
-      logoutModal.classList.remove('active');
-    });
-  }
-
-  // Show spinner on submit
-  if (logoutForm && spinner) {
-    logoutForm.addEventListener('submit', () => {
-      spinner.style.display = 'flex';
-    });
-  }
-});
 </script>
 
 <script src="/BatEstateExplorer/assets/js/agents.js"></script>

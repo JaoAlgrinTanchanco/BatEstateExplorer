@@ -156,8 +156,8 @@
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_review.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_wallet.css">
 <script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt&currency=PHP"></script>
-<div class="dashboard-container">
 
+<div class="dashboard-container">
     <!-- Arrow Button for Mobile -->
     <button id="sidebarToggle" class="sidebar-toggle">
     <i class="fa-solid fa-arrow-right"></i>
@@ -766,17 +766,6 @@
                             <div class="info-row"><strong>Training:</strong> <span><?= htmlspecialchars($user['training'] ?? '-') ?></span></div>
                         </div>
 
-                        <!-- Professional Details -->
-                        <div class="overview-card">
-                            <h3>Professional Details</h3>
-                            <div class="info-row"><strong>Agent Type:</strong> <span><?= htmlspecialchars($user['agent_type'] ?? '-') ?></span></div>
-                            <div class="info-row"><strong>Broker ID:</strong> <span><?= htmlspecialchars($user['broker_id'] ?? '-') ?></span></div>
-                            <div class="info-row"><strong>License Number:</strong> <span><?= htmlspecialchars($user['license_number'] ?? '-') ?></span></div>
-                            <div class="info-row"><strong>Years of Experience:</strong> <span><?= htmlspecialchars($user['experience_years'] ?? '-') ?></span></div>
-                            <div class="info-row"><strong>Specialization:</strong> <span><?= htmlspecialchars($user['specialization'] ?? '-') ?></span></div>
-                            <div class="info-row"><strong>Bio:</strong> <span><?= nl2br(htmlspecialchars($user['bio'] ?? '-')) ?></span></div>
-                        </div>
-
                         <!-- Documents -->
                         <div class="overview-card">
                             <h3>Documents</h3>
@@ -807,6 +796,17 @@
                             <div class="info-row"><strong>Admin Notes:</strong> <span><?= nl2br(htmlspecialchars($user['admin_notes'] ?? '-')) ?></span></div>
                             <div class="info-row"><strong>Created At:</strong> <span><?= htmlspecialchars($user['created_at'] ?? '-') ?></span></div>
                             <div class="info-row"><strong>Last Updated:</strong> <span><?= htmlspecialchars($user['updated_at'] ?? '-') ?></span></div>
+                        </div>
+
+                        <!-- Professional Details -->
+                        <div class="overview-card">
+                            <h3>Professional Details</h3>
+                            <div class="info-row"><strong>Agent Type:</strong> <span><?= htmlspecialchars($user['agent_type'] ?? '-') ?></span></div>
+                            <div class="info-row"><strong>Broker ID:</strong> <span><?= htmlspecialchars($user['broker_id'] ?? '-') ?></span></div>
+                            <div class="info-row"><strong>License Number:</strong> <span><?= htmlspecialchars($user['license_number'] ?? '-') ?></span></div>
+                            <div class="info-row"><strong>Years of Experience:</strong> <span><?= htmlspecialchars($user['experience_years'] ?? '-') ?></span></div>
+                            <div class="info-row"><strong>Specialization:</strong> <span><?= !empty($user['specialization']) ? htmlspecialchars(is_array($tmp = json_decode($user['specialization'], true)) ? implode(', ', $tmp) : $user['specialization']) : '-' ?></span></div>
+                            <div class="info-row"><strong>Bio:</strong> <span><?= nl2br(htmlspecialchars($user['bio'] ?? '-')) ?></span></div>
                         </div>
 
                         <!-- Danger Zone -->
