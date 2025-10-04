@@ -81,112 +81,18 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Admin Agents (Direct + Associate)
+// Admin Agents (List, Remove, Sort)
 document.addEventListener('DOMContentLoaded', () => {
   const agentList = document.getElementById('agentList');
-  const agentModal = document.getElementById('agentModal');
-  const modalBody = document.getElementById('modalBody');
-  const modalCloseBtns = agentModal ? agentModal.querySelectorAll('.close, .cancel-btn') : [];
   const sortSelect = document.getElementById('sort');
 
-  // Close modal functionality
-  modalCloseBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (agentModal) agentModal.style.display = 'none';
-    });
-  });
-
-  // Helper function to generate document link HTML
-  function docLink(label, path, field) {
-    if (!path) return '';
-    const file = encodeURIComponent(path.split('/').pop()); // get filename only
-    return `
-      <div class="detail-row">
-        <div class="detail-label">${label}:</div>
-        <div class="detail-value">
-          <a href="/BatEstateExplorer/public/api/view_document.php?file=${file}&field=${field}" 
-            target="_blank" class="document-link">View</a>
-        </div>
-      </div>`;
-  }
-
-  // Agent list actions (View and Remove)
   if (agentList) {
     agentList.addEventListener('click', async (e) => {
-      if (e.target.matches('.btn-view')) {
-        const btn = e.target;
 
-        let additionalDocsHtml = '';
-        if (btn.dataset.additionalDocsPath) {
-          const docs = btn.dataset.additionalDocsPath
-            .split(',')
-            .map(d => d.trim())
-            .filter(d => d);
+      // 🔹 Modal view logic removed
+      // Now handled by direct_modal_detail.js / associate_modal_detail.js
 
-          additionalDocsHtml = docs.map((doc, i) => {
-            const file = encodeURIComponent(doc.split('/').pop());
-            return `
-              <div class="detail-row">
-                <div class="detail-label">Additional Document ${i + 1}:</div>
-                <div class="detail-value">
-                  <a href="/BatEstateExplorer/public/api/view_document.php?file=${file}&field=additional_docs_path" 
-                    target="_blank" class="document-link">View</a>
-                </div>
-              </div>`;
-          }).join('');
-        }
-
-        modalBody.innerHTML = `
-          <div class="col-left">
-            <section class="personal-info">
-              <h3>Personal Information</h3>
-              <div class="detail-row"><div class="detail-label">Full Name:</div><div class="detail-value">${btn.dataset.firstName} ${btn.dataset.lastName}</div></div>
-              <div class="detail-row"><div class="detail-label">Email:</div><div class="detail-value">${btn.dataset.email}</div></div>
-              <div class="detail-row"><div class="detail-label">Phone:</div><div class="detail-value">${btn.dataset.phone || 'N/A'}</div></div>
-              <div class="detail-row"><div class="detail-label">Address:</div><div class="detail-value">${btn.dataset.address || 'N/A'}</div></div>
-            </section>
-
-            <section class="agent-info">
-              <h3>Agent Information</h3>
-              <div class="detail-row"><div class="detail-label">Agent Type:</div><div class="detail-value">${btn.dataset.userType || 'DIRECT AGENT'}</div></div>
-              <div class="detail-row"><div class="detail-label">Broker ID:</div><div class="detail-value">${btn.dataset.brokerId || 'N/A'}</div></div>
-              <div class="detail-row"><div class="detail-label">License Number:</div><div class="detail-value">${btn.dataset.licenseNumber || 'N/A'}</div></div>
-              <div class="detail-row"><div class="detail-label">Experience:</div><div class="detail-value">${btn.dataset.experienceYears || 'N/A'} years</div></div>
-              <div class="detail-row"><div class="detail-label">Specialization:</div><div class="detail-value">${btn.dataset.specialization || 'N/A'}</div></div>
-              <div class="detail-row"><div class="detail-label">Company:</div><div class="detail-value">${btn.dataset.companyName || 'N/A'}</div></div>
-            </section>
-          </div>
-
-          <div class="col-right">
-            <section class="education">
-              <h3>Education & Qualifications</h3>
-              <div class="detail-row"><div class="detail-label">Education:</div><div class="detail-value">${btn.dataset.education || 'N/A'}</div></div>
-              <div class="detail-row"><div class="detail-label">School:</div><div class="detail-value">${btn.dataset.school || 'N/A'}</div></div>
-              <div class="detail-row"><div class="detail-label">Course:</div><div class="detail-value">${btn.dataset.course || 'N/A'}</div></div>
-              <div class="detail-row"><div class="detail-label">Graduation Year:</div><div class="detail-value">${btn.dataset.graduationYear || 'N/A'}</div></div>
-            </section>
-
-            <section class="documents">
-              <h3>Uploaded Documents</h3>
-              ${docLink('Broker License', btn.dataset.brokerLicensePath, 'broker_license_path')}
-              ${docLink('PRC License', btn.dataset.prcLicensePath, 'prc_license_path')}
-              ${docLink('Resume/CV', btn.dataset.resumePath, 'resume_path')}
-              ${docLink('Valid ID', btn.dataset.validIdPath, 'valid_id_path')}
-              ${additionalDocsHtml || '<div class="detail-row"><div class="detail-value">No additional documents uploaded</div></div>'}
-            </section>
-
-            <section class="account">
-              <h3>Account Information</h3>
-              <div class="detail-row"><div class="detail-label">Account Created:</div><div class="detail-value">${new Date(btn.dataset.accountCreated).toLocaleDateString()}</div></div>
-              <div class="detail-row"><div class="detail-label">Status:</div><div class="detail-value">${btn.dataset.status || 'N/A'}</div></div>
-            </section>
-          </div>
-        `;
-
-        agentModal.style.display = 'block';
-      }
-
-      else if (e.target.matches('.btn-remove')) {
+      if (e.target.matches('.btn-remove')) {
         const agentId = e.target.dataset.agentId;
         if (!agentId) return;
 
@@ -220,6 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sortBy = sortSelect.value;
         const cards = Array.from(agentList.querySelectorAll('.direct-agent-card, .associate-agent-card'));
         let sorted;
+
         switch (sortBy) {
           case 'date':
             sorted = cards.sort((a, b) => new Date(b.dataset.date) - new Date(a.dataset.date));
@@ -231,17 +138,11 @@ document.addEventListener('DOMContentLoaded', () => {
             sorted = cards.sort((a, b) => parseInt(b.dataset.experience) - parseInt(a.dataset.experience));
             break;
         }
+
         sorted.forEach(card => agentList.appendChild(card));
       });
     }
   }
-
-  // Close modal if clicking outside
-  window.addEventListener('click', e => {
-    if (e.target === agentModal) {
-      agentModal.style.display = 'none';
-    }
-  });
 });
 
 // Logout Modal Logic (safe version)

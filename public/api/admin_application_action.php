@@ -66,12 +66,25 @@ try {
 
         // --- Convert specialization to JSON ---
         $specialization_json = null;
+
         if (!empty($application['specialization'])) {
-            if (is_string($application['specialization'])) {
-                $items = array_map('trim', explode(',', $application['specialization']));
-                $specialization_json = json_encode($items, JSON_UNESCAPED_UNICODE);
-            } elseif (is_array($application['specialization'])) {
-                $specialization_json = json_encode($application['specialization'], JSON_UNESCAPED_UNICODE);
+            $spec = $application['specialization'];
+
+            // If it's a string, try decoding it first
+            if (is_string($spec)) {
+                $decoded = json_decode($spec, true);
+
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    // It was already JSON
+                    $specialization_json = json_encode($decoded, JSON_UNESCAPED_UNICODE);
+                } else {
+                    // It’s a comma-separated list
+                    $items = array_map('trim', explode(',', $spec));
+                    $specialization_json = json_encode($items, JSON_UNESCAPED_UNICODE);
+                }
+            } elseif (is_array($spec)) {
+                // Already an array
+                $specialization_json = json_encode($spec, JSON_UNESCAPED_UNICODE);
             }
         }
 
