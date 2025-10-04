@@ -76,8 +76,85 @@
 }
 
 /* ===========================
+   Agent Modal Header (Standalone)
+=========================== */
+.agent-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  padding: 1.5rem 1rem;
+  background-color: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+
+}
+
+.agent-modal-header .profile-col {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-modal-header .modal-profile-img {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #f3f4f6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.agent-modal-header .modal-profile-icon {
+  font-size: 100px;
+  color: #9ca3af;
+}
+
+.agent-modal-header .info-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.agent-modal-header .agent-fullname {
+  font-family: 'Satoshi-Bold', sans-serif;
+  font-size: 1.6rem;
+  color: #111827;
+  margin: 0;
+}
+
+.agent-modal-header .agent-email {
+  font-family: 'Satoshi-Regular', sans-serif;
+  font-size: 1rem;
+  color: #4b5563;
+  margin: 0;
+}
+
+.agent-modal-header .agent-type {
+  font-family: 'Satoshi-Medium', sans-serif;
+  font-size: 0.95rem;
+  color: #374151;
+  background: #e5e7eb;
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  width: fit-content;
+  margin-top: 0.3rem;
+}
+
+/* ===========================
    Avatar & Info
 =========================== */
+
+.agent-profile-img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .direct-agent-avatar {
   width: 60px;
   height: 60px;
@@ -212,7 +289,7 @@
 #agentModal .modal-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: 1.5rem;
   font-size: 1.1rem;
   color: #374151;
   line-height: 1.6;
