@@ -62,18 +62,39 @@
         <?php else: ?>
             <?php foreach ($applications as $app): ?>
                 <div class="application-card"
-                     data-name="<?php echo htmlspecialchars($app['first_name'] . ' ' . $app['last_name']); ?>"
-                     data-type="<?php echo htmlspecialchars($app['agent_type']); ?>"
-                     data-date="<?php echo htmlspecialchars($app['created_at']); ?>">
+                    data-name="<?php echo htmlspecialchars($app['first_name'] . ' ' . $app['last_name']); ?>"
+                    data-type="<?php echo htmlspecialchars($app['agent_type']); ?>"
+                    data-date="<?php echo htmlspecialchars($app['created_at']); ?>">
+                    
                     <div class="application-header">
+                        <?php
+                        $profileImageUrl = !empty($app['profile_image_path'])
+                            ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($app['profile_image_path'])
+                            : '';
+                        ?>
+                        <!-- LEFT: Profile Image -->
+                        <div class="applicant-avatar">
+                            <?php if (!empty($profileImageUrl)): ?>
+                                <img src="<?php echo htmlspecialchars($profileImageUrl); ?>" alt="Profile" class="avatar-img">
+                            <?php else: ?>
+                                <i class="fa-solid fa-user default-avatar"></i>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- RIGHT: Name, Email, Applied Date -->
                         <div class="applicant-info">
                             <div class="applicant-name"><?php echo htmlspecialchars($app['first_name'] . ' ' . $app['last_name']); ?></div>
                             <div class="applicant-details"><?php echo htmlspecialchars($app['email']); ?> • <?php echo htmlspecialchars(str_replace('_', ' ', $app['agent_type'])); ?></div>
                             <div class="applicant-details">Applied: <?php echo date('M d, Y', strtotime($app['created_at'])); ?></div>
                         </div>
-                        <div class="application-status status-<?php echo htmlspecialchars($app['status']); ?>"><?php echo ucfirst(htmlspecialchars($app['status'])); ?></div>
+
+                        <!-- Status Badge -->
+                        <div class="application-status status-<?php echo htmlspecialchars($app['status']); ?>">
+                            <?php echo ucfirst(htmlspecialchars($app['status'])); ?>
+                        </div>
                     </div>
 
+                    <!-- Card content and actions remain the same -->
                     <div class="application-content">
                         <div class="application-field"><span class="field-label">Broker ID:</span><span class="field-value"><?php echo htmlspecialchars($app['broker_id'] ?: 'N/A'); ?></span></div>
                         <div class="application-field"><span class="field-label">Experience:</span><span class="field-value"><?php echo htmlspecialchars($app['experience_years'] ?: 'N/A'); ?> years</span></div>
@@ -276,6 +297,12 @@
         function renderApplicationDetails(app) {
             let docSection = '';
 
+            // Prepare profile image URL
+            const profileImageUrl = app.profile_image_path 
+                ? '/BatEstateExplorer/storage/uploads/profile_images/' + app.profile_image_path.split('/').pop() 
+                : '';
+
+            // Documents section for direct agents
             if (app.agent_type === 'direct_agent') {
                 docSection = `
                     <h3>Documents Submitted</h3>
@@ -288,6 +315,10 @@
 
             modalBody.innerHTML = `
                 <div class="detail-section">
+                    ${profileImageUrl 
+                        ? `<div class="modal-avatar"><img src="${escapeHtml(profileImageUrl)}" alt="Profile" class="avatar-img" style="width:100px;height:100px;border-radius:50%;margin-bottom:15px;"> </div>` 
+                        : `<i class="fa-solid fa-user default-avatar" style="font-size: 80px; display:block; margin-bottom:15px;"></i>`}
+                    
                     <h3>Applicant Info</h3>
                     ${detailRow('Full Name', `${escapeHtml(app.first_name)} ${escapeHtml(app.last_name)}`)}
                     ${detailRow('Email', escapeHtml(app.email))}

@@ -134,11 +134,33 @@
 
 /* ---- Card Header ---- */
 .application-header {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 12px; /* space between avatar and info */
+    position: relative; /* keep status badge positioning */
 }
+
+.applicant-avatar {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.default-avatar {
+    font-size: 2rem;
+    color: #aaa;
+}
+
 
 .applicant-info {
   display: flex;
@@ -431,4 +453,31 @@
     justify-content: flex-start; 
     gap: 0.25rem; 
   }
+}
+
+/* Tablets & smaller laptops */
+@media screen and (max-width: 768px) {
+    .applicant-avatar {
+        width: 50px;
+        height: 50px;
+    }
+    .avatar-img, .default-avatar {
+        font-size: 1.5rem;
+    }
+}
+
+/* Mobile */
+@media screen and (max-width: 480px) {
+    .application-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .applicant-avatar {
+        width: 50px;
+        height: 50px;
+    }
+    .avatar-img, .default-avatar {
+        font-size: 1.5rem;
+    }
 }
