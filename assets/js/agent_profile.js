@@ -199,52 +199,56 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------
   // Pay Listing Fee & Submit
   // -------------------------
-
   document.getElementById('payListingFeeBtn')?.addEventListener('click', async () => {
-    const form = document.getElementById('addListingForm');
-    const walletBalanceEl = document.getElementById('agentWalletBalance');
-    const fd = new FormData(form);
+      const form = document.getElementById('addListingForm');
+      const walletBalanceEl = document.getElementById('agentWalletBalance');
+      const fd = new FormData(form);
 
-    // Append images
-    window.selectedFiles.forEach(f => {
-      if (f instanceof File) {
-        // New uploaded file
-        fd.append('images[]', f);
-      } else if (typeof f === 'string') {
-        // Draft image URL
-        fd.append('existing_images[]', f);
-      }
-    });
+      // Append images
+      window.selectedFiles.forEach(f => {
+          if (f instanceof File) {
+              fd.append('images[]', f);
+          } else if (typeof f === 'string') {
+              fd.append('existing_images[]', f);
+          }
+      });
 
-    // If editing a draft, send the draft ID
-    if (window.currentDraftId) {
-      fd.append('draft_id', window.currentDraftId);
-    }
-
-    try {
-      // Step 1: Charge listing fee
-      const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
-      const feeData = await feeRes.json();
-      if (!feeData.success) throw new Error(feeData.error || 'Failed to process fee');
-      walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
-
-      // Step 2: Save listing
-      const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
-      const saveData = await saveRes.json();
-
-      if (saveData.success) {
-        notify('success', 'Listing submitted! Awaiting admin approval.');
-        window.closeListingFeeModal?.();
-        form.reset();
-        window.resetImageUpload?.();
-        window.currentDraftId = null;
-      } else {
-        notify('error', 'Listing fee paid but failed to save listing: ' + (saveData.error || 'Unknown error'));
+      // If editing a draft, send the draft ID
+      if (window.currentDraftId) {
+          fd.append('draft_id', window.currentDraftId);
       }
 
-    } catch (err) {
-      notify('error', err.message || 'An error occurred.');
-    }
+      try {
+          const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
+          const feeData = await feeRes.json();
+          if (!feeData.success) throw new Error(feeData.error || 'Failed to process fee');
+          walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+          const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
+          const saveData = await saveRes.json();
+
+          if (saveData.success) {
+              notify('success', 'Listing submitted! Awaiting admin approval.');
+              window.closeListingFeeModal?.();
+              form.reset();
+              window.resetImageUpload?.();
+
+              // Remove draft card if it exists
+              if (window.currentDraftId) {
+                  const draftCard = document.querySelector(`.draft-card[data-id="${window.currentDraftId}"]`);
+                  draftCard?.remove();
+                  window.currentDraftId = null;
+              }
+
+              // Optionally reload drafts to refresh UI completely
+              loadDrafts?.();
+          } else {
+              notify('error', 'Listing fee paid but failed to save listing: ' + (saveData.error || 'Unknown error'));
+          }
+
+      } catch (err) {
+          notify('error', err.message || 'An error occurred.');
+      }
   });
 
   initDraftCards();
