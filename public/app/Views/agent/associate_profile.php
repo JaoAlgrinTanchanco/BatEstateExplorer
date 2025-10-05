@@ -51,7 +51,7 @@
             }
         }
 
-        // Fetch all properties for this agent
+        // Fetch all unique properties for this agent
         $propsStmt = $conn->prepare("
             SELECT 
                 p.*,
@@ -60,7 +60,8 @@
             FROM properties p
             LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
             LEFT JOIN users su ON sa.user_id = su.id
-            WHERE p.agent_id = ? OR p.sold_by_agent_id = ?
+            WHERE p.agent_id = ? 
+            OR (p.sold_by_agent_id IS NOT NULL AND p.sold_by_agent_id = ?)
             ORDER BY p.created_at DESC
         ");
         $propsStmt->bind_param("ii", $agent_id, $agent_id);

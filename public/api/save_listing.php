@@ -31,7 +31,6 @@ try {
     // Directories
     // -------------------------
     $property_dir = 'C:/xampp/htdocs/BatEstateExplorer/storage/uploads/property_images/';
-    $draft_dir    = 'C:/xampp/htdocs/BatEstateExplorer/storage/uploads/draft/';
     $db_prefix    = 'storage/uploads/property_images/';
     if (!is_dir($property_dir)) mkdir($property_dir, 0777, true);
 
@@ -49,18 +48,18 @@ try {
         $draft = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$draft) throw new Exception("Draft not found");
 
+        // Use draft data
         $title         = $draft['title'];
         $description   = $draft['description'];
         $price         = $draft['price'];
         $location      = $draft['location'];
         $bedrooms      = $draft['bedrooms'];
         $bathrooms     = $draft['bathrooms'];
-        $sqm           = $draft['sqm'] ?? 0;
         $lot_size      = $draft['lot_size'];
         $property_type = $draft['property_type'];
 
+        // Move draft images to property folder
         $draftImages = !empty($draft['image_path']) ? array_filter(explode(',', $draft['image_path'])) : [];
-
         $projectRoot = realpath(__DIR__ . '/../../');
 
         foreach ($draftImages as $idx => $imgPath) {
@@ -75,11 +74,11 @@ try {
             if (!rename($oldPath, $newPath)) throw new Exception("Failed to move draft image: $imgPath");
             $images[] = ['path' => $dbPath, 'is_primary' => $idx === 0 ? 1 : 0];
 
-            // Extra safety: remove original if still exists
+            // Remove old file if still exists
             if (file_exists($oldPath)) unlink($oldPath);
         }
 
-        // Delete draft record from DB
+        // Delete draft after publishing
         $stmtDel = $pdo->prepare("DELETE FROM property_drafts WHERE id = ? AND user_id = ?");
         $stmtDel->execute([$draftId, $user_data['id']]);
     } else {
@@ -92,7 +91,6 @@ try {
         $location      = trim($_POST['location'] ?? '');
         $bedrooms      = intval($_POST['bedrooms'] ?? 0);
         $bathrooms     = intval($_POST['bathrooms'] ?? 0);
-        $sqm           = floatval($_POST['sqm'] ?? 0);
         $lot_size      = floatval($_POST['lot_size'] ?? 0);
         $property_type = trim($_POST['property_type'] ?? '');
         $existingImages = $_POST['existing_images'] ?? [];
@@ -124,31 +122,29 @@ try {
         if (empty($images)) throw new Exception("Please upload at least one property image.");
     }
 
-    $pdo->beginTransaction();
-
     // -------------------------
     // Insert property
     // -------------------------
     $stmt = $pdo->prepare("
         INSERT INTO properties
-        (title, description, property_type, location, price, bedrooms, bathrooms, sqm, lot_size, agent_id, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
+        (title, description, property_type, location, price, bedrooms, bathrooms, lot_size, agent_id, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
     ");
     $stmt->execute([
         $title, $description, $property_type, $location, $price,
-        $bedrooms, $bathrooms, $sqm, $lot_size, $agent_id
+        $bedrooms, $bathrooms, $lot_size, $agent_id
     ]);
     $property_id = $pdo->lastInsertId();
 
     // -------------------------
     // Insert images
     // -------------------------
-    $stmtImg = $pdo->prepare("INSERT INTO property_images (property_id, image_path, is_primary, created_at) VALUES (?, ?, ?, NOW())");
-    foreach ($images as $img) {
-        $stmtImg->execute([$property_id, $img['path'], $img['is_primary']]);
+    if (!empty($images)) {
+        $stmtImg = $pdo->prepare("INSERT INTO property_images (property_id, image_path, is_primary, created_at) VALUES (?, ?, ?, NOW())");
+        foreach ($images as $img) {
+            $stmtImg->execute([$property_id, $img['path'], $img['is_primary']]);
+        }
     }
-
-    $pdo->commit();
 
     echo json_encode([
         'success' => true,
