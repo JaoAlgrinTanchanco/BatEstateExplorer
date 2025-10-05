@@ -323,6 +323,156 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+
+  // Draft Save / Load Logic
+const draftContainer = document.getElementById('draftContainer');
+const form = document.getElementById('addListingForm');
+const preview = document.getElementById('imagePreview');
+const API_BASE = '/BatEstateExplorer/public/api/';
+
+// Load drafts on page load
+loadDrafts();
+
+// ======================
+// Save draft
+// ======================
+const saveDraftBtn = document.getElementById('saveDraftBtn');
+if (saveDraftBtn) {
+  saveDraftBtn.addEventListener('click', async () => {
+    if (!form) return;
+    const fd = new FormData(form);
+    window.selectedFiles.forEach(f => fd.append('images[]', f));
+
+    try {
+      const res = await fetch(API_BASE + 'save_draft.php', { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (data.success) {
+        notify('success', 'Draft saved!');
+        form.reset();
+        window.selectedFiles = [];
+        preview.innerHTML = '';
+        loadDrafts();
+      } else {
+        notify('error', 'Error saving draft: ' + data.error);
+      }
+    } catch (err) {
+      console.error('Save draft failed:', err);
+      notify('error', 'Failed to save draft.');
+    }
+  });
+}
+
+// ======================
+// Load all drafts
+// ======================
+async function loadDrafts() {
+  try {
+    const res = await fetch(API_BASE + 'get_drafts.php');
+    const drafts = await res.json();
+
+    draftContainer.innerHTML = drafts.length
+      ? drafts.map(d => `
+        <div class="draft-card" data-id="${d.id}">
+          <h4>${d.title}</h4>
+          <button class="load-draft-btn" data-id="${d.id}">Load</button>
+          <button class="delete-draft">Delete</button>
+        </div>
+      `).join('')
+      : '<p>No drafts available.</p>';
+
+    attachDraftEvents();
+  } catch (err) {
+    console.error('Failed to load drafts:', err);
+    notify('error', 'Failed to load drafts.');
+  }
+}
+
+// ======================
+// Attach events for load/delete
+// ======================
+function attachDraftEvents() {
+  // Load draft
+  draftContainer.querySelectorAll('.load-draft-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const draftId = btn.dataset.id;
+      try {
+        const res = await fetch(`${API_BASE}get_draft.php?id=${draftId}`);
+        const d = await res.json();
+        if (d.error) return notify('error', d.error);
+
+        // Populate form
+        form.title.value = d.title || '';
+        form.location.value = d.location || '';
+        form.price.value = d.price || '';
+        form.lot_size.value = d.lot_size || '';
+        form.property_type.value = d.property_type || '';
+        form.bedrooms.value = d.bedrooms || '';
+        form.bathrooms.value = d.bathrooms || '';
+        form.description.value = d.description || '';
+
+        // Clear previous images
+        window.selectedFiles = [];
+        preview.innerHTML = '';
+
+        // Load draft images
+        if (d.images && Array.isArray(d.images)) {
+          d.images.forEach(src => {
+            const imgWrap = document.createElement('div');
+            imgWrap.className = 'img-wrap';
+
+            const img = document.createElement('img');
+            img.className = 'thumb';
+            img.src = src; // use the path stored in DB
+            imgWrap.appendChild(img);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'remove-img';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.addEventListener('click', () => {
+              imgWrap.remove();
+              // remove from selectedFiles if needed
+              window.selectedFiles = window.selectedFiles.filter(f => f.name !== src.split('/').pop());
+            });
+            imgWrap.appendChild(removeBtn);
+
+            preview.appendChild(imgWrap);
+          });
+        }
+
+      } catch (err) {
+        console.error('Failed to load draft:', err);
+        notify('error', 'Failed to load draft.');
+      }
+    });
+  });
+
+  // Delete draft
+  draftContainer.querySelectorAll('.delete-draft').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const card = btn.closest('.draft-card');
+      if (!card || !confirm('Delete this draft?')) return;
+      const draftId = card.dataset.id;
+
+      try {
+        const res = await fetch(API_BASE + 'delete_draft.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: draftId })
+        });
+        const data = await res.json();
+        if (data.success) card.remove();
+        else notify('error', 'Error deleting draft: ' + data.error);
+      } catch (err) {
+        console.error('Delete draft failed:', err);
+        notify('error', 'Failed to delete draft.');
+      }
+    });
+  });
+}
+
+
 }); // End DOMContentLoaded
 
 // Global functions
