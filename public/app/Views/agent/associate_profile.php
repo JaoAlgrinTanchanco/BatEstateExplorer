@@ -459,7 +459,7 @@
                 <header class="content-header">
                     <h2>Add Listings</h2>
                 </header>
-
+                <p>Drafts:</p>
                 <div id="draftContainer" class="draft-container">
                     <?php
                     // Example: fetch drafts from DB
@@ -506,7 +506,7 @@
                     <label for="images"><strong>Upload Images</strong></label>
                     <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
                         <p>Drag & drop images here or click to browse</p>
-                        <input type="file" id="images" name="images[]" accept="image/*" multiple style="display:none;">
+                        <input type="file" id="images" accept="image/*" multiple style="display:none;"> 
                     </div>
                     <div id="imagePreview" class="image-preview" aria-live="polite"></div>
                     </div>
@@ -543,7 +543,9 @@
 
                     <!-- Submit Button moved here -->
                     <div class="add_listing_actions">
-                        <button type="button" id="saveDraftBtn" class="btn-draft">Draft</button>
+                        <button type="button" id="saveDraftBtn" class="btn-draft" data-url="/BatEstateExplorer/public/api/save_draft.php">
+                            Save Draft
+                        </button>
                         <button type="button" id="openListingModalBtn" class="btn-submit">Save Listing</button>
                     </div>
                     </div>

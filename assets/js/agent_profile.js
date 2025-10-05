@@ -23,33 +23,27 @@ function notify(type, message) {
   setTimeout(() => notif.remove(), 5000);
 }
 
+window.currentDraftId = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-
-  // Toggle Bedrooms/Bathrooms based on property type
-  const toggleRooms = (typeSelect, bedroomsInput, bathroomsInput) => {
-    const isLot = typeSelect.value === 'Lot';
-    bedroomsInput.disabled = isLot;
-    bathroomsInput.disabled = isLot;
-    if (isLot) { bedroomsInput.value = 0; bathroomsInput.value = 0; }
-  };
-
-  // Drag & Drop Image Upload Initialization
+  // -------------------------
+  // Image Upload Initialization
+  // -------------------------
   window.selectedFiles = window.selectedFiles || [];
-  const initImageUpload = ({ dropAreaId, fileInputId, previewId, formId, maxFiles = 10 }) => {
+
+  const initImageUpload = ({ dropAreaId, fileInputId, previewId, maxFiles = 10 }) => {
     const dropArea = document.getElementById(dropAreaId);
     const fileInput = document.getElementById(fileInputId);
     const preview = document.getElementById(previewId);
-    const form = document.getElementById(formId);
-    if (!dropArea || !fileInput || !form) return;
 
-    let selectedFiles = window.selectedFiles;
-    const fileSignature = f => `${f.name}|${f.size}|${f.lastModified}`;
+    if (!dropArea || !fileInput || !preview) return;
 
     const renderPreviews = () => {
       preview.innerHTML = '';
-      selectedFiles.forEach((file, index) => {
+      window.selectedFiles.forEach((file, idx) => {
         const wrap = document.createElement('div');
         wrap.className = 'img-wrap';
+
         const img = document.createElement('img');
         img.className = 'thumb';
         wrap.appendChild(img);
@@ -59,421 +53,171 @@ document.addEventListener('DOMContentLoaded', () => {
         removeBtn.className = 'remove-img';
         removeBtn.innerHTML = '&times;';
         removeBtn.addEventListener('click', () => {
-          selectedFiles.splice(index, 1);
+          window.selectedFiles.splice(idx, 1);
           renderPreviews();
         });
         wrap.appendChild(removeBtn);
 
         const reader = new FileReader();
-        reader.onload = e => (img.src = e.target.result);
+        reader.onload = e => img.src = e.target.result;
         reader.readAsDataURL(file);
+
         preview.appendChild(wrap);
       });
     };
 
-    const addFiles = fileList => {
-      if (!fileList) return;
-      const incoming = Array.from(fileList).filter(f => f.type.startsWith('image/'));
-      const existingSigs = new Set(selectedFiles.map(fileSignature));
+    const addFiles = files => {
+      const incoming = Array.from(files).filter(f => f.type.startsWith('image/'));
+      const existingSigs = new Set(window.selectedFiles.map(f => `${f.name}|${f.size}|${f.lastModified}`));
       for (const f of incoming) {
-        if (selectedFiles.length >= maxFiles) break;
-        if (!existingSigs.has(fileSignature(f))) {
-          selectedFiles.push(f);
-          existingSigs.add(fileSignature(f));
+        if (window.selectedFiles.length >= maxFiles) break;
+        const sig = `${f.name}|${f.size}|${f.lastModified}`;
+        if (!existingSigs.has(sig)) {
+          window.selectedFiles.push(f);
+          existingSigs.add(sig);
         }
       }
       renderPreviews();
     };
 
-    // Set up drag and drop and file input event listeners
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt =>
+    // Drag & Drop
+    ['dragenter','dragover','dragleave','drop'].forEach(evt =>
       dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); })
     );
     dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
     dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
-    dropArea.addEventListener('drop', e => { dropArea.classList.remove('drag-over'); addFiles(e.dataTransfer.files); });
+    dropArea.addEventListener('drop', e => {
+      dropArea.classList.remove('drag-over');
+      addFiles(e.dataTransfer.files);
+    });
     dropArea.addEventListener('click', () => fileInput.click());
-    dropArea.addEventListener('keydown', e => { if (['Enter', ' '].includes(e.key)) { e.preventDefault(); fileInput.click(); } });
-    fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
+    fileInput.addEventListener('change', () => {
+      addFiles(fileInput.files);
+      fileInput.value = '';
+    });
 
-    // Handle standard form submission (used by Direct Agents)
-    if (form.id === 'addListingForm') {
-      form.addEventListener('submit', e => {
-        e.preventDefault();
-        const fd = new FormData(form);
-        selectedFiles.forEach(f => fd.append('images[]', f));
-        fetch(form.action, { method: 'POST', body: fd })
-          .then(res => res.text())
-          .then(() => {
-            notify('success', 'Listing saved!');
-            form.reset();
-            selectedFiles = [];
-            renderPreviews();
-          })
-          .catch(() => notify('error', 'Upload failed!'));
-      });
-    }
-
-    // Expose reset function globally
+    // Reset helper
     window.resetImageUpload = () => {
-      selectedFiles = [];
+      window.selectedFiles.length = 0;
       renderPreviews();
     };
   };
 
-  // Initialize image upload for the main form
+  // Initialize main image upload
   initImageUpload({
     dropAreaId: 'imageUploadArea',
     fileInputId: 'images',
     previewId: 'imagePreview',
-    formId: 'addListingForm',
     maxFiles: 10
   });
 
-  // Edit modals functions
-  window.openModal = id => document.getElementById(`editModal-${id}`).style.display = 'block';
-  window.closeModal = id => document.getElementById(`editModal-${id}`).style.display = 'none';
-  window.onclick = e => { document.querySelectorAll('.edit-modal').forEach(m => { if (e.target === m) m.style.display = 'none'; }); };
-  window.removeImage = btn => btn.closest('.slider-item').remove();
+  // -------------------------
+  // Save Draft Handler
+  // -------------------------
+  function loadDrafts() {
+    const container = document.getElementById('draftContainer');
+    if (!container) return;
 
-  // Bedrooms/Bathrooms initial setup for edit modals
-  document.querySelectorAll('.edit-modal').forEach(modal => {
-    const typeSelect = modal.querySelector('select[name="property_type"]');
-    const bedrooms = modal.querySelector('input[name="bedrooms"]');
-    const bathrooms = modal.querySelector('input[name="bathrooms"]');
-    if (!typeSelect || !bedrooms || !bathrooms) return;
-    toggleRooms(typeSelect, bedrooms, bathrooms);
-    typeSelect.addEventListener('change', () => toggleRooms(typeSelect, bedrooms, bathrooms));
-  });
-
-  // Bedrooms/Bathrooms initial setup for Add Listing form
-  const addType = document.getElementById('property_type');
-  const addBeds = document.getElementById('bedrooms');
-  const addBaths = document.getElementById('bathrooms');
-  if (addType && addBeds && addBaths) {
-    toggleRooms(addType, addBeds, addBaths);
-    addType.addEventListener('change', () => toggleRooms(addType, addBeds, addBaths));
+    fetch('/BatEstateExplorer/public/api/get_drafts.php') // make sure this returns drafts JSON
+      .then(res => res.json())
+      .then(data => {
+        container.innerHTML = ''; // clear existing drafts
+        data.forEach(draft => {
+          const div = document.createElement('div');
+          div.className = 'draft-card';
+          div.dataset.id = draft.id;
+          div.innerHTML = `
+            <span class="delete-draft">&times;</span>
+            ${draft.title}
+          `;
+          container.appendChild(div);
+        });
+      })
+      .catch(err => console.error('Failed to load drafts:', err));
   }
 
-  // Company listing modal details fetch
-  document.querySelectorAll('.view-details').forEach(link => {
-    link.addEventListener('click', e => {
-      e.preventDefault();
-      const propertyId = link.dataset.id;
-      fetch(`/BatEstateExplorer/public/api/get_company_listings.php?id=${propertyId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.error) return notify('error', data.error);
-          document.getElementById('propertyTitle').textContent = data.title || 'N/A';
-          const carousel = document.getElementById('carouselImages');
-          carousel.innerHTML = '';
-          if (data.images?.length) {
-            data.images.forEach((img, idx) => {
-              carousel.innerHTML += `<div class="carousel-item ${idx === 0 ? 'active' : ''}"><img src="storage/uploads/property_images/${img}" class="d-block w-100"></div>`;
-            });
-          } else carousel.innerHTML = '<div class="carousel-item active"><p>No images</p></div>';
-          const details = document.getElementById('propertyDetails');
-          details.innerHTML = `
-            <li class="list-group-item"><b>Location:</b> ${data.location}</li>
-            <li class="list-group-item"><b>Price:</b> ₱${parseFloat(data.price).toLocaleString()}</li>
-            <li class="list-group-item"><b>Bedrooms:</b> ${data.bedrooms}</li>
-            <li class="list-group-item"><b>Bathrooms:</b> ${data.bathrooms}</li>
-            <li class="list-group-item"><b>Size:</b> ${data.sqm} sqm</li>
-            <li class="list-group-item"><b>Status:</b> ${data.status}</li>
-            <li class="list-group-item"><b>Created By:</b> ${data.created_by ?? 'N/A'}</li>
-            <li class="list-group-item"><b>Sold By:</b> ${data.sold_by ?? 'N/A'}</li>`;
-        })
-        .catch(() => notify('error', 'Error fetching property details.'));
-    });
-  });
-
-  // Edit profile modal logic
-  const editBtn = document.getElementById("editProfileBtn");
-  const editModal = document.getElementById("editModal");
-  const cancelEditBtn = document.getElementById("cancelEditBtn");
-
-  if (editBtn && editModal && cancelEditBtn) {
-    editBtn.addEventListener("click", () => {
-      editModal.style.display = "flex";
-    });
-
-    cancelEditBtn.addEventListener("click", () => {
-      editModal.style.display = "none";
-    });
-
-    window.addEventListener("click", e => {
-      if (e.target === editModal) editModal.style.display = "none";
-    });
-  }
-
-  // Delete agent modal logic (Direct Agent) - Redundant code below was removed, consolidating the logic here.
-  const openDeleteModalBtn = document.getElementById("openDeleteModal");
-  const deleteModal = document.getElementById("deleteModal");
-  const cancelDeleteBtnEl = document.getElementById("cancelDeleteBtn");
-  const deleteForm = document.getElementById("deleteAgentForm");
-  const confirmBtn = document.getElementById("confirmDeleteBtn");
-  const spinner = document.getElementById("deleteSpinner");
-
-  if (openDeleteModalBtn) openDeleteModalBtn.addEventListener("click", () => deleteModal.style.display = "flex");
-  if (cancelDeleteBtnEl) cancelDeleteBtnEl.addEventListener("click", () => deleteModal.style.display = "none");
-  if (deleteForm) deleteForm.addEventListener("submit", () => {
-    // Only hide button and show spinner on submit
-    if (confirmBtn) confirmBtn.style.display = "none";
-    if (spinner) spinner.style.display = "flex";
-  });
-
-  // Listing Fee Modal & Submit Flow (Associate Agent)
-  const listingForm = document.getElementById('addListingForm');
-  const listingModal = document.getElementById('listingFeeModal');
-  const walletBalanceEl = document.getElementById('agentWalletBalance');
-  const payBtn = document.getElementById('payListingFeeBtn');
-  const listingFee = 20;
-  const openListingBtn = document.getElementById('openListingModalBtn');
-
-  if (listingForm && listingModal && walletBalanceEl && payBtn && openListingBtn) {
-
-    // Open / Close modal helpers
-    const openListingFeeModal = () => listingModal.style.display = 'flex';
-    const closeListingFeeModal = (e) => {
-      if (!e || e.target === listingModal) listingModal.style.display = 'none';
-    };
-
-    // Click "Save Listing" -> validate form + images -> show modal
-    openListingBtn.addEventListener('click', () => {
-      if (!listingForm.checkValidity()) {
-        listingForm.reportValidity();
-        return;
-      }
-      if (!window.selectedFiles || window.selectedFiles.length === 0) {
-        notify('error', 'Please upload at least one property image.');
-        return;
-      }
-
-      // Wallet balance check
-      const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g, ''));
-      if (walletBalance < listingFee) {
-        notify('error', 'Insufficient wallet balance. Please deposit first.');
-        return;
-      }
-
-      openListingFeeModal();
-    });
-
-    // Click "Pay Listing Fee & Submit" -> process fee -> save listing
-    payBtn.addEventListener('click', () => {
-      const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g, ''));
-      if (walletBalance < listingFee) {
-        notify('error', 'Insufficient wallet balance. Please deposit first.');
-        return;
-      }
-      if (!window.selectedFiles || window.selectedFiles.length === 0) {
-        notify('error', 'Please upload at least one property image.');
-        return;
-      }
-
-      const formData = new FormData(listingForm);
-      window.selectedFiles.forEach(f => formData.append('images[]', f));
-
-      // Step 1: Charge listing fee
-      fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: formData })
-        .then(res => res.json())
-        .then(feeData => {
-          if (!feeData.success) throw new Error(feeData.error || 'Failed to process listing fee.');
-          walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
-
-          // Step 2: Save listing
-          return fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: formData });
-        })
-        .then(res => res.json())
-        .then(saveData => {
-          if (saveData.success) {
-            notify('success', 'Listing submitted! Awaiting admin approval.');
-            closeListingFeeModal();
-            listingForm.reset();
-            window.resetImageUpload(); // clears previews & selectedFiles
-          } else {
-            notify('error', 'Listing fee paid but failed to save listing: ' + (saveData.error || 'Unknown error'));
-          }
-        })
-        .catch(err => notify('error', err.message || 'An error occurred.'));
-    });
-
-    // Expose modal close globally
-    window.closeListingFeeModal = closeListingFeeModal;
-    window.openListingFeeModal = openListingFeeModal;
-  }
-
-  // Trim old agent transactions
-  const TRIM_AGENT_API = '/BatEstateExplorer/public/api/agent_trim_transact.php';
-
-  async function trimAgentTransactions() {
-    try {
-      const res = await fetch(TRIM_AGENT_API, { method: 'POST', credentials: 'same-origin' });
-      const data = await res.json();
-      // Remove debugging lines
-    } catch (err) {
-      // Remove debugging lines
-    }
-  }
-
-  trimAgentTransactions(); // Call immediately
-  document.addEventListener('visibilitychange', () => { // Also refresh on tab visibility change
-    if (document.visibilityState === 'visible') {
-      trimAgentTransactions();
-    }
-  });
-
-
-  // Draft Save / Load Logic
-const draftContainer = document.getElementById('draftContainer');
-const form = document.getElementById('addListingForm');
-const preview = document.getElementById('imagePreview');
-const API_BASE = '/BatEstateExplorer/public/api/';
-
-// Load drafts on page load
-loadDrafts();
-
-// ======================
-// Save draft
-// ======================
-const saveDraftBtn = document.getElementById('saveDraftBtn');
-if (saveDraftBtn) {
-  saveDraftBtn.addEventListener('click', async () => {
+  // -------------------------
+  // Save Draft Handler
+  // -------------------------
+  document.getElementById('saveDraftBtn')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const form = document.getElementById('addListingForm');
     if (!form) return;
+
+    const fd = new FormData(form);
+    window.selectedFiles.forEach(f => fd.append('images[]', f));
+
+    // If editing an existing draft, append the ID
+    if (window.currentDraftId) fd.append('id', window.currentDraftId);
+
+    try {
+      const res = await fetch('/BatEstateExplorer/public/api/save_draft.php', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+
+      const data = await res.json();
+      if (data.success) {
+        notify('success', window.currentDraftId ? 'Draft updated successfully!' : 'Draft saved successfully!');
+        form.reset();
+        window.resetImageUpload?.();
+        loadDrafts?.();
+        window.currentDraftId = null; // reset after save
+      } else {
+        notify('error', data.error || 'Failed to save draft.');
+      }
+    } catch (err) {
+      console.error('Draft save error:', err);
+      notify('error', err.message || 'Network error while saving draft.');
+    }
+  });
+
+  // -------------------------
+  // Save Listing Handler
+  // -------------------------
+  document.getElementById('openListingModalBtn')?.addEventListener('click', () => {
+    const form = document.getElementById('addListingForm');
+    const walletBalanceEl = document.getElementById('agentWalletBalance');
+    const listingFee = 20;
+
+    if (!form.checkValidity()) return form.reportValidity();
+    if (!window.selectedFiles.length) return notify('error', 'Please upload at least one image.');
+
+    const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g, ''));
+    if (walletBalance < listingFee) return notify('error', 'Insufficient wallet balance.');
+
+    // Open listing fee modal
+    window.openListingFeeModal?.();
+  });
+
+  // Pay Listing Fee & Submit
+  document.getElementById('payListingFeeBtn')?.addEventListener('click', async () => {
+    const form = document.getElementById('addListingForm');
+    const walletBalanceEl = document.getElementById('agentWalletBalance');
     const fd = new FormData(form);
     window.selectedFiles.forEach(f => fd.append('images[]', f));
 
     try {
-      const res = await fetch(API_BASE + 'save_draft.php', { method: 'POST', body: fd });
-      const data = await res.json();
+      // Step 1: Charge listing fee
+      const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
+      const feeData = await feeRes.json();
+      if (!feeData.success) throw new Error(feeData.error || 'Failed to process fee');
+      walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
-      if (data.success) {
-        notify('success', 'Draft saved!');
+      // Step 2: Save listing
+      const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
+      const saveData = await saveRes.json();
+      if (saveData.success) {
+        notify('success', 'Listing submitted! Awaiting admin approval.');
+        window.closeListingFeeModal?.();
         form.reset();
-        window.selectedFiles = [];
-        preview.innerHTML = '';
-        loadDrafts();
-      } else {
-        notify('error', 'Error saving draft: ' + data.error);
-      }
+        window.resetImageUpload?.();
+      } else notify('error', 'Listing fee paid but failed to save listing: ' + (saveData.error || 'Unknown error'));
     } catch (err) {
-      console.error('Save draft failed:', err);
-      notify('error', 'Failed to save draft.');
+      notify('error', err.message || 'An error occurred.');
     }
   });
-}
 
-// ======================
-// Load all drafts
-// ======================
-async function loadDrafts() {
-  try {
-    const res = await fetch(API_BASE + 'get_drafts.php');
-    const drafts = await res.json();
-
-    draftContainer.innerHTML = drafts.length
-      ? drafts.map(d => `
-        <div class="draft-card" data-id="${d.id}">
-          <h4>${d.title}</h4>
-          <button class="load-draft-btn" data-id="${d.id}">Load</button>
-          <button class="delete-draft">Delete</button>
-        </div>
-      `).join('')
-      : '<p>No drafts available.</p>';
-
-    attachDraftEvents();
-  } catch (err) {
-    console.error('Failed to load drafts:', err);
-    notify('error', 'Failed to load drafts.');
-  }
-}
-
-// ======================
-// Attach events for load/delete
-// ======================
-function attachDraftEvents() {
-  // Load draft
-  draftContainer.querySelectorAll('.load-draft-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const draftId = btn.dataset.id;
-      try {
-        const res = await fetch(`${API_BASE}get_draft.php?id=${draftId}`);
-        const d = await res.json();
-        if (d.error) return notify('error', d.error);
-
-        // Populate form
-        form.title.value = d.title || '';
-        form.location.value = d.location || '';
-        form.price.value = d.price || '';
-        form.lot_size.value = d.lot_size || '';
-        form.property_type.value = d.property_type || '';
-        form.bedrooms.value = d.bedrooms || '';
-        form.bathrooms.value = d.bathrooms || '';
-        form.description.value = d.description || '';
-
-        // Clear previous images
-        window.selectedFiles = [];
-        preview.innerHTML = '';
-
-        // Load draft images
-        if (d.images && Array.isArray(d.images)) {
-          d.images.forEach(src => {
-            const imgWrap = document.createElement('div');
-            imgWrap.className = 'img-wrap';
-
-            const img = document.createElement('img');
-            img.className = 'thumb';
-            img.src = src; // use the path stored in DB
-            imgWrap.appendChild(img);
-
-            const removeBtn = document.createElement('button');
-            removeBtn.type = 'button';
-            removeBtn.className = 'remove-img';
-            removeBtn.innerHTML = '&times;';
-            removeBtn.addEventListener('click', () => {
-              imgWrap.remove();
-              // remove from selectedFiles if needed
-              window.selectedFiles = window.selectedFiles.filter(f => f.name !== src.split('/').pop());
-            });
-            imgWrap.appendChild(removeBtn);
-
-            preview.appendChild(imgWrap);
-          });
-        }
-
-      } catch (err) {
-        console.error('Failed to load draft:', err);
-        notify('error', 'Failed to load draft.');
-      }
-    });
-  });
-
-  // Delete draft
-  draftContainer.querySelectorAll('.delete-draft').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const card = btn.closest('.draft-card');
-      if (!card || !confirm('Delete this draft?')) return;
-      const draftId = card.dataset.id;
-
-      try {
-        const res = await fetch(API_BASE + 'delete_draft.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: draftId })
-        });
-        const data = await res.json();
-        if (data.success) card.remove();
-        else notify('error', 'Error deleting draft: ' + data.error);
-      } catch (err) {
-        console.error('Delete draft failed:', err);
-        notify('error', 'Failed to delete draft.');
-      }
-    });
-  });
-}
-
-
-}); // End DOMContentLoaded
+initDraftCards();
+}); //END OF DOM
 
 // Global functions
 function toggleSoldBy(select, propertyId) {
@@ -604,4 +348,96 @@ function deleteListing(id) {
   if (confirm("Are you sure you want to delete this listing?")) {
     document.getElementById(`deleteForm-${id}`).submit();
   }
+}
+
+// -------------------------
+// Draft card click & delete
+// -------------------------
+// Call this whenever draft cards exist (after loadDrafts or on page load)
+function initDraftCards() {
+  const container = document.getElementById('draftContainer');
+  if (!container) return;
+
+  // Use event delegation so dynamically added cards work
+  container.addEventListener('click', e => {
+    const card = e.target.closest('.draft-card');
+    if (!card) return;
+
+    const draftId = card.dataset.id;
+    if (e.target.classList.contains('delete-draft')) {
+      // Delete draft
+      deleteDraft(draftId, card);
+    } else {
+      // Load draft
+      loadDraftIntoForm(draftId);
+    }
+  });
+}
+
+// Load draft into form
+function loadDraftIntoForm(draftId) {
+  if (!draftId) return notify('error', 'Invalid draft ID');
+
+  fetch(`/BatEstateExplorer/public/api/get_draft.php?id=${draftId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) return notify('error', data.error);
+
+      document.getElementById('title').value = data.title || '';
+      document.getElementById('location').value = data.location || '';
+      document.getElementById('price').value = data.price || '';
+      document.getElementById('lot_size').value = data.lot_size || '';
+      document.getElementById('property_type').value = data.property_type || '';
+      document.getElementById('bedrooms').value = data.bedrooms || '';
+      document.getElementById('bathrooms').value = data.bathrooms || '';
+      document.getElementById('description').value = data.description || '';
+
+      // Reset images first
+      window.resetImageUpload?.();
+
+      // Load existing images into preview
+      if (Array.isArray(data.images)) {
+        data.images.forEach(src => {
+          const wrap = document.createElement('div');
+          wrap.className = 'img-wrap';
+
+          const img = document.createElement('img');
+          img.className = 'thumb';
+          img.src = src;
+          wrap.appendChild(img);
+
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'remove-img';
+          removeBtn.innerHTML = '&times;';
+          removeBtn.addEventListener('click', () => wrap.remove()); // optional: mark for deletion in update
+          wrap.appendChild(removeBtn);
+
+          document.getElementById('imagePreview').appendChild(wrap);
+        });
+      }
+    })
+    .catch(err => notify('error', 'Failed to load draft'));
+}
+
+// Delete draft
+function deleteDraft(draftId, cardEl) {
+  if (!draftId) return notify('error', 'Invalid draft ID');
+  if (!confirm('Are you sure you want to delete this draft?')) return;
+
+  fetch('/BatEstateExplorer/public/api/delete_draft.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: draftId })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        notify('success', 'Draft deleted successfully!');
+        cardEl.remove();
+      } else {
+        notify('error', data.error || 'Failed to delete draft');
+      }
+    })
+    .catch(() => notify('error', 'Network error while deleting draft'));
 }
