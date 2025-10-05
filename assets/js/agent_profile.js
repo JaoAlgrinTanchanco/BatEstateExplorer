@@ -26,6 +26,31 @@ function notify(type, message) {
 window.currentDraftId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    //property type
+    const propertyType = document.getElementById('property_type');
+    const bedrooms = document.getElementById('bedrooms');
+    const bathrooms = document.getElementById('bathrooms');
+
+    if (!propertyType || !bedrooms || !bathrooms) return;
+
+    const toggleBedroomsBathrooms = () => {
+        if (propertyType.value === 'Lot') {
+            bedrooms.value = '';
+            bathrooms.value = '';
+            bedrooms.disabled = true;
+            bathrooms.disabled = true;
+        } else {
+            bedrooms.disabled = false;
+            bathrooms.disabled = false;
+        }
+    };
+
+    // Initial check
+    toggleBedroomsBathrooms();
+
+    // Listen for changes
+    propertyType.addEventListener('change', toggleBedroomsBathrooms);
+
   // -------------------------
   // Image Upload Initialization
   // -------------------------
@@ -253,6 +278,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initDraftCards();
 }); //END OF DOM
+
+// Open edit modal
+function openModal(propertyId) {
+    const modal = document.getElementById(`editModal-${propertyId}`);
+    if (!modal) return;
+    modal.style.display = 'flex'; // or 'block', depending on your CSS
+}
+
+// Close edit modal
+function closeModal(propertyId) {
+    const modal = document.getElementById(`editModal-${propertyId}`);
+    if (!modal) return;
+    modal.style.display = 'none';
+}
 
 // Global functions
 function toggleSoldBy(select, propertyId) {
