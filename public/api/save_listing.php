@@ -8,9 +8,7 @@ try {
     // Check logged-in user
     // =========================
     $user_data = get_logged_in_user($pdo);
-    if (!$user_data) {
-        throw new Exception("No logged in user detected.");
-    }
+    if (!$user_data) throw new Exception("No logged in user detected.");
 
     // Only allow associate_agent or direct_agent
     if (!in_array($user_data['user_type'], ['associate_agent', 'direct_agent'])) {
@@ -47,7 +45,7 @@ try {
     // =========================
     // Validate image upload
     // =========================
-    if (!isset($_FILES['images']) || empty($_FILES['images']['tmp_name'])) {
+    if (!isset($_FILES['images']) || empty($_FILES['images']['tmp_name'][0])) {
         echo json_encode([
             'success' => false,
             'error'   => 'Please upload at least one property image.',
@@ -116,16 +114,46 @@ try {
         ];
     }
 
+    // =========================
+    // Delete draft if draft_id is provided
+    // =========================
+    $draftId = intval($_POST['draft_id'] ?? 0);
+    $deletedDraftDebug = null;
+
+    if ($draftId > 0) {
+        try {
+            $stmtDraft = $pdo->prepare("SELECT image_path FROM property_drafts WHERE id = ? AND user_id = ?");
+            $stmtDraft->execute([$draftId, $user_data['id']]);
+            $draft = $stmtDraft->fetch(PDO::FETCH_ASSOC);
+
+            if ($draft && !empty($draft['image_path'])) {
+                $paths = array_filter(explode(',', $draft['image_path']));
+                foreach ($paths as $p) {
+                    $file = str_replace('/', DIRECTORY_SEPARATOR, $p);
+                    if (file_exists($file)) unlink($file);
+                }
+            }
+
+            $stmtDel = $pdo->prepare("DELETE FROM property_drafts WHERE id = ? AND user_id = ?");
+            $stmtDel->execute([$draftId, $user_data['id']]);
+
+        } catch (Exception $e) {
+            $deletedDraftDebug = $e->getMessage();
+        }
+    }
+
     $pdo->commit();
 
     echo json_encode([
         'success' => true,
         'message' => 'Property submitted successfully! Awaiting admin approval.',
         'property_id' => $property_id,
+        'deleted_draft_id' => $draftId > 0 ? $draftId : null,
         'debug' => [
             'POST' => $_POST,
             'FILES' => $_FILES,
-            'uploadedImages' => $uploadedImages
+            'uploadedImages' => $uploadedImages,
+            'deletedDraftDebug' => $deletedDraftDebug
         ]
     ]);
 

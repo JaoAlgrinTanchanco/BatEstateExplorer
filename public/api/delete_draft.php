@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+// Get draft ID from JSON payload
 $data = json_decode(file_get_contents('php://input'), true);
 $draftId = intval($data['id'] ?? 0);
 
@@ -18,33 +19,61 @@ if (!$draftId) {
 
 $userId = $_SESSION['user_id'];
 
-// Step 1: Fetch draft to get images
-$stmt = $conn->prepare("SELECT image_path FROM property_drafts WHERE id = ? AND user_id = ?");
-$stmt->bind_param("ii", $draftId, $userId);
-$stmt->execute();
-$result = $stmt->get_result();
+try {
+    // Step 1: Fetch draft and its image paths
+    $stmt = $conn->prepare("SELECT image_path FROM property_drafts WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $draftId, $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $draft = $result->fetch_assoc();
 
-if ($draft = $result->fetch_assoc()) {
+    if (!$draft) {
+        throw new Exception('Draft not found');
+    }
+
+    $deletedFiles = [];
+    $resolvedPaths = [];
+
     if (!empty($draft['image_path'])) {
-        $images = array_filter(explode(',', $draft['image_path']));
-        foreach ($images as $imgPath) {
-            $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/' . $imgPath;
-            if (file_exists($fullPath)) {
-                @unlink($fullPath); // delete the file, suppress errors
+        $paths = array_filter(explode(',', $draft['image_path']));
+        $projectRoot = realpath(__DIR__ . '/../../'); // BatEstateExplorer root
+
+        foreach ($paths as $p) {
+            // Normalize slashes and prepend project root
+            $absPath = $projectRoot . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $p);
+            $resolvedPaths[$p] = $absPath;
+
+            if (file_exists($absPath)) {
+                if (unlink($absPath)) {
+                    $deletedFiles[] = $absPath;
+                }
             }
         }
     }
 
-    // Step 2: Delete the draft record
-    $delStmt = $conn->prepare("DELETE FROM property_drafts WHERE id = ? AND user_id = ?");
-    $delStmt->bind_param("ii", $draftId, $userId);
+    // Step 2: Delete draft from DB
+    $stmt = $conn->prepare("DELETE FROM property_drafts WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $draftId, $userId);
+    $stmt->execute();
 
-    if ($delStmt->execute()) {
-        echo json_encode(['success' => true]);
-    } else {
-        echo json_encode(['success' => false, 'error' => $delStmt->error]);
-    }
-
-} else {
-    echo json_encode(['success' => false, 'error' => 'Draft not found']);
+    echo json_encode([
+        'success' => true,
+        'debug' => [
+            'draft_id' => $draftId,
+            'image_paths_in_db' => $draft['image_path'] ?? '',
+            'resolved_paths' => $resolvedPaths,
+            'deleted_files' => $deletedFiles
+        ]
+    ]);
+} catch (Exception $e) {
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage(),
+        'debug' => [
+            'draft_id' => $draftId,
+            'image_paths_in_db' => $draft['image_path'] ?? '',
+            'resolved_paths' => $resolvedPaths ?? [],
+            'deleted_files' => $deletedFiles ?? []
+        ]
+    ]);
 }
