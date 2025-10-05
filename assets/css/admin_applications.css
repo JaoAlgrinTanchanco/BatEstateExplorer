@@ -143,24 +143,23 @@
 .applicant-avatar {
     flex-shrink: 0;
     width: 60px;
-    height: 60px;
+    aspect-ratio: 1 / 1;  /* Maintain square ratio */
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .avatar-img {
-    width: 60px;
-    height: 60px;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
-    object-fit: cover;
+    object-fit: cover; /* Cover keeps aspect ratio, fills container */
 }
 
 .default-avatar {
     font-size: 2rem;
     color: #aaa;
 }
-
 
 .applicant-info {
   display: flex;

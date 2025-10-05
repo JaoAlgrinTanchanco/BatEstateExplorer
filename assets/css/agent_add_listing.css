@@ -1,6 +1,7 @@
 /* ===========================
    Add Listing Form - Modern Grid Look
 =========================== */
+
 #addListingForm {
   display: block;
   width: 100%;
@@ -157,26 +158,6 @@
   transform: scale(1.05);
 }
 
-/* ===========================
-   Submit Button
-=========================== */
-.btn-submit {
-  margin-top: auto;       /* pushes it down */
-  background: #111;
-  color: #fff;
-  padding: 0.8rem 1.25rem;
-  border: none;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.25s ease, transform 0.15s ease;
-}
-.btn-submit:hover {
-  background: #333;
-  transform: translateY(-2px);
-}
-
 /* =========================
    Listing Fee Modal Styles
 ========================= */
@@ -308,6 +289,94 @@
 
 .img-wrap .remove-img:hover {
   background: rgba(220, 53, 69, 0.85); /* red hover effect */
+}
+
+/* ==========================
+   Draft & Save Listing Buttons
+========================== */
+.btn-draft {
+  flex: 0 0 auto;                /* small, does not stretch */
+  margin-top: auto;              /* pushes it down */
+  background: #111;
+  color: #fff;
+  padding: 0.8rem 1.25rem;
+  border: none;
+  border-radius: 12px 0 0 12px; /* top-left & bottom-left rounded, right corners squared */
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.15s ease;
+}
+
+.btn-draft:hover {
+  background: #333;
+  transform: translateY(-2px);
+}
+
+.btn-submit {
+  flex: 1;                       /* fills remaining row space */
+  margin-top: auto;
+  background: #111;
+  color: #fff;
+  padding: 0.8rem 1.25rem;
+  border: none;
+  border-radius: 0 12px 12px 0;  /* top-right & bottom-right rounded, left corners squared */
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.15s ease;
+}
+
+.btn-submit:hover {
+  background: #333;
+  transform: translateY(-2px);
+}
+
+/* ==========================
+   Draft Cards
+========================== */
+.draft-container {
+    margin-bottom: 20px;
+}
+
+.draft-card {
+    position: relative;
+    background: #f5f5f5;
+    padding: 15px 35px 15px 15px; /* space for X button */
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Delete X button */
+.delete-draft {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: #e74c3c;
+    color: #fff;
+    font-weight: bold;
+    width: 22px;
+    height: 22px;
+    text-align: center;
+    line-height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.delete-draft:hover {
+    background: #c0392b;
+}
+
+/* ==========================
+   Add Listing Form Actions
+========================== */
+.add_listing_actions {
+    display: flex;
+    gap: 1px;
+    width: 100%;
+    align-items: center;
 }
 
 
