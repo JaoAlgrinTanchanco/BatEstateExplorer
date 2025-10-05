@@ -179,21 +179,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const listingFee = 20;
 
     if (!form.checkValidity()) return form.reportValidity();
-    if (!window.selectedFiles.length) return notify('error', 'Please upload at least one image.');
+
+    // Accept both new files and draft images
+    const totalImages = (window.selectedFiles?.length || 0) + (window.draftImages?.length || 0);
+    if (totalImages === 0) return notify('error', 'Please upload at least one image.');
 
     const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g, ''));
     if (walletBalance < listingFee) return notify('error', 'Insufficient wallet balance.');
 
     // Open listing fee modal
-    window.openListingFeeModal?.();
+    document.getElementById('listingFeeModal').style.display = 'flex';
   });
 
+  function closeListingFeeModal() {
+    document.getElementById('listingFeeModal').style.display = 'none';
+  }
+  window.closeListingFeeModal = closeListingFeeModal;
+
+  // -------------------------
   // Pay Listing Fee & Submit
+  // -------------------------
+
   document.getElementById('payListingFeeBtn')?.addEventListener('click', async () => {
     const form = document.getElementById('addListingForm');
     const walletBalanceEl = document.getElementById('agentWalletBalance');
     const fd = new FormData(form);
-    window.selectedFiles.forEach(f => fd.append('images[]', f));
+
+    // Append images
+    window.selectedFiles.forEach(f => {
+      if (f instanceof File) {
+        // New uploaded file
+        fd.append('images[]', f);
+      } else if (typeof f === 'string') {
+        // Draft image URL
+        fd.append('existing_images[]', f);
+      }
+    });
+
+    // If editing a draft, send the draft ID
+    if (window.currentDraftId) {
+      fd.append('draft_id', window.currentDraftId);
+    }
 
     try {
       // Step 1: Charge listing fee
@@ -205,18 +231,23 @@ document.addEventListener('DOMContentLoaded', () => {
       // Step 2: Save listing
       const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
       const saveData = await saveRes.json();
+
       if (saveData.success) {
         notify('success', 'Listing submitted! Awaiting admin approval.');
         window.closeListingFeeModal?.();
         form.reset();
         window.resetImageUpload?.();
-      } else notify('error', 'Listing fee paid but failed to save listing: ' + (saveData.error || 'Unknown error'));
+        window.currentDraftId = null;
+      } else {
+        notify('error', 'Listing fee paid but failed to save listing: ' + (saveData.error || 'Unknown error'));
+      }
+
     } catch (err) {
       notify('error', err.message || 'An error occurred.');
     }
   });
 
-initDraftCards();
+  initDraftCards();
 }); //END OF DOM
 
 // Global functions
@@ -383,20 +414,22 @@ function loadDraftIntoForm(draftId) {
     .then(data => {
       if (data.error) return notify('error', data.error);
 
-      document.getElementById('title').value = data.title || '';
-      document.getElementById('location').value = data.location || '';
-      document.getElementById('price').value = data.price || '';
-      document.getElementById('lot_size').value = data.lot_size || '';
+      // Fill form fields
+      document.getElementById('title').value         = data.title || '';
+      document.getElementById('location').value      = data.location || '';
+      document.getElementById('price').value         = data.price || '';
+      document.getElementById('lot_size').value      = data.lot_size || '';
       document.getElementById('property_type').value = data.property_type || '';
-      document.getElementById('bedrooms').value = data.bedrooms || '';
-      document.getElementById('bathrooms').value = data.bathrooms || '';
-      document.getElementById('description').value = data.description || '';
+      document.getElementById('bedrooms').value      = data.bedrooms || '';
+      document.getElementById('bathrooms').value     = data.bathrooms || '';
+      document.getElementById('description').value   = data.description || '';
 
-      // Reset images first
+      // Reset previous images
       window.resetImageUpload?.();
 
-      // Load existing images into preview
+      // Render draft images
       if (Array.isArray(data.images)) {
+        const preview = document.getElementById('imagePreview');
         data.images.forEach(src => {
           const wrap = document.createElement('div');
           wrap.className = 'img-wrap';
@@ -410,12 +443,20 @@ function loadDraftIntoForm(draftId) {
           removeBtn.type = 'button';
           removeBtn.className = 'remove-img';
           removeBtn.innerHTML = '&times;';
-          removeBtn.addEventListener('click', () => wrap.remove()); // optional: mark for deletion in update
+          removeBtn.addEventListener('click', () => {
+            wrap.remove();
+            window.selectedFiles = window.selectedFiles.filter(f => f !== src);
+          });
           wrap.appendChild(removeBtn);
 
-          document.getElementById('imagePreview').appendChild(wrap);
+          preview.appendChild(wrap);
+
+          // Push draft image URL into selectedFiles
+          window.selectedFiles.push(src);
         });
       }
+
+      window.currentDraftId = draftId;
     })
     .catch(err => notify('error', 'Failed to load draft'));
 }
