@@ -43,9 +43,8 @@
 
         // Fetch all properties for this agent
         $stmt = $conn->prepare("
-            SELECT 
-                p.*,
-                sa.id AS sold_by_agent_id,
+            SELECT DISTINCT p.*, 
+                sa.id AS sold_by_agent_id, 
                 su.email AS sold_by_email
             FROM properties p
             LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
@@ -239,7 +238,14 @@
 
                 <div class="listing-container">
                 <?php if (!empty($listings)): ?>
+                    <?php
+                        $listings = array_values(array_reduce($listings, function($carry, $item) {
+                            $carry[$item['id']] = $item;
+                            return $carry;
+                        }, []));
+                    ?>
                     <?php foreach ($listings as $property): 
+                    
                         // Determine ownership type
                         $isOwnedByAgent = ($property['agent_id'] == $agent_id);
                         $ownership = $isOwnedByAgent ? 'Owned' : 'Shared';
@@ -255,7 +261,8 @@
                         if (!empty($property['images']) && isset($property['images'][0]['image_path'])) {
                             $first_img_src = "/BatEstateExplorer/" . ltrim($property['images'][0]['image_path'], '/');
                         }
-                    ?>
+                    ?> 
+                        <?php echo "<!-- ID: {$property['id']} -->"; ?>
                         <div class="listing-card">
                             <div class="listing-thumb">
                                 <?php if ($first_img_src): ?>
