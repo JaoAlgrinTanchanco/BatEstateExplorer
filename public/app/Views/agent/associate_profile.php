@@ -121,16 +121,20 @@
         $total_reviews = $row['total_reviews'] ?? 0;
         $stmt->close();
 
-        // Fetch reviews with user info and primary image
+        // Fetch reviews with user info and one property image (primary preferred)
         $stmt = $conn->prepare("
-            SELECT 
-                pr.rating, pr.review_text,
+            SELECT pr.rating, pr.review_text,
                 u.first_name, u.last_name, u.email,
                 p.title, pi.image_path
             FROM property_reviews pr
             JOIN users u ON pr.user_id = u.id
             JOIN properties p ON pr.property_id = p.id
-            LEFT JOIN property_images pi ON pi.property_id = p.id AND pi.is_primary = 1
+            LEFT JOIN (
+                SELECT property_id, image_path
+                FROM property_images
+                GROUP BY property_id
+                ORDER BY is_primary DESC, id ASC
+            ) pi ON pi.property_id = p.id
             WHERE p.agent_id = ?
             ORDER BY pr.created_at DESC
         ");
@@ -140,14 +144,11 @@
         $stmt->close();
     }
 
-    // Debug log
-    echo "<script>console.log('Company ID: {$company_id}, Company Name: " . addslashes($company_name) . "');</script>";
-
-    // Fetch all properties for company
+    // Fetch available properties for company
     if ($company_id > 0) {
         $stmt = $conn->prepare("
             SELECT 
-                p.id, p.title, p.location, p.price, p.bedrooms, p.bathrooms, p.sqm, p.status, p.created_at,
+                p.id, p.title, p.location, p.price, p.bedrooms, p.bathrooms, p.lot_size, p.created_at,
                 a.id AS agent_id, CONCAT(u.first_name, ' ', u.last_name) AS created_by,
                 sa.id AS sold_agent_id, CONCAT(su.first_name, ' ', su.last_name) AS sold_by
             FROM properties p
@@ -155,8 +156,8 @@
             LEFT JOIN users u ON a.user_id = u.id
             LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
             LEFT JOIN users su ON sa.user_id = su.id
-            WHERE a.company_id = ?
-            ORDER BY p.created_at DESC
+            WHERE a.company_id = ? AND p.status = 'available'
+            ORDER BY p.created_at DESC;
         ");
         $stmt->bind_param("i", $company_id);
         $stmt->execute();
@@ -693,8 +694,7 @@
                             <p>Price: ₱<?= number_format($row['price'], 2); ?></p>
                             <p>Bedrooms: <?= (int)$row['bedrooms']; ?></p>
                             <p>Bathrooms: <?= (int)$row['bathrooms']; ?></p>
-                            <p>Size (sqm): <?= number_format($row['sqm'], 2); ?></p>
-                            <p><?= ucfirst($row['status']); ?></p>
+                            <p>Lot Size: <?= number_format($row['lot_size'], 2); ?></p>
                             <p>By: <?= !empty($row['created_by']) ? htmlspecialchars($row['created_by']) : 'N/A'; ?></p>
                             <p>Sold By: <?= !empty($row['sold_by']) ? htmlspecialchars($row['sold_by']) : 'N/A'; ?></p>
                         </div>

@@ -1,132 +1,136 @@
 <?php
-    if (!isset($user)) {die('Access denied.');}
+    if (!isset($user)) die('Access denied.');
 
-    // Use the centralized notification system
+    // Centralized notification system
     require_once __DIR__ . '/../../../../components/notification.php';
+
+    // Show flash messages
+    foreach (['success', 'error'] as $type) {
+        if (!empty($_SESSION['flash_' . $type])): ?>
+            <div class="alert alert-<?= $type === 'success' ? 'success' : 'danger' ?>">
+                <?= $_SESSION['flash_' . $type]; unset($_SESSION['flash_' . $type]); ?>
+            </div>
+        <?php endif;
+    }
 
     // Detect active tab
     $tab = $_GET['tab'] ?? 'overview';
 
-    // Initialize listings array
-    $listings = [];
-
-    // Determine agent_id
-    $agent_id = 0;
-    if ($user['user_type'] === 'direct') {
-        $agent_id = (int)$user['id']; // direct agents: user_id is agent_id
-    } else {
-        // associates: fetch agent mapping
-        $stmt = $conn->prepare("SELECT id FROM agents WHERE user_id = ?");
-        $stmt->bind_param("i", $user['id']);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $agent = $res ? $res->fetch_assoc() : null;
-        $stmt->close();
-
-        $agent_id = $agent ? (int)$agent['id'] : 0;
-    }
-
-    // Initialize analytics variables
+    // Initialize
+    $listings = $reviews = [];
     $avg_rating = 0;
     $total_reviews = 0;
-    $reviews = [];
 
-    // Fetch agent's properties
-    if ($agent_id) {
-        // Fetch properties
-        $stmt = $conn->prepare("
-            SELECT *
-            FROM properties
-            WHERE agent_id = ? OR sold_by_agent_id = ?
-            ORDER BY created_at DESC
+    // Get agent_id from users.id
+    $stmt = $conn->prepare("SELECT id FROM agents WHERE user_id = ?");
+    $stmt->bind_param("i", $user['id']);
+    $stmt->execute();
+    $agentRow = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    $agent_id = $agentRow ? (int)$agentRow['id'] : 0;
+
+    // Fetch all properties for this agent (all statuses)
+    $stmt = $conn->prepare("
+        SELECT p.*, sa.id AS sold_by_agent_id, su.email AS sold_by_email
+        FROM properties p
+        LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
+        LEFT JOIN users su ON sa.user_id = su.id
+        WHERE p.listed_by_agent_id = ? OR p.sold_by_agent_id = ? OR p.agent_id = ?
+        ORDER BY p.created_at DESC
+    ");
+    $stmt->bind_param("iii", $agent_id, $agent_id, $agent_id);
+    $stmt->execute();
+    $listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    // Fetch all images for these properties
+    if (!empty($listings)) {
+        $propertyIds = array_column($listings, 'id');
+        $placeholders = implode(',', array_fill(0, count($propertyIds), '?'));
+        $types = str_repeat('i', count($propertyIds));
+
+        $stmtImg = $conn->prepare("
+            SELECT property_id, image_path, is_primary
+            FROM property_images
+            WHERE property_id IN ($placeholders)
+            ORDER BY is_primary DESC, id ASC
         ");
-        $stmt->bind_param("ii", $agent_id, $agent_id);
+
+        $params = array_merge([$types], $propertyIds);
+        $refs = [];
+        foreach ($params as $key => $value) $refs[$key] = &$params[$key];
+        call_user_func_array([$stmtImg, 'bind_param'], $refs);
+
+        $stmtImg->execute();
+        $allImages = $stmtImg->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmtImg->close();
+
+        $imagesGrouped = [];
+        foreach ($allImages as $img) {
+            $imagesGrouped[$img['property_id']][] = [
+                'image_path' => $img['image_path'],
+                'is_primary' => $img['is_primary']
+            ];
+        }
+
+        foreach ($listings as &$property) {
+            $property['images'] = $imagesGrouped[$property['id']] ?? [];
+        }
+    }
+
+    // Reviews & ratings (if analytics tab)
+    if ($tab === 'analytics') {
+        // Average rating and total reviews
+        $stmt = $conn->prepare("
+            SELECT AVG(pr.rating) AS avg_rating, COUNT(*) AS total_reviews
+            FROM property_reviews pr
+            JOIN properties p ON pr.property_id = p.id
+            WHERE p.agent_id = ?
+        ");
+        $stmt->bind_param("i", $agent_id);
         $stmt->execute();
-        $res = $stmt->get_result();
-        $properties = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        $row = $stmt->get_result()->fetch_assoc();
+        $avg_rating = $row['avg_rating'] ? round($row['avg_rating'], 1) : 0;
+        $total_reviews = $row['total_reviews'] ?? 0;
         $stmt->close();
 
-        foreach ($properties as $property) {
-            $stmtImg = $conn->prepare("
-                SELECT image_path
+        // Fetch reviews with user info and one property image (primary preferred)
+        $stmt = $conn->prepare("
+            SELECT pr.rating, pr.review_text,
+                u.first_name, u.last_name, u.email,
+                p.title, pi.image_path
+            FROM property_reviews pr
+            JOIN users u ON pr.user_id = u.id
+            JOIN properties p ON pr.property_id = p.id
+            LEFT JOIN (
+                SELECT property_id, image_path
                 FROM property_images
-                WHERE property_id = ?
+                GROUP BY property_id
                 ORDER BY is_primary DESC, id ASC
-            ");
-            $stmtImg->bind_param("i", $property['id']);
-            $stmtImg->execute();
-            $resImg = $stmtImg->get_result();
-            $images = $resImg ? $resImg->fetch_all(MYSQLI_ASSOC) : [];
-            $stmtImg->close();
-
-            $property['images'] = $images;
-            $listings[] = $property;
-        }
-
-        // If Analytics tab, fetch reviews and rating
-        if ($tab === 'analytics') {
-            // Average rating & total reviews
-            $stmt = $conn->prepare("
-                SELECT AVG(pr.rating) AS avg_rating, COUNT(*) AS total_reviews
-                FROM property_reviews pr
-                JOIN properties p ON pr.property_id = p.id
-                WHERE p.agent_id = ?
-            ");
-            $stmt->bind_param("i", $agent_id);
-            $stmt->execute();
-            $res = $stmt->get_result();
-            $row = $res ? $res->fetch_assoc() : null;
-            $avg_rating = $row['avg_rating'] ? round($row['avg_rating'], 1) : 0;
-            $total_reviews = $row['total_reviews'] ?? 0;
-            $stmt->close();
-
-            // Fetch reviews
-            $stmt = $conn->prepare("
-                SELECT pr.rating, pr.review_text, u.first_name, u.last_name, u.email, p.title, pi.image_path
-                FROM property_reviews pr
-                JOIN users u ON pr.user_id = u.id
-                JOIN properties p ON pr.property_id = p.id
-                LEFT JOIN property_images pi 
-                    ON pi.property_id = p.id AND pi.is_primary = 1
-                WHERE p.agent_id = ?
-                ORDER BY pr.created_at DESC
-            ");
-            $stmt->bind_param("i", $agent_id);
-            $stmt->execute();
-            $res = $stmt->get_result();
-            $reviews = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-            $stmt->close();
-        }
-    }
-
-    // 🔹 Fetch wallet balance for the logged-in user (works for both direct & associate agents)
-    $walletBalance = 0.00;
-    if (isset($user['id'])) {
-        $stmtWallet = $conn->prepare("
-            SELECT wallet_balance 
-            FROM users 
-            WHERE id = ?
+            ) pi ON pi.property_id = p.id
+            WHERE p.agent_id = ?
+            ORDER BY pr.created_at DESC
         ");
-        $stmtWallet->bind_param("i", $user['id']);
-        $stmtWallet->execute();
-        $resWallet = $stmtWallet->get_result();
-        $rowWallet = $resWallet ? $resWallet->fetch_assoc() : null;
-        $walletBalance = $rowWallet ? (float)$rowWallet['wallet_balance'] : 0.00;
-        $stmtWallet->close();
+        $stmt->bind_param("i", $agent_id);
+        $stmt->execute();
+        $reviews = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
     }
 
-    // Format wallet balance for display
+    // Wallet balance
+    $walletBalance = 0.00;
+    $stmt = $conn->prepare("SELECT wallet_balance FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user['id']);
+    $stmt->execute();
+    $rowWallet = $stmt->get_result()->fetch_assoc();
+    $walletBalance = $rowWallet ? (float)$rowWallet['wallet_balance'] : 0.00;
+    $stmt->close();
     $walletBalanceFormatted = number_format($walletBalance, 2, '.', ',');
 
-    // Fetch last 10 transactions for this user (works for both direct & associate agents)
+    // Last 10 transactions
     $transactions = [];
     $stmt = $conn->prepare("
-        SELECT 
-            id,
-            property,
-            amount,
-            status,
-            method,
+        SELECT id, property, amount, status, method,
             DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS date
         FROM transactions
         WHERE user_id = ?
@@ -136,14 +140,12 @@
     $stmt->bind_param("i", $user['id']);
     $stmt->execute();
     $res = $stmt->get_result();
-    if ($res && $res->num_rows > 0) {
-        $transactions = $res->fetch_all(MYSQLI_ASSOC);
-    }
+    if ($res && $res->num_rows > 0) $transactions = $res->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
-    // Fetch agent info for wallet tab
+    // Agent info
     $agentInfo = [
-        'name'  => trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')),
+        'name'  => $user['first_name'] . ' ' . $user['last_name'],
         'phone' => $user['phone'] ?? 'N/A'
     ];
 ?>
@@ -175,8 +177,22 @@
                 <div class="agent-sidebar">
                     <!-- Sidebar Header -->
                     <div class="sidebar-header">
-                        <i class="fa-solid fa-user-tie sidebar-icon"></i>
-                        <h2>Profile</h2>
+                        <?php if (!empty($profileImage)): ?>
+                            <img 
+                                src="<?= htmlspecialchars($profileImage) ?>" 
+                                alt="Profile Picture" 
+                                class="profile-img" 
+                                onclick="window.location.href='?view=associate_profile&tab=overview'"
+                                style="cursor: pointer;"
+                            >
+                        <?php else: ?>
+                            <i 
+                                class="fa-solid fa-user-tie sidebar-icon" 
+                                onclick="window.location.href='?view=associate_profile&tab=overview'"
+                                style="cursor: pointer;"
+                            ></i>
+                        <?php endif; ?>
+                        <h2><?= htmlspecialchars($user['first_name'] ?? 'Profile') ?></h2>
                     </div>
 
                     <!-- Sidebar Nav -->
@@ -205,35 +221,48 @@
 
                 <div class="listing-container">
                 <?php if (!empty($listings)): ?>
+                    <?php
+                        $listings = array_values(array_reduce($listings, function($carry, $item) {
+                            $carry[$item['id']] = $item;
+                            return $carry;
+                        }, []));
+                    ?>
                     <?php foreach ($listings as $property): 
-                        $ownership = ($property['agent_id'] == $agent_id) ? 'Owned' : 'Shared';
+                    
+                        // Determine ownership type
+                        $isOwnedByAgent = ($property['listed_by_agent_id'] == $agent_id);
+                        $ownership = $isOwnedByAgent ? 'Owned' : 'Shared';
+
+                        // Determine listing type (Owned or Sold by another agent)
+                        $listingTypeSelected = !empty($property['sold_by_agent_id']) ? 'sold_by' : 'owned';
+                        $ownershipLabel = ($listingTypeSelected === 'sold_by' && !empty($property['sold_by_email'])) 
+                            ? "Sold by: " . htmlspecialchars($property['sold_by_email']) 
+                            : "Owned";
 
                         // Grab first uploaded image if available
                         $first_img_src = '';
-                        if (!empty($property['images'])) {
-                            $first_img_src = "/BatEstateExplorer/" . $property['images'][0]['image_path'];
+                        if (!empty($property['images']) && isset($property['images'][0]['image_path'])) {
+                            $first_img_src = "/BatEstateExplorer/" . ltrim($property['images'][0]['image_path'], '/');
                         }
-
-                        $listingTypeSelected = !empty($property['sold_by_agent_id']) ? 'sold_by' : 'owned';
-                        $ownershipLabel = $listingTypeSelected === 'sold_by' ? "Sold by: {$property['sold_by_email']}" : "Owned";
-                    ?>
+                    ?> 
+                        <?php echo "<!-- ID: {$property['id']} -->"; ?>
                         <div class="listing-card">
                             <div class="listing-thumb">
                                 <?php if ($first_img_src): ?>
-                                    <img src="<?= $first_img_src ?>" alt="Property Image">
+                                    <img src="<?= htmlspecialchars($first_img_src) ?>" alt="Property Image">
                                 <?php else: ?>
                                     <img src="/BatEstateExplorer/assets/images/no-image.png" alt="No Image Available">
                                 <?php endif; ?>
 
                                 <!-- Overlay buttons -->
                                 <div class="overlay">
-                                    <span onclick="openModal(<?= $property['id'] ?>)">Edit</span>
-                                    <form id="deleteForm-<?= $property['id'] ?>" 
+                                    <span onclick="openModal(<?= (int)$property['id'] ?>)">Edit</span>
+                                    <form id="deleteForm-<?= (int)$property['id'] ?>" 
                                         action="/BatEstateExplorer/public/api/delete_listing.php" 
                                         method="POST" 
                                         style="display:inline;">
-                                        <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
-                                        <button type="button" onclick="deleteListing(<?= $property['id'] ?>)" class="delete-listing-btn">
+                                        <input type="hidden" name="property_id" value="<?= (int)$property['id'] ?>">
+                                        <button type="button" onclick="deleteListing(<?= (int)$property['id'] ?>)" class="delete-listing-btn">
                                             Delete
                                         </button>
                                     </form>
@@ -241,40 +270,52 @@
                             </div>
 
                             <div class="details">
-                                <div class="info-row"><strong>Title:</strong> <span><?= htmlspecialchars($property['title']) ?></span></div>
-                                <div class="info-row"><strong>Location:</strong> <span><?= htmlspecialchars($property['location']) ?></span></div>
-                                <div class="info-row"><strong>Price:</strong> <span>₱<?= number_format($property['price'], 2) ?></span></div>
-                                <div class="info-row"><strong>Bedrooms:</strong> <span><?= htmlspecialchars($property['bedrooms']) ?></span></div>
-                                <div class="info-row"><strong>Bathrooms:</strong> <span><?= htmlspecialchars($property['bathrooms']) ?></span></div>
-                                <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($property['status']) ?></span></div>
+                                <div class="info-row"><strong>Title:</strong> <span><?= htmlspecialchars($property['title'] ?? 'N/A') ?></span></div>
+                                <div class="info-row"><strong>Location:</strong> <span><?= htmlspecialchars($property['location'] ?? 'N/A') ?></span></div>
+                                <div class="info-row"><strong>Price:</strong> <span>₱<?= number_format((float)($property['price'] ?? 0), 2) ?></span></div>
+                                <div class="info-row"><strong>Bedrooms:</strong> <span><?= htmlspecialchars($property['bedrooms'] ?? 0) ?></span></div>
+                                <div class="info-row"><strong>Bathrooms:</strong> <span><?= htmlspecialchars($property['bathrooms'] ?? 0) ?></span></div>
+                                <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($property['status'] ?? 'pending') ?></span></div>
                                 <div class="info-row"><strong>Listing Type:</strong> <span><?= $ownershipLabel ?></span></div>
                             </div>
                         </div>
 
                         <!-- Edit Modal -->
-                        <div id="editModal-<?= $property['id'] ?>" class="edit-modal-wrapper2">
+                        <div id="editModal-<?= (int)$property['id'] ?>" class="edit-modal-wrapper2">
                             <div class="edit-modal-content2">
                                 <!-- Close Button -->
-                                <span class="close2" onclick="closeModal(<?= $property['id'] ?>)">&times;</span>
+                                <span class="close2" onclick="closeModal(<?= (int)$property['id'] ?>)">&times;</span>
 
                                 <!-- Title -->
-                                <h2>Edit Listing: <?= htmlspecialchars($property['title']) ?></h2>
+                                <h2>Edit Listing: <?= htmlspecialchars($property['title'] ?? 'Untitled') ?></h2>
 
-                                <form id="editForm-<?= $property['id'] ?>" method="POST" action="/BatEstateExplorer/public/api/update_property.php" enctype="multipart/form-data">
-                                    <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
+                                <form id="editForm-<?= (int)$property['id'] ?>" 
+                                    method="POST" 
+                                    action="/BatEstateExplorer/public/api/update_property.php" 
+                                    enctype="multipart/form-data">
+                                    
+                                    <input type="hidden" name="property_id" value="<?= (int)$property['id'] ?>">
 
                                     <!-- Images on top -->
                                     <div class="form-group2">
                                         <div class="image-gallery2">
                                             <?php if (!empty($property['images'])): ?>
                                                 <?php foreach ($property['images'] as $img): ?>
+                                                    <?php 
+                                                        $imgPath = "/BatEstateExplorer/" . ltrim($img['image_path'], '/'); 
+                                                        $isPrimary = isset($img['is_primary']) && $img['is_primary'];
+                                                    ?>
                                                     <div class="image-item2">
-                                                        <img src="/BatEstateExplorer/<?= $img['image_path'] ?>" alt="Property Image">
-                                                        <input type="hidden" name="existing_images[]" value="<?= $img['image_path'] ?>">
+                                                        <img src="<?= htmlspecialchars($imgPath) ?>" alt="Property Image">
+                                                        <input type="hidden" name="existing_images[]" value="<?= htmlspecialchars($img['image_path']) ?>">
                                                         <label class="primary-label2">
-                                                            <input type="radio" name="primary_image" value="<?= $img['image_path'] ?>" <?= isset($img['is_primary']) && $img['is_primary'] ? 'checked' : '' ?>> Primary
+                                                            <input type="radio" 
+                                                                name="primary_image" 
+                                                                value="<?= htmlspecialchars($img['image_path']) ?>" 
+                                                                <?= $isPrimary ? 'checked' : '' ?>> Primary
                                                         </label>
-                                                        <button type="button" class="remove-img-btn2" onclick="markImageForRemoval(this, '<?= $img['image_path'] ?>')">×</button>
+                                                        <button type="button" class="remove-img-btn2" 
+                                                            onclick="markImageForRemoval(this, '<?= htmlspecialchars($img['image_path']) ?>')">×</button>
                                                     </div>
                                                 <?php endforeach; ?>
                                             <?php else: ?>
@@ -284,8 +325,8 @@
                                     </div>
 
                                     <div class="form-group2">
-                                        <label class="newImage" for="newImages-<?= $property['id'] ?>">Add New Images</label>
-                                        <input id="newImages-<?= $property['id'] ?>" type="file" name="new_images[]" multiple accept="image/*">
+                                        <label class="newImage" for="newImages-<?= (int)$property['id'] ?>">Add New Images</label>
+                                        <input id="newImages-<?= (int)$property['id'] ?>" type="file" name="new_images[]" multiple accept="image/*">
                                     </div>
 
                                     <!-- Form fields in 2-column grid -->
@@ -298,8 +339,8 @@
                                         <div class="form-group2">
                                             <label>Property Type</label>
                                             <select name="property_type" required>
-                                                <option value="Property" <?= $property['property_type']=='Property'?'selected':'' ?>>Property</option>
-                                                <option value="Lot" <?= $property['property_type']=='Lot'?'selected':'' ?>>Lot</option>
+                                                <option value="Property" <?= ($property['property_type'] ?? '') === 'Property' ? 'selected' : '' ?>>Property</option>
+                                                <option value="Lot" <?= ($property['property_type'] ?? '') === 'Lot' ? 'selected' : '' ?>>Lot</option>
                                             </select>
                                         </div>
 
@@ -307,17 +348,16 @@
                                             <label>Location</label>
                                             <select name="location" required>
                                                 <option value="">Select Location</option>
-                                                <?php
+                                                <?php 
                                                 $locations = [
                                                     "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
                                                     "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
                                                     "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
                                                     "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
                                                 ];
-
                                                 foreach ($locations as $loc): ?>
-                                                    <option value="<?= $loc ?>" <?= $property['location'] == $loc ? 'selected' : '' ?>>
-                                                        <?= $loc ?>
+                                                    <option value="<?= htmlspecialchars($loc) ?>" <?= ($property['location'] ?? '') === $loc ? 'selected' : '' ?>>
+                                                        <?= htmlspecialchars($loc) ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
@@ -325,52 +365,50 @@
 
                                         <div class="form-group2">
                                             <label>Price</label>
-                                            <input type="number" step="0.01" name="price" value="<?= $property['price'] ?>" required>
+                                            <input type="number" step="0.01" name="price" value="<?= htmlspecialchars($property['price']) ?>" required>
                                         </div>
 
                                         <div class="form-group2">
                                             <label>Bedrooms</label>
-                                            <input type="number" name="bedrooms" value="<?= $property['bedrooms'] ?>">
+                                            <input type="number" name="bedrooms" value="<?= htmlspecialchars($property['bedrooms']) ?>">
                                         </div>
 
                                         <div class="form-group2">
                                             <label>Bathrooms</label>
-                                            <input type="number" name="bathrooms" value="<?= $property['bathrooms'] ?>">
+                                            <input type="number" name="bathrooms" value="<?= htmlspecialchars($property['bathrooms']) ?>">
                                         </div>
 
                                         <div class="form-group2">
                                             <label>Lot Size (sqm)</label>
-                                            <input type="number" step="0.01" name="lot_size" value="<?= $property['lot_size'] ?>">
+                                            <input type="number" step="0.01" name="lot_size" value="<?= htmlspecialchars($property['lot_size']) ?>">
                                         </div>
 
                                         <div class="form-group2">
                                             <label>Listing Type</label>
-                                            <select name="listing_type" onchange="toggleSoldBy(this, <?= $property['id'] ?>)">
-                                                <option value="owned" <?= ($listingTypeSelected=='owned')?'selected':'' ?>>Owned</option>
-                                                <option value="sold_by" <?= ($listingTypeSelected=='sold_by')?'selected':'' ?>>Sold By</option>
+                                            <select name="listing_type" onchange="toggleSoldBy(this, <?= (int)$property['id'] ?>)">
+                                                <option value="owned" <?= ($listingTypeSelected === 'owned') ? 'selected' : '' ?>>Owned</option>
+                                                <option value="sold_by" <?= ($listingTypeSelected === 'sold_by') ? 'selected' : '' ?>>Sold By</option>
                                             </select>
                                         </div>
 
-                                        <div class="form-group2" id="soldByContainer-<?= $property['id'] ?>" style="display: <?= ($listingTypeSelected=='sold_by')?'block':'none' ?>;">
+                                        <div class="form-group2" id="soldByContainer-<?= (int)$property['id'] ?>" style="display: <?= ($listingTypeSelected === 'sold_by') ? 'block' : 'none' ?>;">
                                             <label>Agent Email</label>
-                                            <input type="email" name="sold_by_email" placeholder="Enter agent email" value="<?= ($listingTypeSelected=='sold_by')?$property['sold_by_email']:'' ?>">
+                                            <input type="email" name="sold_by_email" placeholder="Enter agent email" 
+                                                value="<?= ($listingTypeSelected === 'sold_by') ? htmlspecialchars($property['sold_by_email'] ?? '') : '' ?>">
                                         </div>
 
-                                        <!-- Full-width description -->
                                         <div class="form-group2 form-full2">
                                             <label>Description</label>
-                                            <textarea name="description"><?= htmlspecialchars($property['description']) ?></textarea>
+                                            <textarea name="description"><?= htmlspecialchars($property['description'] ?? '') ?></textarea>
                                         </div>
 
-                                        <!-- Full-width submit button -->
                                         <div class="form-group2 form-full2">
-                                            <button type="button" onclick="confirmEdit(<?= $property['id'] ?>)">Update Listing</button>
+                                            <button type="button" onclick="confirmEdit(<?= (int)$property['id'] ?>)">Update Listing</button>
                                         </div>
                                     </div>
                                 </form>
                             </div>
                         </div>
-
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div class="overview-card">
@@ -378,87 +416,109 @@
                     </div>
                 <?php endif; ?>
                 </div>
-
             <?php break; ?>
 
             <?php case 'add_listing': ?>
-                <h2>Add New Listing</h2>
-
-                <!-- 🔹 Centralized Notification Component -->
-                <?php require_once __DIR__ . '/../../../../components/notification.php'; ?>
-
-                <form id="addListingForm" 
-                    action="/BatEstateExplorer/public/api/direct_save_listing.php" 
-                    method="POST" 
-                    enctype="multipart/form-data">
-
-                    <div class="addListing-container">
-
-                        <!-- Card: Basic Info -->
-                        <div class="form-card">
-                            <h3 class="form-card-title">Basic Information</h3>
-                            
-                            <label for="title"><strong>Property Name</strong></label>
-                            <input type="text" id="title" name="title" required>
-
-                            <label for="location"><strong>Location</strong></label>
-                            <select id="location" name="location" required>
-                                <option value="">Select Location</option>
-                                <?php 
-                                    $locations = ["Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca","Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu","Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual","Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"];
-                                    foreach ($locations as $loc): echo "<option value='$loc'>$loc</option>"; endforeach;
-                                ?>
-                            </select>
-
-                            <!-- Property Images -->
-                            <label for="images"><strong>Upload Images</strong></label>
-                            <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
-                                <p>Drag & drop images here or click to browse</p>
-                                <input type="file" id="images" name="images[]" accept="image/*" multiple style="display:none;">
-                            </div>
-                            <div id="imagePreview" class="image-preview" aria-live="polite"></div>
-                        </div>
-
-                        <!-- Card: Property Details -->
-                        <div class="form-card">
-                            <h3 class="form-card-title">Property Details</h3>
-
-                            <label for="price"><strong>Price (₱)</strong></label>
-                            <input type="number" id="price" name="price" min="0" step="0.01" required>
-
-                            <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
-                            <input type="number" id="lot_size" name="lot_size" min="0" step="0.01">
-
-                            <label for="property_type"><strong>Property Type</strong></label>
-                            <select id="property_type" name="property_type" required>
-                                <option value="">-- Select Type --</option>
-                                <option value="Property">Property</option>
-                                <option value="Lot">Lot</option>
-                            </select>
-
-                            <label for="bedrooms"><strong>Bedrooms</strong></label>
-                            <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
-
-                            <label for="bathrooms"><strong>Bathrooms</strong></label>
-                            <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
-                        </div>
-
-                        <!-- Card: Description -->
-                        <div class="form-card">
-                            <h3 class="form-card-title">Description</h3>
-                            <label for="description"><strong>Description</strong></label>
-                            <textarea id="description" name="description" rows="4" required></textarea>
-
-                            <!-- Submit -->
-                            <button type="button" id="openListingModalBtn" class="btn-submit">Save Listing</button>
-                        </div>
-
+                <header class="content-header">
+                    <h2>Add Listings</h2>
+                </header>
+                <p>Drafts:</p>
+                <div id="draftContainer" class="draft-container">
+                    <?php
+                    // Example: fetch drafts from DB
+                    $stmt = $conn->prepare("SELECT id, title FROM property_drafts WHERE user_id = ?");
+                    $stmt->bind_param("i", $_SESSION['user_id']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    while ($draft = $result->fetch_assoc()):
+                    ?>
+                    <div class="draft-card" data-id="<?= $draft['id'] ?>">
+                        <span class="delete-draft">&times;</span>
+                        <?= htmlspecialchars($draft['title']) ?>
                     </div>
+                    <?php endwhile; ?>
+                </div>
+
+                <form id="addListingForm" enctype="multipart/form-data">
+                <div class="addListing-container">
+
+                    <!-- Card: Basic Info (with property images) -->
+                    <div class="form-card">
+                    <h3 class="form-card-title">Basic Information</h3>
+                    
+                    <label for="title"><strong>Property Name</strong></label>
+                    <input type="text" id="title" name="title" required>
+
+                    <label for="location"><strong>Location</strong></label>
+                    <select id="location" name="location" required>
+                        <option value="">Select Location</option>
+                        <?php
+                        $locations = [
+                            "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
+                            "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
+                            "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
+                            "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
+                        ];
+
+                        foreach ($locations as $loc): ?>
+                            <option value="<?= $loc ?>"><?= $loc ?></option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <!-- Property Images inside Basic Info -->
+                    <label for="images"><strong>Upload Images</strong></label>
+                    <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
+                        <p>Drag & drop images here or click to browse</p>
+                        <input type="file" id="images" accept="image/*" multiple style="display:none;"> 
+                    </div>
+                    <div id="imagePreview" class="image-preview" aria-live="polite"></div>
+                    </div>
+
+                    <!-- Card: Property Details -->
+                    <div class="form-card">
+                    <h3 class="form-card-title">Property Details</h3>
+
+                    <label for="price"><strong>Price (₱)</strong></label>
+                    <input type="number" id="price" name="price" min="0" step="0.01" required>
+
+                    <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
+                    <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
+
+                    <label for="property_type"><strong>Property Type</strong></label>
+                    <select id="property_type" name="property_type" required>
+                        <option value="">-- Select Type --</option>
+                        <option value="Property">Property</option>
+                        <option value="Lot">Lot</option>
+                    </select>
+
+                    <label for="bedrooms"><strong>Bedrooms</strong></label>
+                    <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
+
+                    <label for="bathrooms"><strong>Bathrooms</strong></label>
+                    <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
+                    </div>
+
+                    <!-- Card: Description (with submit button) -->
+                    <div class="form-card">
+                    <h3 class="form-card-title">Description</h3>
+                    <label for="description"><strong>Description</strong></label>
+                    <textarea id="description" name="description" rows="4" required></textarea>
+
+                    <!-- Submit Button moved here -->
+                    <div class="add_listing_actions">
+                        <button type="button" id="saveDraftBtn" class="btn-draft" data-url="/BatEstateExplorer/public/api/save_draft.php">
+                            Save Draft
+                        </button>
+                        <button type="button" id="openListingModalBtn" class="btn-submit">Save Listing (Balance: ₱<?= $walletBalanceFormatted ?? '0.00' ?>)</button>
+                    </div>
+                    </div>
+
+                </div>
                 </form>
 
                 <!-- Listing Fee Modal -->
                 <div id="listingFeeModal" class="deposit-modal" onclick="closeListingFeeModal(event)">
-                    <div class="modal-content" onclick="event.stopPropagation()">
+                    <div class="modal-content3" onclick="event.stopPropagation()">
                         <span class="close" onclick="closeListingFeeModal()">&times;</span>
                         <h2 class="modal-title">Listing Fee Payment</h2>
                         
@@ -489,19 +549,23 @@
                         </div>
                     </div>
                 </div>
+
             <?php break; ?>
 
             <?php case 'analytics': ?>
-                <h2>Performance Analytics</h2>
+                <header class="content-header">
+                    <h2>Analytics</h2>
+                </header>
 
                 <div class="analytics-wrapper">
 
-                    <!-- 🔹 Summary Card -->
+                    <!-- Analytics Summary Card Wrapper -->
                     <div class="analytics-summary-wrapper">
                         <div class="card analytics-summary">
+                            <h2>Performance Analytics</h2>
                             <h1><?= $avg_rating ?></h1>
                             <div class="stars">
-                                <?php for ($i=1; $i<=5; $i++): ?>
+                                <?php for($i = 1; $i <= 5; $i++): ?>
                                     <span class="star <?= $i <= round($avg_rating) ? 'filled' : '' ?>">★</span>
                                 <?php endfor; ?>
                             </div>
@@ -515,22 +579,42 @@
                         <?php if (!empty($reviews)): ?>
                             <?php foreach ($reviews as $r): 
                                 $user_name = trim($r['first_name'] . ' ' . $r['last_name']);
+
+                                // Reviewer profile picture (left)
+                                $reviewer_pfp = !empty($r['profile_image_path'])
+                                    ? "/BatEstateExplorer/storage/uploads/profile_images/" . basename($r['profile_image_path'])
+                                    : '/BatEstateExplorer/assets/images/default-profile-icon.png';
+
+                                // Original right-side image
                                 $image_path = !empty($r['image_path']) 
                                     ? "/BatEstateExplorer/" . $r['image_path'] 
-                                    : '/assets/images/default.jpg';
+                                    : '/BatEstateExplorer/assets/images/default.jpg';
                             ?>
                             <div class="review-card">
                                 <div class="review-left">
-                                    <div class="review-header">
-                                        <h4><?= htmlspecialchars($user_name) ?></h4>
-                                        <p class="review-email"><?= htmlspecialchars($r['email']) ?>:</p>
-                                        <span class="review-title"><?= htmlspecialchars($r['title']) ?></span>
+                                    <div class="review-header-inline">
+                                        <?php if (!empty($r['profile_image_path'])): ?>
+                                            <img src="<?= htmlspecialchars("/BatEstateExplorer/storage/uploads/profile_images/" . basename($r['profile_image_path'])) ?>" 
+                                                alt="<?= htmlspecialchars($user_name) ?>" class="reviewer-pfp-inline">
+                                        <?php else: ?>
+                                            <i class="fa-solid fa-user reviewer-pfp-icon-inline"></i>
+                                        <?php endif; ?>
+
+                                        <div class="reviewer-info-inline">
+                                            <span class="reviewer-name-inline"><?= htmlspecialchars($user_name) ?></span>
+                                            <i class="fa-solid fa-circle dot-icon"></i>
+                                            <span class="review-email-inline"><?= htmlspecialchars($r['email']) ?></span>
+                                            <i class="fa-solid fa-circle dot-icon"></i>
+                                            <span class="review-title-inline"><?= htmlspecialchars($r['title']) ?></span>
+                                        </div>
                                     </div>
+
                                     <div class="review-stars">
                                         <?php for($i = 1; $i <= 5; $i++): ?>
                                             <span class="star <?= $i <= $r['rating'] ? 'filled' : '' ?>">★</span>
                                         <?php endfor; ?>
                                     </div>
+
                                     <div class="review-text"><?= nl2br(htmlspecialchars($r['review_text'])) ?></div>
                                 </div>
                                 <div class="review-right">
@@ -567,7 +651,14 @@
                     <h3>Select a Property</h3>
                     <div id="propertyList" class="property-list">
                         <?php if (!empty($listings)): ?>
+                            <?php
+                                $listings = array_values(array_reduce($listings, function($carry, $item) {
+                                $carry[$item['id']] = $item;
+                                return $carry;
+                                }, []));
+                            ?>
                             <?php foreach ($listings as $property): 
+                                // Check if property has images
                                 $first_img_src = !empty($property['images']) && !empty($property['images'][0]['image_path'])
                                     ? "/BatEstateExplorer/" . $property['images'][0]['image_path'] 
                                     : "/BatEstateExplorer/assets/images/no-image.png"; // fallback placeholder
@@ -741,7 +832,6 @@
                 </header>
 
                 <button id="editProfileBtn">Edit Profile</button>
-
                 <div class="overview-container">
                     <div class="profile-view">
 
@@ -766,29 +856,6 @@
                             <div class="info-row"><strong>Training:</strong> <span><?= htmlspecialchars($user['training'] ?? '-') ?></span></div>
                         </div>
 
-                        <!-- Documents -->
-                        <div class="overview-card">
-                            <h3>Documents</h3>
-                            <?php
-                            $docs = [
-                                'Broker License' => 'broker_license_path',
-                                'PRC License' => 'prc_license_path',
-                                'Resume' => 'resume_path',
-                                'Valid ID' => 'valid_id_path',
-                                'Additional Docs' => 'additional_docs_path'
-                            ];
-                            foreach ($docs as $label => $field):
-                            ?>
-                                <div class="info-row"><strong><?= $label ?>:</strong>
-                                    <?php if (!empty($user[$field])): ?>
-                                        <a href="/BatEstateExplorer/public/api/view_document.php?file=<?= urlencode(basename($user[$field])) ?>&field=<?= $field ?>" target="_blank">View</a>
-                                    <?php else: ?>
-                                        -
-                                    <?php endif; ?>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-
                         <!-- Account Status -->
                         <div class="overview-card">
                             <h3>Account Status</h3>
@@ -801,7 +868,7 @@
                         <!-- Professional Details -->
                         <div class="overview-card">
                             <h3>Professional Details</h3>
-                            <div class="info-row"><strong>Agent Type:</strong> <span><?= htmlspecialchars($user['agent_type'] ?? '-') ?></span></div>
+                            <div class="info-row"><strong>Agent Type:</strong> <span><?= ($user['user_type'] ?? '') === 'associate_agent' ? 'Associate Agent' : (($user['user_type'] ?? '') === 'direct_agent' ? 'Direct Agent' : '-') ?></span></div>
                             <div class="info-row"><strong>Broker ID:</strong> <span><?= htmlspecialchars($user['broker_id'] ?? '-') ?></span></div>
                             <div class="info-row"><strong>License Number:</strong> <span><?= htmlspecialchars($user['license_number'] ?? '-') ?></span></div>
                             <div class="info-row"><strong>Years of Experience:</strong> <span><?= htmlspecialchars($user['experience_years'] ?? '-') ?></span></div>
@@ -809,7 +876,7 @@
                             <div class="info-row"><strong>Bio:</strong> <span><?= nl2br(htmlspecialchars($user['bio'] ?? '-')) ?></span></div>
                         </div>
 
-                        <!-- Danger Zone -->
+                        <!-- Danger Zone in new grid row -->
                         <div class="overview-card danger-zone">
                             <h3>Danger Zone</h3>
                             <p class="danger-note">⚠️ Once deleted, this account <strong>cannot be recovered</strong>. Please proceed with caution.</p>
@@ -820,49 +887,72 @@
                     <div id="profileMessage"></div>
                 </div>
 
-                <!-- Edit Form Modal -->
+                <!-- Edit Form (full width) -->
                 <div id="editModal" class="modal">
                     <div class="modal-content">
                         <h4>Edit Profile</h4>
-                        <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php">
-                            <label>First Name</label>
-                            <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" required>
+                        <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php" enctype="multipart/form-data">
 
-                            <label>Last Name</label>
-                            <input type="text" name="last_name" value="<?= htmlspecialchars($user['last_name']) ?>" required>
-
-                            <label>Phone</label>
-                            <input type="text" name="phone" value="<?= htmlspecialchars($user['phone']) ?>">
-
-                            <label for="address">Address</label>
-                            <textarea name="address" id="address" rows="3"><?= htmlspecialchars($user['address']) ?></textarea>
-
-                            <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
-                                <button type="submit">Save Changes</button>
-                                <button type="button" id="cancelEditBtn">Cancel</button>
+                        <div class="edit-pfp-group">
+                            <div class="edit-pfp-wrapper">
+                                <input 
+                                type="file" 
+                                id="edit_profile_picture" 
+                                name="profile_picture" 
+                                accept="image/*"
+                                >
+                                <div class="edit-pfp-preview" id="editProfilePicPreview">
+                                <?php if (!empty($user['profile_image_path'])): ?>
+                                    <img 
+                                    src="<?= htmlspecialchars('/BatEstateExplorer/storage/uploads/profile_images/' . basename($user['profile_image_path'])) ?>" 
+                                    alt="Profile Picture"
+                                    >
+                                <?php else: ?>
+                                    <span class="edit-upload-text">Upload Here</span>
+                                <?php endif; ?>
+                                </div>
                             </div>
+                        </div>
+
+                        <label>First Name</label>
+                        <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" required>
+
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" value="<?= htmlspecialchars($user['last_name']) ?>" required>
+
+                        <label>Phone</label>
+                        <input type="text" name="phone" value="<?= htmlspecialchars($user['phone']) ?>">
+
+                        <label for="address">Address</label>
+                        <textarea name="address" id="address" rows="3"><?= htmlspecialchars($user['address']) ?></textarea>
+
+                        <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
+                            <button type="submit">Save Changes</button>
+                            <button type="button" id="cancelEditBtn">Cancel</button>
+                        </div>
                         </form>
                     </div>
                 </div>
 
-                <!-- Delete Modal -->
+                <!-- Modal (outside container so it overlays everything) -->
                 <div id="deleteModal" class="modal">
-                    <div class="modal-content">
-                        <h4>Confirm Account Deletion</h4>
-                        <p>Are you sure you want to delete this account? This action cannot be undone.</p>
-                        <form id="deleteAgentForm" method="POST" action="/BatEstateExplorer/public/api/delete_agent.php">
-                            <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
-                            <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
-                                <button type="submit" id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
-                                <button type="button" id="cancelDeleteBtn" class="cancel-btn">Cancel</button>
-                            </div>
-                            <div id="deleteSpinner" class="spinner" style="display:none;">
-                                <div class="loader"></div>
-                                <span>Deleting account...</span>
-                            </div>
-                        </form>
+                <div class="modal-content">
+                    <h4>Confirm Account Deletion</h4>
+                    <p>Are you sure you want to delete this agent account? This action cannot be undone.</p>
+                    <form id="deleteAgentForm" method="POST" action="/BatEstateExplorer/public/api/delete_agent.php">
+                    <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
+                    <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
+                        <button type="submit" id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
+                        <button type="button" id="cancelDeleteBtn" class="cancel-btn">Cancel</button>
                     </div>
+                    <div id="deleteSpinner" class="spinner" style="display:none;">
+                        <div class="loader"></div>
+                        <span>Deleting account...</span>
+                    </div>
+                    </form>
                 </div>
+                </div>
+
             <?php endswitch; ?>
         </section>
     </div>
