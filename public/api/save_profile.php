@@ -60,7 +60,7 @@ if (!empty($_FILES['profile_picture']['name'])) {
         $targetPath = $uploadDir . $newFileName;
 
         if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-            // ✅ Delete old image (if exists)
+            // Delete old image if exists
             if (!empty($user['profile_image_path'])) {
                 $oldFilePath = __DIR__ . '/../../' . $user['profile_image_path'];
                 if (file_exists($oldFilePath)) {
@@ -123,13 +123,13 @@ redirectWithAgentType('overview');
 
 
 // ==========================
-// Helper: Redirect by agent type
+// Helper: Redirect by user type
 // ==========================
 function redirectWithAgentType($tab = 'overview') {
     global $conn;
 
     $userId = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
-    $agentType = 'normal_user';
+    $userType = 'user'; // default for normal users
 
     if ($userId) {
         $stmt = $conn->prepare("SELECT user_type FROM users WHERE id = ? LIMIT 1");
@@ -138,21 +138,22 @@ function redirectWithAgentType($tab = 'overview') {
         $result = $stmt->get_result();
         if ($row = $result->fetch_assoc()) {
             $userType = $row['user_type'];
-            if ($userType === 'associate_agent') {
-                $agentType = 'associate';
-            } elseif ($userType === 'direct_agent') {
-                $agentType = 'direct';
-            }
         }
         $stmt->close();
     }
 
-    if ($agentType === 'associate') {
-        header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab={$tab}");
-    } elseif ($agentType === 'direct') {
-        header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab={$tab}");
-    } else {
-        header("Location: /BatEstateExplorer/public/controllers/user_dashboard.php?view=profile&tab={$tab}");
+    // Redirect based on type
+    switch ($userType) {
+        case 'associate_agent':
+            header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab={$tab}");
+            break;
+        case 'direct_agent':
+            header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab={$tab}");
+            break;
+        case 'user':
+        default:
+            header("Location: /BatEstateExplorer/public/controllers/user_dashboard.php?view=profile&tab={$tab}");
+            break;
     }
     exit;
 }

@@ -13,6 +13,24 @@
         <?php endif;
     }
 
+    // Fetch user's profile image
+    $profileImage = null;
+
+    $stmt = $conn->prepare("SELECT profile_image_path FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user['id']);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!empty($result['profile_image_path'])) {
+        $path = str_replace('\\', '/', $result['profile_image_path']);
+        $path = str_replace('C:/xampp/htdocs', '', $path);
+        if ($path[0] !== '/') {
+            $path = '/' . $path;
+        }
+        $profileImage = $path;
+    }
+
     // Detect active tab
     $tab = $_GET['tab'] ?? 'overview';
 
@@ -182,13 +200,13 @@
                                 src="<?= htmlspecialchars($profileImage) ?>" 
                                 alt="Profile Picture" 
                                 class="profile-img" 
-                                onclick="window.location.href='?view=associate_profile&tab=overview'"
+                                onclick="window.location.href='?view=direct_profile&tab=overview'"
                                 style="cursor: pointer;"
                             >
                         <?php else: ?>
                             <i 
                                 class="fa-solid fa-user-tie sidebar-icon" 
-                                onclick="window.location.href='?view=associate_profile&tab=overview'"
+                                onclick="window.location.href='?view=direct_profile&tab=overview'"
                                 style="cursor: pointer;"
                             ></i>
                         <?php endif; ?>
