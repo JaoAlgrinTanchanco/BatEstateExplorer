@@ -608,7 +608,7 @@
 
                 <div class="analytics-wrapper">
 
-                    <!-- Analytics Summary Card Wrapper (centered) -->
+                    <!-- Analytics Summary Card Wrapper -->
                     <div class="analytics-summary-wrapper">
                         <div class="card analytics-summary">
                             <h2>Performance Analytics</h2>
@@ -628,22 +628,42 @@
                         <?php if (!empty($reviews)): ?>
                             <?php foreach ($reviews as $r): 
                                 $user_name = trim($r['first_name'] . ' ' . $r['last_name']);
+
+                                // Reviewer profile picture (left)
+                                $reviewer_pfp = !empty($r['profile_image_path'])
+                                    ? "/BatEstateExplorer/storage/uploads/profile_images/" . basename($r['profile_image_path'])
+                                    : '/BatEstateExplorer/assets/images/default-profile-icon.png';
+
+                                // Original right-side image
                                 $image_path = !empty($r['image_path']) 
                                     ? "/BatEstateExplorer/" . $r['image_path'] 
-                                    : '/assets/images/default.jpg';
+                                    : '/BatEstateExplorer/assets/images/default.jpg';
                             ?>
                             <div class="review-card">
                                 <div class="review-left">
-                                    <div class="review-header">
-                                        <h4><?= htmlspecialchars($user_name) ?></h4>
-                                        <p class="review-email"><?= htmlspecialchars($r['email']) ?>:</p>
-                                        <span class="review-title"><?= htmlspecialchars($r['title']) ?></span>
+                                    <div class="review-header-inline">
+                                        <?php if (!empty($r['profile_image_path'])): ?>
+                                            <img src="<?= htmlspecialchars("/BatEstateExplorer/storage/uploads/profile_images/" . basename($r['profile_image_path'])) ?>" 
+                                                alt="<?= htmlspecialchars($user_name) ?>" class="reviewer-pfp-inline">
+                                        <?php else: ?>
+                                            <i class="fa-solid fa-user reviewer-pfp-icon-inline"></i>
+                                        <?php endif; ?>
+
+                                        <div class="reviewer-info-inline">
+                                            <span class="reviewer-name-inline"><?= htmlspecialchars($user_name) ?></span>
+                                            <i class="fa-solid fa-circle dot-icon"></i>
+                                            <span class="review-email-inline"><?= htmlspecialchars($r['email']) ?></span>
+                                            <i class="fa-solid fa-circle dot-icon"></i>
+                                            <span class="review-title-inline"><?= htmlspecialchars($r['title']) ?></span>
+                                        </div>
                                     </div>
+
                                     <div class="review-stars">
                                         <?php for($i = 1; $i <= 5; $i++): ?>
                                             <span class="star <?= $i <= $r['rating'] ? 'filled' : '' ?>">★</span>
                                         <?php endfor; ?>
                                     </div>
+
                                     <div class="review-text"><?= nl2br(htmlspecialchars($r['review_text'])) ?></div>
                                 </div>
                                 <div class="review-right">
