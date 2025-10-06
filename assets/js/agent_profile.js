@@ -26,6 +26,14 @@ function notify(type, message) {
 window.currentDraftId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+  const openBtn = document.getElementById("editProfileBtn");
+  const editModal = document.getElementById("editModal");
+
+  if (openBtn && editModal) {
+    openBtn.addEventListener("click", function () {
+      editModal.style.display = "flex";
+    });
+  }
     //property type
     const propertyType = document.getElementById('property_type');
     const bedrooms = document.getElementById('bedrooms');
@@ -276,8 +284,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   });
 
+  
+
   initDraftCards();
 }); //END OF DOM
+
+function openEditProfileModal() {
+  const modal = document.getElementById('editModal');
+  if (!modal) return;
+  modal.style.display = 'flex'; // matches your modal CSS style
+}
+
+function closeEditProfileModal() {
+  const modal = document.getElementById('editModal');
+  if (!modal) return;
+  modal.style.display = 'none';
+}
 
 // Open edit modal
 function openModal(propertyId) {

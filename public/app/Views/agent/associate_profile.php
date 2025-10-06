@@ -15,6 +15,24 @@
     // Detect active tab
     $tab = $_GET['tab'] ?? 'overview';
 
+    // Fetch user's profile image
+    $profileImage = null;
+
+    $stmt = $conn->prepare("SELECT profile_image_path FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user['id']);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!empty($result['profile_image_path'])) {
+        $path = str_replace('\\', '/', $result['profile_image_path']);
+        $path = str_replace('C:/xampp/htdocs', '', $path);
+        if ($path[0] !== '/') {
+            $path = '/' . $path;
+        }
+        $profileImage = $path;
+    }
+
     // Initialize defaults
     $listings = $reviews = $company_listings = [];
     $agent_id = $company_id = $avg_rating = $total_reviews = 0;
@@ -192,7 +210,7 @@
 <div class="dashboard-container">
     <!-- Arrow Button for Mobile -->
     <button id="sidebarToggle" class="sidebar-toggle">
-    <i class="fa-solid fa-arrow-right"></i>
+        <i class="fa-solid fa-arrow-right"></i>
     </button>
 
     <div class="left-side">
@@ -207,7 +225,21 @@
                 <div class="agent-sidebar">
                 <!-- Sidebar Header -->
                 <div class="sidebar-header">
-                    <i class="fa-solid fa-user-tie sidebar-icon"></i>
+                    <?php if (!empty($profileImage)): ?>
+                        <img 
+                            src="<?= htmlspecialchars($profileImage) ?>" 
+                            alt="Profile Picture" 
+                            class="profile-img" 
+                            onclick="window.location.href='?view=associate_profile&tab=overview'"
+                            style="cursor: pointer;"
+                        >
+                    <?php else: ?>
+                        <i 
+                            class="fa-solid fa-user-tie sidebar-icon" 
+                            onclick="window.location.href='?view=associate_profile&tab=overview'"
+                            style="cursor: pointer;"
+                        ></i>
+                    <?php endif; ?>
                     <h2>Profile</h2>
                 </div>
 
@@ -902,27 +934,27 @@
                 </div>
                 <!-- Edit Form (full width) -->
                 <div id="editModal" class="modal">
-                <div class="modal-content">
-                    <h4>Edit Profile</h4>
-                    <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php">
-                    <label>First Name</label>
-                    <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" required>
+                    <div class="modal-content">
+                        <h4>Edit Profile</h4>
+                        <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php">
+                        <label>First Name</label>
+                        <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" required>
 
-                    <label>Last Name</label>
-                    <input type="text" name="last_name" value="<?= htmlspecialchars($user['last_name']) ?>" required>
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" value="<?= htmlspecialchars($user['last_name']) ?>" required>
 
-                    <label>Phone</label>
-                    <input type="text" name="phone" value="<?= htmlspecialchars($user['phone']) ?>">
+                        <label>Phone</label>
+                        <input type="text" name="phone" value="<?= htmlspecialchars($user['phone']) ?>">
 
-                    <label for="address">Address</label>
-                    <textarea name="address" id="address" rows="3"><?= htmlspecialchars($user['address']) ?></textarea>
+                        <label for="address">Address</label>
+                        <textarea name="address" id="address" rows="3"><?= htmlspecialchars($user['address']) ?></textarea>
 
-                    <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
-                        <button type="submit">Save Changes</button>
-                        <button type="button" id="cancelEditBtn">Cancel</button>
+                        <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
+                            <button type="submit">Save Changes</button>
+                            <button type="button" id="cancelEditBtn">Cancel</button>
+                        </div>
+                        </form>
                     </div>
-                    </form>
-                </div>
                 </div>
 
                 <!-- Modal (outside container so it overlays everything) -->
