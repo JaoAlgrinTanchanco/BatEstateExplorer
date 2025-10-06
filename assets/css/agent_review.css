@@ -1,6 +1,46 @@
 /* =========================
    Review Privileges Page
 =========================== */
+.client-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 2rem 0;               /* margin top & bottom */
+  padding: 1rem 1.5rem;         /* padding defines the card "size" */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f9f9f9;
+  width: max-content;            /* shrink to fit content */
+  height: auto;                  /* height determined by padding/content */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.client-card .client-pfp {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;                /* prevent shrinking */
+}
+
+.client-card .client-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.client-card .client-info .name-email {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.client-card .client-info .joined {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 0.25rem;
+}
+
 
 /* privilege container for search */
 .privilege-container {

@@ -26,6 +26,37 @@ function notify(type, message) {
 window.currentDraftId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+  //profile edit
+  const input = document.getElementById("edit_profile_picture");
+  const preview = document.getElementById("editProfilePicPreview");
+
+  if (input && preview) {
+    // Hide file input fully
+    input.style.display = "none";
+
+    // Trigger input manually
+    preview.addEventListener("click", (e) => {
+      e.preventDefault();
+      input.click();
+    });
+
+    // Handle preview change
+    input.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        preview.innerHTML = `<span class="edit-upload-text">Upload Here</span>`;
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        preview.innerHTML = `<img src="${event.target.result}" alt="Profile Picture">`;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  //edit modal
   const openBtn = document.getElementById("editProfileBtn");
   const editModal = document.getElementById("editModal");
 
@@ -334,32 +365,51 @@ window.currentEmail = null;
 
 // Search client logic
 window.searchClient = function() {
-  const email = document.getElementById('searchEmail').value.trim();
+  const emailInput = document.getElementById('searchEmail');
+  const email = emailInput.value.trim();
   if (!email) return notify('error', 'Please enter an email');
 
   fetch(`/BatEstateExplorer/public/api/give_privilege.php?email=${encodeURIComponent(email)}`)
     .then(res => res.json())
     .then(data => {
+      const section = document.getElementById('grantPrivilegeSection');
+      const giveBtn = document.getElementById('givePrivilegeBtn');
+      const userNameEmail = document.getElementById('userNameEmail');
+
+      // Clear previous selection if client not found
       if (data.error || !data.email) {
         window.currentEmail = null;
-        document.getElementById('userNameEmail').textContent = '';
-        document.getElementById('grantPrivilegeSection').style.opacity = '0.5';
-        document.getElementById('grantPrivilegeSection').style.pointerEvents = 'none';
-        document.getElementById('givePrivilegeBtn').disabled = true;
+        userNameEmail.innerHTML = '';
+        section.style.opacity = '0.5';
+        section.style.pointerEvents = 'none';
+        giveBtn.disabled = true;
         return notify('error', data.error || 'Client not found.');
       }
 
+      // Set current email for givePrivilege
       window.currentEmail = data.email;
-      document.getElementById('userNameEmail').textContent = `${data.name || ''} (${data.email})`;
-      const section = document.getElementById('grantPrivilegeSection');
-      const giveBtn = document.getElementById('givePrivilegeBtn');
+
+      // Render client card
+      userNameEmail.innerHTML = `
+        <div class="client-card">
+          <img src="${data.profile_image}" alt="${data.name}" class="client-pfp">
+          <div class="client-info">
+            <div class="name-email">${data.name} &middot; ${data.email}</div>
+            <div class="joined">Joined ${data.joined}</div>
+          </div>
+        </div>
+      `;
+
+      // Enable grant privilege section
       section.style.opacity = '1';
       section.style.pointerEvents = 'auto';
       giveBtn.disabled = false;
 
       notify('success', 'Client found! Select a property to grant privilege.');
     })
-    .catch(() => notify('error', 'Search client error.'));
+    .catch(() => {
+      notify('error', 'Search client error.');
+    });
 };
 
 // Select property for privilege
@@ -386,9 +436,18 @@ window.givePrivilege = function() {
     .then(data => {
       if (data.success) {
         notify('success', 'Privilege granted successfully!');
+        
+        // Reset selection
         selectedPropertyId = null;
         document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
-      } else notify('error', data.error || 'Something went wrong.');
+
+        // Reload page after short delay to show the success notification
+        setTimeout(() => {
+          window.location.reload();
+        }, 500); // 0.5s delay
+      } else {
+        notify('error', data.error || 'Something went wrong.');
+      }
     })
     .catch(() => notify('error', 'Give privilege error.'));
 };

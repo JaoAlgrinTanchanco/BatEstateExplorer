@@ -1,7 +1,7 @@
 <?php
     require_once __DIR__ . '/../../../../config/database.php';
     require_once __DIR__ . '/../../../../components/notification.php';
-    require_once __DIR__ . '/../../../../components/user_property_card.php';
+    require_once __DIR__ . '/../../../../components/agent_property_card.php';
 
     //
     // ================================
@@ -86,7 +86,7 @@
     // ================================
     // Count Query
     // ================================
-    $countSql = "SELECT COUNT(*) AS total FROM properties p WHERE 1=1";
+    $countSql = "SELECT COUNT(*) AS total FROM properties p WHERE p.status = 'available'";
     $params   = [];
     $types    = "";
     applyFilters($countSql, $params, $types, $location, $property_type, $bedrooms, $bathrooms, $price_range, $size);
@@ -116,7 +116,7 @@
             FROM properties p
             LEFT JOIN property_images pi 
                 ON p.id = pi.property_id AND pi.is_primary = 1
-            WHERE 1=1";
+            WHERE p.status = 'available'";
 
     $params = [];
     $types  = "";
@@ -243,7 +243,7 @@
             <?php foreach ($properties as $property):
                 $property['data_type'] = $property['property_type'];
                 $property['data_size'] = $property['sqm'];
-                render_property_card($property);
+                render_agent_property_card($property);
             endforeach; ?>
         <?php else: ?>
             <p>No properties available at the moment.</p>
@@ -282,7 +282,7 @@
         ?>
     </div>
 
-    <?php render_property_card([], true); ?>
+    <?php render_agent_property_card([], true); ?>
 </div>
 
 <script>

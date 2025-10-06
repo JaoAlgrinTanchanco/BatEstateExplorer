@@ -240,7 +240,7 @@
                             style="cursor: pointer;"
                         ></i>
                     <?php endif; ?>
-                    <h2>Profile</h2>
+                    <h2><?= htmlspecialchars($user['first_name'] ?? 'Profile') ?></h2>
                 </div>
 
                 <!-- Sidebar Nav -->
@@ -703,6 +703,12 @@
                     <h3>Select a Property</h3>
                     <div id="propertyList" class="property-list">
                         <?php if (!empty($listings)): ?>
+                            <?php
+                                $listings = array_values(array_reduce($listings, function($carry, $item) {
+                                $carry[$item['id']] = $item;
+                                return $carry;
+                                }, []));
+                            ?>
                             <?php foreach ($listings as $property): 
                                 // Check if property has images
                                 $first_img_src = !empty($property['images']) && !empty($property['images'][0]['image_path'])
@@ -932,11 +938,34 @@
 
                     <div id="profileMessage"></div>
                 </div>
+
                 <!-- Edit Form (full width) -->
                 <div id="editModal" class="modal">
                     <div class="modal-content">
                         <h4>Edit Profile</h4>
-                        <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php">
+                        <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php" enctype="multipart/form-data">
+
+                        <div class="edit-pfp-group">
+                            <div class="edit-pfp-wrapper">
+                                <input 
+                                type="file" 
+                                id="edit_profile_picture" 
+                                name="profile_picture" 
+                                accept="image/*"
+                                >
+                                <div class="edit-pfp-preview" id="editProfilePicPreview">
+                                <?php if (!empty($user['profile_image_path'])): ?>
+                                    <img 
+                                    src="<?= htmlspecialchars('/BatEstateExplorer/storage/uploads/profile_images/' . basename($user['profile_image_path'])) ?>" 
+                                    alt="Profile Picture"
+                                    >
+                                <?php else: ?>
+                                    <span class="edit-upload-text">Upload Here</span>
+                                <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+
                         <label>First Name</label>
                         <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" required>
 
@@ -994,16 +1023,6 @@
     closeButtons.forEach((btn) => {
         btn.addEventListener("click", function () {
         location.reload();
-        });
-    });
-
-    // If user clicks outside of the modal, close & reload
-    const modals = document.querySelectorAll("#editModal, #deleteModal");
-    modals.forEach((modal) => {
-        modal.addEventListener("click", function (e) {
-        if (e.target === modal) {
-            location.reload();
-        }
         });
     });
     });

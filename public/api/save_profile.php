@@ -31,8 +31,6 @@ $firstName = trim($_POST['first_name'] ?? '');
 $lastName  = trim($_POST['last_name'] ?? '');
 $phone     = trim($_POST['phone'] ?? '');
 $address   = trim($_POST['address'] ?? '');
-$status    = $user['status'];
-$userType  = $user['user_type']; // preserve current user_type
 
 if (!$firstName || !$lastName) {
     $_SESSION['notification'] = [
@@ -42,15 +40,68 @@ if (!$firstName || !$lastName) {
     redirectWithAgentType('overview');
 }
 
-// Update user (do not touch email)
+// ==========================
+// Handle Profile Image Upload
+// ==========================
+$uploadDir = __DIR__ . '/../../storage/uploads/profile_images/';
+$profileImagePath = $user['profile_image_path']; // Keep old path if no new upload
+
+if (!empty($_FILES['profile_picture']['name'])) {
+    $file = $_FILES['profile_picture'];
+    $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (in_array($ext, $allowedExts)) {
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $newFileName = 'pfp_' . $userId . '_' . time() . '.' . $ext;
+        $targetPath = $uploadDir . $newFileName;
+
+        if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+            // ✅ Delete old image (if exists)
+            if (!empty($user['profile_image_path'])) {
+                $oldFilePath = __DIR__ . '/../../' . $user['profile_image_path'];
+                if (file_exists($oldFilePath)) {
+                    @unlink($oldFilePath);
+                }
+            }
+
+            // Save relative path
+            $profileImagePath = 'storage/uploads/profile_images/' . $newFileName;
+        } else {
+            $_SESSION['notification'] = [
+                'type' => 'error',
+                'message' => 'Failed to upload profile picture.'
+            ];
+            redirectWithAgentType('overview');
+        }
+    } else {
+        $_SESSION['notification'] = [
+            'type' => 'error',
+            'message' => 'Invalid image format. Allowed: JPG, PNG, GIF, WEBP.'
+        ];
+        redirectWithAgentType('overview');
+    }
+}
+
+// ==========================
+// Update user record
+// ==========================
 $stmt = $conn->prepare("
-    UPDATE users SET
-        first_name = ?, last_name = ?, phone = ?, address = ?, updated_at = NOW()
+    UPDATE users 
+    SET first_name = ?, last_name = ?, phone = ?, address = ?, profile_image_path = ?, updated_at = NOW()
     WHERE id = ?
 ");
 $stmt->bind_param(
-    "ssssi",
-    $firstName, $lastName, $phone, $address, $userId
+    "sssssi",
+    $firstName,
+    $lastName,
+    $phone,
+    $address,
+    $profileImagePath,
+    $userId
 );
 
 if ($stmt->execute()) {
@@ -96,15 +147,11 @@ function redirectWithAgentType($tab = 'overview') {
         $stmt->close();
     }
 
-    // Redirect based on user type
     if ($agentType === 'associate') {
-        $view = 'associate_profile';
-        header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab={$tab}");
+        header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=associate_profile&tab={$tab}");
     } elseif ($agentType === 'direct') {
-        $view = 'direct_profile';
-        header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab={$tab}");
+        header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view=direct_profile&tab={$tab}");
     } else {
-        // normal user
         header("Location: /BatEstateExplorer/public/controllers/user_dashboard.php?view=profile&tab={$tab}");
     }
     exit;

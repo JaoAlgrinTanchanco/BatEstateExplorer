@@ -2,7 +2,7 @@
 .search-container {
   position: relative;
   width: 100%;
-  min-height: calc(100vh - 120px);
+  min-height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr; /* search bar then results */
   align-items: start;
