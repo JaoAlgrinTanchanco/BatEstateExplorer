@@ -44,7 +44,18 @@ session_start();
         <p class="stagger-item">Join thousands of users who found their dream properties with BatEstate Explorer.</p>
         
         <!-- Signup Form -->
-        <form id="signupForm" action="../auth/signup_user.php" method="POST">
+        <form id="signupForm" action="../auth/signup_user.php" method="POST" enctype="multipart/form-data">
+            <!-- Profile Picture Upload -->
+            <div class="form-group profile-pic-group">
+                <label>Profile Picture (Optional)</label>
+                <div class="profile-pic-wrapper">
+                    <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
+                    <div class="profile-pic-preview" id="profilePicPreview">
+                        <span class="upload-text">Upload Here</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-row stagger-item">
                 <div class="form-group">
                     <label for="first_name">First Name *</label>
@@ -56,14 +67,15 @@ session_start();
                 </div>
             </div>
 
-            <div class="form-group stagger-item">
-                <label for="email">Email Address *</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-
-            <div class="form-group stagger-item">
-                <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone">
+            <div class="form-row stagger-item">
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone">
+                </div>
             </div>
             
             <div class="form-row stagger-item">
@@ -103,28 +115,50 @@ session_start();
 
 <!-- JS -->
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-    const toggle = document.getElementById("togglePassword");
-    const passwordField = document.getElementById("password");
-    const confirmField = document.getElementById("confirm_password");
-    const signupForm = document.getElementById("signupForm");
+    document.addEventListener("DOMContentLoaded", () => {
+        const toggle = document.getElementById("togglePassword");
+        const passwordField = document.getElementById("password");
+        const confirmField = document.getElementById("confirm_password");
+        const signupForm = document.getElementById("signupForm");
 
-    // Toggle show/hide for both password fields
-    toggle.addEventListener("click", () => {
-        const isPassword = passwordField.type === "password";
-        passwordField.type = isPassword ? "text" : "password";
-        confirmField.type = isPassword ? "text" : "password";
-        toggle.textContent = isPassword ? "Hide password" : "Show password";
-    });
+        // Profile picture elements
+        const profilePreview = document.getElementById("profilePicPreview");
+        const profileInput = document.getElementById("profile_picture");
 
-    // Password match validation on form submit
-    signupForm.addEventListener("submit", (e) => {
-        if (passwordField.value !== confirmField.value) {
-            e.preventDefault();
-            alert("Passwords do not match.");
-        }
+        // Toggle show/hide for password fields
+        toggle.addEventListener("click", () => {
+            const isPassword = passwordField.type === "password";
+            passwordField.type = isPassword ? "text" : "password";
+            confirmField.type = isPassword ? "text" : "password";
+            toggle.textContent = isPassword ? "Hide password" : "Show password";
+        });
+
+        // Password match validation on form submit
+        signupForm.addEventListener("submit", (e) => {
+            if (passwordField.value !== confirmField.value) {
+                e.preventDefault();
+                alert("Passwords do not match.");
+            }
+        });
+
+        // === PROFILE PICTURE PREVIEW ===
+        profilePreview.addEventListener('click', () => profileInput.click());
+
+        profileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) {
+                profilePreview.innerHTML = '<span class="upload-text">Upload Here</span>';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                profilePreview.innerHTML = `<img src="${event.target.result}" alt="Profile Picture">`;
+            };
+            reader.readAsDataURL(file);
+        });
     });
-});
 </script>
+
 </body>
 </html>
