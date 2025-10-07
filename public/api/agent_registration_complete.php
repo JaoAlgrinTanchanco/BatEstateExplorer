@@ -135,7 +135,14 @@ try {
     // Profile picture is now optional
     $profile_picture = null;
     if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] !== UPLOAD_ERR_NO_FILE) {
-        $profile_picture = handleUpload($_FILES['profile_picture'], 'pfp', $docsDir, $profileDir, ['image/jpeg','image/jpg','image/png'], $debug);
+        $profile_picture = handleUpload(
+            $_FILES['profile_picture'],
+            'pfp',
+            $docsDir,
+            $profileDir,
+            ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'],
+            $debug
+        );
         if (!$profile_picture) $debug[] = "Profile picture handling returned null";
     }
 
