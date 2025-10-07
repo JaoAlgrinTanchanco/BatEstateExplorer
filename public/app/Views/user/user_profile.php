@@ -194,21 +194,34 @@
             <div class="edit-pfp-group">
                 <div class="edit-pfp-wrapper">
                     <input 
-                        type="file" 
-                        id="edit_profile_picture" 
-                        name="profile_picture" 
-                        accept="image/*"
+                    type="file" 
+                    id="edit_profile_picture" 
+                    name="profile_picture" 
+                    accept="image/*"
                     >
+                    <input type="hidden" name="remove_picture" id="remove_picture" value="0">
                     <div class="edit-pfp-preview" id="editProfilePicPreview">
-                        <?php if (!empty($current_user['profile_image_path'])): ?>
-                            <img 
-                                src="<?= htmlspecialchars('/BatEstateExplorer/storage/uploads/profile_images/' . basename($current_user['profile_image_path'])) ?>" 
-                                alt="Profile Picture"
-                            >
-                        <?php else: ?>
-                            <span class="edit-upload-text">Upload Here</span>
-                        <?php endif; ?>
+                    <?php if (!empty($current_user['profile_image_path'])): ?>
+                        <img 
+                        src="<?= htmlspecialchars('/BatEstateExplorer/storage/uploads/profile_images/' . basename($current_user['profile_image_path'])) ?>" 
+                        alt="Profile Picture"
+                        >
+                    <?php else: ?>
+                        <span class="edit-upload-text">Upload Here</span>
+                    <?php endif; ?>
                     </div>
+
+                    <!-- Trash Icon Button -->
+                    <button type="button" id="removeProfilePicBtn" class="remove-pfp-btn" title="Remove Picture" style="display: none;">
+                    <!-- Inline SVG Trash Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6L17.7 20.4A2 2 0 0 1 15.7 22H8.3A2 2 0 0 1 6.3 20.4L5 6"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                    </svg>
+                    </button>
                 </div>
             </div>
 
@@ -257,41 +270,66 @@
 <script src="/BatEstateExplorer/assets/js/user_profile.js"></script>
 
 <script>
-  window.addEventListener('pageshow', function(event) {
-      if (event.persisted || (window.performance && window.performance.getEntriesByType("navigation")[0].type === "back_forward")) {
-          window.location.reload();
-      }
+  // Force reload when navigating back (to prevent showing outdated data)
+  window.addEventListener('pageshow', function (event) {
+    const navType = window.performance?.getEntriesByType("navigation")[0]?.type;
+    if (event.persisted || navType === "back_forward") {
+      window.location.reload();
+    }
   });
 
   document.addEventListener("DOMContentLoaded", function () {
-      // --- Modal Close Handling (only buttons) ---
-      const closeButtons = document.querySelectorAll("#modalCloseBtn, #cancelEditBtn, #cancelDeleteBtn");
-      closeButtons.forEach(btn => {
-          btn.addEventListener("click", () => location.reload());
+    // --- Modal Close Buttons: Reload page when closing ---
+    const closeButtons = document.querySelectorAll("#modalCloseBtn, #cancelEditBtn, #cancelDeleteBtn");
+    closeButtons.forEach(btn => {
+      btn.addEventListener("click", () => location.reload());
+    });
+
+    // --- Profile Picture Upload and Remove Logic ---
+    const profileInput = document.getElementById('edit_profile_picture');
+    const profilePreview = document.getElementById('editProfilePicPreview');
+    const removeBtn = document.getElementById('removeProfilePicBtn');
+    const removeHidden = document.getElementById('remove_picture'); // optional hidden field
+
+    if (profileInput && profilePreview) {
+      // Show remove button if an image is already present
+      if (profilePreview.querySelector('img') && removeBtn) {
+        removeBtn.style.display = 'flex';
+      }
+
+      // Open file selector when clicking the preview area
+      profilePreview.addEventListener('click', () => profileInput.click());
+
+      // Preview the selected image before uploading
+      profileInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) {
+          profilePreview.innerHTML = '<span class="edit-upload-text">Upload Here</span>';
+          if (removeBtn) removeBtn.style.display = 'none';
+          if (removeHidden) removeHidden.value = '0';
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = event => {
+          profilePreview.innerHTML = `<img src="${event.target.result}" alt="Profile Picture">`;
+          if (removeBtn) removeBtn.style.display = 'flex';
+          if (removeHidden) removeHidden.value = '0';
+        };
+        reader.readAsDataURL(file);
       });
 
-      // --- Profile Picture Preview ---
-      const profileInput = document.getElementById('edit_profile_picture');
-      const profilePreview = document.getElementById('editProfilePicPreview');
-
-      if (profileInput && profilePreview) {
-          // Open file selector on preview click
-          profilePreview.addEventListener('click', () => profileInput.click());
-
-          // Preview selected image
-          profileInput.addEventListener('change', e => {
-              const file = e.target.files[0];
-              if (!file) {
-                  profilePreview.innerHTML = '<span class="edit-upload-text">Upload Here</span>';
-                  return;
-              }
-
-              const reader = new FileReader();
-              reader.onload = event => {
-                  profilePreview.innerHTML = `<img src="${event.target.result}" alt="Profile Picture">`;
-              };
-              reader.readAsDataURL(file);
-          });
+      // Handle image removal action
+      if (removeBtn) {
+        removeBtn.addEventListener('click', e => {
+          e.stopPropagation(); // Prevent triggering file input
+          profileInput.value = ''; // Clear selected file
+          profilePreview.innerHTML = '<span class="edit-upload-text">Upload Here</span>';
+          removeBtn.style.display = 'none';
+          if (removeHidden) removeHidden.value = '1';
+        });
       }
+    }
   });
 </script>
+

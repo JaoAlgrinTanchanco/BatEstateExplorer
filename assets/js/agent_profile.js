@@ -26,9 +26,44 @@ function notify(type, message) {
 window.currentDraftId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-  //profile edit
+  // --- Profile Picture Remove Logic ---
+  const removeBtn = document.getElementById("removeProfilePicBtn");
+  const removeInput = document.getElementById("remove_picture");
   const input = document.getElementById("edit_profile_picture");
   const preview = document.getElementById("editProfilePicPreview");
+
+  if (preview && removeBtn && removeInput && input) {
+    // Show remove button if an image is already present
+    if (preview.querySelector("img")) {
+      removeBtn.style.display = "flex";
+    }
+
+    // Handle remove button click
+    removeBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Reset to "Upload Here" text
+      preview.innerHTML = `<span class="edit-upload-text">Upload Here</span>`;
+
+      // Hide remove button
+      removeBtn.style.display = "none";
+
+      // Clear file input
+      input.value = "";
+
+      // Mark for removal on backend
+      removeInput.value = "1";
+    });
+
+    // When selecting a new image, show remove button again and reset removal flag
+    input.addEventListener("change", () => {
+      if (input.files.length > 0) {
+        removeBtn.style.display = "flex";
+        removeInput.value = "0";
+      }
+    });
+  }
 
   if (input && preview) {
     // Hide file input fully

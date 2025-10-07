@@ -973,16 +973,43 @@
                                 name="profile_picture" 
                                 accept="image/*"
                                 >
+                                <input type="hidden" name="remove_picture" id="remove_picture" value="0">
+
                                 <div class="edit-pfp-preview" id="editProfilePicPreview">
                                 <?php if (!empty($user['profile_image_path'])): ?>
                                     <img 
-                                    src="<?= htmlspecialchars('/BatEstateExplorer/storage/uploads/profile_images/' . basename($user['profile_image_path'])) ?>" 
-                                    alt="Profile Picture"
+                                        src="<?= htmlspecialchars('/BatEstateExplorer/storage/uploads/profile_images/' . basename($user['profile_image_path'])) ?>" 
+                                        alt="Profile Picture"
                                     >
                                 <?php else: ?>
                                     <span class="edit-upload-text">Upload Here</span>
                                 <?php endif; ?>
                                 </div>
+
+                                <!-- Trash Icon Button -->
+                                <button 
+                                type="button" 
+                                id="removeProfilePicBtn" 
+                                class="remove-pfp-btn" 
+                                title="Remove Picture" 
+                                style="display: none;"
+                                >
+                                <svg xmlns="http://www.w3.org/2000/svg" 
+                                    viewBox="0 0 24 24" 
+                                    fill="none" 
+                                    stroke="#666" 
+                                    stroke-width="2" 
+                                    stroke-linecap="round" 
+                                    stroke-linejoin="round" 
+                                    width="18" 
+                                    height="18">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6L17.7 20.4A2 2 0 0 1 15.7 22H8.3A2 2 0 0 1 6.3 20.4L5 6"></path>
+                                    <path d="M10 11v6"></path>
+                                    <path d="M14 11v6"></path>
+                                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                                </svg>
+                                </button>
                             </div>
                         </div>
 
