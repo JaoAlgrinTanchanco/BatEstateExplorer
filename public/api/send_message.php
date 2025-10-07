@@ -6,7 +6,9 @@ session_start();
 require_once __DIR__ . '/../app/bootstrap.php';
 
 // Encryption key
-define('ENCRYPTION_KEY', '12345678901234567890123456789012'); // 32 chars for AES-256
+$secrets = require __DIR__ . '/../../config/secrets.php';
+define('ENCRYPTION_KEY', $secrets['ENCRYPTION_KEY']);
+
 
 // Check logged-in user
 if (isset($_SESSION['user']['id'])) {
