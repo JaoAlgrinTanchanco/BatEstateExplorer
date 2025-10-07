@@ -107,3 +107,4 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_ac
 
 </body>
 </html>
+

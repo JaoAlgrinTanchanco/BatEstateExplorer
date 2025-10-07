@@ -1,6 +1,4 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_accounts.php';
-
 if (!isset($page_title)) $page_title = "User Dashboard";
 $user = $_SESSION['user'] ?? null; // Logged-in user
 ?>

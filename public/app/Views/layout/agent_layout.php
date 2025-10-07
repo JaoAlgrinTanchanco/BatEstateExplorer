@@ -1,6 +1,5 @@
 <?php
 if (!isset($page_title)) $page_title = "Agent Dashboard";
-require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_accounts.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -158,4 +157,3 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_ac
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-

@@ -883,6 +883,29 @@
                             <div class="info-row"><strong>Last Updated:</strong> <span><?= htmlspecialchars($user['updated_at'] ?? '-') ?></span></div>
                         </div>
 
+                        <!-- Documents -->
+                        <div class="overview-card">
+                            <h3>Documents</h3>
+                            <?php
+                            $docs = [
+                                'Broker License' => 'broker_license_path',
+                                'PRC License' => 'prc_license_path',
+                                'Resume' => 'resume_path',
+                                'Valid ID' => 'valid_id_path',
+                                'Additional Docs' => 'additional_docs_path'
+                            ];
+                            foreach ($docs as $label => $field):
+                            ?>
+                                <div class="info-row"><strong><?= $label ?>:</strong>
+                                    <?php if (!empty($user[$field])): ?>
+                                        <a href="/BatEstateExplorer/public/api/view_document.php?file=<?= urlencode(basename($user[$field])) ?>&field=<?= $field ?>" target="_blank">View</a>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        
                         <!-- Professional Details -->
                         <div class="overview-card">
                             <h3>Professional Details</h3>
