@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../../../components/notification.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_accounts.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">

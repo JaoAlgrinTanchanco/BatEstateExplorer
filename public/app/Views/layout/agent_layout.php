@@ -1,5 +1,6 @@
 <?php
 if (!isset($page_title)) $page_title = "Agent Dashboard";
+require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_accounts.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
