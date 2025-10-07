@@ -16,28 +16,30 @@ function decryptMessage($encrypted_base64) {
 $current_user_id = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
 if (!$current_user_id) die("Agent not logged in.");
 
-// 1️⃣ Get user_id from URL (conversation switch)
+// Get user_id from URL (conversation switch)
 $user_id = $_GET['user_id'] ?? null;
 
-// 2️⃣ If agent_id provided, resolve to user_id
+// Resolve agent_id to user_id if provided
 $agent_id = $_GET['agent_id'] ?? null;
 if ($agent_id) {
     $stmt = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
     $stmt->bind_param("i", $agent_id);
     $stmt->execute();
     $res = $stmt->get_result();
-    if ($row = $res->fetch_assoc()) {
-        $user_id = (int)$row['user_id'];
-    }
+    if ($row = $res->fetch_assoc()) $user_id = (int)$row['user_id'];
     $stmt->close();
 }
 
-// 3️⃣ Fetch conversation contact info
+// Fetch conversation contact info
+$contact = null;
+$contact_name = null;
+$chat_header = "Select a conversation";
+
 if ($user_id) {
     $stmt = $conn->prepare("
         SELECT id, first_name, last_name, email 
         FROM users 
-        WHERE id = ?
+        WHERE id = ? 
         LIMIT 1
     ");
     $stmt->bind_param("i", $user_id);
@@ -48,15 +50,26 @@ if ($user_id) {
     if ($contact) {
         $contact_name = trim($contact['first_name'] . ' ' . $contact['last_name']);
         $chat_header = $contact_name;
-    } else {
-        $contact = null;
-        $contact_name = null;
-        $chat_header = "No conversation selected";
     }
-} else {
-    $contact = null;
-    $contact_name = null;
-    $chat_header = "No conversation selected";
+}
+
+// Function to get profile image URL
+function getProfileImage($conn, $user_id) {
+    $stmt = $conn->prepare("SELECT profile_image_path FROM users WHERE id = ? LIMIT 1");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res->fetch_assoc();
+    $stmt->close();
+
+    if (!empty($row['profile_image_path'])) {
+        $fileName = basename($row['profile_image_path']);
+        $filePath = __DIR__ . '/../storage/uploads/profile_images/' . $fileName;
+        if (file_exists($filePath)) {
+            return '/BatEstateExplorer/storage/uploads/profile_images/' . $fileName;
+        }
+    }
+    return null;
 }
 
 // Fetch all contacts for conversation list
@@ -77,7 +90,15 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// Fetch messages
+// Map profile images for contacts
+$contactsImages = [];
+foreach ($contacts_list as $id => $name) {
+    $contactsImages[$id] = getProfileImage($conn, $id);
+}
+// Optionally add current agent profile
+$contactsImages[$current_user_id] = getProfileImage($conn, $current_user_id);
+
+// Fetch conversation messages
 $messages = [];
 if ($contact) {
     $stmt = $conn->prepare("
@@ -89,17 +110,15 @@ if ($contact) {
     $stmt->bind_param("iiii", $current_user_id, $contact['id'], $contact['id'], $current_user_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $messages[] = $row;
-    }
+    while ($row = $result->fetch_assoc()) $messages[] = $row;
     $stmt->close();
 }
 
+// Add current agent name for "You"
 $contact_names = $contacts_list;
 $contact_names[$current_user_id] = 'You';
-
-$chat_header = $user_id ? $contact_name : "Select a conversation";
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -117,7 +136,14 @@ $chat_header = $user_id ? $contact_name : "Select a conversation";
         <h3>Conversations</h3>
         <?php foreach ($contacts_list as $id => $name): ?>
             <div class="conversation-item <?= ($id == ($contact['id'] ?? 0)) ? 'active' : '' ?>" data-user-id="<?= $id ?>">
-                <?= htmlspecialchars($name) ?>
+                <div class="conversation-avatar">
+                    <?php if (!empty($contactsImages[$id])): ?>
+                        <img src="<?= htmlspecialchars($contactsImages[$id]) ?>" alt="<?= htmlspecialchars($name) ?>">
+                    <?php else: ?>
+                        <i class="fa-solid fa-user"></i>
+                    <?php endif; ?>
+                </div>
+                <span class="conversation-name"><?= htmlspecialchars($name) ?></span>
             </div>
         <?php endforeach; ?>
     </div>
@@ -128,6 +154,7 @@ $chat_header = $user_id ? $contact_name : "Select a conversation";
             <button id="sidebarToggle" class="sidebar-toggle">☰</button>
             <?= htmlspecialchars($chat_header) ?>
         </div>
+
         <div class="messages" id="messages">
             <?php foreach ($messages as $msg):
                 $isYou = $msg['sender_id'] === $current_user_id;
@@ -135,11 +162,21 @@ $chat_header = $user_id ? $contact_name : "Select a conversation";
                 $timestamp = date('M d, Y H:i', strtotime($msg['created_at']));
             ?>
             <div class="message <?= $isYou ? 'you' : 'agent' ?>">
-                <div class="sender"><?= $senderName ?> <span class="timestamp"><?= $timestamp ?></span>:</div>
-                <div class="text"><?= htmlspecialchars(decryptMessage($msg['message'])) ?></div>
+                <div class="sender-avatar">
+                    <?php if (!empty($contactsImages[$msg['sender_id']])): ?>
+                        <img src="<?= htmlspecialchars($contactsImages[$msg['sender_id']]) ?>" alt="<?= htmlspecialchars($senderName) ?>">
+                    <?php else: ?>
+                        <i class="fa-solid fa-user"></i>
+                    <?php endif; ?>
+                </div>
+                <div class="text-container">
+                    <div class="sender"><?= $senderName ?> <span class="timestamp"><?= $timestamp ?></span>:</div>
+                    <div class="text"><?= htmlspecialchars(decryptMessage($msg['message'])) ?></div>
+                </div>
             </div>
             <?php endforeach; ?>
         </div>
+
         <div class="chat-input">
             <input type="text" id="messageInput" placeholder="Type your message..." <?= $contact ? '' : 'disabled' ?>>
             <button id="sendBtn" <?= $contact ? '' : 'disabled' ?>>Send</button>
@@ -151,94 +188,94 @@ $chat_header = $user_id ? $contact_name : "Select a conversation";
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const sendBtn = document.getElementById('sendBtn');
-    const messageInput = document.getElementById('messageInput');
-    const messagesContainer = document.getElementById('messages');
-    const chatWindow = document.querySelector('.chat-window');
-    const receiverId = chatWindow.dataset.userId;
+    document.addEventListener('DOMContentLoaded', () => {
+        const sendBtn = document.getElementById('sendBtn');
+        const messageInput = document.getElementById('messageInput');
+        const messagesContainer = document.getElementById('messages');
+        const chatWindow = document.querySelector('.chat-window');
+        const receiverId = chatWindow.dataset.userId;
 
-    const canSend = receiverId && receiverId !== "";
+        const sidebar = document.querySelector('.conversations-list');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggleBtn = document.getElementById('sidebarToggle');
 
-    const sendMessage = () => {
-        const message = messageInput.value.trim();
-        if (!message || !canSend) return;
+        const canSend = receiverId && receiverId !== "";
 
-        fetch('api/send_message.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `receiver_id=${receiverId}&message=${encodeURIComponent(message)}`
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const msgDiv = document.createElement('div');
-                msgDiv.classList.add('message', 'you');
+        const sendMessage = () => {
+            const message = messageInput.value.trim();
+            if (!message || !canSend) return;
 
-                const rawDate = data.message.created_at
-                    ? new Date(data.message.created_at)
-                    : new Date();
+            fetch('api/send_message.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `receiver_id=${receiverId}&message=${encodeURIComponent(message)}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.classList.add('message', 'you');
 
-                const options = {
-                    month: 'short',
-                    day: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                };
-                const timestamp = rawDate.toLocaleString('en-US', options).replace(',', '');
+                    const rawDate = data.message.created_at ? new Date(data.message.created_at) : new Date();
+                    const options = { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
+                    const timestamp = rawDate.toLocaleString('en-US', options).replace(',', '');
 
-                msgDiv.innerHTML = `
-                    <div class="sender">
-                        You <span class="timestamp">${timestamp}</span>:
-                    </div>
-                    <div class="text">${data.message.text}</div>
-                `;
+                    const userAvatar = '<?= htmlspecialchars($agentsImages[$current_user_id] ?? $contactsImages[$current_user_id] ?? "") ?>';
+                    const avatarHTML = userAvatar ? `<img src="${userAvatar}" alt="You">` : '<i class="fa-solid fa-user"></i>';
 
-                messagesContainer.appendChild(msgDiv);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                messageInput.value = '';
-            } else {
-                alert(data.error);
-            }
-        })
-        .catch(err => console.error(err));
-    };
+                    msgDiv.innerHTML = `
+                        <div class="sender-avatar">${avatarHTML}</div>
+                        <div class="text-container">
+                            <div class="sender">You <span class="timestamp">${timestamp}</span>:</div>
+                            <div class="text">${data.message.text}</div>
+                        </div>
+                    `;
 
-    sendBtn?.addEventListener('click', sendMessage);
-    messageInput?.addEventListener('keypress', e => {
-        if (e.key === 'Enter') sendMessage();
-    });
+                    messagesContainer.appendChild(msgDiv);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    messageInput.value = '';
+                } else alert(data.error);
+            })
+            .catch(err => console.error(err));
+        };
 
-    // Sidebar toggle
-    const sidebar = document.querySelector('.conversations-list');
-    const overlay = document.getElementById('sidebarOverlay');
-    const toggleBtn = document.getElementById('sidebarToggle');
+        sendBtn?.addEventListener('click', sendMessage);
+        messageInput?.addEventListener('keypress', e => { if(e.key === 'Enter') sendMessage(); });
 
-    toggleBtn?.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
-        overlay.classList.toggle('active');
-    });
+        // Toggle sidebar manually
+        toggleBtn?.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
 
-    overlay?.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-        overlay.classList.remove('active');
-    });
-
-    // Switch conversations
-    document.querySelectorAll('.conversation-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const userId = item.dataset.userId;
-            if (userId) {
-                window.location.href = `/BatEstateExplorer/public/agent_message.php?user_id=${userId}`;
+        // Collapse sidebar when clicking outside of it
+        document.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
                 sidebar.classList.remove('open');
                 overlay.classList.remove('active');
             }
         });
+
+        // Optional: click overlay also closes
+        overlay?.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+
+        // Switch conversations
+        document.querySelectorAll('.conversation-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const userId = item.dataset.userId;
+                if (userId) {
+                    window.location.href = `/BatEstateExplorer/public/agent_message.php?user_id=${userId}`;
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                }
+            });
+        });
     });
-});
 </script>
+
 
 </body>
 </html>
