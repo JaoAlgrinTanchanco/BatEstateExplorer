@@ -5,6 +5,7 @@
 if (!isset($user) || !is_array($user)) die('Access denied.');
 
 require_once __DIR__ . '/../../../../components/notification.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_database.php';
 
 // ==================================================
 // 2. Build safe first name for welcome card

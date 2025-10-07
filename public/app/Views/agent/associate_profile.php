@@ -952,7 +952,7 @@
                         <div class="overview-card danger-zone">
                             <h3>Danger Zone</h3>
                             <p class="danger-note">⚠️ Once deleted, this account <strong>cannot be recovered</strong>. Please proceed with caution.</p>
-                            <button type="button" id="openDeleteModal" class="delete-btn-overview">Delete Account</button>
+                            <button type="button" id="openDeleteModal" class="delete-btn-overview" onclick="openDeleteModal()">Delete Account</button>
                         </div>
                     </div>  
 
@@ -1008,21 +1008,21 @@
 
                 <!-- Modal (outside container so it overlays everything) -->
                 <div id="deleteModal" class="modal">
-                <div class="modal-content">
-                    <h4>Confirm Account Deletion</h4>
-                    <p>Are you sure you want to delete this agent account? This action cannot be undone.</p>
-                    <form id="deleteAgentForm" method="POST" action="/BatEstateExplorer/public/api/delete_agent.php">
-                    <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
-                    <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
-                        <button type="submit" id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
-                        <button type="button" id="cancelDeleteBtn" class="cancel-btn">Cancel</button>
+                    <div class="modal-content">
+                        <h4>Confirm Account Deletion</h4>
+                        <p>Are you sure you want to delete this agent account? This action cannot be undone.</p>
+                        <form id="deleteAgentForm" method="POST" action="/BatEstateExplorer/public/api/delete_agent.php">
+                        <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
+                        <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
+                            <button type="submit" id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
+                            <button type="button" id="cancelDeleteBtn" class="cancel-btn">Cancel</button>
+                        </div>
+                        <div id="deleteSpinner" class="spinner" style="display:none;">
+                            <div class="loader"></div>
+                            <span>Deleting account...</span>
+                        </div>
+                        </form>
                     </div>
-                    <div id="deleteSpinner" class="spinner" style="display:none;">
-                        <div class="loader"></div>
-                        <span>Deleting account...</span>
-                    </div>
-                    </form>
-                </div>
                 </div>
 
             <?php endswitch; ?>

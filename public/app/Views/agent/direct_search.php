@@ -2,6 +2,7 @@
     require_once __DIR__ . '/../../../../config/database.php';
     require_once __DIR__ . '/../../../../components/notification.php';
     require_once __DIR__ . '/../../../../components/agent_property_card.php';
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_database.php';
 
     //
     // ================================

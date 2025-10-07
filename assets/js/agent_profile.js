@@ -315,10 +315,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   });
 
-  
 
   initDraftCards();
 }); //END OF DOM
+
+// =========================
+// Delete Account Modal Logic
+// =========================
+function openDeleteModal() {
+  const modal = document.getElementById('deleteModal');
+  if (!modal) return;
+  modal.style.display = 'flex'; // matches your CSS
+}
+
+function closeDeleteModal() {
+  const modal = document.getElementById('deleteModal');
+  if (!modal) return;
+  modal.style.display = 'none';
+}
 
 function openEditProfileModal() {
   const modal = document.getElementById('editModal');

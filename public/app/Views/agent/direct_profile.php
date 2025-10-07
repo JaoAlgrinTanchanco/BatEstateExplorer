@@ -921,7 +921,7 @@
                         <div class="overview-card danger-zone">
                             <h3>Danger Zone</h3>
                             <p class="danger-note">⚠️ Once deleted, this account <strong>cannot be recovered</strong>. Please proceed with caution.</p>
-                            <button type="button" id="openDeleteModal" class="delete-btn-overview">Delete Account</button>
+                            <button type="button" id="openDeleteModal" class="delete-btn-overview" onclick="openDeleteModal()">Delete Account</button>
                         </div>
                     </div>  
 

@@ -12,6 +12,7 @@ $user = $_SESSION['user'] ?? null;
 require_once __DIR__ . '/../../../../config/database.php';
 require_once __DIR__ . '/../../../../components/notification.php';
 require_once __DIR__ . '/../../../../components/user_property_card.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_database.php';
 
 // Generate user token if missing
 if ($user && isset($user['id']) && empty($user['token'])) {
