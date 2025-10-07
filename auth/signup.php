@@ -46,10 +46,10 @@ session_start();
         <!-- Signup Form -->
         <form id="signupForm" action="../auth/signup_user.php" method="POST" enctype="multipart/form-data">
             <!-- Profile Picture Upload -->
-            <div class="form-group profile-pic-group">
+            <div class="form-group profile-pic-group stagger-item">
                 <label>Profile Picture (Optional)</label>
                 <div class="profile-pic-wrapper">
-                    <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
+                    <input type="file" id="profile_picture" name="profile_picture" accept="image/png, image/jpeg, image/jpg, image/gif">
                     <div class="profile-pic-preview" id="profilePicPreview">
                         <span class="upload-text">Upload Here</span>
                     </div>

@@ -4,13 +4,12 @@
  * DB is the source of truth
  * Keeps files if:
  *     - user exists in users table
- *     - user has a non-rejected application (pending or approved)
+ *     - user has a pending or approved application
  * Deletes files if:
  *     - user exists only in applications table and status is rejected
  *     - user exists in both tables but application is rejected
- *     - file not referenced at all
- * Deletes property images if owner invalid
- * Handles property drafts (keeps if valid user + referenced, deletes orphaned)
+ *     - file is not referenced at all
+ * Handles property drafts, property images, user files
  */
 
 require_once __DIR__ . '/../config/database.php';
@@ -21,37 +20,37 @@ $dirs = [
     $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/storage/uploads/images/',
     $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/storage/uploads/profile_images/',
     $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/storage/uploads/property_images/',
-    $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/storage/uploads/draft/' // ✅ Added draft directory
+    $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/storage/uploads/draft/'
 ];
 
-// --- Step 1: Identify valid user IDs (those we KEEP) ---
+// --- STEP 1: Identify valid and rejected user IDs ---
 $validUserIds = [];
 $rejectedUserIds = [];
 
-// 1. All users from users table → always valid
+// 1 All users in `users` table → always valid
 $res = mysqli_query($conn, "SELECT id FROM users");
 while ($row = mysqli_fetch_assoc($res)) {
     $validUserIds[] = (int)$row['id'];
 }
 
-// 2. Applications: mark users with pending/approved apps as valid, rejected as rejectable
+// 2️Applications → pending / approved = valid, rejected = cleanup
 $res = mysqli_query($conn, "SELECT user_id, status FROM applications WHERE user_id IS NOT NULL");
 while ($row = mysqli_fetch_assoc($res)) {
     $uid = (int)$row['user_id'];
     $status = strtolower(trim($row['status'] ?? ''));
 
-    if ($status === 'pending' || $status === 'approved' || $status === '') {
-        $validUserIds[] = $uid;
+    if (in_array($status, ['pending', 'approved', ''])) {
+        $validUserIds[] = $uid; // KEEP (pending or approved)
     } elseif ($status === 'rejected') {
-        $rejectedUserIds[] = $uid;
+        $rejectedUserIds[] = $uid; // DELETE (rejected)
     }
 }
 
-// Unique
+// Deduplicate IDs
 $validUserIds = array_unique(array_filter($validUserIds));
 $rejectedUserIds = array_unique(array_filter($rejectedUserIds));
 
-// --- Step 2: Gather file references from users table ---
+// --- STEP 2: Gather user file references ---
 $userFilePaths = [];
 $res = mysqli_query($conn, "
     SELECT 
@@ -63,7 +62,6 @@ $res = mysqli_query($conn, "
         additional_docs_path
     FROM users
 ");
-
 while ($row = mysqli_fetch_assoc($res)) {
     foreach ($row as $col => $val) {
         if (empty($val)) continue;
@@ -80,7 +78,7 @@ while ($row = mysqli_fetch_assoc($res)) {
     }
 }
 
-// --- Step 3: Gather file references from applications ---
+// --- STEP 3: Gather application file references ---
 $appFilePaths = []; // keep
 $rejFilePaths = []; // delete
 
@@ -94,12 +92,11 @@ $appColumns = [
 ];
 
 $res = mysqli_query($conn, "SELECT " . implode(',', $appColumns) . ", status, user_id FROM applications");
-
 while ($row = mysqli_fetch_assoc($res)) {
     $status = strtolower(trim($row['status'] ?? ''));
     $uid = (int)($row['user_id'] ?? 0);
-
     $paths = [];
+
     foreach ($appColumns as $col) {
         if (empty($row[$col])) continue;
 
@@ -115,27 +112,24 @@ while ($row = mysqli_fetch_assoc($res)) {
         }
     }
 
-    // Determine whether to keep or delete based on status + user validity
-    foreach ($paths as $p) {
-        if (
-            in_array($uid, $validUserIds, true) && 
-            ($status === 'pending' || $status === 'approved' || $status === '')
-        ) {
-            $appFilePaths[] = $p; // keep
-        } elseif ($status === 'rejected' && !in_array($uid, $validUserIds, true)) {
-            $rejFilePaths[] = $p; // delete
-        }
+    // Keep if pending or approved
+    if (in_array($status, ['pending', 'approved', '']) || in_array($uid, $validUserIds, true)) {
+        foreach ($paths as $p) $appFilePaths[] = $p;
+    }
+
+    // Delete if rejected and user is not valid
+    if ($status === 'rejected' && !in_array($uid, $validUserIds, true)) {
+        foreach ($paths as $p) $rejFilePaths[] = $p;
     }
 }
 
-// --- Step 4: Property image paths ---
+// --- STEP 4: Property image paths ---
 $propertyFilePaths = [];
 $res = mysqli_query($conn, "
     SELECT pi.image_path, p.user_id, p.agent_id
     FROM property_images pi
     LEFT JOIN properties p ON p.id = pi.property_id
 ");
-
 while ($row = mysqli_fetch_assoc($res)) {
     $img = trim($row['image_path'] ?? '');
     if (empty($img)) continue;
@@ -149,40 +143,37 @@ while ($row = mysqli_fetch_assoc($res)) {
     if ($ownerValid) {
         $propertyFilePaths[] = $absPath; // keep
     } else {
-        $rejFilePaths[] = $absPath; // invalid owner → delete
+        $rejFilePaths[] = $absPath; // delete
     }
 }
 
-// --- Step 5: Property draft images ---
+// --- STEP 5: Property draft images ---
 $draftFilePaths = [];
 $res = mysqli_query($conn, "
     SELECT image_path, user_id 
     FROM property_drafts 
     WHERE image_path IS NOT NULL AND image_path != ''
 ");
-
 while ($row = mysqli_fetch_assoc($res)) {
     $path = trim($row['image_path']);
     $uid = (int)$row['user_id'];
-
     $absPath = $_SERVER['DOCUMENT_ROOT'] . '/' . ltrim($path, '/');
-    $ownerValid = in_array($uid, $validUserIds, true);
 
-    if ($ownerValid) {
+    if (in_array($uid, $validUserIds, true)) {
         $draftFilePaths[] = $absPath; // keep
     } else {
-        $rejFilePaths[] = $absPath; // invalid user → delete
+        $rejFilePaths[] = $absPath; // delete
     }
 }
 
-// --- Step 6: Build lookups ---
+// --- STEP 6: Build lookups ---
 $userLookup  = array_flip(array_unique($userFilePaths));
 $appLookup   = array_flip(array_unique($appFilePaths));
 $propLookup  = array_flip(array_unique($propertyFilePaths));
 $draftLookup = array_flip(array_unique($draftFilePaths));
 $rejLookup   = array_flip(array_unique($rejFilePaths));
 
-// --- Step 7: Iterate directories and clean ---
+// --- STEP 7: Iterate directories and cleanup ---
 foreach ($dirs as $dir) {
     if (!is_dir($dir)) continue;
 
@@ -202,7 +193,7 @@ foreach ($dirs as $dir) {
             continue;
         }
 
-        // Delete if orphaned or in rejected list
+        // Delete if orphaned or explicitly rejected
         if (isset($rejLookup[$fullPath]) || (
             !isset($userLookup[$fullPath]) &&
             !isset($appLookup[$fullPath]) &&

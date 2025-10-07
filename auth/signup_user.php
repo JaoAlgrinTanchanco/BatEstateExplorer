@@ -61,7 +61,7 @@ $password_hash = password_hash($password, PASSWORD_DEFAULT);
 $profile_picture_path = null;
 if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] !== UPLOAD_ERR_NO_FILE) {
     $file = $_FILES['profile_picture'];
-    $allowedTypes = ['image/jpeg','image/jpg','image/png'];
+    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
     if (!in_array($file['type'], $allowedTypes, true)) {
         $_SESSION['notification'] = ['type'=>'error','message'=>'Invalid profile picture type.'];
         header('Location: signup.php');
