@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+<<<<<<< HEAD
 // Admin Agents (Direct + Associate)
 document.addEventListener('DOMContentLoaded', () => {
   const agentList = document.getElementById('agentList');
@@ -187,6 +188,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       else if (e.target.matches('.btn-remove')) {
+=======
+// Admin Agents (List, Remove, Sort)
+document.addEventListener('DOMContentLoaded', () => {
+  const agentList = document.getElementById('agentList');
+  const sortSelect = document.getElementById('sort');
+
+  if (agentList) {
+    agentList.addEventListener('click', async (e) => {
+
+      // 🔹 Modal view logic removed
+      // Now handled by direct_modal_detail.js / associate_modal_detail.js
+
+      if (e.target.matches('.btn-remove')) {
+>>>>>>> origin/ansel
         const agentId = e.target.dataset.agentId;
         if (!agentId) return;
 
@@ -220,6 +235,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const sortBy = sortSelect.value;
         const cards = Array.from(agentList.querySelectorAll('.direct-agent-card, .associate-agent-card'));
         let sorted;
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ansel
         switch (sortBy) {
           case 'date':
             sorted = cards.sort((a, b) => new Date(b.dataset.date) - new Date(a.dataset.date));
@@ -231,10 +250,15 @@ document.addEventListener('DOMContentLoaded', () => {
             sorted = cards.sort((a, b) => parseInt(b.dataset.experience) - parseInt(a.dataset.experience));
             break;
         }
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ansel
         sorted.forEach(card => agentList.appendChild(card));
       });
     }
   }
+<<<<<<< HEAD
 
   // Close modal if clicking outside
   window.addEventListener('click', e => {
@@ -245,10 +269,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Logout Modal Logic
+=======
+});
+
+// Logout Modal Logic (safe version)
+>>>>>>> origin/ansel
 const logoutLink = document.querySelector('.sidebar-footer a');
 const logoutModal = document.getElementById('logoutModal');
 const cancelBtn = document.getElementById('cancelLogout');
 
+<<<<<<< HEAD
 // Open modal instead of direct logout
 logoutLink.addEventListener('click', function(e) {
   e.preventDefault();
@@ -266,3 +296,23 @@ logoutModal.addEventListener('click', function(e) {
     logoutModal.style.display = 'none';
   }
 });
+=======
+if (logoutLink && logoutModal) {
+  logoutLink.addEventListener('click', function (e) {
+    e.preventDefault();
+    logoutModal.style.display = 'flex';
+  });
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function () {
+      logoutModal.style.display = 'none';
+    });
+  }
+
+  logoutModal.addEventListener('click', function (e) {
+    if (e.target === logoutModal) {
+      logoutModal.style.display = 'none';
+    }
+  });
+}
+>>>>>>> origin/ansel

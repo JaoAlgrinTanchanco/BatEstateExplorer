@@ -11,20 +11,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
+<<<<<<< HEAD
     $stmt = $conn->prepare("SELECT id, first_name, last_name, email, privileges FROM users WHERE email = ?");
+=======
+    $stmt = $conn->prepare("SELECT id, first_name, last_name, email, profile_image_path, created_at, privileges FROM users WHERE email = ? LIMIT 1");
+>>>>>>> origin/ansel
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
     $user = $result->fetch_assoc();
+<<<<<<< HEAD
+=======
+    $stmt->close();
+>>>>>>> origin/ansel
 
     if (!$user) {
         echo json_encode(['error' => 'User not found']);
         exit;
     }
 
+<<<<<<< HEAD
     // Build full name
     $user['name'] = trim($user['first_name'] . ' ' . $user['last_name']);
 
+=======
+    // Full name
+    $user['name'] = trim($user['first_name'] . ' ' . $user['last_name']);
+
+    // Profile image
+    $profileImage = '/BatEstateExplorer/assets/images/no-image.png';
+    if (!empty($user['profile_image_path'])) {
+        $path = str_replace('\\', '/', $user['profile_image_path']);
+        $path = str_replace('C:/xampp/htdocs', '', $path);
+        if ($path[0] !== '/') $path = '/' . $path;
+        $profileImage = $path;
+    }
+    $user['profile_image'] = $profileImage;
+
+    // Joined duration (human-readable: years, months, weeks, days)
+    $created = new DateTime($user['created_at']);
+    $now = new DateTime();
+    $diff = $now->diff($created);
+
+    if ($diff->y > 0) {
+        $user['joined'] = $diff->y . ' year' . ($diff->y > 1 ? 's' : '') . ' ago';
+    } elseif ($diff->m > 0) {
+        $user['joined'] = $diff->m . ' month' . ($diff->m > 1 ? 's' : '') . ' ago';
+    } elseif ($diff->d >= 7) {
+        $weeks = floor($diff->d / 7);
+        $user['joined'] = $weeks . ' week' . ($weeks > 1 ? 's' : '') . ' ago';
+    } elseif ($diff->d > 0) {
+        $user['joined'] = $diff->d . ' day' . ($diff->d > 1 ? 's' : '') . ' ago';
+    } elseif ($diff->h > 0) {
+        $user['joined'] = $diff->h . ' hour' . ($diff->h > 1 ? 's' : '') . ' ago';
+    } elseif ($diff->i > 0) {
+        $user['joined'] = $diff->i . ' minute' . ($diff->i > 1 ? 's' : '') . ' ago';
+    } else {
+        $user['joined'] = 'Just now';
+    }
+
+>>>>>>> origin/ansel
     // Ensure privileges is a valid JSON array
     $user['privileges'] = $user['privileges'] ? json_decode($user['privileges'], true) : [];
 
@@ -48,6 +94,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute();
     $result = $stmt->get_result();
     $user = $result->fetch_assoc();
+<<<<<<< HEAD
+=======
+    $stmt->close();
+>>>>>>> origin/ansel
 
     if (!$user) {
         echo json_encode(['error' => 'User not found']);
@@ -74,4 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->close();
     $conn->close();
 }
+<<<<<<< HEAD
 ?>
+=======
+>>>>>>> origin/ansel

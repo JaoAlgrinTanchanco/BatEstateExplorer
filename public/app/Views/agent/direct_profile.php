@@ -1,12 +1,49 @@
 <?php
+<<<<<<< HEAD
     if (!isset($user)) {die('Access denied.');}
 
     // Use the centralized notification system
     require_once __DIR__ . '/../../../../components/notification.php';
+=======
+    if (!isset($user)) die('Access denied.');
+
+    // Centralized notification system
+    require_once __DIR__ . '/../../../../components/notification.php';
+    $secrets = require __DIR__ . '/../../../../config/secret.php';
+    $paypalClientId = htmlspecialchars($secrets['PAYPAL_CLIENT_ID']);
+
+    // Show flash messages
+    foreach (['success', 'error'] as $type) {
+        if (!empty($_SESSION['flash_' . $type])): ?>
+            <div class="alert alert-<?= $type === 'success' ? 'success' : 'danger' ?>">
+                <?= $_SESSION['flash_' . $type]; unset($_SESSION['flash_' . $type]); ?>
+            </div>
+        <?php endif;
+    }
+
+    // Fetch user's profile image
+    $profileImage = null;
+
+    $stmt = $conn->prepare("SELECT profile_image_path FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user['id']);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!empty($result['profile_image_path'])) {
+        $path = str_replace('\\', '/', $result['profile_image_path']);
+        $path = str_replace('C:/xampp/htdocs', '', $path);
+        if ($path[0] !== '/') {
+            $path = '/' . $path;
+        }
+        $profileImage = $path;
+    }
+>>>>>>> origin/ansel
 
     // Detect active tab
     $tab = $_GET['tab'] ?? 'overview';
 
+<<<<<<< HEAD
     // Initialize listings array
     $listings = [];
 
@@ -127,6 +164,123 @@
             amount,
             status,
             method,
+=======
+    // Initialize
+    $listings = $reviews = [];
+    $avg_rating = 0;
+    $total_reviews = 0;
+
+    // Get agent_id from users.id
+    $stmt = $conn->prepare("SELECT id FROM agents WHERE user_id = ?");
+    $stmt->bind_param("i", $user['id']);
+    $stmt->execute();
+    $agentRow = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    $agent_id = $agentRow ? (int)$agentRow['id'] : 0;
+
+    // Fetch all properties for this agent (all statuses)
+    $stmt = $conn->prepare("
+        SELECT p.*, sa.id AS sold_by_agent_id, su.email AS sold_by_email
+        FROM properties p
+        LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
+        LEFT JOIN users su ON sa.user_id = su.id
+        WHERE p.listed_by_agent_id = ? OR p.sold_by_agent_id = ? OR p.agent_id = ?
+        ORDER BY p.created_at DESC
+    ");
+    $stmt->bind_param("iii", $agent_id, $agent_id, $agent_id);
+    $stmt->execute();
+    $listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    // Fetch all images for these properties
+    if (!empty($listings)) {
+        $propertyIds = array_column($listings, 'id');
+        $placeholders = implode(',', array_fill(0, count($propertyIds), '?'));
+        $types = str_repeat('i', count($propertyIds));
+
+        $stmtImg = $conn->prepare("
+            SELECT property_id, image_path, is_primary
+            FROM property_images
+            WHERE property_id IN ($placeholders)
+            ORDER BY is_primary DESC, id ASC
+        ");
+
+        $params = array_merge([$types], $propertyIds);
+        $refs = [];
+        foreach ($params as $key => $value) $refs[$key] = &$params[$key];
+        call_user_func_array([$stmtImg, 'bind_param'], $refs);
+
+        $stmtImg->execute();
+        $allImages = $stmtImg->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmtImg->close();
+
+        $imagesGrouped = [];
+        foreach ($allImages as $img) {
+            $imagesGrouped[$img['property_id']][] = [
+                'image_path' => $img['image_path'],
+                'is_primary' => $img['is_primary']
+            ];
+        }
+
+        foreach ($listings as &$property) {
+            $property['images'] = $imagesGrouped[$property['id']] ?? [];
+        }
+    }
+
+    // Reviews & ratings (if analytics tab)
+    if ($tab === 'analytics') {
+        // Average rating and total reviews
+        $stmt = $conn->prepare("
+            SELECT AVG(pr.rating) AS avg_rating, COUNT(*) AS total_reviews
+            FROM property_reviews pr
+            JOIN properties p ON pr.property_id = p.id
+            WHERE p.agent_id = ?
+        ");
+        $stmt->bind_param("i", $agent_id);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $avg_rating = $row['avg_rating'] ? round($row['avg_rating'], 1) : 0;
+        $total_reviews = $row['total_reviews'] ?? 0;
+        $stmt->close();
+
+        // Fetch reviews with user info and one property image (primary preferred)
+        $stmt = $conn->prepare("
+            SELECT pr.rating, pr.review_text,
+                u.first_name, u.last_name, u.email,
+                p.title, pi.image_path
+            FROM property_reviews pr
+            JOIN users u ON pr.user_id = u.id
+            JOIN properties p ON pr.property_id = p.id
+            LEFT JOIN (
+                SELECT property_id, image_path
+                FROM property_images
+                GROUP BY property_id
+                ORDER BY is_primary DESC, id ASC
+            ) pi ON pi.property_id = p.id
+            WHERE p.agent_id = ?
+            ORDER BY pr.created_at DESC
+        ");
+        $stmt->bind_param("i", $agent_id);
+        $stmt->execute();
+        $reviews = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+    }
+
+    // Wallet balance
+    $walletBalance = 0.00;
+    $stmt = $conn->prepare("SELECT wallet_balance FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user['id']);
+    $stmt->execute();
+    $rowWallet = $stmt->get_result()->fetch_assoc();
+    $walletBalance = $rowWallet ? (float)$rowWallet['wallet_balance'] : 0.00;
+    $stmt->close();
+    $walletBalanceFormatted = number_format($walletBalance, 2, '.', ',');
+
+    // Last 10 transactions
+    $transactions = [];
+    $stmt = $conn->prepare("
+        SELECT id, property, amount, status, method,
+>>>>>>> origin/ansel
             DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS date
         FROM transactions
         WHERE user_id = ?
@@ -136,6 +290,7 @@
     $stmt->bind_param("i", $user['id']);
     $stmt->execute();
     $res = $stmt->get_result();
+<<<<<<< HEAD
     if ($res && $res->num_rows > 0) {
         $transactions = $res->fetch_all(MYSQLI_ASSOC);
     }
@@ -144,6 +299,14 @@
     // Fetch agent info for wallet tab
     $agentInfo = [
         'name'  => trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')),
+=======
+    if ($res && $res->num_rows > 0) $transactions = $res->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    // Agent info
+    $agentInfo = [
+        'name'  => $user['first_name'] . ' ' . $user['last_name'],
+>>>>>>> origin/ansel
         'phone' => $user['phone'] ?? 'N/A'
     ];
 ?>
@@ -155,9 +318,15 @@
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_analytics.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_review.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_wallet.css">
+<<<<<<< HEAD
 <script src="https://www.paypal.com/sdk/js?client-id=AS2IFQyy2dcIowcsn3TnY5rSfvzbQbx3KrcGxSeaVBr9XoqYVqNrDR_hPHDXt3gUzhIr1vuUx1m4J1Yt&currency=PHP"></script>
 <div class="dashboard-container">
 
+=======
+<script src="https://www.paypal.com/sdk/js?client-id=<?= $paypalClientId ?>&currency=PHP"></script>
+
+<div class="dashboard-container">
+>>>>>>> origin/ansel
     <!-- Arrow Button for Mobile -->
     <button id="sidebarToggle" class="sidebar-toggle">
     <i class="fa-solid fa-arrow-right"></i>
@@ -175,8 +344,27 @@
                 <div class="agent-sidebar">
                     <!-- Sidebar Header -->
                     <div class="sidebar-header">
+<<<<<<< HEAD
                         <i class="fa-solid fa-user-tie sidebar-icon"></i>
                         <h2>Profile</h2>
+=======
+                        <?php if (!empty($profileImage)): ?>
+                            <img 
+                                src="<?= htmlspecialchars($profileImage) ?>" 
+                                alt="Profile Picture" 
+                                class="profile-img" 
+                                onclick="window.location.href='?view=direct_profile&tab=overview'"
+                                style="cursor: pointer;"
+                            >
+                        <?php else: ?>
+                            <i 
+                                class="fa-solid fa-user-tie sidebar-icon" 
+                                onclick="window.location.href='?view=direct_profile&tab=overview'"
+                                style="cursor: pointer;"
+                            ></i>
+                        <?php endif; ?>
+                        <h2><?= htmlspecialchars($user['first_name'] ?? 'Profile') ?></h2>
+>>>>>>> origin/ansel
                     </div>
 
                     <!-- Sidebar Nav -->
@@ -205,6 +393,7 @@
 
                 <div class="listing-container">
                 <?php if (!empty($listings)): ?>
+<<<<<<< HEAD
                     <?php foreach ($listings as $property): 
                         $ownership = ($property['agent_id'] == $agent_id) ? 'Owned' : 'Shared';
 
@@ -221,12 +410,44 @@
                             <div class="listing-thumb">
                                 <?php if ($first_img_src): ?>
                                     <img src="<?= $first_img_src ?>" alt="Property Image">
+=======
+                    <?php
+                        $listings = array_values(array_reduce($listings, function($carry, $item) {
+                            $carry[$item['id']] = $item;
+                            return $carry;
+                        }, []));
+                    ?>
+                    <?php foreach ($listings as $property): 
+                    
+                        // Determine ownership type
+                        $isOwnedByAgent = ($property['listed_by_agent_id'] == $agent_id);
+                        $ownership = $isOwnedByAgent ? 'Owned' : 'Shared';
+
+                        // Determine listing type (Owned or Sold by another agent)
+                        $listingTypeSelected = !empty($property['sold_by_agent_id']) ? 'sold_by' : 'owned';
+                        $ownershipLabel = ($listingTypeSelected === 'sold_by' && !empty($property['sold_by_email'])) 
+                            ? "Sold by: " . htmlspecialchars($property['sold_by_email']) 
+                            : "Owned";
+
+                        // Grab first uploaded image if available
+                        $first_img_src = '';
+                        if (!empty($property['images']) && isset($property['images'][0]['image_path'])) {
+                            $first_img_src = "/BatEstateExplorer/" . ltrim($property['images'][0]['image_path'], '/');
+                        }
+                    ?> 
+                        <?php echo "<!-- ID: {$property['id']} -->"; ?>
+                        <div class="listing-card">
+                            <div class="listing-thumb">
+                                <?php if ($first_img_src): ?>
+                                    <img src="<?= htmlspecialchars($first_img_src) ?>" alt="Property Image">
+>>>>>>> origin/ansel
                                 <?php else: ?>
                                     <img src="/BatEstateExplorer/assets/images/no-image.png" alt="No Image Available">
                                 <?php endif; ?>
 
                                 <!-- Overlay buttons -->
                                 <div class="overlay">
+<<<<<<< HEAD
                                     <span onclick="openModal(<?= $property['id'] ?>)">Edit</span>
                                     <form id="deleteForm-<?= $property['id'] ?>" 
                                         action="/BatEstateExplorer/public/api/delete_listing.php" 
@@ -234,6 +455,15 @@
                                         style="display:inline;">
                                         <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
                                         <button type="button" onclick="deleteListing(<?= $property['id'] ?>)" class="delete-listing-btn">
+=======
+                                    <span onclick="openModal(<?= (int)$property['id'] ?>)">Edit</span>
+                                    <form id="deleteForm-<?= (int)$property['id'] ?>" 
+                                        action="/BatEstateExplorer/public/api/delete_listing.php" 
+                                        method="POST" 
+                                        style="display:inline;">
+                                        <input type="hidden" name="property_id" value="<?= (int)$property['id'] ?>">
+                                        <button type="button" onclick="deleteListing(<?= (int)$property['id'] ?>)" class="delete-listing-btn">
+>>>>>>> origin/ansel
                                             Delete
                                         </button>
                                     </form>
@@ -241,17 +471,27 @@
                             </div>
 
                             <div class="details">
+<<<<<<< HEAD
                                 <div class="info-row"><strong>Title:</strong> <span><?= htmlspecialchars($property['title']) ?></span></div>
                                 <div class="info-row"><strong>Location:</strong> <span><?= htmlspecialchars($property['location']) ?></span></div>
                                 <div class="info-row"><strong>Price:</strong> <span>₱<?= number_format($property['price'], 2) ?></span></div>
                                 <div class="info-row"><strong>Bedrooms:</strong> <span><?= htmlspecialchars($property['bedrooms']) ?></span></div>
                                 <div class="info-row"><strong>Bathrooms:</strong> <span><?= htmlspecialchars($property['bathrooms']) ?></span></div>
                                 <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($property['status']) ?></span></div>
+=======
+                                <div class="info-row"><strong>Title:</strong> <span><?= htmlspecialchars($property['title'] ?? 'N/A') ?></span></div>
+                                <div class="info-row"><strong>Location:</strong> <span><?= htmlspecialchars($property['location'] ?? 'N/A') ?></span></div>
+                                <div class="info-row"><strong>Price:</strong> <span>₱<?= number_format((float)($property['price'] ?? 0), 2) ?></span></div>
+                                <div class="info-row"><strong>Bedrooms:</strong> <span><?= htmlspecialchars($property['bedrooms'] ?? 0) ?></span></div>
+                                <div class="info-row"><strong>Bathrooms:</strong> <span><?= htmlspecialchars($property['bathrooms'] ?? 0) ?></span></div>
+                                <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($property['status'] ?? 'pending') ?></span></div>
+>>>>>>> origin/ansel
                                 <div class="info-row"><strong>Listing Type:</strong> <span><?= $ownershipLabel ?></span></div>
                             </div>
                         </div>
 
                         <!-- Edit Modal -->
+<<<<<<< HEAD
                         <div id="editModal-<?= $property['id'] ?>" class="edit-modal-wrapper2">
                             <div class="edit-modal-content2">
                                 <!-- Close Button -->
@@ -262,12 +502,29 @@
 
                                 <form id="editForm-<?= $property['id'] ?>" method="POST" action="/BatEstateExplorer/public/api/update_property.php" enctype="multipart/form-data">
                                     <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
+=======
+                        <div id="editModal-<?= (int)$property['id'] ?>" class="edit-modal-wrapper2">
+                            <div class="edit-modal-content2">
+                                <!-- Close Button -->
+                                <span class="close2" onclick="closeModal(<?= (int)$property['id'] ?>)">&times;</span>
+
+                                <!-- Title -->
+                                <h2>Edit Listing: <?= htmlspecialchars($property['title'] ?? 'Untitled') ?></h2>
+
+                                <form id="editForm-<?= (int)$property['id'] ?>" 
+                                    method="POST" 
+                                    action="/BatEstateExplorer/public/api/update_property.php" 
+                                    enctype="multipart/form-data">
+                                    
+                                    <input type="hidden" name="property_id" value="<?= (int)$property['id'] ?>">
+>>>>>>> origin/ansel
 
                                     <!-- Images on top -->
                                     <div class="form-group2">
                                         <div class="image-gallery2">
                                             <?php if (!empty($property['images'])): ?>
                                                 <?php foreach ($property['images'] as $img): ?>
+<<<<<<< HEAD
                                                     <div class="image-item2">
                                                         <img src="/BatEstateExplorer/<?= $img['image_path'] ?>" alt="Property Image">
                                                         <input type="hidden" name="existing_images[]" value="<?= $img['image_path'] ?>">
@@ -275,6 +532,23 @@
                                                             <input type="radio" name="primary_image" value="<?= $img['image_path'] ?>" <?= isset($img['is_primary']) && $img['is_primary'] ? 'checked' : '' ?>> Primary
                                                         </label>
                                                         <button type="button" class="remove-img-btn2" onclick="markImageForRemoval(this, '<?= $img['image_path'] ?>')">×</button>
+=======
+                                                    <?php 
+                                                        $imgPath = "/BatEstateExplorer/" . ltrim($img['image_path'], '/'); 
+                                                        $isPrimary = isset($img['is_primary']) && $img['is_primary'];
+                                                    ?>
+                                                    <div class="image-item2">
+                                                        <img src="<?= htmlspecialchars($imgPath) ?>" alt="Property Image">
+                                                        <input type="hidden" name="existing_images[]" value="<?= htmlspecialchars($img['image_path']) ?>">
+                                                        <label class="primary-label2">
+                                                            <input type="radio" 
+                                                                name="primary_image" 
+                                                                value="<?= htmlspecialchars($img['image_path']) ?>" 
+                                                                <?= $isPrimary ? 'checked' : '' ?>> Primary
+                                                        </label>
+                                                        <button type="button" class="remove-img-btn2" 
+                                                            onclick="markImageForRemoval(this, '<?= htmlspecialchars($img['image_path']) ?>')">×</button>
+>>>>>>> origin/ansel
                                                     </div>
                                                 <?php endforeach; ?>
                                             <?php else: ?>
@@ -284,8 +558,13 @@
                                     </div>
 
                                     <div class="form-group2">
+<<<<<<< HEAD
                                         <label class="newImage" for="newImages-<?= $property['id'] ?>">Add New Images</label>
                                         <input id="newImages-<?= $property['id'] ?>" type="file" name="new_images[]" multiple accept="image/*">
+=======
+                                        <label class="newImage" for="newImages-<?= (int)$property['id'] ?>">Add New Images</label>
+                                        <input id="newImages-<?= (int)$property['id'] ?>" type="file" name="new_images[]" multiple accept="image/*">
+>>>>>>> origin/ansel
                                     </div>
 
                                     <!-- Form fields in 2-column grid -->
@@ -298,8 +577,13 @@
                                         <div class="form-group2">
                                             <label>Property Type</label>
                                             <select name="property_type" required>
+<<<<<<< HEAD
                                                 <option value="Property" <?= $property['property_type']=='Property'?'selected':'' ?>>Property</option>
                                                 <option value="Lot" <?= $property['property_type']=='Lot'?'selected':'' ?>>Lot</option>
+=======
+                                                <option value="Property" <?= ($property['property_type'] ?? '') === 'Property' ? 'selected' : '' ?>>Property</option>
+                                                <option value="Lot" <?= ($property['property_type'] ?? '') === 'Lot' ? 'selected' : '' ?>>Lot</option>
+>>>>>>> origin/ansel
                                             </select>
                                         </div>
 
@@ -307,17 +591,27 @@
                                             <label>Location</label>
                                             <select name="location" required>
                                                 <option value="">Select Location</option>
+<<<<<<< HEAD
                                                 <?php
+=======
+                                                <?php 
+>>>>>>> origin/ansel
                                                 $locations = [
                                                     "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
                                                     "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
                                                     "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
                                                     "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
                                                 ];
+<<<<<<< HEAD
 
                                                 foreach ($locations as $loc): ?>
                                                     <option value="<?= $loc ?>" <?= $property['location'] == $loc ? 'selected' : '' ?>>
                                                         <?= $loc ?>
+=======
+                                                foreach ($locations as $loc): ?>
+                                                    <option value="<?= htmlspecialchars($loc) ?>" <?= ($property['location'] ?? '') === $loc ? 'selected' : '' ?>>
+                                                        <?= htmlspecialchars($loc) ?>
+>>>>>>> origin/ansel
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
@@ -325,26 +619,43 @@
 
                                         <div class="form-group2">
                                             <label>Price</label>
+<<<<<<< HEAD
                                             <input type="number" step="0.01" name="price" value="<?= $property['price'] ?>" required>
+=======
+                                            <input type="number" step="0.01" name="price" value="<?= htmlspecialchars($property['price']) ?>" required>
+>>>>>>> origin/ansel
                                         </div>
 
                                         <div class="form-group2">
                                             <label>Bedrooms</label>
+<<<<<<< HEAD
                                             <input type="number" name="bedrooms" value="<?= $property['bedrooms'] ?>">
+=======
+                                            <input type="number" name="bedrooms" value="<?= htmlspecialchars($property['bedrooms']) ?>">
+>>>>>>> origin/ansel
                                         </div>
 
                                         <div class="form-group2">
                                             <label>Bathrooms</label>
+<<<<<<< HEAD
                                             <input type="number" name="bathrooms" value="<?= $property['bathrooms'] ?>">
+=======
+                                            <input type="number" name="bathrooms" value="<?= htmlspecialchars($property['bathrooms']) ?>">
+>>>>>>> origin/ansel
                                         </div>
 
                                         <div class="form-group2">
                                             <label>Lot Size (sqm)</label>
+<<<<<<< HEAD
                                             <input type="number" step="0.01" name="lot_size" value="<?= $property['lot_size'] ?>">
+=======
+                                            <input type="number" step="0.01" name="lot_size" value="<?= htmlspecialchars($property['lot_size']) ?>">
+>>>>>>> origin/ansel
                                         </div>
 
                                         <div class="form-group2">
                                             <label>Listing Type</label>
+<<<<<<< HEAD
                                             <select name="listing_type" onchange="toggleSoldBy(this, <?= $property['id'] ?>)">
                                                 <option value="owned" <?= ($listingTypeSelected=='owned')?'selected':'' ?>>Owned</option>
                                                 <option value="sold_by" <?= ($listingTypeSelected=='sold_by')?'selected':'' ?>>Sold By</option>
@@ -365,12 +676,36 @@
                                         <!-- Full-width submit button -->
                                         <div class="form-group2 form-full2">
                                             <button type="button" onclick="confirmEdit(<?= $property['id'] ?>)">Update Listing</button>
+=======
+                                            <select name="listing_type" onchange="toggleSoldBy(this, <?= (int)$property['id'] ?>)">
+                                                <option value="owned" <?= ($listingTypeSelected === 'owned') ? 'selected' : '' ?>>Owned</option>
+                                                <option value="sold_by" <?= ($listingTypeSelected === 'sold_by') ? 'selected' : '' ?>>Sold By</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group2" id="soldByContainer-<?= (int)$property['id'] ?>" style="display: <?= ($listingTypeSelected === 'sold_by') ? 'block' : 'none' ?>;">
+                                            <label>Agent Email</label>
+                                            <input type="email" name="sold_by_email" placeholder="Enter agent email" 
+                                                value="<?= ($listingTypeSelected === 'sold_by') ? htmlspecialchars($property['sold_by_email'] ?? '') : '' ?>">
+                                        </div>
+
+                                        <div class="form-group2 form-full2">
+                                            <label>Description</label>
+                                            <textarea name="description"><?= htmlspecialchars($property['description'] ?? '') ?></textarea>
+                                        </div>
+
+                                        <div class="form-group2 form-full2">
+                                            <button type="button" onclick="confirmEdit(<?= (int)$property['id'] ?>)">Update Listing</button>
+>>>>>>> origin/ansel
                                         </div>
                                     </div>
                                 </form>
                             </div>
                         </div>
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/ansel
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div class="overview-card">
@@ -378,6 +713,7 @@
                     </div>
                 <?php endif; ?>
                 </div>
+<<<<<<< HEAD
 
             <?php break; ?>
 
@@ -454,11 +790,115 @@
                         </div>
 
                     </div>
+=======
+            <?php break; ?>
+
+            <?php case 'add_listing': ?>
+                <header class="content-header">
+                    <h2>Add Listings</h2>
+                </header>
+                <p>Drafts:</p>
+                <div id="draftContainer" class="draft-container">
+                    <?php
+                    // Example: fetch drafts from DB
+                    $stmt = $conn->prepare("SELECT id, title FROM property_drafts WHERE user_id = ?");
+                    $stmt->bind_param("i", $_SESSION['user_id']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    while ($draft = $result->fetch_assoc()):
+                    ?>
+                    <div class="draft-card" data-id="<?= $draft['id'] ?>">
+                        <span class="delete-draft">&times;</span>
+                        <?= htmlspecialchars($draft['title']) ?>
+                    </div>
+                    <?php endwhile; ?>
+                </div>
+
+                <form id="addListingForm" enctype="multipart/form-data">
+                <div class="addListing-container">
+
+                    <!-- Card: Basic Info (with property images) -->
+                    <div class="form-card">
+                    <h3 class="form-card-title">Basic Information</h3>
+                    
+                    <label for="title"><strong>Property Name</strong></label>
+                    <input type="text" id="title" name="title" required>
+
+                    <label for="location"><strong>Location</strong></label>
+                    <select id="location" name="location" required>
+                        <option value="">Select Location</option>
+                        <?php
+                        $locations = [
+                            "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
+                            "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
+                            "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
+                            "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
+                        ];
+
+                        foreach ($locations as $loc): ?>
+                            <option value="<?= $loc ?>"><?= $loc ?></option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <!-- Property Images inside Basic Info -->
+                    <label for="images"><strong>Upload Images</strong></label>
+                    <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
+                        <p>Drag & drop images here or click to browse</p>
+                        <input type="file" id="images" accept="image/*" multiple style="display:none;"> 
+                    </div>
+                    <div id="imagePreview" class="image-preview" aria-live="polite"></div>
+                    </div>
+
+                    <!-- Card: Property Details -->
+                    <div class="form-card">
+                    <h3 class="form-card-title">Property Details</h3>
+
+                    <label for="price"><strong>Price (₱)</strong></label>
+                    <input type="number" id="price" name="price" min="0" step="0.01" required>
+
+                    <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
+                    <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
+
+                    <label for="property_type"><strong>Property Type</strong></label>
+                    <select id="property_type" name="property_type" required>
+                        <option value="">-- Select Type --</option>
+                        <option value="Property">Property</option>
+                        <option value="Lot">Lot</option>
+                    </select>
+
+                    <label for="bedrooms"><strong>Bedrooms</strong></label>
+                    <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
+
+                    <label for="bathrooms"><strong>Bathrooms</strong></label>
+                    <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
+                    </div>
+
+                    <!-- Card: Description (with submit button) -->
+                    <div class="form-card">
+                    <h3 class="form-card-title">Description</h3>
+                    <label for="description"><strong>Description</strong></label>
+                    <textarea id="description" name="description" rows="4" required></textarea>
+
+                    <!-- Submit Button moved here -->
+                    <div class="add_listing_actions">
+                        <button type="button" id="saveDraftBtn" class="btn-draft" data-url="/BatEstateExplorer/public/api/save_draft.php">
+                            Save Draft
+                        </button>
+                        <button type="button" id="openListingModalBtn" class="btn-submit">Save Listing (Balance: ₱<?= $walletBalanceFormatted ?? '0.00' ?>)</button>
+                    </div>
+                    </div>
+
+                </div>
+>>>>>>> origin/ansel
                 </form>
 
                 <!-- Listing Fee Modal -->
                 <div id="listingFeeModal" class="deposit-modal" onclick="closeListingFeeModal(event)">
+<<<<<<< HEAD
                     <div class="modal-content" onclick="event.stopPropagation()">
+=======
+                    <div class="modal-content3" onclick="event.stopPropagation()">
+>>>>>>> origin/ansel
                         <span class="close" onclick="closeListingFeeModal()">&times;</span>
                         <h2 class="modal-title">Listing Fee Payment</h2>
                         
@@ -489,6 +929,7 @@
                         </div>
                     </div>
                 </div>
+<<<<<<< HEAD
             <?php break; ?>
 
             <?php case 'analytics': ?>
@@ -502,6 +943,25 @@
                             <h1><?= $avg_rating ?></h1>
                             <div class="stars">
                                 <?php for ($i=1; $i<=5; $i++): ?>
+=======
+
+            <?php break; ?>
+
+            <?php case 'analytics': ?>
+                <header class="content-header">
+                    <h2>Analytics</h2>
+                </header>
+
+                <div class="analytics-wrapper">
+
+                    <!-- Analytics Summary Card Wrapper -->
+                    <div class="analytics-summary-wrapper">
+                        <div class="card analytics-summary">
+                            <h2>Performance Analytics</h2>
+                            <h1><?= $avg_rating ?></h1>
+                            <div class="stars">
+                                <?php for($i = 1; $i <= 5; $i++): ?>
+>>>>>>> origin/ansel
                                     <span class="star <?= $i <= round($avg_rating) ? 'filled' : '' ?>">★</span>
                                 <?php endfor; ?>
                             </div>
@@ -515,6 +975,7 @@
                         <?php if (!empty($reviews)): ?>
                             <?php foreach ($reviews as $r): 
                                 $user_name = trim($r['first_name'] . ' ' . $r['last_name']);
+<<<<<<< HEAD
                                 $image_path = !empty($r['image_path']) 
                                     ? "/BatEstateExplorer/" . $r['image_path'] 
                                     : '/assets/images/default.jpg';
@@ -526,11 +987,47 @@
                                         <p class="review-email"><?= htmlspecialchars($r['email']) ?>:</p>
                                         <span class="review-title"><?= htmlspecialchars($r['title']) ?></span>
                                     </div>
+=======
+
+                                // Reviewer profile picture (left)
+                                $reviewer_pfp = !empty($r['profile_image_path'])
+                                    ? "/BatEstateExplorer/storage/uploads/profile_images/" . basename($r['profile_image_path'])
+                                    : '/BatEstateExplorer/assets/images/default-profile-icon.png';
+
+                                // Original right-side image
+                                $image_path = !empty($r['image_path']) 
+                                    ? "/BatEstateExplorer/" . $r['image_path'] 
+                                    : '/BatEstateExplorer/assets/images/default.jpg';
+                            ?>
+                            <div class="review-card">
+                                <div class="review-left">
+                                    <div class="review-header-inline">
+                                        <?php if (!empty($r['profile_image_path'])): ?>
+                                            <img src="<?= htmlspecialchars("/BatEstateExplorer/storage/uploads/profile_images/" . basename($r['profile_image_path'])) ?>" 
+                                                alt="<?= htmlspecialchars($user_name) ?>" class="reviewer-pfp-inline">
+                                        <?php else: ?>
+                                            <i class="fa-solid fa-user reviewer-pfp-icon-inline"></i>
+                                        <?php endif; ?>
+
+                                        <div class="reviewer-info-inline">
+                                            <span class="reviewer-name-inline"><?= htmlspecialchars($user_name) ?></span>
+                                            <i class="fa-solid fa-circle dot-icon"></i>
+                                            <span class="review-email-inline"><?= htmlspecialchars($r['email']) ?></span>
+                                            <i class="fa-solid fa-circle dot-icon"></i>
+                                            <span class="review-title-inline"><?= htmlspecialchars($r['title']) ?></span>
+                                        </div>
+                                    </div>
+
+>>>>>>> origin/ansel
                                     <div class="review-stars">
                                         <?php for($i = 1; $i <= 5; $i++): ?>
                                             <span class="star <?= $i <= $r['rating'] ? 'filled' : '' ?>">★</span>
                                         <?php endfor; ?>
                                     </div>
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ansel
                                     <div class="review-text"><?= nl2br(htmlspecialchars($r['review_text'])) ?></div>
                                 </div>
                                 <div class="review-right">
@@ -567,7 +1064,18 @@
                     <h3>Select a Property</h3>
                     <div id="propertyList" class="property-list">
                         <?php if (!empty($listings)): ?>
+<<<<<<< HEAD
                             <?php foreach ($listings as $property): 
+=======
+                            <?php
+                                $listings = array_values(array_reduce($listings, function($carry, $item) {
+                                $carry[$item['id']] = $item;
+                                return $carry;
+                                }, []));
+                            ?>
+                            <?php foreach ($listings as $property): 
+                                // Check if property has images
+>>>>>>> origin/ansel
                                 $first_img_src = !empty($property['images']) && !empty($property['images'][0]['image_path'])
                                     ? "/BatEstateExplorer/" . $property['images'][0]['image_path'] 
                                     : "/BatEstateExplorer/assets/images/no-image.png"; // fallback placeholder
@@ -741,7 +1249,10 @@
                 </header>
 
                 <button id="editProfileBtn">Edit Profile</button>
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/ansel
                 <div class="overview-container">
                     <div class="profile-view">
 
@@ -766,6 +1277,7 @@
                             <div class="info-row"><strong>Training:</strong> <span><?= htmlspecialchars($user['training'] ?? '-') ?></span></div>
                         </div>
 
+<<<<<<< HEAD
                         <!-- Professional Details -->
                         <div class="overview-card">
                             <h3>Professional Details</h3>
@@ -775,6 +1287,15 @@
                             <div class="info-row"><strong>Years of Experience:</strong> <span><?= htmlspecialchars($user['experience_years'] ?? '-') ?></span></div>
                             <div class="info-row"><strong>Specialization:</strong> <span><?= htmlspecialchars($user['specialization'] ?? '-') ?></span></div>
                             <div class="info-row"><strong>Bio:</strong> <span><?= nl2br(htmlspecialchars($user['bio'] ?? '-')) ?></span></div>
+=======
+                        <!-- Account Status -->
+                        <div class="overview-card">
+                            <h3>Account Status</h3>
+                            <div class="info-row"><strong>Status:</strong> <span><?= htmlspecialchars($user['status'] ?? '-') ?></span></div>
+                            <div class="info-row"><strong>Admin Notes:</strong> <span><?= nl2br(htmlspecialchars($user['admin_notes'] ?? '-')) ?></span></div>
+                            <div class="info-row"><strong>Created At:</strong> <span><?= htmlspecialchars($user['created_at'] ?? '-') ?></span></div>
+                            <div class="info-row"><strong>Last Updated:</strong> <span><?= htmlspecialchars($user['updated_at'] ?? '-') ?></span></div>
+>>>>>>> origin/ansel
                         </div>
 
                         <!-- Documents -->
@@ -799,6 +1320,7 @@
                                 </div>
                             <?php endforeach; ?>
                         </div>
+<<<<<<< HEAD
 
                         <!-- Account Status -->
                         <div class="overview-card">
@@ -814,12 +1336,32 @@
                             <h3>Danger Zone</h3>
                             <p class="danger-note">⚠️ Once deleted, this account <strong>cannot be recovered</strong>. Please proceed with caution.</p>
                             <button type="button" id="openDeleteModal" class="delete-btn-overview">Delete Account</button>
+=======
+                        
+                        <!-- Professional Details -->
+                        <div class="overview-card">
+                            <h3>Professional Details</h3>
+                            <div class="info-row"><strong>Agent Type:</strong> <span><?= ($user['user_type'] ?? '') === 'associate_agent' ? 'Associate Agent' : (($user['user_type'] ?? '') === 'direct_agent' ? 'Direct Agent' : '-') ?></span></div>
+                            <div class="info-row"><strong>Broker ID:</strong> <span><?= htmlspecialchars($user['broker_id'] ?? '-') ?></span></div>
+                            <div class="info-row"><strong>License Number:</strong> <span><?= htmlspecialchars($user['license_number'] ?? '-') ?></span></div>
+                            <div class="info-row"><strong>Years of Experience:</strong> <span><?= htmlspecialchars($user['experience_years'] ?? '-') ?></span></div>
+                            <div class="info-row"><strong>Specialization:</strong> <span><?= !empty($user['specialization']) ? htmlspecialchars(is_array($tmp = json_decode($user['specialization'], true)) ? implode(', ', $tmp) : $user['specialization']) : '-' ?></span></div>
+                            <div class="info-row"><strong>Bio:</strong> <span><?= nl2br(htmlspecialchars($user['bio'] ?? '-')) ?></span></div>
+                        </div>
+
+                        <!-- Danger Zone in new grid row -->
+                        <div class="overview-card danger-zone">
+                            <h3>Danger Zone</h3>
+                            <p class="danger-note">⚠️ Once deleted, this account <strong>cannot be recovered</strong>. Please proceed with caution.</p>
+                            <button type="button" id="openDeleteModal" class="delete-btn-overview" onclick="openDeleteModal()">Delete Account</button>
+>>>>>>> origin/ansel
                         </div>
                     </div>  
 
                     <div id="profileMessage"></div>
                 </div>
 
+<<<<<<< HEAD
                 <!-- Edit Form Modal -->
                 <div id="editModal" class="modal">
                     <div class="modal-content">
@@ -841,10 +1383,83 @@
                                 <button type="submit">Save Changes</button>
                                 <button type="button" id="cancelEditBtn">Cancel</button>
                             </div>
+=======
+                <!-- Edit Form (full width) -->
+                <div id="editModal" class="modal">
+                    <div class="modal-content">
+                        <h4>Edit Profile</h4>
+                        <form id="profileForm" class="profile-edit" method="POST" action="/BatEstateExplorer/public/api/save_profile.php" enctype="multipart/form-data">
+
+                        <div class="edit-pfp-group">
+                            <div class="edit-pfp-wrapper">
+                                <input 
+                                type="file" 
+                                id="edit_profile_picture" 
+                                name="profile_picture" 
+                                accept="image/*"
+                                >
+                                <input type="hidden" name="remove_picture" id="remove_picture" value="0">
+
+                                <div class="edit-pfp-preview" id="editProfilePicPreview">
+                                <?php if (!empty($user['profile_image_path'])): ?>
+                                    <img 
+                                        src="<?= htmlspecialchars('/BatEstateExplorer/storage/uploads/profile_images/' . basename($user['profile_image_path'])) ?>" 
+                                        alt="Profile Picture"
+                                    >
+                                <?php else: ?>
+                                    <span class="edit-upload-text">Upload Here</span>
+                                <?php endif; ?>
+                                </div>
+
+                                <!-- Trash Icon Button -->
+                                <button 
+                                type="button" 
+                                id="removeProfilePicBtn" 
+                                class="remove-pfp-btn" 
+                                title="Remove Picture" 
+                                style="display: none;"
+                                >
+                                <svg xmlns="http://www.w3.org/2000/svg" 
+                                    viewBox="0 0 24 24" 
+                                    fill="none" 
+                                    stroke="#666" 
+                                    stroke-width="2" 
+                                    stroke-linecap="round" 
+                                    stroke-linejoin="round" 
+                                    width="18" 
+                                    height="18">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6L17.7 20.4A2 2 0 0 1 15.7 22H8.3A2 2 0 0 1 6.3 20.4L5 6"></path>
+                                    <path d="M10 11v6"></path>
+                                    <path d="M14 11v6"></path>
+                                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                                </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <label>First Name</label>
+                        <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" required>
+
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" value="<?= htmlspecialchars($user['last_name']) ?>" required>
+
+                        <label>Phone</label>
+                        <input type="text" name="phone" value="<?= htmlspecialchars($user['phone']) ?>">
+
+                        <label for="address">Address</label>
+                        <textarea name="address" id="address" rows="3"><?= htmlspecialchars($user['address']) ?></textarea>
+
+                        <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
+                            <button type="submit">Save Changes</button>
+                            <button type="button" id="cancelEditBtn">Cancel</button>
+                        </div>
+>>>>>>> origin/ansel
                         </form>
                     </div>
                 </div>
 
+<<<<<<< HEAD
                 <!-- Delete Modal -->
                 <div id="deleteModal" class="modal">
                     <div class="modal-content">
@@ -863,9 +1478,58 @@
                         </form>
                     </div>
                 </div>
+=======
+                <!-- Modal (outside container so it overlays everything) -->
+                <div id="deleteModal" class="modal">
+                <div class="modal-content">
+                    <h4>Confirm Account Deletion</h4>
+                    <p>Are you sure you want to delete this agent account? This action cannot be undone.</p>
+                    <form id="deleteAgentForm" method="POST" action="/BatEstateExplorer/public/api/delete_agent.php">
+                    <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
+                    <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
+                        <button type="submit" id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
+                        <button type="button" id="cancelDeleteBtn" class="cancel-btn">Cancel</button>
+                    </div>
+                    <div id="deleteSpinner" class="spinner" style="display:none;">
+                        <div class="loader"></div>
+                        <span>Deleting account...</span>
+                    </div>
+                    </form>
+                </div>
+                </div>
+
+>>>>>>> origin/ansel
             <?php endswitch; ?>
         </section>
     </div>
 </div>
 
 <script src="/BatEstateExplorer/assets/js/agent_profile.js"></script>
+<<<<<<< HEAD
+=======
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    // Close buttons for modals
+    const closeButtons = document.querySelectorAll(
+        "#cancelEditBtn, #cancelDeleteBtn"
+    );
+
+    // Add reload on close
+    closeButtons.forEach((btn) => {
+        btn.addEventListener("click", function () {
+        location.reload();
+        });
+    });
+
+    // If user clicks outside of the modal, close & reload
+    const modals = document.querySelectorAll("#editModal, #deleteModal");
+    modals.forEach((modal) => {
+        modal.addEventListener("click", function (e) {
+        if (e.target === modal) {
+            location.reload();
+        }
+        });
+    });
+    });
+</script>
+>>>>>>> origin/ansel

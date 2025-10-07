@@ -140,9 +140,13 @@
 /* ===========================
    Right Side Content
 =========================== */
+<<<<<<< HEAD
 .right-side {
   width: 100%;
 }
+=======
+
+>>>>>>> origin/ansel
 
 /* ===========================
    Dashboard Header
@@ -288,7 +292,12 @@
 
   /* Right side content */
   .right-side {
+<<<<<<< HEAD
     width: 100%; 
+=======
+    width: 100%;
+    height: 100vh;
+>>>>>>> origin/ansel
     margin-right: 0;            /* remove negative margin */
     min-width: 0;               /* allow shrink */
   }

@@ -92,6 +92,7 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
   </div>
 </div>
 
+<<<<<<< HEAD
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const logoutModal = document.getElementById('logoutModal');
@@ -148,6 +149,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="/BatEstateExplorer/assets/js/agents.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
+=======
+>>>>>>> origin/ansel
 <!-- Footer -->
 <footer class="footer scroll-animation">
   <div class="container scroll-animation">
@@ -177,5 +180,44 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </footer>
 
+<<<<<<< HEAD
 </body>
 </html>
+=======
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const logoutModal = document.getElementById('logoutModal');
+    const cancelBtn = document.getElementById('cancelLogoutBtn');
+    const logoutForm = document.getElementById('logoutForm');
+    const spinner = document.getElementById('logoutSpinner');
+
+    if (!logoutModal) return; // modal not present on this page
+
+    // Open modal for all logout buttons
+    document.querySelectorAll('.logout-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        logoutModal.classList.add('active-agent'); // <-- use correct class
+      });
+    });
+
+    // Close modal
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        logoutModal.classList.remove('active-agent'); // <-- match open
+      });
+    }
+
+    // Show spinner on submit
+    if (logoutForm && spinner) {
+      logoutForm.addEventListener('submit', () => {
+        spinner.style.display = 'flex';
+      });
+    }
+  });
+</script>
+
+<script src="/BatEstateExplorer/assets/js/agents.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+>>>>>>> origin/ansel

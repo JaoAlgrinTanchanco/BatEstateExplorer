@@ -1,5 +1,9 @@
 <?php
 require_once __DIR__ . '/../../../../components/notification.php';
+<<<<<<< HEAD
+=======
+require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_accounts.php';
+>>>>>>> origin/ansel
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -106,3 +110,7 @@ require_once __DIR__ . '/../../../../components/notification.php';
 
 </body>
 </html>
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ansel

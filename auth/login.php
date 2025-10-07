@@ -3,24 +3,44 @@ session_start();
 require_once '../config/database.php';
 require_once __DIR__ . '/../public/app/redirects.php';
 
+<<<<<<< HEAD
 // Handle AJAX and regular login requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_POST['ajax'])) {
     $email = sanitize_input($conn, $_POST['email']);
     $password = $_POST['password'];
 
     if (empty($email) || empty($password)) {
+=======
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
+    $email = sanitize_input($conn, $_POST['email']);
+    $password = $_POST['password'] ?? '';
+    $isAjax = isset($_POST['ajax']) ? (bool)$_POST['ajax'] : false;
+
+    // Basic validation
+    if (empty($email) || empty($password)) {
+        $_SESSION['old_email'] = $email;
+>>>>>>> origin/ansel
         $_SESSION['notification'] = [
             'type' => 'error',
             'message' => 'Please enter both email and password.'
         ];
+<<<<<<< HEAD
         header("Location: login.php"); // <-- redirect clears POST
         exit;
     }
 
+=======
+        header("Location: login.php");
+        exit;
+    }
+
+    // Fetch user by email
+>>>>>>> origin/ansel
     $stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE email = ?");
     mysqli_stmt_bind_param($stmt, "s", $email);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
+<<<<<<< HEAD
 
     if ($user = mysqli_fetch_assoc($result)) {
         if (verify_password($password, $user['password_hash'])) {
@@ -55,6 +75,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_P
             exit;
         }
     } else {
+=======
+    $user = mysqli_fetch_assoc($result);
+
+    if (!$user) {
+        $_SESSION['old_email'] = $email;
+>>>>>>> origin/ansel
         $_SESSION['notification'] = [
             'type' => 'error',
             'message' => 'No account found with that email.'
@@ -62,8 +88,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_P
         header("Location: login.php");
         exit;
     }
+<<<<<<< HEAD
 }
 
+=======
+
+    // Verify password
+    if (!verify_password($password, $user['password_hash'])) {
+        $_SESSION['old_email'] = $email;
+        $_SESSION['notification'] = [
+            'type' => 'error',
+            'message' => 'Incorrect password. Please try again.'
+        ];
+        header("Location: login.php");
+        exit;
+    }
+
+    // Check account status
+    if ($user['status'] !== 'active') {
+        $_SESSION['old_email'] = $email;
+        $_SESSION['notification'] = [
+            'type' => 'error',
+            'message' => 'Your account is pending approval. Please wait for admin review.'
+        ];
+        header("Location: login.php");
+        exit;
+    }
+
+    // Successful login
+    $_SESSION['user_token'] = generate_token($user['id'], $user['email'], $user['user_type']);
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['user_type'] = $user['user_type'];
+
+    $_SESSION['notification'] = [
+        'type' => 'success',
+        'message' => 'Logged in successfully!'
+    ];
+
+    redirect_by_user_type($user['user_type']); // redirects and exits
+    exit;
+}
+>>>>>>> origin/ansel
 ?>
 
 <!DOCTYPE html>
@@ -89,7 +154,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_P
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" autocomplete="username" required 
+<<<<<<< HEAD
                        value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+=======
+                    value="<?php 
+                        echo isset($_SESSION['old_email']) ? htmlspecialchars($_SESSION['old_email']) : ''; 
+                        unset($_SESSION['old_email']); // clear after displaying
+                    ?>">
+>>>>>>> origin/ansel
             </div>
 
             <div class="form-group password-wrapper">
@@ -114,6 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && isset($_P
 <?php include __DIR__ . "/../components/notification.php"; ?>
 
 <script>
+<<<<<<< HEAD
 const togglePasswordText = document.querySelector('#togglePasswordText');
 const password = document.querySelector('#password');
 
@@ -126,6 +199,20 @@ togglePasswordText.addEventListener('click', () => {
         togglePasswordText.textContent = 'Show';
     }
 });
+=======
+    const togglePasswordText = document.querySelector('#togglePasswordText');
+    const password = document.querySelector('#password');
+
+    togglePasswordText.addEventListener('click', () => {
+        if (password.type === 'password') {
+            password.type = 'text';
+            togglePasswordText.textContent = 'Hide';
+        } else {
+            password.type = 'password';
+            togglePasswordText.textContent = 'Show';
+        }
+    });
+>>>>>>> origin/ansel
 </script>
 </body>
 </html>

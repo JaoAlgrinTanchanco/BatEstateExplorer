@@ -325,3 +325,42 @@
     .deposit-amounts button { flex: 1 1 100%; height: 40px; font-size: 0.8rem; }
     .wallet-balance-section, .agent-info { padding: 0.75rem 1rem; }
 }
+<<<<<<< HEAD
+=======
+
+/* ===========================
+   Transactions List - Profile Pics
+=========================== */
+.transaction-pic,
+.transaction-icon {
+    width: 50px;
+    aspect-ratio: 1 / 1;       /* keep it square */
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.transaction-pic {
+    object-fit: cover;          /* fill container without distortion */
+    width: 100%;
+    height: 100%;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+    .transaction-pic,
+    .transaction-icon {
+        width: 40px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .transaction-pic,
+    .transaction-icon {
+        width: 50px;  /* can keep original size or scale slightly */
+    }
+}
+>>>>>>> origin/ansel

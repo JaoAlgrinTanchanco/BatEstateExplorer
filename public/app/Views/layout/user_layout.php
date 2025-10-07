@@ -1,6 +1,9 @@
 <?php
+<<<<<<< HEAD
 // user_layout.php
 
+=======
+>>>>>>> origin/ansel
 if (!isset($page_title)) $page_title = "User Dashboard";
 $user = $_SESSION['user'] ?? null; // Logged-in user
 ?>
