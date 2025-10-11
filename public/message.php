@@ -205,7 +205,11 @@ $contact_names[$current_user_id] = 'You';
 <!-- Image Viewer Overlay -->
 <div id="imageViewerOverlay" class="image-viewer-overlay hidden">
   <div class="image-viewer-backdrop"></div>
+  <button class="nav-arrow left"><i class="fa-solid fa-chevron-left"></i></button>
   <img id="imageViewerImg" src="" alt="Preview" />
+  <button class="nav-arrow right"><i class="fa-solid fa-chevron-right"></i></button>
+
+  <div class="thumbnail-bar" id="thumbnailBar"></div>
 </div>
 
 <script>
@@ -224,70 +228,141 @@ $contact_names[$current_user_id] = 'You';
 
         const canSend = Boolean(receiverId);
 
-        // --- Image Viewer Logic ---
+        // --- Enhanced Image Viewer Logic ---
         const viewerOverlay = document.getElementById('imageViewerOverlay');
         const viewerImg = document.getElementById('imageViewerImg');
+        const thumbnailBar = document.getElementById('thumbnailBar');
+        const leftArrow = viewerOverlay.querySelector('.nav-arrow.left');
+        const rightArrow = viewerOverlay.querySelector('.nav-arrow.right');
+
+        let currentIndex = 0;
+        let currentImages = [];
 
         document.addEventListener('click', (e) => {
-        if (e.target.matches('.chat-images img')) {
-            viewerImg.src = e.target.src;
-            viewerOverlay.classList.remove('hidden');
-            document.body.style.overflow = 'hidden'; // prevent scroll
-        } else if (e.target === viewerOverlay || e.target === viewerImg) {
-            viewerOverlay.classList.add('hidden');
-            viewerImg.src = '';
-            document.body.style.overflow = '';
-        }
+            const clickedImg = e.target.closest('.chat-images img');
+            if (clickedImg) {
+                const parentGallery = Array.from(clickedImg.closest('.chat-images').querySelectorAll('img'));
+                currentImages = parentGallery.map(img => img.src);
+                currentIndex = parentGallery.indexOf(clickedImg);
+                openImageViewer();
+            } else if (e.target === viewerOverlay || e.target === viewerImg) {
+                closeImageViewer();
+            }
         });
 
+        function openImageViewer() {
+            viewerOverlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            renderImage();
+            renderThumbnails();
+        }
+
+        function closeImageViewer() {
+            viewerOverlay.classList.add('hidden');
+            document.body.style.overflow = '';
+            viewerImg.src = '';
+            thumbnailBar.innerHTML = '';
+        }
+
+        function renderImage() {
+            viewerImg.src = currentImages[currentIndex];
+            document.querySelectorAll('.thumbnail-bar img').forEach((thumb, idx) => {
+                thumb.classList.toggle('active', idx === currentIndex);
+            });
+        }
+
+        function renderThumbnails() {
+            thumbnailBar.innerHTML = '';
+            currentImages.forEach((src, idx) => {
+                const thumb = document.createElement('img');
+                thumb.src = src;
+                if (idx === currentIndex) thumb.classList.add('active');
+                thumb.addEventListener('click', () => {
+                    currentIndex = idx;
+                    renderImage();
+                });
+                thumbnailBar.appendChild(thumb);
+            });
+        }
+
+        leftArrow.addEventListener('click', () => {
+            if (!currentImages.length) return;
+            currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
+            renderImage();
+        });
+
+        rightArrow.addEventListener('click', () => {
+            if (!currentImages.length) return;
+            currentIndex = (currentIndex + 1) % currentImages.length;
+            renderImage();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (viewerOverlay.classList.contains('hidden')) return;
+            if (e.key === 'ArrowLeft') leftArrow.click();
+            if (e.key === 'ArrowRight') rightArrow.click();
+            if (e.key === 'Escape') closeImageViewer();
+        });
 
         // --- Image Preview Logic ---
-        fileUpload?.addEventListener('change', (e) => {
-            const files = Array.from(e.target.files);
-            previewContainer.innerHTML = '';
+        let selectedFiles = [];
 
-            if (files.length === 0) {
-                previewContainer.classList.add('hidden');
-                return;
-            }
+        function renderPreviewContainer() {
+        previewContainer.innerHTML = '';
+        if (selectedFiles.length === 0) {
+            previewContainer.classList.add('hidden');
+            return;
+        }
 
-            files.forEach(file => {
-                if (!file.type.startsWith('image/')) return;
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = document.createElement('img');
-                    img.src = event.target.result;
-                    img.title = file.name;
-                    img.addEventListener('click', () => {
-                        img.remove();
-                        if (previewContainer.children.length === 0) {
-                            previewContainer.classList.add('hidden');
-                            fileUpload.value = '';
-                        }
-                    });
-                    previewContainer.appendChild(img);
-                };
-                reader.readAsDataURL(file);
+        // Create scrollable inner div
+        const scrollWrapper = document.createElement('div');
+        scrollWrapper.className = 'image-scroll-wrapper';
+
+        selectedFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+            const thumb = document.createElement('div');
+            thumb.className = 'preview-thumb';
+            thumb.innerHTML = `<img src="${e.target.result}" alt="${file.name}">`;
+            thumb.addEventListener('click', () => {
+                selectedFiles.splice(index, 1);
+                renderPreviewContainer();
             });
+            scrollWrapper.appendChild(thumb);
+            };
+            reader.readAsDataURL(file);
+        });
 
-            previewContainer.classList.remove('hidden');
+        previewContainer.appendChild(scrollWrapper);
+
+        // Add the "+" square
+        const addDiv = document.createElement('div');
+        addDiv.className = 'preview-add';
+        addDiv.innerHTML = '+';
+        addDiv.addEventListener('click', () => fileUpload.click());
+        previewContainer.appendChild(addDiv);
+
+        previewContainer.classList.remove('hidden');
+        }
+
+        fileUpload?.addEventListener('change', (e) => {
+            const newFiles = Array.from(e.target.files);
+            selectedFiles = [...selectedFiles, ...newFiles];
+            renderPreviewContainer();
+            fileUpload.value = ''; // allow same file reselect
         });
 
         // --- Send Message Function ---
         const sendMessage = async () => {
             const message = messageInput.value.trim();
-            const files = fileUpload.files;
-
-            if (!message && files.length === 0) return;
+            if (!message && selectedFiles.length === 0) return;
             if (!canSend) return alert('No conversation selected.');
 
             const formData = new FormData();
             formData.append('receiver_id', receiverId);
             formData.append('message', message);
 
-            for (let i = 0; i < files.length; i++) {
-                formData.append('attachments[]', files[i]);
-            }
+            selectedFiles.forEach(file => formData.append('attachments[]', file));
 
             try {
                 const response = await fetch('api/send_message.php', {
@@ -301,28 +376,29 @@ $contact_names[$current_user_id] = 'You';
                     return;
                 }
 
-                // Format timestamp
                 const rawDate = new Date(data.message.created_at);
                 const timestamp = rawDate.toLocaleString('en-US', {
                     month: 'short', day: '2-digit', year: 'numeric',
                     hour: '2-digit', minute: '2-digit', hour12: false
                 }).replace(',', '');
 
-                // Avatar (current user)
                 const userAvatar = '<?= htmlspecialchars($contactsImages[$current_user_id] ?? "") ?>';
                 const avatarHTML = userAvatar 
                     ? `<img src="${userAvatar}" alt="You">`
                     : '<i class="fa-solid fa-user"></i>';
 
-                // Create message bubble
                 const msgDiv = document.createElement('div');
                 msgDiv.classList.add('message', 'you');
 
                 let imagesHTML = '';
                 if (data.message.images && data.message.images.length > 0) {
-                    imagesHTML = '<div class="chat-images">' + 
-                        data.message.images.map(img => `<img src="${img}" alt="sent image" class="sent-image">`).join('') + 
-                        '</div>';
+                    const isMultiple = data.message.images.length > 1;
+                    imagesHTML = `
+                        <div class="chat-images ${isMultiple ? 'multiple' : 'single'}">
+                            ${data.message.images
+                                .map(img => `<img src="${img}" alt="sent image" loading="lazy">`)
+                                .join('')}
+                        </div>`;
                 }
 
                 msgDiv.innerHTML = `
@@ -340,6 +416,7 @@ $contact_names[$current_user_id] = 'You';
                 // Reset inputs
                 messageInput.value = '';
                 fileUpload.value = '';
+                selectedFiles = [];
                 previewContainer.innerHTML = '';
                 previewContainer.classList.add('hidden');
             } catch (err) {
@@ -367,7 +444,7 @@ $contact_names[$current_user_id] = 'You';
         document.querySelectorAll('.conversation-item').forEach(item => {
             item.addEventListener('click', () => {
                 const userId = item.dataset.userId;
-                if (userId) window.location.href = `/BatEstateExplorer/public/agent_message.php?user_id=${userId}`;
+                if (userId) window.location.href = `/BatEstateExplorer/public/message.php?user_id=${userId}`;
             });
         });
     });
