@@ -92,19 +92,26 @@ function getProfileImage($conn, $user_id) {
 $contactsImages[$current_user_id] = getProfileImage($conn, $current_user_id);
 
 // Fetch conversation messages
-if ($agent) {
-    $stmt = $conn->prepare("
-        SELECT sender_id, message, created_at
-        FROM messages
-        WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
-        ORDER BY created_at ASC
-    ");
-    $stmt->bind_param("iiii", $current_user_id, $agent['id'], $agent['id'], $current_user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) $messages[] = $row;
-    $stmt->close();
+$stmt = $conn->prepare("
+    SELECT sender_id, message, image_path, created_at
+    FROM messages
+    WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+    ORDER BY created_at ASC
+");
+$stmt->bind_param("iiii", $current_user_id, $agent['id'], $agent['id'], $current_user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    // Decode image paths if present
+    if (!empty($row['image_path'])) {
+        $row['images'] = json_decode($row['image_path'], true);
+        if (!is_array($row['images'])) $row['images'] = [];
+    } else {
+        $row['images'] = [];
+    }
+    $messages[] = $row;
 }
+$stmt->close();
 
 // Names mapping for display
 $contact_names = $agents_list;
@@ -117,6 +124,7 @@ $contact_names[$current_user_id] = 'You';
 <meta charset="UTF-8">
 <title>Chat with <?= htmlspecialchars($agent_name) ?></title>
 <link rel="stylesheet" href="../assets/css/agent_message.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 
@@ -162,21 +170,43 @@ $contact_names[$current_user_id] = 'You';
                 </div>
                 <div class="text-container">
                     <div class="sender"><?= $senderName ?> <span class="timestamp"><?= $timestamp ?></span>:</div>
-                    <div class="text"><?= htmlspecialchars(decryptMessage($msg['message'])) ?></div>
+                    <div class="text">
+                        <?= htmlspecialchars(decryptMessage($msg['message'])) ?>
+                        <?php if (!empty($msg['images'])): ?>
+                            <?php $isMultiple = count($msg['images']) > 1; ?>
+                            <div class="chat-images <?= $isMultiple ? 'multiple' : 'single' ?>">
+                                <?php foreach ($msg['images'] as $imgPath): ?>
+                                    <img src="<?= htmlspecialchars($imgPath) ?>" alt="Message image" loading="lazy">
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
             <?php endforeach; ?>
         </div>
-
+        <div id="imagePreviewContainer" class="image-preview-container hidden"></div>
         <div class="chat-input">
-            <input type="text" id="messageInput" placeholder="Type your message..." <?= $receiver_disabled ? 'disabled' : '' ?>>
-            <button id="sendBtn" <?= $receiver_disabled ? 'disabled' : '' ?>>Send</button>
+            <div class="file-upload-wrapper">
+                <label for="fileUpload" class="file-upload-label">
+                <i class="fa-solid fa-paperclip"></i>
+                </label>
+                <input type="file" id="fileUpload" name="attachments[]" multiple>
+            </div>
+
+            <input type="text" id="messageInput" placeholder="Type your message..." />
+            <button id="sendBtn">Send</button>
         </div>
     </div>
-
 </div>
 
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Image Viewer Overlay -->
+<div id="imageViewerOverlay" class="image-viewer-overlay hidden">
+  <div class="image-viewer-backdrop"></div>
+  <img id="imageViewerImg" src="" alt="Preview" />
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -184,84 +214,160 @@ $contact_names[$current_user_id] = 'You';
         const messageInput = document.getElementById('messageInput');
         const messagesContainer = document.getElementById('messages');
         const chatWindow = document.querySelector('.chat-window');
-        const receiverId = chatWindow.dataset.userId;
+        const receiverId = chatWindow?.dataset.userId;
+        const fileUpload = document.getElementById('fileUpload');
+        const previewContainer = document.getElementById('imagePreviewContainer');
 
         const sidebar = document.querySelector('.conversations-list');
         const overlay = document.getElementById('sidebarOverlay');
         const toggleBtn = document.getElementById('sidebarToggle');
 
-        const canSend = receiverId && receiverId !== "";
+        const canSend = Boolean(receiverId);
 
-        const sendMessage = () => {
+        // --- Image Viewer Logic ---
+        const viewerOverlay = document.getElementById('imageViewerOverlay');
+        const viewerImg = document.getElementById('imageViewerImg');
+
+        document.addEventListener('click', (e) => {
+        if (e.target.matches('.chat-images img')) {
+            viewerImg.src = e.target.src;
+            viewerOverlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // prevent scroll
+        } else if (e.target === viewerOverlay || e.target === viewerImg) {
+            viewerOverlay.classList.add('hidden');
+            viewerImg.src = '';
+            document.body.style.overflow = '';
+        }
+        });
+
+
+        // --- Image Preview Logic ---
+        fileUpload?.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            previewContainer.innerHTML = '';
+
+            if (files.length === 0) {
+                previewContainer.classList.add('hidden');
+                return;
+            }
+
+            files.forEach(file => {
+                if (!file.type.startsWith('image/')) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = document.createElement('img');
+                    img.src = event.target.result;
+                    img.title = file.name;
+                    img.addEventListener('click', () => {
+                        img.remove();
+                        if (previewContainer.children.length === 0) {
+                            previewContainer.classList.add('hidden');
+                            fileUpload.value = '';
+                        }
+                    });
+                    previewContainer.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            previewContainer.classList.remove('hidden');
+        });
+
+        // --- Send Message Function ---
+        const sendMessage = async () => {
             const message = messageInput.value.trim();
-            if (!message || !canSend) return;
+            const files = fileUpload.files;
 
-            fetch('api/send_message.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `receiver_id=${receiverId}&message=${encodeURIComponent(message)}`
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    const msgDiv = document.createElement('div');
-                    msgDiv.classList.add('message', 'you');
+            if (!message && files.length === 0) return;
+            if (!canSend) return alert('No conversation selected.');
 
-                    const rawDate = data.message.created_at ? new Date(data.message.created_at) : new Date();
-                    const options = { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
-                    const timestamp = rawDate.toLocaleString('en-US', options).replace(',', '');
+            const formData = new FormData();
+            formData.append('receiver_id', receiverId);
+            formData.append('message', message);
 
-                    const userAvatar = '<?= htmlspecialchars($agentsImages[$current_user_id] ?? $contactsImages[$current_user_id] ?? "") ?>';
-                    const avatarHTML = userAvatar ? `<img src="${userAvatar}" alt="You">` : '<i class="fa-solid fa-user"></i>';
+            for (let i = 0; i < files.length; i++) {
+                formData.append('attachments[]', files[i]);
+            }
 
-                    msgDiv.innerHTML = `
-                        <div class="sender-avatar">${avatarHTML}</div>
-                        <div class="text-container">
-                            <div class="sender">You <span class="timestamp">${timestamp}</span>:</div>
-                            <div class="text">${data.message.text}</div>
-                        </div>
-                    `;
+            try {
+                const response = await fetch('api/send_message.php', {
+                    method: 'POST',
+                    body: formData
+                });
 
-                    messagesContainer.appendChild(msgDiv);
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                    messageInput.value = '';
-                } else alert(data.error);
-            })
-            .catch(err => console.error(err));
+                const data = await response.json();
+                if (!data.success) {
+                    alert(data.error || 'Failed to send message.');
+                    return;
+                }
+
+                // Format timestamp
+                const rawDate = new Date(data.message.created_at);
+                const timestamp = rawDate.toLocaleString('en-US', {
+                    month: 'short', day: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit', hour12: false
+                }).replace(',', '');
+
+                // Avatar (current user)
+                const userAvatar = '<?= htmlspecialchars($contactsImages[$current_user_id] ?? "") ?>';
+                const avatarHTML = userAvatar 
+                    ? `<img src="${userAvatar}" alt="You">`
+                    : '<i class="fa-solid fa-user"></i>';
+
+                // Create message bubble
+                const msgDiv = document.createElement('div');
+                msgDiv.classList.add('message', 'you');
+
+                let imagesHTML = '';
+                if (data.message.images && data.message.images.length > 0) {
+                    imagesHTML = '<div class="chat-images">' + 
+                        data.message.images.map(img => `<img src="${img}" alt="sent image" class="sent-image">`).join('') + 
+                        '</div>';
+                }
+
+                msgDiv.innerHTML = `
+                    <div class="sender-avatar">${avatarHTML}</div>
+                    <div class="text-container">
+                        <div class="sender">You <span class="timestamp">${timestamp}</span>:</div>
+                        ${data.message.text ? `<div class="text">${data.message.text}</div>` : ''}
+                        ${imagesHTML}
+                    </div>
+                `;
+
+                messagesContainer.appendChild(msgDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+                // Reset inputs
+                messageInput.value = '';
+                fileUpload.value = '';
+                previewContainer.innerHTML = '';
+                previewContainer.classList.add('hidden');
+            } catch (err) {
+                console.error('Send message error:', err);
+                alert('Unexpected error occurred while sending message.');
+            }
         };
 
         sendBtn?.addEventListener('click', sendMessage);
-        messageInput?.addEventListener('keypress', e => { if(e.key === 'Enter') sendMessage(); });
+        messageInput?.addEventListener('keypress', e => {
+            if (e.key === 'Enter') sendMessage();
+        });
 
-        // Toggle sidebar manually
+        // --- Sidebar Toggle ---
         toggleBtn?.addEventListener('click', () => {
             sidebar.classList.toggle('open');
             overlay.classList.toggle('active');
         });
-
-        // Collapse sidebar when clicking outside of it
-        document.addEventListener('click', (e) => {
-            if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
-                sidebar.classList.remove('open');
-                overlay.classList.remove('active');
-            }
-        });
-
-        // Optional: click overlay also closes
         overlay?.addEventListener('click', () => {
             sidebar.classList.remove('open');
             overlay.classList.remove('active');
         });
 
-        // Switch conversations
+        // --- Switch Conversations ---
         document.querySelectorAll('.conversation-item').forEach(item => {
             item.addEventListener('click', () => {
                 const userId = item.dataset.userId;
-                if (userId) {
-                    window.location.href = `/BatEstateExplorer/public/agent_message.php?user_id=${userId}`;
-                    sidebar.classList.remove('open');
-                    overlay.classList.remove('active');
-                }
+                if (userId) window.location.href = `/BatEstateExplorer/public/agent_message.php?user_id=${userId}`;
             });
         });
     });

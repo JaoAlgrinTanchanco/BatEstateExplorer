@@ -158,7 +158,7 @@
             LEFT JOIN users u ON a.user_id = u.id
             LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
             LEFT JOIN users su ON sa.user_id = su.id
-            WHERE a.company_id = ? AND p.status = 'available'
+            WHERE a.company_id = ? AND p.status IN ('available', 'sold')
             ORDER BY p.created_at DESC;
         ");
         $stmt->bind_param("i", $company_id);

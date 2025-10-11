@@ -324,6 +324,188 @@ body::before {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* --- Image Viewer --- */
+.image-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  transition: opacity 0.25s ease;
+}
+
+.image-viewer-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.image-viewer-overlay img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 10px;
+  box-shadow: 0 0 25px rgba(0,0,0,0.7);
+  animation: zoomIn 0.2s ease;
+  cursor: zoom-out;
+}
+
+@keyframes zoomIn {
+  from { transform: scale(0.9); opacity: 0.6; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ===========================
+   Chat Images (Safe & Adaptive)
+=========================== */
+.chat-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  border-radius: 10px;
+  overflow: visible; /* ✅ Prevents cutting content & disappearing input */
+  max-width: 100%;
+}
+
+/* --- Single image: keeps natural ratio --- */
+.chat-images.single img {
+  width: auto;
+  max-width: 240px;
+  max-height: 200px;
+  border-radius: 10px;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* --- Multiple images: uniform grid --- */
+.chat-images.multiple {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 6px;
+  max-width: 250px;
+}
+
+.chat-images.multiple img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* --- Hover effects --- */
+.chat-images img:hover {
+  transform: scale(1.03);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+/* --- Adjusted borders per sender --- */
+.message.you .chat-images img {
+  border: 2px solid rgba(255,255,255,0.1);
+}
+
+.message.agent .chat-images img {
+  border: 2px solid rgba(0,0,0,0.05);
+}
+
+/* ===========================
+   Image Preview (above input)
+=========================== */
+.image-preview-container {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 10px 15px;
+  background: #fafafa;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  border-radius: 12px 12px 0 0;
+  max-height: 120px;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.image-preview-container.hidden {
+  opacity: 0;
+  visibility: hidden;
+  height: 0;
+  padding: 0;
+  border: none;
+}
+
+.image-preview-container img {
+  height: 90px;
+  width: auto;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.image-preview-container img:hover {
+  transform: scale(1.05);
+}
+
+
+/* ===========================
+   File Upload Button
+=========================== */
+.chat-input .file-upload-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.75rem;
+}
+
+.chat-input input[type="file"] {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* Visible custom button */
+.chat-input .file-upload-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: #f1f3f5;
+  color: #111;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.7rem 1rem;
+  border-radius: 30px;
+  border: 2px solid #e1e5e9;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+.chat-input .file-upload-label i {
+  font-size: 1.1rem;
+  color: #555;
+  transition: color 0.3s ease;
+}
+
+.chat-input .file-upload-label:hover {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.chat-input .file-upload-label:hover i {
+  color: #fff;
+}
+
+
 /* ===========================
    Responsive (Drawer Sidebar)
 =========================== */
