@@ -64,7 +64,7 @@ if (!isset($page_title)) $page_title = "Agent Dashboard";
 
     <!-- Right -->
     <div class="nav-right">
-      <a href="/BatEstateExplorer/public/agent_message.php" target="_blank" class="glow-link"><i class="fa-solid fa-envelope"></i> Messages</a>
+      <a href="/BatEstateExplorer/public/message.php" target="_blank" class="glow-link"><i class="fa-solid fa-envelope"></i> Messages</a>
       <button type="button" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
     </div>
   </div>

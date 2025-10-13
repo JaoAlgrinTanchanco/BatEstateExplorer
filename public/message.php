@@ -3,7 +3,7 @@
     require_once __DIR__ . '/app/bootstrap.php';
 
     define('ENCRYPTION_KEY', '12345678901234567890123456789012');
-
+    
     function decryptMessage($encrypted_base64) {
         $data = base64_decode($encrypted_base64);
         if (strlen($data) < 16) return $encrypted_base64;
@@ -12,34 +12,26 @@
         return openssl_decrypt($ciphertext, 'aes-256-cbc', ENCRYPTION_KEY, 0, $iv);
     }
 
-    // Determine role
-    $role = $_GET['role'] ?? ($_SESSION['user']['role'] ?? 'user'); // 'user' or 'agent'
-    $current_user_id = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
+    // --- Determine current user ---
+    $current_user_id = $_SESSION['user_id'] ?? null;
     if (!$current_user_id) die("Not logged in.");
 
-    // Determine contact id
-    $contact_id = $_GET['user_id'] ?? null;
-    if (empty($contact_id) && !empty($_GET['agent_id'])) {
-        $stmt = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
-        $stmt->bind_param("i", $_GET['agent_id']);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        if ($row = $res->fetch_assoc()) $contact_id = (int)$row['user_id'];
-        $stmt->close();
-    }
+    // Determine role safely
+    $role = $_SESSION['user_type'] ?? 'user';
 
-    // Initialize
+    // --- Determine current conversation ---
+    $contact_id = $_GET['user_id'] ?? null;
+
+    // --- Fetch contact info ---
     $contact = null;
     $contact_name = "No conversation selected";
-    $messages = [];
     $receiver_disabled = true;
 
-    // Fetch contact info
     if ($contact_id) {
         $stmt = $conn->prepare("
-            SELECT id, first_name, last_name, email, profile_image_path
+            SELECT id, first_name, last_name, email, profile_image_path, user_type
             FROM users
-            WHERE id = ? " . ($role === 'user' ? "AND user_type IN ('direct_agent','associate_agent')" : "") . "
+            WHERE id = ?
             LIMIT 1
         ");
         $stmt->bind_param("i", $contact_id);
@@ -53,16 +45,24 @@
         }
     }
 
-    // Fetch contacts list
+    // --- Fetch contacts list for sidebar ---
     $contacts_list = [];
     $contactsImages = [];
+
+    if ($role === 'user') {
+        $userTypeFilter = "AND u.user_type IN ('direct_agent','associate_agent')";
+    } else {
+        // agent sees users
+        $userTypeFilter = "AND u.user_type = 'user'";
+    }
 
     $sql = "
         SELECT DISTINCT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, u.profile_image_path
         FROM messages m
         INNER JOIN users u ON (u.id = m.sender_id OR u.id = m.receiver_id)
         WHERE (m.sender_id = ? OR m.receiver_id = ?)
-        AND u.id != ? " . ($role === 'user' ? "AND u.user_type IN ('direct_agent','associate_agent')" : "") . "
+        AND u.id != ?
+        $userTypeFilter
     ";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("iii", $current_user_id, $current_user_id, $current_user_id);
@@ -76,7 +76,7 @@
     }
     $stmt->close();
 
-    // Current user profile image
+    // --- Current user profile image ---
     function getProfileImage($conn, $user_id) {
         $stmt = $conn->prepare("SELECT profile_image_path FROM users WHERE id = ? LIMIT 1");
         $stmt->bind_param("i", $user_id);
@@ -90,7 +90,8 @@
     }
     $contactsImages[$current_user_id] = getProfileImage($conn, $current_user_id);
 
-    // Fetch conversation messages
+    // --- Fetch conversation messages ---
+    $messages = [];
     if ($contact) {
         $stmt = $conn->prepare("
             SELECT sender_id, message, image_path, created_at
@@ -102,22 +103,18 @@
         $stmt->execute();
         $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) {
-            if (!empty($row['image_path'])) {
-                $row['images'] = json_decode($row['image_path'], true);
-                if (!is_array($row['images'])) $row['images'] = [];
-            } else {
-                $row['images'] = [];
-            }
+            $row['images'] = !empty($row['image_path']) ? json_decode($row['image_path'], true) : [];
+            if (!is_array($row['images'])) $row['images'] = [];
             $messages[] = $row;
         }
         $stmt->close();
     }
 
-    // Names mapping
+    // --- Names mapping ---
     $contact_names = $contacts_list;
     $contact_names[$current_user_id] = 'You';
 
-    // All conversation redirects now point to this single file
+    // --- Conversation redirect ---
     $conversation_redirect = '/BatEstateExplorer/public/message.php?user_id=';
 ?>
 
@@ -125,7 +122,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Chat with <?= htmlspecialchars($agent_name) ?></title>
+<title>Chat with <?= htmlspecialchars($contact_name) ?></title>
 <link rel="stylesheet" href="../assets/css/agent_message.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -154,7 +151,7 @@
     <div class="chat-window" data-user-id="<?= $contact['id'] ?? '' ?>">
         <div class="chat-header">
             <button id="sidebarToggle" class="sidebar-toggle">☰</button>
-            <?= htmlspecialchars($contact_name ?? 'No conversation selected') ?>
+            <span class="chat-contact-name"><?= htmlspecialchars($contact_name ?? 'No conversation selected') ?></span>
         </div>
 
         <div class="messages" id="messages">
@@ -162,19 +159,23 @@
                 $isYou = $msg['sender_id'] === $current_user_id;
                 $senderName = htmlspecialchars($contact_names[$msg['sender_id']] ?? 'Unknown');
                 $timestamp = date('M d, Y H:i', strtotime($msg['created_at']));
+                $messageText = htmlspecialchars(decryptMessage($msg['message']));
             ?>
             <div class="message <?= $isYou ? 'you' : 'agent' ?>">
                 <div class="sender-avatar">
                     <?php if (!empty($contactsImages[$msg['sender_id']])): ?>
-                        <img src="<?= htmlspecialchars($contactsImages[$msg['sender_id']]) ?>" alt="<?= htmlspecialchars($senderName) ?>">
+                        <img src="<?= htmlspecialchars($contactsImages[$msg['sender_id']]) ?>" alt="<?= $senderName ?>">
                     <?php else: ?>
                         <i class="fa-solid fa-user"></i>
                     <?php endif; ?>
                 </div>
                 <div class="text-container">
-                    <div class="sender"><?= $senderName ?> <span class="timestamp"><?= $timestamp ?></span>:</div>
+                    <div class="sender">
+                        <?= $senderName ?> 
+                        <span class="timestamp"><?= $timestamp ?></span>:
+                    </div>
                     <div class="text">
-                        <?= htmlspecialchars(decryptMessage($msg['message'])) ?>
+                        <?= $messageText ?>
                         <?php if (!empty($msg['images'])): ?>
                             <?php $isMultiple = count($msg['images']) > 1; ?>
                             <div class="chat-images <?= $isMultiple ? 'multiple' : 'single' ?>">
@@ -189,7 +190,7 @@
             <?php endforeach; ?>
         </div>
 
-        <!-- Image preview area (before send) -->
+        <!-- Image preview before sending -->
         <div id="imagePreviewContainer" class="image-preview-container hidden"></div>
 
         <!-- Message input + file upload -->
