@@ -208,14 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.classList.remove('active');
     });
 
-    // Switch Conversations
-    const conversationRedirect = '<?= $conversation_redirect ?>';
-    document.querySelectorAll('.conversation-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const userId = item.dataset.userId;
-            if (userId) window.location.href = `${conversationRedirect}${userId}`;
-        });
-    });
 
     // 3-dot menu toggle for "You" messages
     document.querySelectorAll('.message.you .options-menu').forEach(icon => {

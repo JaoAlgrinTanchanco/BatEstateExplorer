@@ -165,7 +165,6 @@
                 $messageText = htmlspecialchars(decryptMessage($msg['message']));
             ?>
             <div class="message <?= $isYou ? 'you' : 'agent' ?>">
-                
                 <!-- Sender Avatar -->
                 <div class="sender-avatar">
                     <?php if (!empty($contactsImages[$msg['sender_id']])): ?>
@@ -195,7 +194,8 @@
                     </div>
                 </div>
 
-                <!-- Message Options Menu (outside bubble) -->
+                <!-- 3-dot menu -->
+                <?php if ($isYou): ?>
                 <div class="message-menu">
                     <i class="fa-solid fa-ellipsis-vertical"></i>
                     <div class="dropdown hidden">
@@ -207,7 +207,7 @@
                         <button class="cancel-delete">Cancel</button>
                     </div>
                 </div>
-
+                <?php endif; ?>
             </div>
             <?php endforeach; ?>
         </div>
@@ -243,7 +243,17 @@
   <div class="thumbnail-bar" id="thumbnailBar"></div>
 </div>
 
-<script src="/assets/js/message.js"></script>
+<script src="/BatEstateExplorer/assets/js/message.js"></script>
+<script>
+    // Switch Conversations
+    const conversationRedirect = '<?= $conversation_redirect ?>';
+    document.querySelectorAll('.conversation-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const userId = item.dataset.userId;
+            if (userId) window.location.href = `${conversationRedirect}${userId}`;
+        });
+    });
+</script>
 
 </body>
 </html>
