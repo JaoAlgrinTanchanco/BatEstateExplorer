@@ -3,7 +3,7 @@
     require_once __DIR__ . '/app/bootstrap.php';
 
     define('ENCRYPTION_KEY', '12345678901234567890123456789012');
-    
+
     function decryptMessage($encrypted_base64) {
         $data = base64_decode($encrypted_base64);
         if (strlen($data) < 16) return $encrypted_base64;
@@ -123,7 +123,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Chat with <?= htmlspecialchars($contact_name) ?></title>
-<link rel="stylesheet" href="../assets/css/agent_message.css">
+<link rel="stylesheet" href="../assets/css/message.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
@@ -149,11 +149,14 @@
 
     <!-- Chat Window -->
     <div class="chat-window" data-user-id="<?= $contact['id'] ?? '' ?>">
+        
+        <!-- Chat Header -->
         <div class="chat-header">
             <button id="sidebarToggle" class="sidebar-toggle">☰</button>
             <span class="chat-contact-name"><?= htmlspecialchars($contact_name ?? 'No conversation selected') ?></span>
         </div>
 
+        <!-- Messages Container -->
         <div class="messages" id="messages">
             <?php foreach ($messages as $msg):
                 $isYou = $msg['sender_id'] === $current_user_id;
@@ -162,6 +165,8 @@
                 $messageText = htmlspecialchars(decryptMessage($msg['message']));
             ?>
             <div class="message <?= $isYou ? 'you' : 'agent' ?>">
+                
+                <!-- Sender Avatar -->
                 <div class="sender-avatar">
                     <?php if (!empty($contactsImages[$msg['sender_id']])): ?>
                         <img src="<?= htmlspecialchars($contactsImages[$msg['sender_id']]) ?>" alt="<?= $senderName ?>">
@@ -169,11 +174,14 @@
                         <i class="fa-solid fa-user"></i>
                     <?php endif; ?>
                 </div>
+
+                <!-- Text Bubble -->
                 <div class="text-container">
                     <div class="sender">
                         <?= $senderName ?> 
                         <span class="timestamp"><?= $timestamp ?></span>:
                     </div>
+
                     <div class="text">
                         <?= $messageText ?>
                         <?php if (!empty($msg['images'])): ?>
@@ -186,14 +194,28 @@
                         <?php endif; ?>
                     </div>
                 </div>
+
+                <!-- Message Options Menu (outside bubble) -->
+                <div class="message-menu">
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                    <div class="dropdown hidden">
+                        <button class="delete-message-btn">Delete message</button>
+                    </div>
+                    <div class="confirm hidden">
+                        <span>Are you sure?</span>
+                        <button class="confirm-delete">Yes</button>
+                        <button class="cancel-delete">Cancel</button>
+                    </div>
+                </div>
+
             </div>
             <?php endforeach; ?>
         </div>
 
-        <!-- Image preview before sending -->
+        <!-- Image Preview Before Sending -->
         <div id="imagePreviewContainer" class="image-preview-container hidden"></div>
 
-        <!-- Message input + file upload -->
+        <!-- Chat Input -->
         <div class="chat-input">
             <div class="file-upload-wrapper">
                 <label for="fileUpload" class="file-upload-label">
@@ -205,6 +227,7 @@
             <input type="text" id="messageInput" placeholder="Type your message..." <?= $receiver_disabled ? 'disabled' : '' ?>>
             <button id="sendBtn" <?= $receiver_disabled ? 'disabled' : '' ?>>Send</button>
         </div>
+
     </div>
 </div>
 
@@ -220,232 +243,7 @@
   <div class="thumbnail-bar" id="thumbnailBar"></div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const sendBtn = document.getElementById('sendBtn');
-        const messageInput = document.getElementById('messageInput');
-        const messagesContainer = document.getElementById('messages');
-        const chatWindow = document.querySelector('.chat-window');
-        const receiverId = chatWindow?.dataset.userId;
-        const fileUpload = document.getElementById('fileUpload');
-        const previewContainer = document.getElementById('imagePreviewContainer');
-
-        const sidebar = document.querySelector('.conversations-list');
-        const overlay = document.getElementById('sidebarOverlay');
-        const toggleBtn = document.getElementById('sidebarToggle');
-
-        const canSend = Boolean(receiverId);
-
-        // --- Enhanced Image Viewer Logic ---
-        const viewerOverlay = document.getElementById('imageViewerOverlay');
-        const viewerImg = document.getElementById('imageViewerImg');
-        const thumbnailBar = document.getElementById('thumbnailBar');
-        const leftArrow = viewerOverlay.querySelector('.nav-arrow.left');
-        const rightArrow = viewerOverlay.querySelector('.nav-arrow.right');
-
-        let currentIndex = 0;
-        let currentImages = [];
-
-        document.addEventListener('click', (e) => {
-            const clickedImg = e.target.closest('.chat-images img');
-            if (clickedImg) {
-                const parentGallery = Array.from(clickedImg.closest('.chat-images').querySelectorAll('img'));
-                currentImages = parentGallery.map(img => img.src);
-                currentIndex = parentGallery.indexOf(clickedImg);
-                openImageViewer();
-            } else if (e.target === viewerOverlay || e.target === viewerImg) {
-                closeImageViewer();
-            }
-        });
-
-        function openImageViewer() {
-            viewerOverlay.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            renderImage();
-            renderThumbnails();
-        }
-
-        function closeImageViewer() {
-            viewerOverlay.classList.add('hidden');
-            document.body.style.overflow = '';
-            viewerImg.src = '';
-            thumbnailBar.innerHTML = '';
-        }
-
-        function renderImage() {
-            viewerImg.src = currentImages[currentIndex];
-            document.querySelectorAll('.thumbnail-bar img').forEach((thumb, idx) => {
-                thumb.classList.toggle('active', idx === currentIndex);
-            });
-        }
-
-        function renderThumbnails() {
-            thumbnailBar.innerHTML = '';
-            currentImages.forEach((src, idx) => {
-                const thumb = document.createElement('img');
-                thumb.src = src;
-                if (idx === currentIndex) thumb.classList.add('active');
-                thumb.addEventListener('click', () => {
-                    currentIndex = idx;
-                    renderImage();
-                });
-                thumbnailBar.appendChild(thumb);
-            });
-        }
-
-        leftArrow.addEventListener('click', () => {
-            if (!currentImages.length) return;
-            currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
-            renderImage();
-        });
-
-        rightArrow.addEventListener('click', () => {
-            if (!currentImages.length) return;
-            currentIndex = (currentIndex + 1) % currentImages.length;
-            renderImage();
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (viewerOverlay.classList.contains('hidden')) return;
-            if (e.key === 'ArrowLeft') leftArrow.click();
-            if (e.key === 'ArrowRight') rightArrow.click();
-            if (e.key === 'Escape') closeImageViewer();
-        });
-
-        // --- Image Preview Logic ---
-        let selectedFiles = [];
-
-        function renderPreviewContainer() {
-            previewContainer.innerHTML = '';
-            if (selectedFiles.length === 0) {
-                previewContainer.classList.add('hidden');
-                return;
-            }
-
-            const scrollWrapper = document.createElement('div');
-            scrollWrapper.className = 'image-scroll-wrapper';
-
-            selectedFiles.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const thumb = document.createElement('div');
-                    thumb.className = 'preview-thumb';
-                    thumb.innerHTML = `<img src="${e.target.result}" alt="${file.name}">`;
-                    thumb.addEventListener('click', () => {
-                        selectedFiles.splice(index, 1);
-                        renderPreviewContainer();
-                    });
-                    scrollWrapper.appendChild(thumb);
-                };
-                reader.readAsDataURL(file);
-            });
-
-            previewContainer.appendChild(scrollWrapper);
-
-            const addDiv = document.createElement('div');
-            addDiv.className = 'preview-add';
-            addDiv.innerHTML = '+';
-            addDiv.addEventListener('click', () => fileUpload.click());
-            previewContainer.appendChild(addDiv);
-
-            previewContainer.classList.remove('hidden');
-        }
-
-        fileUpload?.addEventListener('change', (e) => {
-            const newFiles = Array.from(e.target.files);
-            selectedFiles = [...selectedFiles, ...newFiles];
-            renderPreviewContainer();
-            fileUpload.value = '';
-        });
-
-        // --- Send Message Function ---
-        const sendMessage = async () => {
-            const message = messageInput.value.trim();
-            if (!message && selectedFiles.length === 0) return;
-            if (!canSend) return alert('No conversation selected.');
-
-            const formData = new FormData();
-            formData.append('receiver_id', receiverId);
-            formData.append('message', message);
-
-            selectedFiles.forEach(file => formData.append('attachments[]', file));
-
-            try {
-                const response = await fetch('api/send_message.php', { method: 'POST', body: formData });
-                const data = await response.json();
-                if (!data.success) {
-                    alert(data.error || 'Failed to send message.');
-                    return;
-                }
-
-                const rawDate = new Date(data.message.created_at);
-                const timestamp = rawDate.toLocaleString('en-US', {
-                    month: 'short', day: '2-digit', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit', hour12: false
-                }).replace(',', '');
-
-                const userAvatar = '<?= htmlspecialchars($contactsImages[$current_user_id] ?? "") ?>';
-                const avatarHTML = userAvatar ? `<img src="${userAvatar}" alt="You">` : '<i class="fa-solid fa-user"></i>';
-
-                const msgDiv = document.createElement('div');
-                msgDiv.classList.add('message', 'you');
-
-                let imagesHTML = '';
-                if (data.message.images && data.message.images.length > 0) {
-                    const isMultiple = data.message.images.length > 1;
-                    imagesHTML = `<div class="chat-images ${isMultiple ? 'multiple' : 'single'}">
-                                    ${data.message.images.map(img => `<img src="${img}" alt="sent image" loading="lazy">`).join('')}
-                                </div>`;
-                }
-
-                msgDiv.innerHTML = `
-                    <div class="sender-avatar">${avatarHTML}</div>
-                    <div class="text-container">
-                        <div class="sender">You <span class="timestamp">${timestamp}</span>:</div>
-                        ${data.message.text ? `<div class="text">${data.message.text}</div>` : ''}
-                        ${imagesHTML}
-                    </div>
-                `;
-
-                messagesContainer.appendChild(msgDiv);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-                messageInput.value = '';
-                fileUpload.value = '';
-                selectedFiles = [];
-                previewContainer.innerHTML = '';
-                previewContainer.classList.add('hidden');
-            } catch (err) {
-                console.error('Send message error:', err);
-                alert('Unexpected error occurred while sending message.');
-            }
-        };
-
-        sendBtn?.addEventListener('click', sendMessage);
-        messageInput?.addEventListener('keypress', e => {
-            if (e.key === 'Enter') sendMessage();
-        });
-
-        // --- Sidebar Toggle ---
-        toggleBtn?.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('active');
-        });
-        overlay?.addEventListener('click', () => {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('active');
-        });
-
-        // --- Switch Conversations ---
-        const conversationRedirect = '<?= $conversation_redirect ?>'; // dynamically set in PHP
-        document.querySelectorAll('.conversation-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const userId = item.dataset.userId;
-                if (userId) window.location.href = `${conversationRedirect}${userId}`;
-            });
-        });
-    });
-</script>
+<script src="/assets/js/message.js"></script>
 
 </body>
 </html>
