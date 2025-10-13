@@ -1,121 +1,121 @@
 <?php
-session_start();
-require_once __DIR__ . '/app/bootstrap.php';
+    session_start();
+    require_once __DIR__ . '/app/bootstrap.php';
 
-define('ENCRYPTION_KEY', '12345678901234567890123456789012');
+    define('ENCRYPTION_KEY', '12345678901234567890123456789012');
 
-function decryptMessage($encrypted_base64) {
-    $data = base64_decode($encrypted_base64);
-    if (strlen($data) < 16) return $encrypted_base64;
-    $iv = substr($data, 0, 16);
-    $ciphertext = substr($data, 16);
-    return openssl_decrypt($ciphertext, 'aes-256-cbc', ENCRYPTION_KEY, 0, $iv);
-}
+    function decryptMessage($encrypted_base64) {
+        $data = base64_decode($encrypted_base64);
+        if (strlen($data) < 16) return $encrypted_base64;
+        $iv = substr($data, 0, 16);
+        $ciphertext = substr($data, 16);
+        return openssl_decrypt($ciphertext, 'aes-256-cbc', ENCRYPTION_KEY, 0, $iv);
+    }
 
-// Logged-in user
-$current_user_id = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
-if (!$current_user_id) die("User not logged in.");
+    // Logged-in user
+    $current_user_id = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
+    if (!$current_user_id) die("User not logged in.");
 
-// Get agent_id from URL
-$agent_id = $_GET['user_id'] ?? null;
+    // Get agent_id from URL
+    $agent_id = $_GET['user_id'] ?? null;
 
-// Resolve agent_id if agent_id parameter exists
-if ($agent_id === null && !empty($_GET['agent_id'])) {
-    $stmt = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
-    $stmt->bind_param("i", $_GET['agent_id']);
+    // Resolve agent_id if agent_id parameter exists
+    if ($agent_id === null && !empty($_GET['agent_id'])) {
+        $stmt = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
+        $stmt->bind_param("i", $_GET['agent_id']);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if ($row) $agent_id = (int)$row['user_id'];
+    }
+
+    // Initialize defaults
+    $agent = null;
+    $agent_name = "No conversation selected";
+    $messages = [];
+    $receiver_disabled = true;
+
+    // Fetch agent info
+    if ($agent_id) {
+        $stmt = $conn->prepare("
+            SELECT id, first_name, last_name, email, profile_image_path
+            FROM users
+            WHERE id = ? AND user_type IN ('direct_agent','associate_agent')
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $agent_id);
+        $stmt->execute();
+        $agent = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if ($agent) {
+            $agent_name = trim($agent['first_name'] . ' ' . $agent['last_name']);
+            $receiver_disabled = false;
+        }
+    }
+
+    // Fetch all agents for conversation list
+    $agents_list = [];
+    $contactsImages = [];
+    $sql = "
+        SELECT DISTINCT u.id, CONCAT(u.first_name,' ',u.last_name) AS name, u.profile_image_path
+        FROM messages m
+        INNER JOIN users u ON (u.id = m.sender_id OR u.id = m.receiver_id)
+        WHERE u.user_type IN ('direct_agent','associate_agent')
+        AND (m.sender_id = ? OR m.receiver_id = ?)
+        AND u.id != ?
+    ";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iii", $current_user_id, $current_user_id, $current_user_id);
     $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $agents_list[$row['id']] = $row['name'];
+        $contactsImages[$row['id']] = !empty($row['profile_image_path'])
+            ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($row['profile_image_path'])
+            : null;
+    }
     $stmt->close();
-    if ($row) $agent_id = (int)$row['user_id'];
-}
 
-// Initialize defaults
-$agent = null;
-$agent_name = "No conversation selected";
-$messages = [];
-$receiver_disabled = true;
+    // Current user profile image
+    function getProfileImage($conn, $user_id) {
+        $stmt = $conn->prepare("SELECT profile_image_path FROM users WHERE id = ? LIMIT 1");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if (!empty($row['profile_image_path']) && file_exists(__DIR__ . '/../storage/uploads/profile_images/' . basename($row['profile_image_path']))) {
+            return '/BatEstateExplorer/storage/uploads/profile_images/' . basename($row['profile_image_path']);
+        }
+        return null;
+    }
+    $contactsImages[$current_user_id] = getProfileImage($conn, $current_user_id);
 
-// Fetch agent info
-if ($agent_id) {
+    // Fetch conversation messages
     $stmt = $conn->prepare("
-        SELECT id, first_name, last_name, email, profile_image_path
-        FROM users
-        WHERE id = ? AND user_type IN ('direct_agent','associate_agent')
-        LIMIT 1
+        SELECT sender_id, message, image_path, created_at
+        FROM messages
+        WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+        ORDER BY created_at ASC
     ");
-    $stmt->bind_param("i", $agent_id);
+    $stmt->bind_param("iiii", $current_user_id, $agent['id'], $agent['id'], $current_user_id);
     $stmt->execute();
-    $agent = $stmt->get_result()->fetch_assoc();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        // Decode image paths if present
+        if (!empty($row['image_path'])) {
+            $row['images'] = json_decode($row['image_path'], true);
+            if (!is_array($row['images'])) $row['images'] = [];
+        } else {
+            $row['images'] = [];
+        }
+        $messages[] = $row;
+    }
     $stmt->close();
 
-    if ($agent) {
-        $agent_name = trim($agent['first_name'] . ' ' . $agent['last_name']);
-        $receiver_disabled = false;
-    }
-}
-
-// Fetch all agents for conversation list
-$agents_list = [];
-$contactsImages = [];
-$sql = "
-    SELECT DISTINCT u.id, CONCAT(u.first_name,' ',u.last_name) AS name, u.profile_image_path
-    FROM messages m
-    INNER JOIN users u ON (u.id = m.sender_id OR u.id = m.receiver_id)
-    WHERE u.user_type IN ('direct_agent','associate_agent')
-      AND (m.sender_id = ? OR m.receiver_id = ?)
-      AND u.id != ?
-";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("iii", $current_user_id, $current_user_id, $current_user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $agents_list[$row['id']] = $row['name'];
-    $contactsImages[$row['id']] = !empty($row['profile_image_path'])
-        ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($row['profile_image_path'])
-        : null;
-}
-$stmt->close();
-
-// Current user profile image
-function getProfileImage($conn, $user_id) {
-    $stmt = $conn->prepare("SELECT profile_image_path FROM users WHERE id = ? LIMIT 1");
-    $stmt->bind_param("i", $user_id);
-    $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-    if (!empty($row['profile_image_path']) && file_exists(__DIR__ . '/../storage/uploads/profile_images/' . basename($row['profile_image_path']))) {
-        return '/BatEstateExplorer/storage/uploads/profile_images/' . basename($row['profile_image_path']);
-    }
-    return null;
-}
-$contactsImages[$current_user_id] = getProfileImage($conn, $current_user_id);
-
-// Fetch conversation messages
-$stmt = $conn->prepare("
-    SELECT sender_id, message, image_path, created_at
-    FROM messages
-    WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
-    ORDER BY created_at ASC
-");
-$stmt->bind_param("iiii", $current_user_id, $agent['id'], $agent['id'], $current_user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    // Decode image paths if present
-    if (!empty($row['image_path'])) {
-        $row['images'] = json_decode($row['image_path'], true);
-        if (!is_array($row['images'])) $row['images'] = [];
-    } else {
-        $row['images'] = [];
-    }
-    $messages[] = $row;
-}
-$stmt->close();
-
-// Names mapping for display
-$contact_names = $agents_list;
-$contact_names[$current_user_id] = 'You';
+    // Names mapping for display
+    $contact_names = $agents_list;
+    $contact_names[$current_user_id] = 'You';
 ?>
 
 <!DOCTYPE html>
