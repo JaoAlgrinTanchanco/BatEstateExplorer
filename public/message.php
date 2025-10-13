@@ -12,65 +12,64 @@
         return openssl_decrypt($ciphertext, 'aes-256-cbc', ENCRYPTION_KEY, 0, $iv);
     }
 
-    // Logged-in user
+    // Determine role
+    $role = $_GET['role'] ?? ($_SESSION['user']['role'] ?? 'user'); // 'user' or 'agent'
     $current_user_id = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
-    if (!$current_user_id) die("User not logged in.");
+    if (!$current_user_id) die("Not logged in.");
 
-    // Get agent_id from URL
-    $agent_id = $_GET['user_id'] ?? null;
-
-    // Resolve agent_id if agent_id parameter exists
-    if ($agent_id === null && !empty($_GET['agent_id'])) {
+    // Determine contact id
+    $contact_id = $_GET['user_id'] ?? null;
+    if (empty($contact_id) && !empty($_GET['agent_id'])) {
         $stmt = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
         $stmt->bind_param("i", $_GET['agent_id']);
         $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
+        $res = $stmt->get_result();
+        if ($row = $res->fetch_assoc()) $contact_id = (int)$row['user_id'];
         $stmt->close();
-        if ($row) $agent_id = (int)$row['user_id'];
     }
 
-    // Initialize defaults
-    $agent = null;
-    $agent_name = "No conversation selected";
+    // Initialize
+    $contact = null;
+    $contact_name = "No conversation selected";
     $messages = [];
     $receiver_disabled = true;
 
-    // Fetch agent info
-    if ($agent_id) {
+    // Fetch contact info
+    if ($contact_id) {
         $stmt = $conn->prepare("
             SELECT id, first_name, last_name, email, profile_image_path
             FROM users
-            WHERE id = ? AND user_type IN ('direct_agent','associate_agent')
+            WHERE id = ? " . ($role === 'user' ? "AND user_type IN ('direct_agent','associate_agent')" : "") . "
             LIMIT 1
         ");
-        $stmt->bind_param("i", $agent_id);
+        $stmt->bind_param("i", $contact_id);
         $stmt->execute();
-        $agent = $stmt->get_result()->fetch_assoc();
+        $contact = $stmt->get_result()->fetch_assoc();
         $stmt->close();
 
-        if ($agent) {
-            $agent_name = trim($agent['first_name'] . ' ' . $agent['last_name']);
+        if ($contact) {
+            $contact_name = trim($contact['first_name'] . ' ' . $contact['last_name']);
             $receiver_disabled = false;
         }
     }
 
-    // Fetch all agents for conversation list
-    $agents_list = [];
+    // Fetch contacts list
+    $contacts_list = [];
     $contactsImages = [];
+
     $sql = "
-        SELECT DISTINCT u.id, CONCAT(u.first_name,' ',u.last_name) AS name, u.profile_image_path
+        SELECT DISTINCT u.id, CONCAT(u.first_name, ' ', u.last_name) AS name, u.profile_image_path
         FROM messages m
         INNER JOIN users u ON (u.id = m.sender_id OR u.id = m.receiver_id)
-        WHERE u.user_type IN ('direct_agent','associate_agent')
-        AND (m.sender_id = ? OR m.receiver_id = ?)
-        AND u.id != ?
+        WHERE (m.sender_id = ? OR m.receiver_id = ?)
+        AND u.id != ? " . ($role === 'user' ? "AND u.user_type IN ('direct_agent','associate_agent')" : "") . "
     ";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("iii", $current_user_id, $current_user_id, $current_user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
-        $agents_list[$row['id']] = $row['name'];
+        $contacts_list[$row['id']] = $row['name'];
         $contactsImages[$row['id']] = !empty($row['profile_image_path'])
             ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($row['profile_image_path'])
             : null;
@@ -92,30 +91,34 @@
     $contactsImages[$current_user_id] = getProfileImage($conn, $current_user_id);
 
     // Fetch conversation messages
-    $stmt = $conn->prepare("
-        SELECT sender_id, message, image_path, created_at
-        FROM messages
-        WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
-        ORDER BY created_at ASC
-    ");
-    $stmt->bind_param("iiii", $current_user_id, $agent['id'], $agent['id'], $current_user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        // Decode image paths if present
-        if (!empty($row['image_path'])) {
-            $row['images'] = json_decode($row['image_path'], true);
-            if (!is_array($row['images'])) $row['images'] = [];
-        } else {
-            $row['images'] = [];
+    if ($contact) {
+        $stmt = $conn->prepare("
+            SELECT sender_id, message, image_path, created_at
+            FROM messages
+            WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+            ORDER BY created_at ASC
+        ");
+        $stmt->bind_param("iiii", $current_user_id, $contact['id'], $contact['id'], $current_user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            if (!empty($row['image_path'])) {
+                $row['images'] = json_decode($row['image_path'], true);
+                if (!is_array($row['images'])) $row['images'] = [];
+            } else {
+                $row['images'] = [];
+            }
+            $messages[] = $row;
         }
-        $messages[] = $row;
+        $stmt->close();
     }
-    $stmt->close();
 
-    // Names mapping for display
-    $contact_names = $agents_list;
+    // Names mapping
+    $contact_names = $contacts_list;
     $contact_names[$current_user_id] = 'You';
+
+    // All conversation redirects now point to this single file
+    $conversation_redirect = '/BatEstateExplorer/public/message.php?user_id=';
 ?>
 
 <!DOCTYPE html>
@@ -133,8 +136,8 @@
     <!-- Conversations Sidebar -->
     <div class="conversations-list">
         <h3>Conversations</h3>
-        <?php foreach ($agents_list as $id => $name): ?>
-            <div class="conversation-item <?= ($id == ($agent['id'] ?? 0)) ? 'active' : '' ?>" data-user-id="<?= $id ?>">
+        <?php foreach ($contacts_list as $id => $name): ?>
+            <div class="conversation-item <?= ($id == ($contact['id'] ?? 0)) ? 'active' : '' ?>" data-user-id="<?= $id ?>">
                 <div class="conversation-avatar">
                     <?php if (!empty($contactsImages[$id])): ?>
                         <img src="<?= htmlspecialchars($contactsImages[$id]) ?>" alt="<?= htmlspecialchars($name) ?>">
@@ -148,16 +151,16 @@
     </div>
 
     <!-- Chat Window -->
-    <div class="chat-window" data-user-id="<?= $agent['id'] ?? '' ?>">
+    <div class="chat-window" data-user-id="<?= $contact['id'] ?? '' ?>">
         <div class="chat-header">
             <button id="sidebarToggle" class="sidebar-toggle">☰</button>
-            <?= htmlspecialchars($agent_name) ?>
+            <?= htmlspecialchars($contact_name ?? 'No conversation selected') ?>
         </div>
 
         <div class="messages" id="messages">
             <?php foreach ($messages as $msg):
                 $isYou = $msg['sender_id'] === $current_user_id;
-                $senderName = htmlspecialchars($contact_names[$msg['sender_id']] ?? 'Agent');
+                $senderName = htmlspecialchars($contact_names[$msg['sender_id']] ?? 'Unknown');
                 $timestamp = date('M d, Y H:i', strtotime($msg['created_at']));
             ?>
             <div class="message <?= $isYou ? 'you' : 'agent' ?>">
@@ -185,17 +188,21 @@
             </div>
             <?php endforeach; ?>
         </div>
+
+        <!-- Image preview area (before send) -->
         <div id="imagePreviewContainer" class="image-preview-container hidden"></div>
+
+        <!-- Message input + file upload -->
         <div class="chat-input">
             <div class="file-upload-wrapper">
                 <label for="fileUpload" class="file-upload-label">
-                <i class="fa-solid fa-paperclip"></i>
+                    <i class="fa-solid fa-paperclip"></i>
                 </label>
                 <input type="file" id="fileUpload" name="attachments[]" multiple>
             </div>
 
-            <input type="text" id="messageInput" placeholder="Type your message..." />
-            <button id="sendBtn">Send</button>
+            <input type="text" id="messageInput" placeholder="Type your message..." <?= $receiver_disabled ? 'disabled' : '' ?>>
+            <button id="sendBtn" <?= $receiver_disabled ? 'disabled' : '' ?>>Send</button>
         </div>
     </div>
 </div>
@@ -308,48 +315,46 @@
         let selectedFiles = [];
 
         function renderPreviewContainer() {
-        previewContainer.innerHTML = '';
-        if (selectedFiles.length === 0) {
-            previewContainer.classList.add('hidden');
-            return;
-        }
+            previewContainer.innerHTML = '';
+            if (selectedFiles.length === 0) {
+                previewContainer.classList.add('hidden');
+                return;
+            }
 
-        // Create scrollable inner div
-        const scrollWrapper = document.createElement('div');
-        scrollWrapper.className = 'image-scroll-wrapper';
+            const scrollWrapper = document.createElement('div');
+            scrollWrapper.className = 'image-scroll-wrapper';
 
-        selectedFiles.forEach((file, index) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-            const thumb = document.createElement('div');
-            thumb.className = 'preview-thumb';
-            thumb.innerHTML = `<img src="${e.target.result}" alt="${file.name}">`;
-            thumb.addEventListener('click', () => {
-                selectedFiles.splice(index, 1);
-                renderPreviewContainer();
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const thumb = document.createElement('div');
+                    thumb.className = 'preview-thumb';
+                    thumb.innerHTML = `<img src="${e.target.result}" alt="${file.name}">`;
+                    thumb.addEventListener('click', () => {
+                        selectedFiles.splice(index, 1);
+                        renderPreviewContainer();
+                    });
+                    scrollWrapper.appendChild(thumb);
+                };
+                reader.readAsDataURL(file);
             });
-            scrollWrapper.appendChild(thumb);
-            };
-            reader.readAsDataURL(file);
-        });
 
-        previewContainer.appendChild(scrollWrapper);
+            previewContainer.appendChild(scrollWrapper);
 
-        // Add the "+" square
-        const addDiv = document.createElement('div');
-        addDiv.className = 'preview-add';
-        addDiv.innerHTML = '+';
-        addDiv.addEventListener('click', () => fileUpload.click());
-        previewContainer.appendChild(addDiv);
+            const addDiv = document.createElement('div');
+            addDiv.className = 'preview-add';
+            addDiv.innerHTML = '+';
+            addDiv.addEventListener('click', () => fileUpload.click());
+            previewContainer.appendChild(addDiv);
 
-        previewContainer.classList.remove('hidden');
+            previewContainer.classList.remove('hidden');
         }
 
         fileUpload?.addEventListener('change', (e) => {
             const newFiles = Array.from(e.target.files);
             selectedFiles = [...selectedFiles, ...newFiles];
             renderPreviewContainer();
-            fileUpload.value = ''; // allow same file reselect
+            fileUpload.value = '';
         });
 
         // --- Send Message Function ---
@@ -365,11 +370,7 @@
             selectedFiles.forEach(file => formData.append('attachments[]', file));
 
             try {
-                const response = await fetch('api/send_message.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
+                const response = await fetch('api/send_message.php', { method: 'POST', body: formData });
                 const data = await response.json();
                 if (!data.success) {
                     alert(data.error || 'Failed to send message.');
@@ -383,9 +384,7 @@
                 }).replace(',', '');
 
                 const userAvatar = '<?= htmlspecialchars($contactsImages[$current_user_id] ?? "") ?>';
-                const avatarHTML = userAvatar 
-                    ? `<img src="${userAvatar}" alt="You">`
-                    : '<i class="fa-solid fa-user"></i>';
+                const avatarHTML = userAvatar ? `<img src="${userAvatar}" alt="You">` : '<i class="fa-solid fa-user"></i>';
 
                 const msgDiv = document.createElement('div');
                 msgDiv.classList.add('message', 'you');
@@ -393,12 +392,9 @@
                 let imagesHTML = '';
                 if (data.message.images && data.message.images.length > 0) {
                     const isMultiple = data.message.images.length > 1;
-                    imagesHTML = `
-                        <div class="chat-images ${isMultiple ? 'multiple' : 'single'}">
-                            ${data.message.images
-                                .map(img => `<img src="${img}" alt="sent image" loading="lazy">`)
-                                .join('')}
-                        </div>`;
+                    imagesHTML = `<div class="chat-images ${isMultiple ? 'multiple' : 'single'}">
+                                    ${data.message.images.map(img => `<img src="${img}" alt="sent image" loading="lazy">`).join('')}
+                                </div>`;
                 }
 
                 msgDiv.innerHTML = `
@@ -413,7 +409,6 @@
                 messagesContainer.appendChild(msgDiv);
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-                // Reset inputs
                 messageInput.value = '';
                 fileUpload.value = '';
                 selectedFiles = [];
@@ -441,10 +436,11 @@
         });
 
         // --- Switch Conversations ---
+        const conversationRedirect = '<?= $conversation_redirect ?>'; // dynamically set in PHP
         document.querySelectorAll('.conversation-item').forEach(item => {
             item.addEventListener('click', () => {
                 const userId = item.dataset.userId;
-                if (userId) window.location.href = `/BatEstateExplorer/public/message.php?user_id=${userId}`;
+                if (userId) window.location.href = `${conversationRedirect}${userId}`;
             });
         });
     });
