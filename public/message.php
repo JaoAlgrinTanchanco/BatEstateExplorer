@@ -193,21 +193,6 @@
                         <?php endif; ?>
                     </div>
                 </div>
-
-                <!-- 3-dot menu -->
-                <?php if ($isYou): ?>
-                <div class="message-menu">
-                    <i class="fa-solid fa-ellipsis-vertical"></i>
-                    <div class="dropdown hidden">
-                        <button class="delete-message-btn">Delete message</button>
-                    </div>
-                    <div class="confirm hidden">
-                        <span>Are you sure?</span>
-                        <button class="confirm-delete">Yes</button>
-                        <button class="cancel-delete">Cancel</button>
-                    </div>
-                </div>
-                <?php endif; ?>
             </div>
             <?php endforeach; ?>
         </div>
