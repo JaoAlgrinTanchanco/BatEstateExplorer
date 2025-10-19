@@ -126,6 +126,35 @@ if (!empty($agent['education'])) {
         ($agent['graduation_year'] ? ' - ' . $agent['graduation_year'] : '')
     );
 }
+
+// --- Fetch Reviews for Agent's Properties ---
+$reviews = [];
+
+if (!empty($property_ids)) {
+    $in_placeholders = implode(',', array_fill(0, count($property_ids), '?'));
+    $types = str_repeat('i', count($property_ids));
+
+    $sql = "
+        SELECT pr.rating, pr.review_text, pr.created_at, u.first_name, u.profile_image_path
+        FROM property_reviews pr
+        JOIN users u ON pr.user_id = u.id
+        WHERE pr.property_id IN ($in_placeholders)
+        ORDER BY pr.created_at DESC
+    ";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param($types, ...$property_ids);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        $row['profile_image'] = !empty($row['profile_image_path'])
+            ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($row['profile_image_path'])
+            : '/BatEstateExplorer/assets/img/default-user.png';
+        $reviews[] = $row;
+    }
+    $stmt->close();
+}
 ?>
 
 
@@ -241,17 +270,46 @@ if (!empty($agent['education'])) {
   <!-- Reviews Section -->
   <div class="agent-reviews-section">
     <h3>What guests say about <?= htmlspecialchars($agent['first_name']) ?></h3>
-    <div class="review-card">
-      <p>“<?= htmlspecialchars($agent['first_name']) ?> was extremely helpful and professional!”</p>
-      <div class="review-author">— Guest User</div>
-    </div>
-    <div class="review-card">
-      <p>“Very smooth transaction, highly recommended agent.”</p>
-      <div class="review-author">— Homebuyer</div>
+
+    <div class="reviews-wrapper">
+      <button class="scroll-btn left-btn">&#10094;</button>
+      
+      <div class="reviews-row">
+        <?php if (!empty($reviews)): ?>
+          <?php foreach ($reviews as $review): ?>
+            <div class="review-card">
+              <div class="review-header">
+                <img src="<?= htmlspecialchars($review['profile_image']) ?>" 
+                    alt="<?= htmlspecialchars($review['first_name']) ?>" 
+                    class="review-avatar">
+                <div>
+                  <div class="reviewer-name-rating">
+                    <?= htmlspecialchars($review['first_name']) ?>
+                    <span class="review-stars">
+                      <?php for ($i=1; $i<=5; $i++): ?>
+                        <i class="fa-solid fa-star" style="color:<?= $i <= $review['rating'] ? '#111' : '#ddd' ?>;"></i>
+                      <?php endfor; ?>
+                    </span>
+                  </div>
+                  <div class="review-date">
+                    <?= date('F j, Y', strtotime($review['created_at'])) ?>
+                  </div>
+                </div>
+              </div>
+              <p class="review-text">“<?= htmlspecialchars($review['review_text']) ?>”</p>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <p>No reviews yet.</p>
+        <?php endif; ?>
+      </div>
+
+      <button class="scroll-btn right-btn">&#10095;</button>
     </div>
   </div>
 
   <!-- Listings Section -->
+  <h3 style="font-size: 28px; margin: 0;">Property Listings <?= htmlspecialchars($agent['first_name']) ?></h3>
   <div class="properties-grid" id="agentPropertiesGrid">
     <?php if (!empty($properties)): ?>
       <?php
@@ -265,6 +323,20 @@ if (!empty($agent['education'])) {
   </div>
 
 </div>
+
+<script>
+  const leftBtn = document.querySelector('.left-btn');
+  const rightBtn = document.querySelector('.right-btn');
+  const row = document.querySelector('.reviews-row');
+
+  leftBtn.addEventListener('click', () => {
+    row.scrollBy({ left: -320, behavior: 'smooth' });
+  });
+
+  rightBtn.addEventListener('click', () => {
+    row.scrollBy({ left: 320, behavior: 'smooth' });
+  });
+</script>
 
 </body>
 </html>
