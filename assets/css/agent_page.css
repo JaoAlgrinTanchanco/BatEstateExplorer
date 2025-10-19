@@ -1,0 +1,294 @@
+/* ============================================
+   AIRBNB-STYLE AGENT PROFILE PAGE (Jamie Layout)
+   ============================================ */
+
+body {
+  font-family: "Inter", Arial, sans-serif;
+  background: #f9fafc;
+  color: #111;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("../images/Vector 1.png") center repeat;
+  background-size: 30% auto;
+  opacity: 0.03;
+  z-index: 0;
+}
+/* Bring all content sections above background */
+.agent-profile-page,
+.agent-top-section,
+.host-profile-card,
+.agent-about,
+.agent-reviews-section,
+.properties-grid,
+.property-card,
+.review-card {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== PAGE CONTAINER ===== */
+.agent-profile-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+/* ===== TOP SECTION (Profile Info) ===== */
+.agent-top-section {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.host-profile-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch; /* make both columns equal height */
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  background-color: white;
+  border: 1px solid #DDDDDD;
+  border-radius: 30px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.host-info-left {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;   /* vertical centering */
+  align-items: center;       /* horizontal centering */
+  flex-basis: 55%;
+  text-align: center;
+}
+
+.profile-image-container {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.profile-image {
+    width: 90px; 
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+.host-name {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+    color: #222222;
+    text-align: center;    
+}
+
+/* Style for the Identity Verified Badge */
+.verify-badge {
+    font-size: 13px;
+    color: #717171; /* A light gray for secondary info */
+    margin-top: 5px; /* Space below the name */
+    font-weight: 500;
+}
+
+.verify-badge .fa-shield-check {
+    color: #222222; /* Darker color for the shield icon */
+    margin-right: 3px;
+}
+
+/* --- Right Section: Statistics (No change needed here as the structure is the same) --- */
+.host-stats-right {
+    display: flex;
+    flex-direction: column;
+    flex-basis: 45%;
+    justify-content: center;
+}
+
+.stat-item {
+    padding: 10px 0;
+    width: 100%;
+    text-align: left;
+    border-bottom: 1px solid #DDDDDD; /* horizontal dividers */
+}
+
+.stat-item:last-child {
+    border-bottom: none; /* remove border on last one */
+}
+
+.stat-item:last-child {
+    padding-bottom: 0;
+}
+
+.stat-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: #222222;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #717171;
+    margin-top: 2px;
+}
+
+.rating-value {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;  /* star + number aligned left */
+}
+
+.rating-value .fa-star {
+    color: #FF5A5F; 
+    font-size: 14px;
+    margin-right: 5px;
+}
+/* Removed styles for .host-misc-details as that block is gone */
+
+/* ===== RIGHT COLUMN: ABOUT SECTION ===== */
+.agent-about {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 16px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  padding: 2rem;
+}
+
+.agent-about h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #222;
+}
+
+.agent-about p {
+  font-size: 0.95rem;
+  color: #444;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.agent-about .specialization {
+  background-color: #fafafa;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: #333;
+  margin-top: 0.75rem;
+}
+
+/* ===== GUEST REVIEWS SECTION ===== */
+.agent-reviews-section {
+  margin-top: 1rem;
+  padding: 2rem;
+  border-radius: 16px;
+  background-color: #fafafa;
+  border: 1px solid #eee;
+}
+
+.agent-reviews-section h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 1rem;
+}
+
+.review-card {
+  background-color: #fff;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.review-card p {
+  font-size: 0.95rem;
+  color: #444;
+  margin-bottom: 0.5rem;
+}
+
+.review-author {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* ===== PROPERTY LISTINGS GRID ===== */
+.properties-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.property-card {
+  background-color: #fff;
+  border: 1px solid #eee;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.property-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.property-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.property-card-content {
+  padding: 1rem 1.25rem;
+}
+
+.property-card-content h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 0.3rem;
+}
+
+.property-card-content p {
+  color: #555;
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
+.property-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #777;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 850px) {
+  .agent-top-section {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-profile-card {
+    position: static;
+    margin-bottom: 1.5rem;
+  }
+}

@@ -100,11 +100,9 @@
   }
 ?>
 
-
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/user_profile.css">
 
 <div class="profile-container">
-
   <!-- Profile Header -->
   <div class="profile-header">
       <div class="profile-info">

@@ -1,5 +1,5 @@
 <?php
-if (!function_exists('render_agent_property_card')) {
+    if (!function_exists('render_agent_property_card')) {
     function render_agent_property_card(array $property, bool $modalOnly = false) {
         $conn = $GLOBALS['conn'] ?? null;
         if (!$conn) {
