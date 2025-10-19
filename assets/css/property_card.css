@@ -129,7 +129,6 @@
  align-items: center;  /* Centers vertically */
  overflow-y: auto; /* Fallback for very short screens */
  backdrop-filter: blur(4px);
- font-family: 'Satoshi', sans-serif;
 }
 
 #propertyModal .custom-modal-content {
@@ -366,7 +365,7 @@
   height: 595px; /* Locked height */
   overflow-y: auto; /* Scrollable area for reviews */
   
-  background: #f9f9f9;
+  background: #fff;
   border-radius: 15px;
   padding: 1rem 1.5rem;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);

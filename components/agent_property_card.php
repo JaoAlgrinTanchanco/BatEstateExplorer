@@ -104,7 +104,6 @@
                 <section><span class="label">Property Type:</span> <span class="value property-type"></span></section>
                 <section><span class="label">Bedrooms:</span> <span class="value bedrooms"></span></section>
                 <section><span class="label">Bathrooms:</span> <span class="value bathrooms"></span></section>
-                <section><span class="label">Area:</span> <span class="value sqm"></span></section>
                 <section><span class="label">Lot Size:</span> <span class="value lot_size"></span></section>
                 <section><span class="label">Status:</span> <span class="value status"></span></section>
                 <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>

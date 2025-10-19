@@ -1,3 +1,8 @@
+@font-face {
+  font-family: 'Satoshi-Regular';
+  src: url('../fonts/Satoshi-Regular.otf') format('opentype');
+  font-style: normal;
+}
 /* --- Search Container Layout --- */
 .search-container {
   position: relative;
@@ -145,6 +150,7 @@
 
 /* Properties Grid */
 .properties-grid {
+  font-family: 'Satoshi-Regular';
   width: 100%;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

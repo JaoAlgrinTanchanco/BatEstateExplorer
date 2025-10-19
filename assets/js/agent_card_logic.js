@@ -79,7 +79,6 @@ function renderStars(rating) {
       modal.querySelector(".property-type").textContent = prop.property_type || "-";
       modal.querySelector(".bedrooms").textContent = prop.bedrooms ?? "-";
       modal.querySelector(".bathrooms").textContent = prop.bathrooms ?? "-";
-      modal.querySelector(".sqm").textContent = prop.sqm ?? "-";
       modal.querySelector(".lot_size").textContent = prop.lot_size ?? "-";
       modal.querySelector(".status").textContent = prop.status || "-";
       modal.querySelector(".date_uploaded").textContent = prop.created_at ? new Date(prop.created_at).toLocaleDateString() : "-";
