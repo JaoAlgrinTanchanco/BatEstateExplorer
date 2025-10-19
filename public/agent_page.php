@@ -111,8 +111,16 @@ $years_hosting = floor(($current_date - $created_date) / (365.25 * 24 * 60 * 60)
             <div class="profile-image-container">
                 <img src="<?= htmlspecialchars($agent_image) ?>" alt="<?= htmlspecialchars($agent_name) ?>" class="profile-image">
             </div>
-            <h2 class="host-name"><?= htmlspecialchars(explode(' ', trim($agent_name))[0]) ?></h2>         
+            
+            <h2 class="host-name">
+                <?= htmlspecialchars(explode(' ', trim($agent_name))[0]) ?>
+            </h2>
+            
+            <div class="agent-type">
+                <?= ucfirst(str_replace('_', ' ', htmlspecialchars($agent['user_type'] ?? 'Agent'))) ?>
+            </div>
         </div>
+
         <div class="host-stats-right">            
             <div class="stat-item">
                 <div class="stat-value rating-value">

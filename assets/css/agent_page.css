@@ -50,7 +50,7 @@ body::before {
 /* ===== TOP SECTION (Profile Info) ===== */
 .agent-top-section {
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: minmax(320px, 380px) 1fr;
   gap: 2.5rem;
   align-items: start;
 }
@@ -61,11 +61,12 @@ body::before {
   align-items: stretch; /* make both columns equal height */
   padding: 24px;
   width: 100%;
-  max-width: 400px;
+  max-width: 100%;
   background-color: white;
   border: 1px solid #DDDDDD;
   border-radius: 30px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  box-sizing: border-box;
 }
 
 .host-info-left {
@@ -77,9 +78,16 @@ body::before {
   text-align: center;
 }
 
+.agent-type {
+  font-size: 14px;
+  font-weight: 500;
+  color: #717171;
+  margin-top: 4px;
+  text-transform: capitalize;
+}
+
 .profile-image-container {
     position: relative;
-    margin-bottom: 12px;
 }
 
 .profile-image {
@@ -91,7 +99,7 @@ body::before {
 }
 
 .host-name {
-    font-size: 24px;
+    font-size: 32px;
     font-weight: 600;
     margin: 0;
     color: #222222;
@@ -135,7 +143,7 @@ body::before {
 }
 
 .stat-value {
-    font-size: 22px;
+    font-size: 28px;
     font-weight: 600;
     color: #222222;
     line-height: 1.2;
