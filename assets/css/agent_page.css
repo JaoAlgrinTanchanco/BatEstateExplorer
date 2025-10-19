@@ -20,16 +20,18 @@
 }
 
 body {
-  font-family: 'Satoshi-Regular';
+  font-family: 'Satoshi-Regular', sans-serif;
   background: #f9fafc;
   color: #111;
   min-height: 100vh;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;   /* stack navbar, main content, footer vertically */
+  justify-content: flex-start; /* content starts at top */
+  align-items: stretch;     /* content fills horizontal space */
   overflow-x: hidden;
   overflow-y: auto;
   position: relative;
+  margin: 0;                /* remove default body margin */
 }
 
 body::before {
@@ -59,7 +61,7 @@ body::before {
   width: 95%; /* takes 95% of viewport width */
   max-width: 1500px; /* optional max-width */
   margin: 0 auto;
-  padding: 3rem 1rem;
+  padding: 6.5rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 2.5rem;
@@ -360,11 +362,11 @@ body::before {
 }
 
 .agent-reviews-section .scroll-btn.left-btn {
-  left: -18px;
+  left: -58px;
 }
 
 .agent-reviews-section .scroll-btn.right-btn {
-  right: -18px;
+  right: -58px;
 }
 
 /* ===== PROPERTY LISTINGS GRID ===== */
