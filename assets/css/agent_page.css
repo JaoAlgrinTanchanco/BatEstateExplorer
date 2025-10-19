@@ -1,9 +1,26 @@
 /* ============================================
    AIRBNB-STYLE AGENT PROFILE PAGE (Jamie Layout)
    ============================================ */
+@font-face {
+    font-family: 'satoshi';
+    src: url('../fonts/Satoshi-Bold.otf') format('opentype');
+    font-weight: 600;
+    font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi-Regular';
+  src: url('../fonts/Satoshi-Regular.otf') format('opentype');
+  font-style: normal;
+}
+
+.host-name,
+.agent-about h3,
+.agent-reviews-section h3 {
+  font-family: 'satoshi';
+}
 
 body {
-  font-family: "Inter", Arial, sans-serif;
+  font-family: 'Satoshi-Regular';
   background: #f9fafc;
   color: #111;
   min-height: 100vh;
@@ -39,12 +56,13 @@ body::before {
 
 /* ===== PAGE CONTAINER ===== */
 .agent-profile-page {
-  max-width: 1100px;
+  width: 95%; /* takes 95% of viewport width */
+  max-width: 1500px; /* optional max-width */
   margin: 0 auto;
   padding: 3rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 3rem;
+  gap: 2.5rem;
 }
 
 /* ===== TOP SECTION (Profile Info) ===== */
@@ -65,7 +83,7 @@ body::before {
   background-color: white;
   border: 1px solid #DDDDDD;
   border-radius: 30px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
   box-sizing: border-box;
 }
 
@@ -82,7 +100,6 @@ body::before {
   font-size: 14px;
   font-weight: 500;
   color: #717171;
-  margin-top: 4px;
   text-transform: capitalize;
 }
 
@@ -91,8 +108,8 @@ body::before {
 }
 
 .profile-image {
-    width: 90px; 
-    height: 90px;
+    width: 110px; 
+    height: 110px;
     border-radius: 50%;
     object-fit: cover;
     display: block;
@@ -120,6 +137,14 @@ body::before {
 }
 
 /* --- Right Section: Statistics (No change needed here as the structure is the same) --- */
+.star-icon {
+    color: #000;        /* black */
+    font-size: 16px;    /* same as rating number */
+    margin-left: 5px;  /* optional spacing between star and number */
+    display: inline-flex;
+    align-items: center;
+}
+
 .host-stats-right {
     display: flex;
     flex-direction: column;
@@ -161,26 +186,45 @@ body::before {
   justify-content: flex-start;  /* star + number aligned left */
 }
 
-.rating-value .fa-star {
-    color: #FF5A5F; 
-    font-size: 14px;
-    margin-right: 5px;
-}
+
 /* Removed styles for .host-misc-details as that block is gone */
 
 /* ===== RIGHT COLUMN: ABOUT SECTION ===== */
+.agent-details {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.agent-detail-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+    color: #444;
+}
+
+.agent-detail-item i {
+    margin-right: 0.75rem;
+    color: #222; /* icon color */
+    font-size: 1rem;
+    width: 20px; /* align icons vertically */
+    text-align: center;
+}
+
 .agent-about {
   background: #fff;
-  border: 1px solid #eee;
-  border-radius: 16px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  border: 1px solid #DDDDDD;
+  border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
   padding: 2rem;
+  min-height: 193px;
 }
 
 .agent-about h3 {
-  font-size: 1.2rem;
+  font-size: 28px;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin: 0;
   color: #222;
 }
 
@@ -202,7 +246,6 @@ body::before {
 
 /* ===== GUEST REVIEWS SECTION ===== */
 .agent-reviews-section {
-  margin-top: 1rem;
   padding: 2rem;
   border-radius: 16px;
   background-color: #fafafa;

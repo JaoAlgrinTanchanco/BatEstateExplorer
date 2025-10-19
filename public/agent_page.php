@@ -5,24 +5,24 @@ session_start();
 require_once __DIR__ . '/app/bootstrap.php';
 require_once __DIR__ . '/../components/agent_property_card.php';
 
-// --- Determine Current User (if logged in) ---
+// --- Current User ---
 $current_user_id = $_SESSION['user_id'] ?? null;
 $role = $_SESSION['user_type'] ?? 'guest';
 
 // --- Validate & Fetch Agent Info ---
-$user_id = $_GET['agent_id'] ?? null;
-if (!$user_id) {
+$agent_user_id = $_GET['agent_id'] ?? null;
+if (!$agent_user_id) {
     die("No agent specified.");
 }
 
-// --- Fetch Agent Info (from users) ---
+// --- Fetch Agent Info from users table ---
 $stmt = $conn->prepare("
-    SELECT id, first_name, last_name, email, profile_image_path, user_type, bio, specialization, created_at
+    SELECT *
     FROM users
     WHERE id = ? AND user_type IN ('direct_agent', 'associate_agent')
     LIMIT 1
 ");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $agent_user_id);
 $stmt->execute();
 $agent = $stmt->get_result()->fetch_assoc();
 $stmt->close();
@@ -31,34 +31,29 @@ if (!$agent) {
     die("Agent not found or invalid.");
 }
 
-// --- Get Corresponding Agent Record in agents table ---
+// --- Agent's internal agent_id (from agents table) ---
 $stmt = $conn->prepare("SELECT id FROM agents WHERE user_id = ? LIMIT 1");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $agent_user_id);
 $stmt->execute();
-$result = $stmt->get_result();
-$agent_row = $result->fetch_assoc();
+$agent_row = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-$real_agent_id = $agent_row['id'] ?? null;
-
-if (!$real_agent_id) {
-    echo "<script>console.warn('⚠️ No matching record found in agents table for user_id = " . $user_id . "');</script>";
-    $real_agent_id = 0;
+$real_agent_id = $agent_row['id'] ?? 0;
+if ($real_agent_id === 0) {
+    echo "<script>console.warn('⚠️ No matching record found in agents table for user_id = $agent_user_id');</script>";
 }
 
-// --- Agent Info ---
+// --- Prepare Agent Display Info ---
 $agent_name = trim($agent['first_name'] . ' ' . $agent['last_name']);
 $agent_image = !empty($agent['profile_image_path'])
     ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($agent['profile_image_path'])
     : '/BatEstateExplorer/assets/img/default-user.png';
 
-// --- Fetch Agent’s Property Listings (owned or sold by them) ---
+// --- Fetch Agent's Property Listings ---
 $properties = [];
 $stmt = $conn->prepare("
     SELECT 
-        p.id, p.title, p.price, p.location, p.description, p.property_type,
-        p.bedrooms, p.bathrooms, p.sqm, p.lot_size, p.status,
-        p.images, p.created_at,
+        p.*, 
         s.first_name AS sold_by_first_name, s.last_name AS sold_by_last_name
     FROM properties p
     LEFT JOIN users s ON p.sold_by_agent_id = s.id
@@ -71,8 +66,6 @@ $result = $stmt->get_result();
 
 while ($row = $result->fetch_assoc()) {
     $row['images'] = !empty($row['images']) ? json_decode($row['images'], true) : [];
-    if (!is_array($row['images'])) $row['images'] = [];
-
     $row['sold_by'] = !empty($row['sold_by_first_name'])
         ? $row['sold_by_first_name'] . ' ' . $row['sold_by_last_name']
         : null;
@@ -81,13 +74,60 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// PHP LOGIC: Calculate years hosting
-// You can put this logic near the top of your file before the HTML starts.
+// --- Calculate Years Hosting ---
 $created_date = strtotime($agent['created_at']);
-$current_date = time();
-// Calculate the difference in years. Use floor() to get a whole number.
-$years_hosting = floor(($current_date - $created_date) / (365.25 * 24 * 60 * 60));
+$years_hosting = floor((time() - $created_date) / (365.25 * 24 * 60 * 60));
+
+// --- Fetch Ratings & Review Count ---
+$avg_rating = 0;
+$review_count = 0;
+
+$stmt = $conn->prepare("SELECT id FROM properties WHERE agent_id = ?");
+$stmt->bind_param("i", $real_agent_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$property_ids = [];
+while ($row = $result->fetch_assoc()) {
+    $property_ids[] = $row['id'];
+}
+$stmt->close();
+
+if (!empty($property_ids)) {
+    $in_placeholders = implode(',', array_fill(0, count($property_ids), '?'));
+    $types = str_repeat('i', count($property_ids));
+    
+    $sql = "
+        SELECT ROUND(AVG(rating),1) AS avg_rating, COUNT(*) AS total_reviews
+        FROM property_reviews
+        WHERE property_id IN ($in_placeholders)
+    ";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param($types, ...$property_ids);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    $avg_rating = $result['avg_rating'] ?? 0;
+    $review_count = $result['total_reviews'] ?? 0;
+}
+
+// --- Fetch Education, Address, and Specialization for About Section ---
+$education_text = '';
+$address_text = $agent['address'] ?? '';
+$specialization_text = $agent['specialization'] ?? '';
+
+if (!empty($agent['education'])) {
+    $education_text = $agent['education'];
+} elseif (!empty($agent['school'])) {
+    $education_text = trim(
+        ($agent['course'] ?? '') .
+        ($agent['school'] ? ', ' . $agent['school'] : '') .
+        ($agent['graduation_year'] ? ' - ' . $agent['graduation_year'] : '')
+    );
+}
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -124,15 +164,19 @@ $years_hosting = floor(($current_date - $created_date) / (365.25 * 24 * 60 * 60)
         <div class="host-stats-right">            
             <div class="stat-item">
                 <div class="stat-value rating-value">
+                    <?= $avg_rating > 0 ? htmlspecialchars($avg_rating) : 0 ?>
                     <span class="star-icon"><i class="fa-solid fa-star"></i></span> 
-                    4.9
                 </div>
                 <div class="stat-label agent-rating-label">Rating</div>
             </div>
+
             <div class="stat-item">
-                <div class="stat-value">34</div> 
+                <div class="stat-value">
+                    <?= htmlspecialchars($review_count) ?>
+                </div> 
                 <div class="stat-label agent-reviews-label">Reviews</div> 
             </div>
+
             <div class="stat-item">
                 <div class="stat-value"><?= $years_hosting ?></div> 
                 <div class="stat-label">Years hosting</div>
@@ -142,12 +186,54 @@ $years_hosting = floor(($current_date - $created_date) / (365.25 * 24 * 60 * 60)
 
     <!-- Right Column -->
     <div class="agent-about">
-      <h3>About <?= htmlspecialchars($agent['first_name']) ?></h3>
-      <p><?= nl2br(htmlspecialchars($agent['bio'] ?? 'No bio provided.')) ?></p>
+        <h3>About <?= htmlspecialchars($agent['first_name']) ?></h3>
+        <p><?= nl2br(htmlspecialchars($agent['bio'] ?? 'No bio provided.')) ?></p>
 
-      <div class="specialization">
-        <strong>Specialization:</strong> <?= htmlspecialchars($agent['specialization'] ?? 'N/A') ?>
-      </div>
+        <div class="agent-details">
+            <!-- Education -->
+            <?php if(!empty($agent['education'])): ?>
+                <div class="agent-detail-item">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <?= htmlspecialchars($agent['education']) ?>
+                </div>
+            <?php elseif(!empty($agent['school'])): ?>
+                <div class="agent-detail-item">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <?= htmlspecialchars(trim(
+                        ($agent['course'] ?? '') .
+                        ($agent['school'] ? ', ' . $agent['school'] : '') .
+                        ($agent['graduation_year'] ? ' - ' . $agent['graduation_year'] : '')
+                    )) ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- Address -->
+            <?php if(!empty($agent['address'])): ?>
+                <div class="agent-detail-item">
+                    <i class="fa-solid fa-globe"></i>
+                    <?= htmlspecialchars($agent['address']) ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- Specialization -->
+            <?php 
+            $specializations = [];
+            if(!empty($agent['specialization'])) {
+                $decoded = json_decode($agent['specialization'], true);
+                if(is_array($decoded)) {
+                    $specializations = $decoded;
+                } else {
+                    $specializations = [$agent['specialization']];
+                }
+            }
+            ?>
+            <?php if(!empty($specializations)): ?>
+                <div class="agent-detail-item">
+                    <i class="fa-solid fa-briefcase"></i>
+                    <?= htmlspecialchars(implode(', ', $specializations)) ?>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 
   </div>
