@@ -116,19 +116,32 @@
   }
 
   // --- Fetch Education, Address, and Specialization for About Section ---
-  $education_text = '';
   $address_text = $agent['address'] ?? '';
   $specialization_text = $agent['specialization'] ?? '';
 
+  // Build education string
+  $education_parts = [];
+
+  // If 'education' field exists, use it first
   if (!empty($agent['education'])) {
-      $education_text = $agent['education'];
-  } elseif (!empty($agent['school'])) {
-      $education_text = trim(
-          ($agent['course'] ?? '') .
-          ($agent['school'] ? ', ' . $agent['school'] : '') .
-          ($agent['graduation_year'] ? ' - ' . $agent['graduation_year'] : '')
-      );
+      $education_parts[] = $agent['education'];
   }
+
+  // Add course, school, graduation year if present
+  if (!empty($agent['course'])) {
+      $education_parts[] = $agent['course'];
+  }
+
+  if (!empty($agent['school'])) {
+      $education_parts[] = $agent['school'];
+  }
+
+  if (!empty($agent['graduation_year'])) {
+      $education_parts[] = $agent['graduation_year'];
+  }
+
+  // Concatenate all parts with separator
+  $education_text = implode(', ', $education_parts);
 
   // --- Fetch Reviews for Agent's Properties ---
   $reviews = [];
@@ -339,7 +352,6 @@
     .footer-bottom { font-size: 0.8rem; padding-top: 0.8rem; }
   }
 </style>
-
 </head>
 <body>
 
@@ -407,19 +419,10 @@
 
         <div class="agent-details">
             <!-- Education -->
-            <?php if(!empty($agent['education'])): ?>
+            <?php if (!empty($education_text)): ?>
                 <div class="agent-detail-item">
                     <i class="fa-solid fa-graduation-cap"></i>
-                    <?= htmlspecialchars($agent['education']) ?>
-                </div>
-            <?php elseif(!empty($agent['school'])): ?>
-                <div class="agent-detail-item">
-                    <i class="fa-solid fa-graduation-cap"></i>
-                    <?= htmlspecialchars(trim(
-                        ($agent['course'] ?? '') .
-                        ($agent['school'] ? ', ' . $agent['school'] : '') .
-                        ($agent['graduation_year'] ? ' - ' . $agent['graduation_year'] : '')
-                    )) ?>
+                    <?= htmlspecialchars($education_text) ?>
                 </div>
             <?php endif; ?>
 
@@ -496,7 +499,7 @@
   </div>
 
   <!-- Listings Section -->
-  <h3 style="font-size: 28px; margin: 0;">Property Listings <?= htmlspecialchars($agent['first_name']) ?></h3>
+  <h3 style="font-size: 28px; margin: 0;">Property Listings of <?= htmlspecialchars($agent['first_name']) ?></h3>
   <div class="properties-grid" id="userPropertiesGrid">
       <?php if (!empty($properties)): ?>
           <?php
@@ -519,6 +522,11 @@
           <p>No properties listed yet.</p>
       <?php endif; ?>
   </div>
+
+  <a href="#" class="nav-link report-agent">
+    <i class="fa-solid fa-flag"></i>
+    <span>Report Agent</span>
+  </a>
 
 </div>
 

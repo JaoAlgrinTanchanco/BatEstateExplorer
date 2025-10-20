@@ -113,22 +113,18 @@
 /* =======================================
    Final Modal - Fixed Dimensions (1335px total)
 ======================================= */
-/* Modal backdrop and container */
 #propertyModal.custom-modal {
- display: none;
- position: fixed;
- top: 0;
- left: 0;
- width: 100%;
- height: 100%;
- background: rgba(0, 0, 0, 0.55);
- z-index: 9999;
- /* 1. Use flexbox to center the content */
- display: flex; 
- justify-content: center; /* Centers horizontally */
- align-items: center;  /* Centers vertically */
- overflow-y: auto; /* Fallback for very short screens */
- backdrop-filter: blur(4px);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999 !important;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(4px);
 }
 
 #propertyModal .custom-modal-content {
