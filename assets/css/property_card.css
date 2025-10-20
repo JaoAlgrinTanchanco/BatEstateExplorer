@@ -316,6 +316,61 @@
   background: transparent;
 }
 
+/* ================================
+   Agent Info Section (Modal)
+================================ */
+.modal-right section.agent-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.modal-right section.agent-info:hover {
+  background: rgba(0,0,0,0.03);
+  border-radius: 8px;
+}
+
+.modal-right section.agent-info img.agent-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid #ddd;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.modal-right section.agent-info img.agent-avatar:hover {
+  border-color: #27ae60;
+  transform: scale(1.05);
+}
+
+.modal-right section.agent-info span.agent-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .modal-right section.agent-info {
+    gap: 8px;
+  }
+
+  .modal-right section.agent-info img.agent-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .modal-right section.agent-info span.agent-name {
+    font-size: 0.95rem;
+  }
+}
 
 /* ---------------------------------- */
 /* Modal Right Column (Details) */

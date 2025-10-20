@@ -1,77 +1,91 @@
 <?php
     if (!function_exists('render_property_card')) {
-    function render_property_card(array $property, bool $modalOnly = false) {
-        $conn = $GLOBALS['conn'] ?? null;
-        if (!$conn) {
-            echo "<p style='color:red'>Database connection not found.</p>";
-            return;
-        }
-
-        $propertyId = (int)($property['id'] ?? 0);
-
-        // --- Fetch property images ---
-        $images = ['/BatEstateExplorer/assets/images/bg4.jpg'];
-        $stmtImg = $conn->prepare("SELECT image_path FROM property_images WHERE property_id = ? ORDER BY id ASC");
-        if ($stmtImg) {
-            $stmtImg->bind_param("i", $propertyId);
-            $stmtImg->execute();
-            $resImg = $stmtImg->get_result();
-            $images = [];
-            while ($row = $resImg->fetch_assoc()) {
-                $images[] = '/' . ltrim($row['image_path'], '/');
+        function render_property_card(array $property, bool $modalOnly = false) {
+            $conn = $GLOBALS['conn'] ?? null;
+            if (!$conn) {
+                echo "<p style='color:red'>Database connection not found.</p>";
+                return;
             }
-            $stmtImg->close();
-        }
-        if (empty($images)) $images[] = '/BatEstateExplorer/assets/images/bg4.jpg';
-        $property['images'] = $images;
 
-        // --- Fetch past reviews ---
-        $property['past_reviews'] = [];
-        $reviewsSql = "
-            SELECT r.*, u.first_name, u.last_name
-            FROM property_reviews r
-            INNER JOIN users u ON r.user_id = u.id
-            WHERE r.property_id = ?
-            ORDER BY r.created_at DESC
-        ";
-        $stmt = $conn->prepare($reviewsSql);
-        if ($stmt) {
-            $stmt->bind_param("i", $propertyId);
-            $stmt->execute();
-            $resReviews = $stmt->get_result();
-            $property['past_reviews'] = $resReviews->fetch_all(MYSQLI_ASSOC);
-            $stmt->close();
-        }
+            $propertyId = (int)($property['id'] ?? 0);
 
-        // --- Check if current user can review THIS property ---
-        $canReview = false;
-        $uid = $_SESSION['user_id'] ?? $_SESSION['user']['id'] ?? null;
-        if ($uid) {
-            $uid = (int)$uid;
-            $stmtPriv = $conn->prepare("SELECT privileges FROM users WHERE id = ? LIMIT 1");
-            if ($stmtPriv) {
-                $stmtPriv->bind_param("i", $uid);
-                $stmtPriv->execute();
-                $resPriv = $stmtPriv->get_result();
-                if ($rowPriv = $resPriv->fetch_assoc()) {
-                    $privileges = json_decode($rowPriv['privileges'], true) ?: [];
-                    $canReview = in_array($propertyId, $privileges, true) || in_array((string)$propertyId, $privileges, true);
+            // --- Fetch property images ---
+            $images = ['/BatEstateExplorer/assets/images/bg4.jpg'];
+            $stmtImg = $conn->prepare("SELECT image_path FROM property_images WHERE property_id = ? ORDER BY id ASC");
+            if ($stmtImg) {
+                $stmtImg->bind_param("i", $propertyId);
+                $stmtImg->execute();
+                $resImg = $stmtImg->get_result();
+                $images = [];
+                while ($row = $resImg->fetch_assoc()) {
+                    $images[] = '/' . ltrim($row['image_path'], '/');
                 }
-                $stmtPriv->close();
+                $stmtImg->close();
             }
-        }
+            if (empty($images)) $images[] = '/BatEstateExplorer/assets/images/bg4.jpg';
+            $property['images'] = $images;
 
-        // --- Sanitize fields ---
-        $image = htmlspecialchars($property['images'][0]);
-        $title = htmlspecialchars($property['title'] ?? '');
-        $location = htmlspecialchars($property['location'] ?? '');
-        $price = number_format((float)($property['price'] ?? 0), 2);
-        $bedrooms = (int)($property['bedrooms'] ?? 0);
-        $bathrooms = (int)($property['bathrooms'] ?? 0);
-        $createdAt = strtotime($property['created_at'] ?? 'now');
+            // --- Fetch agent info ---
+            $agent = null;
+            $agentId = $property['listed_by_agent_id'] ?? null;
+            if ($agentId) {
+                $stmtAgent = $conn->prepare("SELECT id, first_name, last_name, profile_image_path FROM users WHERE id = ? AND user_type IN ('direct_agent','associate_agent')");
+                if ($stmtAgent) {
+                    $stmtAgent->bind_param("i", $agentId);
+                    $stmtAgent->execute();
+                    $resAgent = $stmtAgent->get_result();
+                    $agent = $resAgent->fetch_assoc();
+                    $stmtAgent->close();
+                }
+            }
 
-        // --- Render card ---
-        if (!$modalOnly):
+            // --- Fetch past reviews ---
+            $property['past_reviews'] = [];
+            $reviewsSql = "
+                SELECT r.*, u.first_name, u.last_name
+                FROM property_reviews r
+                INNER JOIN users u ON r.user_id = u.id
+                WHERE r.property_id = ?
+                ORDER BY r.created_at DESC
+            ";
+            $stmt = $conn->prepare($reviewsSql);
+            if ($stmt) {
+                $stmt->bind_param("i", $propertyId);
+                $stmt->execute();
+                $resReviews = $stmt->get_result();
+                $property['past_reviews'] = $resReviews->fetch_all(MYSQLI_ASSOC);
+                $stmt->close();
+            }
+
+            // --- Check if current user can review THIS property ---
+            $canReview = false;
+            $uid = $_SESSION['user_id'] ?? $_SESSION['user']['id'] ?? null;
+            if ($uid) {
+                $uid = (int)$uid;
+                $stmtPriv = $conn->prepare("SELECT privileges FROM users WHERE id = ? LIMIT 1");
+                if ($stmtPriv) {
+                    $stmtPriv->bind_param("i", $uid);
+                    $stmtPriv->execute();
+                    $resPriv = $stmtPriv->get_result();
+                    if ($rowPriv = $resPriv->fetch_assoc()) {
+                        $privileges = json_decode($rowPriv['privileges'], true) ?: [];
+                        $canReview = in_array($propertyId, $privileges, true) || in_array((string)$propertyId, $privileges, true);
+                    }
+                    $stmtPriv->close();
+                }
+            }
+
+            // --- Sanitize fields ---
+            $image = htmlspecialchars($property['images'][0]);
+            $title = htmlspecialchars($property['title'] ?? '');
+            $location = htmlspecialchars($property['location'] ?? '');
+            $price = number_format((float)($property['price'] ?? 0), 2);
+            $bedrooms = (int)($property['bedrooms'] ?? 0);
+            $bathrooms = (int)($property['bathrooms'] ?? 0);
+            $createdAt = strtotime($property['created_at'] ?? 'now');
+
+            // --- Render card / modal ---
+            if (!$modalOnly):
 ?>
 <div class="property-card"
      data-id="<?= $propertyId ?>"
@@ -124,25 +138,32 @@
         <!-- Right side: details + reviews + actions -->
         <div class="modal-right">
             <div class="details">
-                <section><span class="label">Price:</span> <span class="value price"></span></section>
-                <section><span class="label">Location:</span> <span class="value location"></span></section>
-                <section><span class="label">Property Type:</span> <span class="value property-type"></span></section>
-                <section><span class="label">Bedrooms:</span> <span class="value bedrooms"></span></section>
-                <section><span class="label">Bathrooms:</span> <span class="value bathrooms"></span></section>
-                <section><span class="label">Lot Size:</span> <span class="value lot_size"></span></section>
-                <section><span class="label">Status:</span> <span class="value status"></span></section>
-                <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>
+                <?php if ($agent): ?>
+                <section class="agent-info" onclick="window.location.href='agent_page.php?agent_id=<?= $agent['id'] ?>'">
+                    <img class="agent-avatar" src="<?= htmlspecialchars($agent['profile_image_path'] ?: 'assets/default-avatar.png') ?>" alt="Agent Avatar">
+                    <span class="agent-name"><?= htmlspecialchars($agent['first_name'] . ' ' . $agent['last_name']) ?></span>
+                </section>
+                <?php endif; ?>
+
+                <section><span class="label">Price:</span> <span class="value price"><?= $price ?></span></section>
+                <section><span class="label">Location:</span> <span class="value location"><?= $location ?></span></section>
+                <section><span class="label">Property Type:</span> <span class="value property-type"><?= htmlspecialchars($property['property_type'] ?? '') ?></span></section>
+                <section><span class="label">Bedrooms:</span> <span class="value bedrooms"><?= $bedrooms ?></span></section>
+                <section><span class="label">Bathrooms:</span> <span class="value bathrooms"><?= $bathrooms ?></span></section>
+                <section><span class="label">Lot Size:</span> <span class="value lot_size"><?= htmlspecialchars($property['lot_size'] ?? '') ?></span></section>
+                <section><span class="label">Status:</span> <span class="value status"><?= htmlspecialchars($property['status'] ?? '') ?></span></section>
+                <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"><?= date('M d, Y', $createdAt) ?></span></section>
                 <section class="desc">
                     <span class="label">Description:</span>
-                    <div class="property-description"></div>
+                    <div class="property-description"><?= htmlspecialchars($property['description'] ?? '') ?></div>
                 </section>
             </div>
-            <!-- Actions -->
+
             <div class="modal-actions">
                 <button class="btn btn-primary message-agent-btn"><i class="fas fa-envelope"></i> Message</button>
                 <button id="saveFavoriteBtn" class="btn btn-outline"><i class="fas fa-heart"></i> Save</button>
-                <button id="leaveReviewBtn" class="btn btn-success" style="display:none;">
-                <i class="fas fa-star"></i> Review
+                <button id="leaveReviewBtn" class="btn btn-success" style="display:<?= $canReview ? 'inline-flex' : 'none' ?>;">
+                    <i class="fas fa-star"></i> Review
                 </button>
             </div>
         </div>
