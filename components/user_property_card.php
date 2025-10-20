@@ -1,112 +1,124 @@
 <?php
-if (!function_exists('render_property_card')) {
-    function render_property_card(array $property, bool $modalOnly = false) {
-        $conn = $GLOBALS['conn'] ?? null;
-        if (!$conn) {
-            echo "<p style='color:red'>Database connection not found.</p>";
-            return;
-        }
-
-        // --- Safely get property ID ---
-        $propertyId = isset($property['id']) ? (int)$property['id'] : 0;
-
-        // --- Fetch property images ---
-        $images = ['/BatEstateExplorer/assets/images/bg4.jpg'];
-        $stmtImg = $conn->prepare("SELECT image_path FROM property_images WHERE property_id = ? ORDER BY id ASC");
-        if ($stmtImg) {
-            $stmtImg->bind_param("i", $propertyId);
-            $stmtImg->execute();
-            $resImg = $stmtImg->get_result();
-            $images = [];
-            while ($row = $resImg->fetch_assoc()) {
-                $images[] = '/' . ltrim($row['image_path'], '/');
+    if (!function_exists('render_property_card')) {
+        function render_property_card(array $property, bool $modalOnly = false) {
+            $conn = $GLOBALS['conn'] ?? null;
+            if (!$conn) {
+                echo "<p style='color:red'>Database connection not found.</p>";
+                return;
             }
-            $stmtImg->close();
-        }
-        if (empty($images)) $images[] = '/BatEstateExplorer/assets/images/bg4.jpg';
-        $property['images'] = $images;
 
-        // --- Fetch agent info ---
-        $agent = null;
-        $listedAgentId = $property['listed_by_agent_id'] ?? null;
+            // --- Safely get property ID ---
+            $propertyId = isset($property['id']) ? (int)$property['id'] : 0;
 
-        if ($listedAgentId) {
-            // Step 1: Get the user_id from agents table
-            $stmtAgentTable = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
-            if ($stmtAgentTable) {
-                $stmtAgentTable->bind_param("i", $listedAgentId);
-                $stmtAgentTable->execute();
-                $resAgentTable = $stmtAgentTable->get_result();
-                $agentRow = $resAgentTable->fetch_assoc();
-                $stmtAgentTable->close();
+            // --- Fetch property images ---
+            $images = ['/BatEstateExplorer/assets/images/bg4.jpg'];
+            $stmtImg = $conn->prepare("SELECT image_path FROM property_images WHERE property_id = ? ORDER BY id ASC");
+            if ($stmtImg) {
+                $stmtImg->bind_param("i", $propertyId);
+                $stmtImg->execute();
+                $resImg = $stmtImg->get_result();
+                $images = [];
+                while ($row = $resImg->fetch_assoc()) {
+                    $images[] = '/' . ltrim($row['image_path'], '/');
+                }
+                $stmtImg->close();
+            }
+            if (empty($images)) $images[] = '/BatEstateExplorer/assets/images/bg4.jpg';
+            $property['images'] = $images;
 
-                $agentUserId = $agentRow['user_id'] ?? null;
+            // --- Fetch agent info ---
+            $agent = null;
+            $listedAgentId = $property['listed_by_agent_id'] ?? null;
 
-                if ($agentUserId) {
-                    // Step 2: Get agent info from users table
-                    $stmtUser = $conn->prepare("SELECT id, first_name, last_name, profile_image_path FROM users WHERE id = ? AND user_type IN ('direct_agent','associate_agent')");
-                    if ($stmtUser) {
-                        $stmtUser->bind_param("i", $agentUserId);
-                        $stmtUser->execute();
-                        $resUser = $stmtUser->get_result();
-                        $agent = $resUser->fetch_assoc();
-                        $stmtUser->close();
+            if ($listedAgentId) {
+                // Step 1: Get the user_id from agents table
+                $stmtAgentTable = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
+                if ($stmtAgentTable) {
+                    $stmtAgentTable->bind_param("i", $listedAgentId);
+                    $stmtAgentTable->execute();
+                    $resAgentTable = $stmtAgentTable->get_result();
+                    $agentRow = $resAgentTable->fetch_assoc();
+                    $stmtAgentTable->close();
+
+                    $agentUserId = $agentRow['user_id'] ?? null;
+
+                    if ($agentUserId) {
+                        // Step 2: Get agent info from users table
+                        $stmtUser = $conn->prepare("SELECT id, first_name, last_name, profile_image_path FROM users WHERE id = ? AND user_type IN ('direct_agent','associate_agent')");
+                        if ($stmtUser) {
+                            $stmtUser->bind_param("i", $agentUserId);
+                            $stmtUser->execute();
+                            $resUser = $stmtUser->get_result();
+                            $agent = $resUser->fetch_assoc();
+                            $stmtUser->close();
+                        }
                     }
                 }
             }
-        }
 
-        // Debugging
-        echo "<script>console.log('listed_by_agent_id for property {$propertyId} = ', " . json_encode($listedAgentId) . ");</script>";
-        echo "<script>console.log('agent fetched for property {$propertyId} = ', " . json_encode($agent) . ");</script>";
-
-        // --- Fetch past reviews ---
-        $property['past_reviews'] = [];
-        $reviewsSql = "
-            SELECT r.*, u.first_name, u.last_name
-            FROM property_reviews r
-            INNER JOIN users u ON r.user_id = u.id
-            WHERE r.property_id = ?
-            ORDER BY r.created_at DESC
-        ";
-        $stmt = $conn->prepare($reviewsSql);
-        if ($stmt) {
-            $stmt->bind_param("i", $propertyId);
-            $stmt->execute();
-            $resReviews = $stmt->get_result();
-            $property['past_reviews'] = $resReviews->fetch_all(MYSQLI_ASSOC);
-            $stmt->close();
-        }
-
-        // --- Check if current user can review THIS property ---
-        $canReview = false;
-        $uid = $_SESSION['user_id'] ?? $_SESSION['user']['id'] ?? null;
-        if ($uid) {
-            $uid = (int)$uid;
-            $stmtPriv = $conn->prepare("SELECT privileges FROM users WHERE id = ? LIMIT 1");
-            if ($stmtPriv) {
-                $stmtPriv->bind_param("i", $uid);
-                $stmtPriv->execute();
-                $resPriv = $stmtPriv->get_result();
-                if ($rowPriv = $resPriv->fetch_assoc()) {
-                    $privileges = json_decode($rowPriv['privileges'], true) ?: [];
-                    $canReview = in_array($propertyId, $privileges, true) || in_array((string)$propertyId, $privileges, true);
+            //message id
+            $userId = null;
+            $listedByAgentId = $property['listed_by_agent_id'] ?? null;
+            if ($listedByAgentId) {
+                $stmtAgent = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
+                if ($stmtAgent) {
+                    $stmtAgent->bind_param("i", $listedByAgentId);
+                    $stmtAgent->execute();
+                    $resAgent = $stmtAgent->get_result();
+                    if ($rowAgent = $resAgent->fetch_assoc()) {
+                        $userId = (int)$rowAgent['user_id']; // <-- THIS is the user_id
+                    }
+                    $stmtAgent->close();
                 }
-                $stmtPriv->close();
             }
-        }
 
-        // --- Sanitize fields ---
-        $image = htmlspecialchars($property['images'][0] ?? '/BatEstateExplorer/assets/images/bg4.jpg');
-        $title = htmlspecialchars($property['title'] ?? '');
-        $location = htmlspecialchars($property['location'] ?? '');
-        $price = number_format((float)($property['price'] ?? 0), 2);
-        $bedrooms = (int)($property['bedrooms'] ?? 0);
-        $bathrooms = (int)($property['bathrooms'] ?? 0);
-        $createdAt = strtotime($property['created_at'] ?? 'now');
+            // --- Fetch past reviews ---
+            $property['past_reviews'] = [];
+            $reviewsSql = "
+                SELECT r.*, u.first_name, u.last_name
+                FROM property_reviews r
+                INNER JOIN users u ON r.user_id = u.id
+                WHERE r.property_id = ?
+                ORDER BY r.created_at DESC
+            ";
+            $stmt = $conn->prepare($reviewsSql);
+            if ($stmt) {
+                $stmt->bind_param("i", $propertyId);
+                $stmt->execute();
+                $resReviews = $stmt->get_result();
+                $property['past_reviews'] = $resReviews->fetch_all(MYSQLI_ASSOC);
+                $stmt->close();
+            }
 
-        // --- Render card / modal ---
-        if (!$modalOnly):
+            // --- Check if current user can review THIS property ---
+            $canReview = false;
+            $uid = $_SESSION['user_id'] ?? $_SESSION['user']['id'] ?? null;
+            if ($uid) {
+                $uid = (int)$uid;
+                $stmtPriv = $conn->prepare("SELECT privileges FROM users WHERE id = ? LIMIT 1");
+                if ($stmtPriv) {
+                    $stmtPriv->bind_param("i", $uid);
+                    $stmtPriv->execute();
+                    $resPriv = $stmtPriv->get_result();
+                    if ($rowPriv = $resPriv->fetch_assoc()) {
+                        $privileges = json_decode($rowPriv['privileges'], true) ?: [];
+                        $canReview = in_array($propertyId, $privileges, true) || in_array((string)$propertyId, $privileges, true);
+                    }
+                    $stmtPriv->close();
+                }
+            }
+
+            // --- Sanitize fields ---
+            $image = htmlspecialchars($property['images'][0] ?? '/BatEstateExplorer/assets/images/bg4.jpg');
+            $title = htmlspecialchars($property['title'] ?? '');
+            $location = htmlspecialchars($property['location'] ?? '');
+            $price = number_format((float)($property['price'] ?? 0), 2);
+            $bedrooms = (int)($property['bedrooms'] ?? 0);
+            $bathrooms = (int)($property['bathrooms'] ?? 0);
+            $createdAt = strtotime($property['created_at'] ?? 'now');
+
+            // --- Render card / modal ---
+            if (!$modalOnly):
 ?>
 
 <div class="property-card"
@@ -189,8 +201,11 @@ if (!function_exists('render_property_card')) {
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-primary message-agent-btn"><i class="fas fa-envelope"></i> Message</button>
-                <button id="saveFavoriteBtn" class="btn btn-outline"><i class="fas fa-heart"></i> Save</button>
+                <?php if ($userId): ?>
+                    <a href="/BatEstateExplorer/public/message.php?user_id=<?= $userId ?>" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-envelope"></i> Message
+                    </a>
+                <?php endif; ?>                <button id="saveFavoriteBtn" class="btn btn-outline"><i class="fas fa-heart"></i> Save</button>
                 <button id="leaveReviewBtn" class="btn btn-success" style="display:<?= $canReview ? 'inline-flex' : 'none' ?>;">
                     <i class="fas fa-star"></i> Review
                 </button>
