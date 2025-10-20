@@ -110,59 +110,81 @@
   color: #fff;
 }
 
-/* =======================================
-   Final Modal - Fixed Dimensions (1335px total)
-======================================= */
+/* ================================
+   PROPERTY MODAL OVERLAY
+================================ */
 #propertyModal.custom-modal {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0; /* shorthand for top:0; right:0; bottom:0; left:0 */
   width: 100%;
   height: 100%;
   z-index: 9999 !important;
-  background: rgba(0,0,0,0.55);
+
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 2rem 1rem;
+
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
+
+  overflow-y: auto; /* allows scroll when modal is taller than viewport */
+  box-sizing: border-box;
 }
 
+/* ================================
+   MODAL CONTENT
+================================ */
 #propertyModal .custom-modal-content {
- /* Sum of column widths (585 + 359 + 359) + 2 gaps (16px + 16px) = 1335px */
- max-width: 1335px; 
-  width: 95%; /* Ensures it shrinks on screens smaller than 1335px */
- height: 595px; /* Locked height */
- /* 2. Remove margin-top and margin-bottom to let flexbox center it */
- margin: 0 auto; 
- 
- display: grid;
- /* Columns locked to specified widths: Left (359), Right (585), Review (359) */
- grid-template-columns: 585px 359px 359px; 
- gap: 16px; /* Explicit gap size */
- 
- border-radius: 20px;
- position: relative;
- align-items: start;
+  display: grid;
+  grid-template-columns: 585px 359px 359px;
+  gap: 16px;
+
+  width: 95%;
+  max-width: 1388px;
+
+  /* dynamic height based on viewport */
+  max-height: 90vh;
+  height: auto;
+  overflow-y: auto; /* vertical scroll inside modal if content overflows */
+  overflow-x: hidden;
+
+  border-radius: 20px;
+  position: relative;
+  align-items: start;
+  padding: 1.5rem;
+  box-sizing: border-box;
+
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
 }
 
-/* Close Button - positioned relative to the content container */
+/* Optional: hide scrollbar while keeping scroll functional */
+#propertyModal .custom-modal-content::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+}
+
+/* ================================
+   CLOSE BUTTON
+================================ */
 #propertyModal .close {
   position: absolute;
-  top: -20px; 
-  right: -20px;
+  top: 12px;
+  right: 12px;
   width: 40px;
   height: 40px;
   border-radius: 50%;
   background: #111;
   color: #fff;
   border: none;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 10;
   transition: all 0.2s ease;
 }
@@ -171,6 +193,50 @@
   background: #fff;
   color: #111;
   transform: scale(1.1);
+}
+
+/* ===========================================
+   HIDE SCROLLBAR (but keep scroll functional)
+   =========================================== */
+#propertyModal.custom-modal,
+#propertyModal .custom-modal-content {
+  -ms-overflow-style: none;  /* IE & Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+#propertyModal.custom-modal::-webkit-scrollbar,
+#propertyModal .custom-modal-content::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari */
+}
+
+/* ================================
+   RESPONSIVE BEHAVIOR
+================================ */
+
+/* Medium screens (tablets) — 2 columns */
+@media (max-width: 1200px) {
+  #propertyModal .custom-modal-content {
+    grid-template-columns: 1fr 1fr;
+    max-width: 95%;
+    max-height: 90vh;
+  }
+}
+
+/* Small screens (mobile) — single column stack */
+@media (max-width: 768px) {
+  #propertyModal .custom-modal-content {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    max-height: 100vh;
+    height: auto;
+    border-radius: 0;
+    padding: 1rem;
+  }
+
+  #propertyModal .close {
+    top: 10px;
+    right: 10px;
+  }
 }
 
 /* ---------------------------------- */
