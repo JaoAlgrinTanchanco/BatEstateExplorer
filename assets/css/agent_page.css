@@ -424,7 +424,7 @@ body::before {
     color: #111;
     cursor: pointer;
     text-decoration: none;
-    width: auto;
+    width: 10%;
     padding: 0; /* remove extra hoverable padding */
     transition: color 0.3s ease, transform 0.2s ease;
 }

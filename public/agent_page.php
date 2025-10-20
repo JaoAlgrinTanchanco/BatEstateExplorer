@@ -533,17 +533,17 @@
 <!-- ===== Report Agent Modal ===== -->
 <div id="reportAgentModal" class="report-modal">
   <div class="report-modal-content">
-    <span class="close" onclick="closeReportModal()">&times;</span>
+    <span class="close">&times;</span>
     <h2>Report this Agent</h2>
 
-    <form id="reportAgentForm" method="POST" action="report_agent.php" enctype="multipart/form-data">
+    <form id="reportAgentForm" method="POST" action="/BatEstateExplorer/public/api/report_agent.php" enctype="multipart/form-data">
       <!-- Hidden fields -->
       <input type="hidden" name="agent_id" value="<?= $agent_user_id ?>">
       <input type="hidden" name="reported_by" value="<?= $current_user_id ?>">
 
       <!-- Reason dropdown -->
       <label for="report-reason">Reason</label>
-      <select name="reason" id="report-reason" required onchange="toggleOtherReason()">
+      <select name="reason" id="report-reason" required>
         <option value="">Select a reason</option>
         <option value="fraudulent_listing">Fraudulent or fake listing</option>
         <option value="harassment">Harassment or inappropriate behavior</option>
@@ -568,8 +568,7 @@
         name="details" 
         id="details" 
         rows="4" 
-        placeholder="Describe what happened..." 
-        required
+        placeholder="Describe what happened..."
       ></textarea>
 
       <!-- Submit -->
@@ -608,7 +607,9 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    /* ====== Reviews Row Scroll Buttons ====== */
+    /* ================================
+      Reviews Row Scroll Buttons
+    ================================ */
     const leftBtn = document.querySelector('.left-btn');
     const rightBtn = document.querySelector('.right-btn');
     const row = document.querySelector('.reviews-row');
@@ -622,7 +623,9 @@
       );
     }
 
-    /* ====== Logout Modal ====== */
+    /* ================================
+      Logout Modal
+    ================================ */
     const logoutModal = document.getElementById('logoutModal');
     if (logoutModal) {
       document.querySelectorAll('.logout-btn').forEach(btn => {
@@ -638,30 +641,33 @@
       });
     }
 
-    /* ====== Report Agent Modal ====== */
+    /* ================================
+      Report Agent Modal
+    ================================ */
     const reportLink = document.querySelector('.report-agent');
     const reportModal = document.getElementById('reportAgentModal');
     const reasonSelect = document.getElementById('report-reason');
     const otherContainer = document.getElementById('otherReasonContainer');
     const otherInput = document.getElementById('other-reason');
+    const reportForm = document.getElementById('reportAgentForm');
 
+    // --- Open modal ---
     if (reportLink && reportModal) {
-      // Open modal
       reportLink.addEventListener('click', e => {
         e.preventDefault();
         reportModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
       });
 
-      // Close modal when clicking the X or outside area
+      // --- Close modal on click outside or X ---
       reportModal.addEventListener('click', e => {
         if (e.target.classList.contains('report-modal') || e.target.classList.contains('close')) {
-          reportModal.style.display = 'none';
-          document.body.style.overflow = 'auto';
+          closeReportModal();
         }
       });
     }
 
+    // --- Toggle "Other" reason input ---
     if (reasonSelect) {
       reasonSelect.addEventListener('change', () => {
         if (reasonSelect.value === 'other') {
@@ -674,6 +680,45 @@
           otherInput.value = '';
         }
       });
+    }
+
+    // --- Handle Report Form Submission (AJAX) ---
+    if (reportForm) {
+      reportForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const formData = new FormData(reportForm);
+
+        try {
+          const response = await fetch('/BatEstateExplorer/public/api/report_agent.php', {
+            method: 'POST',
+            body: formData
+          });
+
+          const data = await response.json();
+
+          if (data.status === 'success') {
+            alert('✅ Report submitted successfully. Thank you for your feedback.');
+            closeReportModal(); // clear fields after success
+          } else {
+            alert('⚠️ ' + (data.message || 'Failed to submit your report.'));
+          }
+        } catch (error) {
+          console.error('Error submitting report:', error);
+          alert('❌ Something went wrong. Please try again later.');
+        }
+      });
+    }
+
+    // --- Close & Reset Modal ---
+    function closeReportModal() {
+      if (!reportModal) return;
+      reportModal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+
+      // Reset all form fields
+      reportForm?.reset();
+      otherContainer.style.display = 'none';
+      otherInput.required = false;
     }
   });
 </script>
