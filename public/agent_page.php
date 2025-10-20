@@ -3,30 +3,33 @@
 
   // --- Bootstrap & Components ---
   require_once __DIR__ . '/app/bootstrap.php';
-  // --- Current User ---
-  $current_user_id = $_SESSION['user_id'] ?? null;
-  $current_user_role = 'guest'; // default
+  include __DIR__ . '/../components/notification.php';
 
-  // Fetch user role from DB if logged in
+  // --- Get current logged-in user ---
+  $current_user_id = $_SESSION['user_id'] ?? null;
+  $current_user_role = 'guest';
+
   if ($current_user_id) {
       $stmt = $conn->prepare("SELECT user_type FROM users WHERE id = ? LIMIT 1");
       $stmt->bind_param("i", $current_user_id);
       $stmt->execute();
       $user_row = $stmt->get_result()->fetch_assoc();
       $stmt->close();
-      if ($user_row && !empty($user_row['user_type'])) {
-          $current_user_role = $user_row['user_type']; // 'user', 'direct_agent', 'associate_agent', 'admin'
+
+      if (!empty($user_row['user_type'])) {
+          $current_user_role = $user_row['user_type'];
       }
   }
 
-  // --- Validate & Fetch Agent Info ---
+  // --- Validate Agent ID ---
   $agent_user_id = $_GET['agent_id'] ?? null;
-  if (!$agent_user_id) die("No agent specified.");
+  if (!$agent_user_id) {
+      die("No agent specified.");
+  }
 
-  // Fetch agent info from users table
+  // --- Fetch Agent Basic Info ---
   $stmt = $conn->prepare("
-      SELECT *
-      FROM users
+      SELECT * FROM users 
       WHERE id = ? AND user_type IN ('direct_agent', 'associate_agent')
       LIMIT 1
   ");
@@ -34,26 +37,30 @@
   $stmt->execute();
   $agent = $stmt->get_result()->fetch_assoc();
   $stmt->close();
-  if (!$agent) die("Agent not found or invalid.");
 
-  // Fetch agent's internal ID from agents table
+  if (!$agent) {
+      die("Agent not found or invalid.");
+  }
+
+  // --- Match agent’s user_id to internal agents table ---
   $stmt = $conn->prepare("SELECT id FROM agents WHERE user_id = ? LIMIT 1");
   $stmt->bind_param("i", $agent_user_id);
   $stmt->execute();
   $agent_row = $stmt->get_result()->fetch_assoc();
   $stmt->close();
+
   $real_agent_id = $agent_row['id'] ?? 0;
   if ($real_agent_id === 0) {
       echo "<script>console.warn('⚠️ No matching record found in agents table for user_id = $agent_user_id');</script>";
   }
 
-  // --- Prepare Agent Display Info ---
-  $agent_name = trim($agent['first_name'] . ' ' . $agent['last_name']);
+  // --- Agent Display Info ---
+  $agent_name  = trim($agent['first_name'] . ' ' . $agent['last_name']);
   $agent_image = !empty($agent['profile_image_path'])
       ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($agent['profile_image_path'])
       : '/BatEstateExplorer/assets/img/default-user.png';
 
-  // --- Fetch Agent's Property Listings ---
+  // --- Fetch Agent’s Properties ---
   $properties = [];
   $stmt = $conn->prepare("
       SELECT 
@@ -68,101 +75,81 @@
   $stmt->bind_param("ii", $real_agent_id, $real_agent_id);
   $stmt->execute();
   $result = $stmt->get_result();
+
   while ($row = $result->fetch_assoc()) {
       $row['images'] = !empty($row['images']) ? json_decode($row['images'], true) : [];
       $row['sold_by'] = !empty($row['sold_by_first_name'])
-          ? $row['sold_by_first_name'] . ' ' . $row['sold_by_last_name']
+          ? "{$row['sold_by_first_name']} {$row['sold_by_last_name']}"
           : null;
       $properties[] = $row;
   }
   $stmt->close();
 
-  // --- Calculate Years Hosting ---
-  $created_date = strtotime($agent['created_at']);
+  // --- Years Hosting ---
+  $created_date  = strtotime($agent['created_at']);
   $years_hosting = floor((time() - $created_date) / (365.25 * 24 * 60 * 60));
 
-  // --- Fetch Ratings & Review Count ---
-  $avg_rating = 0;
-  $review_count = 0;
-
+  // --- Agent Reviews Summary ---
+  $property_ids = [];
   $stmt = $conn->prepare("SELECT id FROM properties WHERE agent_id = ?");
   $stmt->bind_param("i", $real_agent_id);
   $stmt->execute();
-  $result = $stmt->get_result();
-  $property_ids = [];
-  while ($row = $result->fetch_assoc()) {
-      $property_ids[] = $row['id'];
-  }
+  $res = $stmt->get_result();
+  while ($r = $res->fetch_assoc()) $property_ids[] = $r['id'];
   $stmt->close();
 
-  if (!empty($property_ids)) {
-      $in_placeholders = implode(',', array_fill(0, count($property_ids), '?'));
-      $types = str_repeat('i', count($property_ids));
-      
-      $sql = "
-          SELECT ROUND(AVG(rating),1) AS avg_rating, COUNT(*) AS total_reviews
-          FROM property_reviews
-          WHERE property_id IN ($in_placeholders)
-      ";
+  $avg_rating = 0;
+  $review_count = 0;
 
+  if ($property_ids) {
+      $placeholders = implode(',', array_fill(0, count($property_ids), '?'));
+      $types = str_repeat('i', count($property_ids));
+
+      $sql = "SELECT ROUND(AVG(rating),1) AS avg_rating, COUNT(*) AS total_reviews
+              FROM property_reviews
+              WHERE property_id IN ($placeholders)";
       $stmt = $conn->prepare($sql);
       $stmt->bind_param($types, ...$property_ids);
       $stmt->execute();
-      $result = $stmt->get_result()->fetch_assoc();
+      $res = $stmt->get_result()->fetch_assoc();
       $stmt->close();
 
-      $avg_rating = $result['avg_rating'] ?? 0;
-      $review_count = $result['total_reviews'] ?? 0;
+      $avg_rating = $res['avg_rating'] ?? 0;
+      $review_count = $res['total_reviews'] ?? 0;
   }
 
-  // --- Fetch Education, Address, and Specialization for About Section ---
+  // --- About Section Info ---
   $address_text = $agent['address'] ?? '';
   $specialization_text = $agent['specialization'] ?? '';
 
-  // Build education string
-  $education_parts = [];
-
-  // If 'education' field exists, use it first
-  if (!empty($agent['education'])) {
-      $education_parts[] = $agent['education'];
-  }
-
-  // Add course, school, graduation year if present
-  if (!empty($agent['course'])) {
-      $education_parts[] = $agent['course'];
-  }
-
-  if (!empty($agent['school'])) {
-      $education_parts[] = $agent['school'];
-  }
-
-  if (!empty($agent['graduation_year'])) {
-      $education_parts[] = $agent['graduation_year'];
-  }
-
-  // Concatenate all parts with separator
+  // Education Summary
+  $education_parts = array_filter([
+      $agent['education'] ?? '',
+      $agent['course'] ?? '',
+      $agent['school'] ?? '',
+      $agent['graduation_year'] ?? ''
+  ]);
   $education_text = implode(', ', $education_parts);
 
-  // --- Fetch Reviews for Agent's Properties ---
+  // --- Fetch Property Reviews ---
   $reviews = [];
-  if (!empty($property_ids)) {
-      $in_placeholders = implode(',', array_fill(0, count($property_ids), '?'));
+  if ($property_ids) {
+      $placeholders = implode(',', array_fill(0, count($property_ids), '?'));
       $types = str_repeat('i', count($property_ids));
 
       $sql = "
           SELECT pr.rating, pr.review_text, pr.created_at, u.first_name, u.profile_image_path
           FROM property_reviews pr
           JOIN users u ON pr.user_id = u.id
-          WHERE pr.property_id IN ($in_placeholders)
+          WHERE pr.property_id IN ($placeholders)
           ORDER BY pr.created_at DESC
       ";
-
       $stmt = $conn->prepare($sql);
       $stmt->bind_param($types, ...$property_ids);
       $stmt->execute();
-      $result = $stmt->get_result();
+      $res = $stmt->get_result();
 
-      while ($row = $result->fetch_assoc()) {
+      while ($row = $res->fetch_assoc()) {
           $row['profile_image'] = !empty($row['profile_image_path'])
               ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($row['profile_image_path'])
               : '/BatEstateExplorer/assets/img/default-user.png';
@@ -170,8 +157,6 @@
       }
       $stmt->close();
   }
-
-  // --- $current_user_role now contains the logged-in user's role ---
 ?>
 
 <!DOCTYPE html>
@@ -606,22 +591,18 @@
 </footer>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', () => {
+
     /* ================================
       Reviews Row Scroll Buttons
     ================================ */
-    const leftBtn = document.querySelector('.left-btn');
-    const rightBtn = document.querySelector('.right-btn');
     const row = document.querySelector('.reviews-row');
-
-    if (leftBtn && rightBtn && row) {
-      leftBtn.addEventListener('click', () =>
-        row.scrollBy({ left: -320, behavior: 'smooth' })
-      );
-      rightBtn.addEventListener('click', () =>
-        row.scrollBy({ left: 320, behavior: 'smooth' })
-      );
-    }
+    document.querySelector('.left-btn')?.addEventListener('click', () =>
+      row?.scrollBy({ left: -320, behavior: 'smooth' })
+    );
+    document.querySelector('.right-btn')?.addEventListener('click', () =>
+      row?.scrollBy({ left: 320, behavior: 'smooth' })
+    );
 
     /* ================================
       Logout Modal
@@ -644,82 +625,100 @@
     /* ================================
       Report Agent Modal
     ================================ */
-    const reportLink = document.querySelector('.report-agent');
     const reportModal = document.getElementById('reportAgentModal');
+    const reportLink = document.querySelector('.report-agent');
+    const reportForm = document.getElementById('reportAgentForm');
     const reasonSelect = document.getElementById('report-reason');
     const otherContainer = document.getElementById('otherReasonContainer');
     const otherInput = document.getElementById('other-reason');
-    const reportForm = document.getElementById('reportAgentForm');
 
-    // --- Open modal ---
-    if (reportLink && reportModal) {
-      reportLink.addEventListener('click', e => {
-        e.preventDefault();
-        reportModal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-      });
+    // Helper: show notification (no emojis)
+    const showNotification = (type, message) => {
+      const notif = document.createElement('div');
+      notif.className = 'notification-container';
+      notif.innerHTML = `
+        <div class="notification ${type}">
+          <div class="notification__icon"></div>
+          <div class="notification__title">${message}</div>
+          <div class="notification__close">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+              <path d="m15.8333 5.34166-1.175-1.175-4.6583 4.65834-4.65833-4.65834-1.175 1.175 4.65833 4.65834-4.65833 4.6583 1.175 1.175 4.65833-4.6583 4.6583 4.6583 1.175-1.175-4.6583-4.6583z"/>
+            </svg>
+          </div>
+        </div>`;
+      document.body.appendChild(notif);
 
-      // --- Close modal on click outside or X ---
-      reportModal.addEventListener('click', e => {
-        if (e.target.classList.contains('report-modal') || e.target.classList.contains('close')) {
-          closeReportModal();
-        }
-      });
-    }
+      // Handle close + fade out
+      const notifBox = notif.querySelector('.notification');
+      const closeBtn = notif.querySelector('.notification__close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => fadeOutNotif(notifBox));
+      }
 
-    // --- Toggle "Other" reason input ---
-    if (reasonSelect) {
-      reasonSelect.addEventListener('change', () => {
-        if (reasonSelect.value === 'other') {
-          otherContainer.style.display = 'block';
-          otherInput.required = true;
-          otherInput.focus();
-        } else {
-          otherContainer.style.display = 'none';
-          otherInput.required = false;
-          otherInput.value = '';
-        }
-      });
-    }
+      setTimeout(() => fadeOutNotif(notifBox), 5000);
 
-    // --- Handle Report Form Submission (AJAX) ---
-    if (reportForm) {
-      reportForm.addEventListener('submit', async e => {
-        e.preventDefault();
-        const formData = new FormData(reportForm);
+      function fadeOutNotif(elem) {
+        elem.classList.add('fade-out');
+        setTimeout(() => elem.remove(), 500);
+      }
+    };
 
-        try {
-          const response = await fetch('/BatEstateExplorer/public/api/report_agent.php', {
-            method: 'POST',
-            body: formData
-          });
-
-          const data = await response.json();
-
-          if (data.status === 'success') {
-            alert('✅ Report submitted successfully. Thank you for your feedback.');
-            closeReportModal(); // clear fields after success
-          } else {
-            alert('⚠️ ' + (data.message || 'Failed to submit your report.'));
-          }
-        } catch (error) {
-          console.error('Error submitting report:', error);
-          alert('❌ Something went wrong. Please try again later.');
-        }
-      });
-    }
-
-    // --- Close & Reset Modal ---
-    function closeReportModal() {
+    const closeReportModal = () => {
       if (!reportModal) return;
       reportModal.style.display = 'none';
       document.body.style.overflow = 'auto';
-
-      // Reset all form fields
       reportForm?.reset();
-      otherContainer.style.display = 'none';
-      otherInput.required = false;
-    }
+      if (otherContainer) {
+        otherContainer.style.display = 'none';
+        if (otherInput) otherInput.required = false;
+      }
+    };
+
+    // Open Modal
+    reportLink?.addEventListener('click', e => {
+      e.preventDefault();
+      reportModal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    });
+
+    // Close Modal (outside click or close icon)
+    reportModal?.addEventListener('click', e => {
+      if (e.target.classList.contains('report-modal') || e.target.classList.contains('close')) {
+        closeReportModal();
+      }
+    });
+
+    // Toggle "Other" reason field
+    reasonSelect?.addEventListener('change', () => {
+      const isOther = reasonSelect.value === 'other';
+      otherContainer.style.display = isOther ? 'block' : 'none';
+      otherInput.required = isOther;
+      if (isOther) otherInput.focus();
+    });
+
+    // Submit Report Form (AJAX)
+    reportForm?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = new FormData(reportForm);
+
+      try {
+        const res = await fetch('/BatEstateExplorer/public/api/report_agent.php', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          showNotification('success', data.message || 'Report submitted successfully.');
+          closeReportModal();
+        } else {
+          showNotification('error', data.message || 'Failed to submit report.');
+        }
+      } catch (err) {
+        console.error('Error submitting report:', err);
+        showNotification('error', 'Something went wrong. Please try again later.');
+      }
+    });
   });
 </script>
 
