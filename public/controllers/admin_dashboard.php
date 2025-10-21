@@ -34,6 +34,9 @@ switch ($view) {
     case 'performance':
         require __DIR__ . '/../app/Views/admin/admin_performance.php';
         break;
+    case 'reported_accounts':
+        require __DIR__ . '/../app/Views/admin/admin_reported_accounts.php';
+        break;
     case 'wallet':
         require __DIR__ . '/../app/Views/admin/admin_wallet.php';
         break;
