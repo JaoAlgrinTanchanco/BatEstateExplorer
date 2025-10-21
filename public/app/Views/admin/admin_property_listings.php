@@ -187,170 +187,165 @@
 
     </div>
 </div>
-<!-- Modal -->
-<div id="propertyModal" class="modal" style="display:none;">
-    <div class="modal-content">
-        <span class="close">&times;</span>
 
-        <div class="modal-left">
-            <div class="property-main-image" style="background-image: url('');"></div>
-            <div class="property-name"></div>
-            <div class="property-images"></div>
-        </div>
-
-        <div class="modal-right">
-            <section><span class="label">Location:</span> <span class="value location"></span></section>
-            <section><span class="label">Price:</span> <span class="value price"></span></section>
-            <section><span class="label">Property Type:</span> <span class="value property-type"></span></section>
-            <section><span class="label">Bedrooms:</span> <span class="value bedrooms"></span></section>
-            <section><span class="label">Bathrooms:</span> <span class="value bathrooms"></span></section>
-            <section><span class="label">Area:</span> <span class="value sqm"></span></section>
-            <section><span class="label">Lot Size:</span> <span class="value lot_size"></span></section>
-            <section><span class="label">Status:</span> <span class="value status"></span></section>
-            <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>
-
-            <section>
-                <span class="label">Description:</span>
-                <div class="property-description"></div>
-            </section>
-        </div>
+<!-- Universal Agent Modal -->
+<div id="agentModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Agent Details</h2>
     </div>
+    <div class="modal-body" id="modalBody">
+      <!-- Loaded dynamically -->
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-btn">Close</button>
+    </div>
+  </div>
 </div>
 
 <script>
-    // ===== Tabs =====
-    document.querySelectorAll('.tab-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            // Remove active from all buttons and hide all panels
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-panel').forEach(panel => panel.style.display = 'none');
-
-            // Activate clicked tab and show its panel
-            button.classList.add('active');
-            const tabPanel = document.getElementById('tab-' + button.dataset.tab);
-            if (tabPanel) tabPanel.style.display = 'block';
+    document.addEventListener('DOMContentLoaded', () => {
+        // ----------------------
+        // Tab Switching
+        // ----------------------
+        const tabs = document.querySelectorAll('.tab-btn');
+        const panels = document.querySelectorAll('.tab-panel');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                panels.forEach(p => p.style.display = 'none');
+                document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
+            });
         });
-    });
 
-    // ===== Modal =====
-    const modal = document.getElementById('propertyModal');
-    const modalBody = document.getElementById('modalBody');
-    const closeBtn = modal.querySelector('.close');
+        // ----------------------
+        // Modal Logic
+        // ----------------------
+        const agentModal = document.getElementById('agentModal');
+        const modalBody = document.getElementById('modalBody');
 
-    // Close modal
-    closeBtn.addEventListener('click', () => modal.style.display = 'none');
-    window.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+        // Helper: generate document link
+        function docLink(label, path) {
+            if (!path || path.trim() === '' || path === 'null') return '';
+            const filename = decodeURIComponent(path.split('/').pop() || 'Document');
+            return `
+                <div class="detail-row">
+                    <div class="detail-label">${label}:</div>
+                    <div class="detail-value">
+                        <a href="${path}" target="_blank" class="document-link" title="${filename}">View</a>
+                    </div>
+                </div>
+            `;
+        }
 
-    // ===== View Property Post =====
-    document.addEventListener('click', async e => {
-        if (!e.target.classList.contains('btn-view')) return;
+        document.body.addEventListener('click', e => {
+            if (!e.target.matches('.btn-view')) return;
 
-        const propertyId = e.target.dataset.id;
-        if (!propertyId) return;
+            const card = e.target.closest('.direct-agent-card, .associate-agent-card');
+            if (!card) return;
 
-        // Get property_type from button data attribute
-        const propertyTypeFromBtn = e.target.dataset.type || '-';
+            const profileImg = card.dataset.profileImagePath?.trim() || null;
+            let specialization = 'N/A';
 
-        modal.style.display = 'block';
-
-        // Clear existing content
-        const mainImage = modal.querySelector('.property-main-image');
-        modal.querySelector('.property-name').textContent = '';
-        modal.querySelector('.property-type').textContent = '';
-        modal.querySelectorAll('.modal-right .value').forEach(v => v.textContent = '');
-        modal.querySelector('.property-images').innerHTML = '';
-        modal.querySelector('.property-description').textContent = '';
-
-        try {
-            const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${propertyId}`);
-            const data = await res.json();
-
-            if (!data.success || !data.property) {
-                alert(data.error || 'Failed to load property details.');
-                modal.style.display = 'none';
-                return;
+            // parse specialization if JSON array
+            if (card.dataset.specialization) {
+                try {
+                    const specArray = JSON.parse(card.dataset.specialization);
+                    if (Array.isArray(specArray) && specArray.length > 0) {
+                        specialization = specArray.join(', ');
+                    } else {
+                        specialization = card.dataset.specialization;
+                    }
+                } catch {
+                    specialization = card.dataset.specialization;
+                }
             }
 
-            const prop = data.property;
+            // Direct agents always show documents; associate only if exists
+            let documentsHtml = '';
+            const isDirect = card.dataset.userType?.toLowerCase() === 'direct agent';
+            const docFields = ['brokerLicensePath','prcLicensePath','resumePath','validIdPath','additionalDocsPath'];
 
-            // Populate left column
-            mainImage.style.backgroundImage = `url('${prop.images?.[0] || '/BatEstateExplorer/assets/images/bg4.jpg'}')`;
-            modal.querySelector('.property-name').textContent = prop.title || '-';
+            if (isDirect || docFields.some(f => card.dataset[f])) {
+                documentsHtml = `<section class="documents"><h3>Uploaded Documents</h3>`;
 
-            // Populate right column
-            modal.querySelector('.location').textContent = prop.location || '-';
-            modal.querySelector('.price').textContent = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
-            modal.querySelector('.property-type').textContent = prop.property_type || propertyTypeFromBtn || '-'; // fallback
-            modal.querySelector('.bedrooms').textContent = prop.bedrooms || 0;
-            modal.querySelector('.bathrooms').textContent = prop.bathrooms || 0;
-            modal.querySelector('.sqm').textContent = `${prop.sqm || 0} sqm`;
-            modal.querySelector('.lot_size').textContent = `${prop.lot_size || 0} sqm`;
-            modal.querySelector('.status').textContent = prop.status || '-';
-            modal.querySelector('.date_uploaded').textContent = prop.date_uploaded || '-';
+                // Main documents
+                documentsHtml += docLink('Broker License', card.dataset.brokerLicensePath);
+                documentsHtml += docLink('PRC License', card.dataset.prcLicensePath);
+                documentsHtml += docLink('Resume/CV', card.dataset.resumePath);
+                documentsHtml += docLink('Valid ID', card.dataset.validIdPath);
 
-            // Description
-            modal.querySelector('.property-description').textContent = prop.description || '';
+                // Additional documents (comma-separated)
+                if (card.dataset.additionalDocsPath) {
+                    const additionalDocs = card.dataset.additionalDocsPath.split(',').map(d => d.trim()).filter(Boolean);
+                    if (additionalDocs.length) {
+                        additionalDocs.forEach((doc, idx) => {
+                            documentsHtml += docLink(`Additional Document ${idx+1}`, doc);
+                        });
+                    }
+                }
 
-            // Populate images gallery with selection functionality
-            const gallery = modal.querySelector('.property-images');
-            (prop.images || []).forEach((img, idx) => {
-                const imgEl = document.createElement('img');
-                imgEl.src = img;
+                if (!documentsHtml.match('<div class="detail-row">')) {
+                    documentsHtml += `<div class="detail-row"><div class="detail-value">No documents uploaded</div></div>`;
+                }
 
-                if(idx === 0) imgEl.classList.add('active'); // first image selected by default
+                documentsHtml += `</section>`;
+            }
 
-                imgEl.addEventListener('click', () => {
-                    mainImage.style.backgroundImage = `url('${img}')`;
-                    gallery.querySelectorAll('img').forEach(i => i.classList.remove('active'));
-                    imgEl.classList.add('active');
-                });
+            modalBody.innerHTML = `
+                <section class="personal-info">
+                    <h3>Personal Information</h3>
+                    <div class="agent-modal-header">
+                        <div class="profile-col">
+                            ${
+                            profileImg
+                                ? `<img src="${profileImg}" alt="Profile Picture" class="modal-profile-img" />`
+                                : `<i class="fa-solid fa-user modal-profile-icon"></i>`
+                            }
+                        </div>
+                        <div class="info-col">
+                            <h3 class="agent-fullname">${card.dataset.firstName || ''} ${card.dataset.lastName || ''}</h3>
+                            <p class="agent-email">${card.dataset.email || 'N/A'}</p>
+                            <p class="agent-type">Type: ${card.dataset.userType || 'Direct Agent'}</p>
+                        </div>
+                    </div>
+                    <div class="detail-row"><div class="detail-label">Phone:</div><div class="detail-value">${card.dataset.phone || 'N/A'}</div></div>
+                    <div class="detail-row"><div class="detail-label">Address:</div><div class="detail-value">${card.dataset.address || 'N/A'}</div></div>
+                </section>
 
-                gallery.appendChild(imgEl);
-            });
+                <section class="agent-info">
+                    <h3>Agent Information</h3>
+                    <div class="detail-row"><div class="detail-label">Broker ID:</div><div class="detail-value">${card.dataset.brokerId || 'N/A'}</div></div>
+                    <div class="detail-row"><div class="detail-label">License Number:</div><div class="detail-value">${card.dataset.licenseNumber || 'N/A'}</div></div>
+                    <div class="detail-row"><div class="detail-label">Experience:</div><div class="detail-value">${card.dataset.experienceYears || '0'} years</div></div>
+                    <div class="detail-row"><div class="detail-label">Specialization:</div><div class="detail-value">${specialization}</div></div>
+                </section>
 
-        } catch (err) {
-            console.error(err);
-            alert('An unexpected error occurred.');
-            modal.style.display = 'none';
-        }
-    });
+                <section class="education">
+                    <h3>Education & Qualifications</h3>
+                    <div class="detail-row"><div class="detail-label">Education:</div><div class="detail-value">${card.dataset.education || 'N/A'}</div></div>
+                    <div class="detail-row"><div class="detail-label">School:</div><div class="detail-value">${card.dataset.school || 'N/A'}</div></div>
+                    <div class="detail-row"><div class="detail-label">Course:</div><div class="detail-value">${card.dataset.course || 'N/A'}</div></div>
+                    <div class="detail-row"><div class="detail-label">Graduation Year:</div><div class="detail-value">${card.dataset.graduationYear || 'N/A'}</div></div>
+                </section>
 
-    // ===== Admin Actions: Approve / Reject / Remove =====
-    document.addEventListener('click', async e => {
-        if (!e.target.classList.contains('btn-approve') &&
-            !e.target.classList.contains('btn-reject') &&
-            !e.target.classList.contains('btn-remove')) return;
+                ${documentsHtml}
 
-        const propertyId = e.target.dataset.id;
-        if (!propertyId) return;
+                <section class="account">
+                    <h3>Account Information</h3>
+                    <div class="detail-row"><div class="detail-label">Account Created:</div><div class="detail-value">${card.dataset.accountCreated ? new Date(card.dataset.accountCreated).toLocaleDateString() : 'N/A'}</div></div>
+                    <div class="detail-row"><div class="detail-label">Status:</div><div class="detail-value">${card.dataset.status || 'N/A'}</div></div>
+                </section>
+            `;
 
-        let action = '';
-        if (e.target.classList.contains('btn-approve')) action = 'approve';
-        if (e.target.classList.contains('btn-reject')) action = 'reject';
-        if (e.target.classList.contains('btn-remove')) action = 'remove';
+            agentModal.style.display = 'block';
+        });
 
-        if (!action) return;
-
-        if (!confirm(`Are you sure you want to ${action} this property?`)) return;
-
-        try {
-            const formData = new FormData();
-            formData.append('property_id', propertyId);
-            formData.append('action', action);
-
-            const res = await fetch('/BatEstateExplorer/public/api/admin_property_action.php', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await res.json();
-            alert(data.message || data.error || 'Unexpected response');
-
-            if (data.success) location.reload();
-        } catch (err) {
-            console.error(err);
-            alert('An error occurred while performing the action.');
-        }
+        // Close modal
+        agentModal.querySelectorAll('.cancel-btn').forEach(btn => {
+            btn.addEventListener('click', () => agentModal.style.display = 'none');
+        });
+        window.addEventListener('click', e => { if (e.target === agentModal) agentModal.style.display = 'none'; });
     });
 </script>
-
