@@ -85,7 +85,7 @@
 }
 
 .reported-accounts-table th {
-  background: #dfdfdf;
+  background: #eaeaea;
   color: #111827;
   font-weight: 600;
 }
@@ -147,6 +147,9 @@
   color: #6b7280;
   padding: 0;
   line-height: 1;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
 .modal-header .cancel-btn:hover {
   color: #111827;
@@ -183,7 +186,7 @@
 
 .cancel-btn,
 .btn-danger,
-.btn-warning {
+.btn-secondary {
   padding: 0.6rem 1.5rem;
   font-size: 1rem;
   font-weight: 600;
@@ -193,6 +196,7 @@
   transition: all 0.2s ease;
 }
 
+/* Close button */
 .cancel-btn {
   background: #111827;
   color: #fff;
@@ -201,6 +205,7 @@
   background: #374151;
 }
 
+/* Block/Unblock button */
 .btn-danger {
   background: #dc2626;
   color: #fff;
@@ -209,12 +214,13 @@
   background: #b91c1c;
 }
 
-.btn-warning {
-  background: #e6e6e6;
-  color: #111;
+/* Delete report button */
+.btn-secondary {
+  color: #000;
 }
-.btn-warning:hover {
-  background: #cecece;
+.btn-secondary:hover {
+  background: #6b7280;
+  color: #fff;
 }
 
 /* Animation */
@@ -233,11 +239,41 @@
     font-size: 1.5rem;
   }
 
-  .cancel-btn, .btn-danger, .btn-warning {
+  .cancel-btn, .btn-danger, .btn-secondary {
     font-size: 0.9rem;
     padding: 0.5rem 1rem;
   }
 }
+
+/* ===========================
+   Duration Dropdown
+=========================== */
+#banDurationSelect {
+  padding: 0.5rem 0.8rem;
+  font-size: 1rem;
+  font-family: 'Satoshi', sans-serif;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background-color: #fff;
+  color: #111827;
+  transition: all 0.2s ease;
+  outline: none;
+  min-width: 160px;
+}
+
+#banDurationSelect:hover {
+  border-color: #9ca3af;
+}
+
+#banDurationSelect:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.modal-body p select {
+  margin-left: 0.5rem;
+}
+
 /* ===========================
    Responsive
 =========================== */

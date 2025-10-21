@@ -11,10 +11,11 @@ if (!$conn) {
 }
 
 // Get JSON input
-$data = json_decode(file_get_contents('php://input'), true);
-$agentId = $data['agent_id'] ?? null;
-$duration = $data['duration'] ?? null;
-$action = $data['action'] ?? 'block'; // default to block
+$data     = json_decode(file_get_contents('php://input'), true);
+$agentId  = $data['agent_id'] ?? null;
+$duration = $data['duration'] ?? null; // Admin selected duration for 'other'
+$action   = $data['action'] ?? 'block'; // 'block' or 'unblock'
+$category = $data['category'] ?? null;  // reason/category of report
 
 if (!$agentId) {
     http_response_code(400);
@@ -25,30 +26,66 @@ if (!$agentId) {
 try {
     $conn->begin_transaction();
 
-    // Block or Unblock agent
     if ($action === 'block') {
-        $stmt = $conn->prepare("UPDATE users SET is_blocked = 1 WHERE id = ?");
-    } else {
-        $stmt = $conn->prepare("UPDATE users SET is_blocked = 0 WHERE id = ?");
-    }
-    $stmt->bind_param("i", $agentId);
-    $stmt->execute();
+        // --- Block the agent ---
+        $isBlocked = 1;
+        $stmt = $conn->prepare("UPDATE users SET is_blocked = ? WHERE id = ?");
+        $stmt->bind_param("ii", $isBlocked, $agentId);
+        $stmt->execute();
 
-    // Update all related reports to resolved and set duration if provided
-    if ($action === 'block') {
+        // --- Set default duration if category is not 'other' ---
+        if ($category && $category !== 'other') {
+            switch ($category) {
+                case 'fraudulent_listing':
+                case 'harassment':
+                    $duration = 'lifetime';
+                    break;
+                case 'misinformation':
+                    $duration = '7days';
+                    break;
+                case 'spam':
+                    $duration = '48hrs';
+                    break;
+                default:
+                    $duration = '7days';
+            }
+        }
+
+        // Update all reports for this agent: mark resolved + store duration
         $stmt2 = $conn->prepare("UPDATE agent_reports SET status = 'resolved', duration = ? WHERE agent_id = ?");
         $stmt2->bind_param("si", $duration, $agentId);
         $stmt2->execute();
+
+        $message = 'Agent blocked successfully.';
+    } else {
+        // --- Unblock the agent ---
+        $isBlocked = 0;
+        $stmt = $conn->prepare("UPDATE users SET is_blocked = ? WHERE id = ?");
+        $stmt->bind_param("ii", $isBlocked, $agentId);
+        $stmt->execute();
+
+        // Reset duration on all reports (optional: you could leave resolved reports as-is)
+        $stmt2 = $conn->prepare("UPDATE agent_reports SET duration = NULL WHERE agent_id = ?");
+        $stmt2->bind_param("i", $agentId);
+        $stmt2->execute();
+
+        $message = 'Agent unblocked successfully.';
+        $duration = null;
     }
 
     $conn->commit();
 
     echo json_encode([
-        'success' => true,
-        'message' => ($action === 'block' ? 'Agent blocked successfully.' : 'Agent unblocked successfully.')
+        'success'  => true,
+        'message'  => $message,
+        'duration' => $duration
     ]);
+
 } catch (Exception $e) {
     $conn->rollback();
     http_response_code(500);
-    echo json_encode(['error' => 'Failed to update agent.', 'details' => $e->getMessage()]);
+    echo json_encode([
+        'error'   => 'Failed to update agent.',
+        'details' => $e->getMessage()
+    ]);
 }
