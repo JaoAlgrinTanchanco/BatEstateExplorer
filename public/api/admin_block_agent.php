@@ -10,12 +10,12 @@ if (!$conn) {
     exit;
 }
 
-// Get JSON input
+// --- Get JSON input ---
 $data     = json_decode(file_get_contents('php://input'), true);
 $agentId  = $data['agent_id'] ?? null;
-$duration = $data['duration'] ?? null; // Admin-selected duration for 'other'
-$action   = $data['action'] ?? 'block'; // 'block' or 'unblock'
-$category = $data['category'] ?? null;  // reason/category of report
+$duration = $data['duration'] ?? null;   // Admin-selected duration for 'other'
+$action   = $data['action'] ?? 'block';  // 'block' or 'unblock'
+$category = $data['category'] ?? null;   // reason/category of report
 
 if (!$agentId) {
     http_response_code(400);
@@ -27,12 +27,13 @@ try {
     $conn->begin_transaction();
 
     if ($action === 'block') {
-        // --- Block the agent ---
+
+        // --- 1. Block the agent ---
         $stmt = $conn->prepare("UPDATE users SET is_blocked = 1 WHERE id = ?");
         $stmt->bind_param("i", $agentId);
         $stmt->execute();
 
-        // --- Set default duration if category is not 'other' ---
+        // --- 2. Determine duration based on category ---
         if ($category && $category !== 'other') {
             switch ($category) {
                 case 'fraudulent_listing':
@@ -48,10 +49,18 @@ try {
                 default:
                     $duration = '7days';
             }
+        } elseif (!$duration) {
+            $duration = '7days'; // default fallback
         }
 
-        // Update reports: mark as blocked and store duration
-        $stmt2 = $conn->prepare("UPDATE agent_reports SET status = 'blocked', duration = ? WHERE agent_id = ?");
+        // --- 3. Update agent_reports table ---
+        //     Sets status = blocked, duration = chosen value,
+        //     and blockage_date = current timestamp
+        $stmt2 = $conn->prepare("
+            UPDATE agent_reports 
+            SET status = 'blocked', duration = ?, blockage_date = NOW() 
+            WHERE agent_id = ?
+        ");
         $stmt2->bind_param("si", $duration, $agentId);
         $stmt2->execute();
 
@@ -64,8 +73,12 @@ try {
         $stmt->bind_param("i", $agentId);
         $stmt->execute();
 
-        // Update reports: mark as unblocked and reset duration
-        $stmt2 = $conn->prepare("UPDATE agent_reports SET status = 'unblocked', duration = NULL WHERE agent_id = ?");
+        // --- Mark reports as unblocked, clear duration and blockage_date ---
+        $stmt2 = $conn->prepare("
+            UPDATE agent_reports 
+            SET status = 'unblocked', duration = NULL, blockage_date = NULL 
+            WHERE agent_id = ?
+        ");
         $stmt2->bind_param("i", $agentId);
         $stmt2->execute();
 
@@ -77,10 +90,12 @@ try {
     $conn->commit();
 
     echo json_encode([
-        'success'  => true,
-        'message'  => $message,
-        'status'   => $status,
-        'duration' => $duration
+        'success'     => true,
+        'message'     => $message,
+        'status'      => $status,
+        'duration'    => $duration,
+        'agent_id'    => $agentId,
+        'blockage_date' => $action === 'block' ? date('Y-m-d H:i:s') : null
     ]);
 
 } catch (Exception $e) {

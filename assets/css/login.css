@@ -191,6 +191,158 @@ body::before {
     user-select: none;
 }
 
+/* ================================
+   Blocked Modal Styles
+=============================== */
+.blocked-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.blocked-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.blocked-content {
+  position: relative;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 16px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  text-align: center;
+  z-index: 2;
+  font-family: "Inter", Arial, sans-serif;
+  animation: fadeInUp 0.4s ease;
+}
+
+.blocked-content h2 {
+  font-family: "Merriweather", serif;
+  font-size: 1.6rem;
+  margin-bottom: 0.5rem;
+  color: #111;
+}
+
+.blocked-subtext {
+  color: #555;
+  font-size: 0.95rem;
+  margin-bottom: 1.2rem;
+}
+
+.blocked-details {
+  background: #f9fafc;
+  border: 1px solid #e1e5e9;
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  text-align: left;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.blocked-details p {
+  margin-bottom: 0.5rem;
+}
+
+.blocked-details p:last-child {
+  margin-bottom: 0;
+}
+
+.blocked-btn {
+  display: inline-block;
+  background: #111;
+  color: #fff;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 30px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.blocked-btn:hover {
+  background: #333;
+}
+
+/* Reuse existing fade-in animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================
+   Blocked / Banned Modal Icon
+================================ */
+.blocked-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.blocked-icon svg {
+  width: 90px;
+  height: 90px;
+  display: block;
+  transition: all 0.3s ease;
+  animation: pulseGlow 2.2s infinite ease-in-out;
+}
+
+/* Yellow glow (temporary block) */
+.blocked-content:not(.permanent) .blocked-icon svg {
+  filter: drop-shadow(0 0 10px rgba(230, 184, 0, 0.6));
+}
+
+/* Red glow (permanent ban) */
+.blocked-content.permanent .blocked-icon svg {
+  filter: drop-shadow(0 0 10px rgba(220, 38, 38, 0.6));
+}
+
+/* Glowing pulse animation */
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(230, 184, 0, 0.3));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 16px rgba(230, 184, 0, 0.6));
+  }
+}
+
+/* When permanent, override animation color */
+.blocked-content.permanent .blocked-icon svg {
+  animation: pulseGlowRed 2.2s infinite ease-in-out;
+}
+
+@keyframes pulseGlowRed {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.3));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 16px rgba(220, 38, 38, 0.6));
+  }
+}
+
+
+
 /* Animation */
 @keyframes fadeInUp {
   from {

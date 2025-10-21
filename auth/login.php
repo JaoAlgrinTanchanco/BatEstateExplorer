@@ -2,91 +2,104 @@
     session_start();
     require_once '../config/database.php';
     require_once __DIR__ . '/../public/app/redirects.php';
-    include __DIR__ . "/../components/notification.php";
 
-    // Only handle POST requests with an email field
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST['email'])) {
-        header("Location: login.php");
-        exit;
-    }
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
+        $email = sanitize_input($conn, $_POST['email']);
+        $password = $_POST['password'] ?? '';
+        $isAjax = isset($_POST['ajax']) ? (bool)$_POST['ajax'] : false;
 
-    $email = sanitize_input($conn, $_POST['email']);
-    $password = $_POST['password'] ?? '';
-    $isAjax = !empty($_POST['ajax']); // will use later if needed for async requests
+        // Basic validation
+        if (empty($email) || empty($password)) {
+            $_SESSION['old_email'] = $email;
+            $_SESSION['notification'] = [
+                'type' => 'error',
+                'message' => 'Please enter both email and password.'
+            ];
+            header("Location: login.php");
+            exit;
+        }
 
-    // ==============================
-    // 1. Basic Validation
-    // ==============================
-    if (empty($email) || empty($password)) {
-        $_SESSION['old_email'] = $email;
+        // Fetch user by email
+        $stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE email = ?");
+        mysqli_stmt_bind_param($stmt, "s", $email);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $user = mysqli_fetch_assoc($result);
+
+        if (!$user) {
+            $_SESSION['old_email'] = $email;
+            $_SESSION['notification'] = [
+                'type' => 'error',
+                'message' => 'No account found with that email.'
+            ];
+            header("Location: login.php");
+            exit;
+        }
+
+        // Verify password
+        if (!verify_password($password, $user['password_hash'])) {
+            $_SESSION['old_email'] = $email;
+            $_SESSION['notification'] = [
+                'type' => 'error',
+                'message' => 'Incorrect password. Please try again.'
+            ];
+            header("Location: login.php");
+            exit;
+        }
+
+        if ((int)$user['is_blocked'] === 1) {
+            // Fetch block details from reported_accounts (or your blocking table)
+            $blockQuery = mysqli_prepare($conn, "
+                SELECT reason, other_reason, duration 
+                FROM agent_reports 
+                WHERE agent_id = ? 
+                AND status = 'blocked'
+                ORDER BY blockage_date DESC 
+                LIMIT 1
+            ");
+            mysqli_stmt_bind_param($blockQuery, "i", $user['id']);
+            mysqli_stmt_execute($blockQuery);
+            $blockResult = mysqli_stmt_get_result($blockQuery);
+            $blockInfo = mysqli_fetch_assoc($blockResult);
+
+            // Choose reason text
+            $reasonText = $blockInfo['reason'] === 'other'
+                ? $blockInfo['other_reason']
+                : ucfirst($blockInfo['reason']);
+
+            // Use values or defaults
+            $duration = $blockInfo['duration'] ?? '7 days';
+            $reason   = $reasonText ?: 'Violation of platform policies';
+
+            // Redirect to login with details in query string
+            header("Location: login.php?blocked=1&reason=" . urlencode($reason) . "&duration=" . urlencode($duration));
+            exit;
+        }
+
+        // Check account status
+        if ($user['status'] !== 'active') {
+            $_SESSION['old_email'] = $email;
+            $_SESSION['notification'] = [
+                'type' => 'error',
+                'message' => 'Your account is pending approval. Please wait for admin review.'
+            ];
+            header("Location: login.php");
+            exit;
+        }
+
+        // Successful login
+        $_SESSION['user_token'] = generate_token($user['id'], $user['email'], $user['user_type']);
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['user_type'] = $user['user_type'];
+
         $_SESSION['notification'] = [
-            'type' => 'error',
-            'message' => 'Please enter both email and password.'
+            'type' => 'success',
+            'message' => 'Logged in successfully!'
         ];
-        header("Location: login.php");
+
+        redirect_by_user_type($user['user_type']); // redirects and exits
         exit;
     }
-
-    // ==============================
-    // 2. Fetch user by email
-    // ==============================
-    $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $user = $result->fetch_assoc();
-
-    if (!$user) {
-        $_SESSION['old_email'] = $email;
-        $_SESSION['notification'] = [
-            'type' => 'error',
-            'message' => 'No account found with that email.'
-        ];
-        header("Location: login.php");
-        exit;
-    }
-
-    // ==============================
-    // 3. Verify password
-    // ==============================
-    if (!verify_password($password, $user['password_hash'])) {
-        $_SESSION['old_email'] = $email;
-        $_SESSION['notification'] = [
-            'type' => 'error',
-            'message' => 'Incorrect password. Please try again.'
-        ];
-        header("Location: login.php");
-        exit;
-    }
-
-    // ==============================
-    // 4. Check account status
-    // ==============================
-    if ($user['status'] !== 'active') {
-        $_SESSION['old_email'] = $email;
-        $_SESSION['notification'] = [
-            'type' => 'error',
-            'message' => 'Your account is pending approval. Please wait for admin review.'
-        ];
-        header("Location: login.php");
-        exit;
-    }
-
-    // ==============================
-    // 5. Successful login
-    // ==============================
-    $_SESSION['user_token'] = generate_token($user['id'], $user['email'], $user['user_type']);
-    $_SESSION['user_id'] = $user['id'];
-    $_SESSION['user_type'] = $user['user_type'];
-
-    $_SESSION['notification'] = [
-        'type' => 'success',
-        'message' => 'Logged in successfully!'
-    ];
-
-    // Redirect user based on type (agent, admin, etc.)
-    redirect_by_user_type($user['user_type']);
-    exit;
 ?>
 
 <!DOCTYPE html>
@@ -137,52 +150,97 @@
     </div>
 </div>
 
-<!-- =========================
-     Blocked Account Modal
-========================= -->
-<div id="blockedModal" class="modal hidden">
-  <div class="modal-content">
-    <h2>Your account has been banned</h2>
-    <p id="blockReason">Reason: <span></span></p>
-    <p id="blockDuration">Duration Remaining: <span></span></p>
-    <button id="closeModalBtn">Close</button>
-  </div>
-</div>
+<?php include __DIR__ . "/../components/notification.php"; ?>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-    const password = document.querySelector('#password');
-    const togglePasswordText = document.querySelector('#togglePasswordText');
-    const modal = document.querySelector('#blockedModal');
-    const closeModalBtn = document.querySelector('#closeModalBtn');
+        /* ================================
+        Toggle Password Visibility
+        ================================ */
+        const togglePasswordText = document.querySelector('#togglePasswordText');
+        const password = document.querySelector('#password');
 
-    // ================================
-    // 1. Toggle Password Visibility
-    // ================================
-    togglePasswordText.addEventListener('click', () => {
-        const isHidden = password.type === 'password';
-        password.type = isHidden ? 'text' : 'password';
-        togglePasswordText.textContent = isHidden ? 'Hide' : 'Show';
-    });
+        if (togglePasswordText && password) {
+            togglePasswordText.addEventListener('click', () => {
+                if (password.type === 'password') {
+                    password.type = 'text';
+                    togglePasswordText.textContent = 'Hide';
+                } else {
+                    password.type = 'password';
+                    togglePasswordText.textContent = 'Show';
+                }
+            });
+        }
 
-    // ================================
-    // 2. Show Blocked Modal (for later use)
-    // ================================
-    function showBlockedModal(reason, remainingTime) {
-        document.querySelector('#blockReason span').textContent = reason;
-        document.querySelector('#blockDuration span').textContent = remainingTime;
-        modal.classList.remove('hidden');
-    }
+        /* ================================
+        Show Blocked Account Modal
+        (temporary or permanent)
+        ================================ */
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('blocked') === '1') {
+            const reason = urlParams.get('reason') || 'Violation of platform policies';
+            const duration = (urlParams.get('duration') || '7 days').toLowerCase();
 
-    closeModalBtn.addEventListener('click', () => {
-        modal.classList.add('hidden');
-    });
+            // Determine if it's a lifetime/permanent ban
+            const isPermanent = ['lifetime', 'permanent', 'permanently', 'forever'].includes(duration);
 
-    // ================================
-    // 3. (Later) Triggered when login detects blocked account
-    // ================================
-    // Example:
-    // showBlockedModal("Inappropriate behavior", "2 days 5 hours remaining");
+            const modal = document.createElement('div');
+            modal.className = 'blocked-modal';
+
+            // Set icon and message based on type
+            const iconColor = isPermanent ? '#d93025' : '#e6b800';
+            const iconBg = isPermanent ? '#ffe6e6' : '#fff8dc';
+            const message = isPermanent
+                ? 'Your account has been permanently banned by the administrator.'
+                : 'Your account has been temporarily disabled by the administrator.';
+
+            // Build modal content
+            const title = isPermanent ? 'Account Banned' : 'Account Blocked';
+
+            modal.innerHTML = `
+                <div class="blocked-overlay"></div>
+                <div class="blocked-content animate-in">
+                    <div class="blocked-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="${iconColor}" stroke-width="3">
+                            <path d="M32 6 L2 58 H62 Z" fill="${iconBg}" stroke="${iconColor}"/>
+                            <line x1="32" y1="22" x2="32" y2="38" stroke="${iconColor}" stroke-width="5" stroke-linecap="round"/>
+                            <circle cx="32" cy="48" r="3" fill="${iconColor}"/>
+                        </svg>
+                    </div>
+                    <h2>${title}</h2>
+                    <p class="blocked-subtext">${message}</p>
+                    <div class="blocked-details">
+                        <p><strong>Violation:</strong> ${reason}</p>
+                        ${!isPermanent ? `<p><strong>Until:</strong> ${duration}</p>` : ''}
+                    </div>
+                    <button id="closeBlockedModal" class="blocked-btn">Okay</button>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            document.querySelector('#closeBlockedModal').addEventListener('click', () => {
+                modal.remove();
+                window.history.replaceState({}, document.title, window.location.pathname);
+            });
+        }
+
+        /* ================================
+        Periodically trigger block_check.php
+        - Runs every 5 minutes (300,000 ms)
+        - Silent background request
+        ================================ */
+        const triggerBlockCheck = () => {
+            fetch('../public/api/block_check.php')
+                .then(res => res.json())
+                .then(data => {
+                    console.log('[Block Check]', data.message, data.unblocked_agents?.length || 0, 'agents updated');
+                })
+                .catch(err => console.error('Block check failed:', err));
+        };
+
+        triggerBlockCheck();
+        setInterval(triggerBlockCheck, 5 * 60 * 1000);
     });
 </script>
 
