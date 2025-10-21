@@ -13,7 +13,7 @@ if (!$conn) {
 // Get JSON input
 $data     = json_decode(file_get_contents('php://input'), true);
 $agentId  = $data['agent_id'] ?? null;
-$duration = $data['duration'] ?? null; // Admin selected duration for 'other'
+$duration = $data['duration'] ?? null; // Admin-selected duration for 'other'
 $action   = $data['action'] ?? 'block'; // 'block' or 'unblock'
 $category = $data['category'] ?? null;  // reason/category of report
 
@@ -28,9 +28,8 @@ try {
 
     if ($action === 'block') {
         // --- Block the agent ---
-        $isBlocked = 1;
-        $stmt = $conn->prepare("UPDATE users SET is_blocked = ? WHERE id = ?");
-        $stmt->bind_param("ii", $isBlocked, $agentId);
+        $stmt = $conn->prepare("UPDATE users SET is_blocked = 1 WHERE id = ?");
+        $stmt->bind_param("i", $agentId);
         $stmt->execute();
 
         // --- Set default duration if category is not 'other' ---
@@ -51,25 +50,27 @@ try {
             }
         }
 
-        // Update all reports for this agent: mark resolved + store duration
-        $stmt2 = $conn->prepare("UPDATE agent_reports SET status = 'resolved', duration = ? WHERE agent_id = ?");
+        // Update reports: mark as blocked and store duration
+        $stmt2 = $conn->prepare("UPDATE agent_reports SET status = 'blocked', duration = ? WHERE agent_id = ?");
         $stmt2->bind_param("si", $duration, $agentId);
         $stmt2->execute();
 
         $message = 'Agent blocked successfully.';
+        $status  = 'blocked';
+
     } else {
         // --- Unblock the agent ---
-        $isBlocked = 0;
-        $stmt = $conn->prepare("UPDATE users SET is_blocked = ? WHERE id = ?");
-        $stmt->bind_param("ii", $isBlocked, $agentId);
+        $stmt = $conn->prepare("UPDATE users SET is_blocked = 0 WHERE id = ?");
+        $stmt->bind_param("i", $agentId);
         $stmt->execute();
 
-        // Reset duration on all reports (optional: you could leave resolved reports as-is)
-        $stmt2 = $conn->prepare("UPDATE agent_reports SET duration = NULL WHERE agent_id = ?");
+        // Update reports: mark as unblocked and reset duration
+        $stmt2 = $conn->prepare("UPDATE agent_reports SET status = 'unblocked', duration = NULL WHERE agent_id = ?");
         $stmt2->bind_param("i", $agentId);
         $stmt2->execute();
 
-        $message = 'Agent unblocked successfully.';
+        $message  = 'Agent unblocked successfully.';
+        $status   = 'unblocked';
         $duration = null;
     }
 
@@ -78,6 +79,7 @@ try {
     echo json_encode([
         'success'  => true,
         'message'  => $message,
+        'status'   => $status,
         'duration' => $duration
     ]);
 

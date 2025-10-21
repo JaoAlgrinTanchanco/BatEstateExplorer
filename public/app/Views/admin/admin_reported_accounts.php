@@ -36,8 +36,8 @@
             <select id="statusFilter">
                 <option value="all">All</option>
                 <option value="pending">Pending</option>
-                <option value="reviewed">Reviewed</option>
-                <option value="resolved">Resolved</option>
+                <option value="blocked">Blocked</option>
+                <option value="unblocked">Unblocked</option>
             </select>
         </div>
     </div>
@@ -135,8 +135,30 @@
         let currentAgentId = null;
         let currentReportId = null;
         let currentCategory = null;
-        let currentIsBlocked = false;
         let currentStatus = null;
+
+        // Helper: Update status cell color & text
+        function updateStatusCell(row, status) {
+            const statusCell = row.querySelector('td:nth-child(6)'); // 6th column = Status
+            statusCell.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+
+            switch(status) {
+                case 'blocked':
+                    statusCell.style.color = '#ff0000';
+                    break;
+                case 'unblocked':
+                    statusCell.style.color = '#008dff';
+                    break;
+                default: // pending / others
+                    statusCell.style.color = '#12d800';
+                    break;
+            }
+        }
+
+        // Initialize status colors on page load
+        reportsBody.querySelectorAll('tr.clickable-row').forEach(row => {
+            updateStatusCell(row, row.dataset.status);
+        });
 
         // Filter reports by status
         statusFilter?.addEventListener('change', () => {
@@ -154,12 +176,9 @@
             currentAgentId = row.dataset.agentId;
             currentReportId = row.dataset.reportId;
             currentCategory = row.dataset.category || 'other';
-            currentIsBlocked = row.dataset.isBlocked === '1';
             currentStatus = row.dataset.status;
 
             let penaltyHtml = `<p style="color:red;"><strong>Penalty Note:</strong> ${penaltyNotes[currentCategory]}</p>`;
-
-            // Duration dropdown for 'other' category
             if (currentCategory === 'other') {
                 penaltyHtml += `
                     <p><strong>Set Ban Duration:</strong>
@@ -169,8 +188,7 @@
                             <option value="30days">30 days</option>
                             <option value="lifetime">Banned for life</option>
                         </select>
-                    </p>
-                `;
+                    </p>`;
             }
 
             modalBody.innerHTML = `
@@ -183,13 +201,7 @@
                 ${penaltyHtml}
             `;
 
-            // If agent is blocked OR report is resolved, show "Unblock Agent"
-            if (currentIsBlocked || currentStatus === 'resolved') {
-                blockUnblockBtn.textContent = 'Unblock Agent';
-            } else {
-                blockUnblockBtn.textContent = 'Block Agent';
-            }
-
+            blockUnblockBtn.textContent = currentStatus === 'blocked' ? 'Unblock Agent' : 'Block Agent';
             reportModal.style.display = 'block';
         });
 
@@ -204,14 +216,18 @@
             fetch('/BatEstateExplorer/public/api/admin_block_agent.php', {
                 method: 'POST',
                 headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ agent_id: currentAgentId, duration, action })
+                body: JSON.stringify({ agent_id: currentAgentId, duration, action, category: currentCategory })
             })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     alert(data.message);
+                    const row = reportsBody.querySelector(`tr[data-agent-id="${currentAgentId}"]`);
+                    if (row) {
+                        row.dataset.status = action === 'block' ? 'blocked' : 'unblocked';
+                        updateStatusCell(row, row.dataset.status);
+                    }
                     reportModal.style.display = 'none';
-                    // location.reload();
                 } else {
                     alert(data.error || 'Failed to update agent.');
                 }
@@ -233,8 +249,9 @@
             .then(data => {
                 if (data.success) {
                     alert(data.message);
+                    const row = reportsBody.querySelector(`tr[data-report-id="${currentReportId}"]`);
+                    if (row) row.remove();
                     reportModal.style.display = 'none';
-                    location.reload();
                 } else {
                     alert(data.error || 'Failed to delete report.');
                 }
