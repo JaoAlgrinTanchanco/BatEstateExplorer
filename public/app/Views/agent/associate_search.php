@@ -15,6 +15,34 @@
 
     $request = $isAjax ? $_POST : $_GET;
 
+    // ================================
+    // Fetch Logged-in User's First Name
+    // ================================
+
+    // No session_start() — it's already active in your layout/controller
+    $userName = 'Guest'; // Default fallback
+
+    if (isset($_SESSION['user_id'])) {
+        $userId = (int)$_SESSION['user_id'];
+
+        $nameSql = "SELECT first_name FROM users WHERE id = ? LIMIT 1";
+
+        if ($nameStmt = $conn->prepare($nameSql)) {
+            $nameStmt->bind_param("i", $userId);
+            $nameStmt->execute();
+            $nameResult = $nameStmt->get_result();
+
+            if ($nameRow = $nameResult->fetch_assoc()) {
+                $first = trim($nameRow['first_name'] ?? '');
+                if ($first !== '') {
+                    $userName = ucfirst($first);
+                }
+            }
+
+            $nameStmt->close();
+        }
+    }
+
     //
     // ================================
     // Filters
@@ -154,6 +182,13 @@
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/search.css">
+
+<h3 class="greeting">Hello, <?= htmlspecialchars($userName) ?>!</h3>
+
+<!-- Welcome Banner -->
+<div class="welcome-card">
+    <img src="/BatEstateExplorer/assets/images/Frame 6.png" alt="Welcome Banner" class="welcome-image">
+</div>
 
 <div class="search-container">
     <div class="search">

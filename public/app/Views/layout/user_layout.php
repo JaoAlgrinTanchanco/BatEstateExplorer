@@ -34,7 +34,6 @@ $user = $_SESSION['user'] ?? null; // Logged-in user
       <div class="nav-links-mobile">
         <a href="user_dashboard.php?view=home" class="nav-link <?= ($view === 'home') ? 'active' : '' ?>"><i class="fa-solid fa-house"></i> Home</a>
         <a href="user_dashboard.php?view=profile" class="nav-link <?= ($view === 'profile') ? 'active' : '' ?>"><i class="fa-solid fa-user"></i> Profile</a>
-        <a href="user_dashboard.php?view=search" class="nav-link <?= ($view === 'search') ? 'active' : '' ?>"><i class="fa-solid fa-search"></i> Search</a>
         <a href="/BatEstateExplorer/public/message.php" class="nav-link" target="_blank"><i class="fa-solid fa-envelope"></i> Messages</a>
         <button type="button" class="nav-link logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
       </div>
@@ -44,7 +43,6 @@ $user = $_SESSION['user'] ?? null; // Logged-in user
     <div class="nav-center">
       <a href="user_dashboard.php?view=home" class="nav-link <?= ($view === 'home') ? 'active' : '' ?>"><i class="fa-solid fa-house"></i> Home</a>
       <a href="user_dashboard.php?view=profile" class="nav-link <?= ($view === 'profile') ? 'active' : '' ?>"><i class="fa-solid fa-user"></i> Profile</a>
-      <a href="user_dashboard.php?view=search" class="nav-link <?= ($view === 'search') ? 'active' : '' ?>"><i class="fa-solid fa-search"></i> Search</a>
     </div>
 
     <!-- Right -->

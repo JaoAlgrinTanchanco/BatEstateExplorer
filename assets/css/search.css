@@ -1,8 +1,45 @@
+/* Import Fonts */
 @font-face {
   font-family: 'Satoshi-Regular';
   src: url('../fonts/Satoshi-Regular.otf') format('opentype');
   font-style: normal;
 }
+
+@font-face {
+  font-family: 'Satoshi-Bold';
+  src: url('../fonts/Satoshi-Bold.otf') format('opentype');
+  font-style: normal;
+}
+
+/* Greeting Style */
+.greeting {
+  font-family: 'Satoshi-Bold', 'Satoshi-Regular', sans-serif;
+  font-size: 2.25rem;              /* Slightly large for emphasis */
+  font-weight: 700;             /* Use bold version */
+  color: #2b2b2b;               /* Neutral dark gray for readability */
+  margin: 6rem 0 0 5rem;             /* Add breathing space around */
+  letter-spacing: 0.5px;        /* Subtle spacing */
+  text-transform: capitalize;   /* Capitalize each word */
+  position: relative;           /* For accent underline */
+}
+
+/* ---------------- Welcome Card ---------------- */
+.welcome-card {
+  width: 100%;
+  max-width: 1300px;
+  padding: 0 1rem 0 1rem;
+  margin: 0 auto 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.welcome-card .welcome-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
 /* --- Search Container Layout --- */
 .search-container {
   position: relative;
@@ -16,7 +53,6 @@
 }
 
 .search {
-  padding-top: 60px;
   padding-bottom: 60px;
   display: flex;
   justify-content: center;
@@ -35,6 +71,7 @@
   border: 1px solid #dfdfdf;
   border-radius: 40px;
   overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* Search Fields */
