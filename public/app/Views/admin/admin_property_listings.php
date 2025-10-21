@@ -1,78 +1,78 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
 
-require_once __DIR__ . '/../../../../config/database.php';
+    require_once __DIR__ . '/../../../../config/database.php';
 
-$is_logged_in = is_logged_in();
-$current_user = null;
-$is_admin = false;
+    $is_logged_in = is_logged_in();
+    $current_user = null;
+    $is_admin = false;
 
-if ($is_logged_in) {
-    $current_user = get_logged_in_user($conn);
-    $is_admin = ($current_user && $current_user['user_type'] === 'admin');
-}
+    if ($is_logged_in) {
+        $current_user = get_logged_in_user($conn);
+        $is_admin = ($current_user && $current_user['user_type'] === 'admin');
+    }
 
-if (!$is_logged_in || !$is_admin) {
-    header('Location: admin_login.php');
-    exit;
-}
+    if (!$is_logged_in || !$is_admin) {
+        header('Location: admin_login.php');
+        exit;
+    }
 
-// Function to get first image for a property
-function get_property_image($conn, $property_id) {
-    $res = mysqli_query($conn, "
-        SELECT image_path 
-        FROM property_images 
-        WHERE property_id = $property_id 
-        ORDER BY is_primary DESC, id ASC 
-        LIMIT 1
-    ");
-    $row = mysqli_fetch_assoc($res);
-    return $row['image_path'] ?? null;
-}
+    // Function to get first image for a property
+    function get_property_image($conn, $property_id) {
+        $res = mysqli_query($conn, "
+            SELECT image_path 
+            FROM property_images 
+            WHERE property_id = $property_id 
+            ORDER BY is_primary DESC, id ASC 
+            LIMIT 1
+        ");
+        $row = mysqli_fetch_assoc($res);
+        return $row['image_path'] ?? null;
+    }
 
-// Direct agents
-$queryDirect = "SELECT
-  p.id AS property_id,
-  p.title AS property_name,
-  p.property_type,
-  p.price,
-  p.status,
-  p.created_at AS date_uploaded
-FROM properties p
-JOIN agents a ON p.agent_id = a.id
-JOIN users u ON a.user_id = u.id
-WHERE u.user_type = 'direct_agent'
-ORDER BY p.created_at DESC";
+    // Direct agents
+    $queryDirect = "SELECT
+    p.id AS property_id,
+    p.title AS property_name,
+    p.property_type,
+    p.price,
+    p.status,
+    p.created_at AS date_uploaded
+    FROM properties p
+    JOIN agents a ON p.agent_id = a.id
+    JOIN users u ON a.user_id = u.id
+    WHERE u.user_type = 'direct_agent'
+    ORDER BY p.created_at DESC";
 
-$resultDirect = mysqli_query($conn, $queryDirect);
-$direct_properties = [];
-while ($row = mysqli_fetch_assoc($resultDirect)) {
-    $row['image_path'] = get_property_image($conn, $row['property_id']);
-    $direct_properties[] = $row;
-}
+    $resultDirect = mysqli_query($conn, $queryDirect);
+    $direct_properties = [];
+    while ($row = mysqli_fetch_assoc($resultDirect)) {
+        $row['image_path'] = get_property_image($conn, $row['property_id']);
+        $direct_properties[] = $row;
+    }
 
-// Associate agents
-$queryAssociate = "SELECT
-  p.id AS property_id,
-  p.title AS property_name,
-  p.property_type,
-  p.price,
-  p.status,
-  p.created_at AS date_uploaded
-FROM properties p
-JOIN agents a ON p.agent_id = a.id
-JOIN users u ON a.user_id = u.id
-WHERE u.user_type = 'associate_agent'
-ORDER BY p.created_at DESC";
+    // Associate agents
+    $queryAssociate = "SELECT
+    p.id AS property_id,
+    p.title AS property_name,
+    p.property_type,
+    p.price,
+    p.status,
+    p.created_at AS date_uploaded
+    FROM properties p
+    JOIN agents a ON p.agent_id = a.id
+    JOIN users u ON a.user_id = u.id
+    WHERE u.user_type = 'associate_agent'
+    ORDER BY p.created_at DESC";
 
-$resultAssociate = mysqli_query($conn, $queryAssociate);
-$associate_properties = [];
-while ($row = mysqli_fetch_assoc($resultAssociate)) {
-    $row['image_path'] = get_property_image($conn, $row['property_id']);
-    $associate_properties[] = $row;
-}
+    $resultAssociate = mysqli_query($conn, $queryAssociate);
+    $associate_properties = [];
+    while ($row = mysqli_fetch_assoc($resultAssociate)) {
+        $row['image_path'] = get_property_image($conn, $row['property_id']);
+        $associate_properties[] = $row;
+    }
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_property_listings.css">
@@ -218,139 +218,139 @@ while ($row = mysqli_fetch_assoc($resultAssociate)) {
 </div>
 
 <script>
-// ===== Tabs =====
-document.querySelectorAll('.tab-btn').forEach(button => {
-    button.addEventListener('click', () => {
-        // Remove active from all buttons and hide all panels
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(panel => panel.style.display = 'none');
+    // ===== Tabs =====
+    document.querySelectorAll('.tab-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active from all buttons and hide all panels
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.style.display = 'none');
 
-        // Activate clicked tab and show its panel
-        button.classList.add('active');
-        const tabPanel = document.getElementById('tab-' + button.dataset.tab);
-        if (tabPanel) tabPanel.style.display = 'block';
+            // Activate clicked tab and show its panel
+            button.classList.add('active');
+            const tabPanel = document.getElementById('tab-' + button.dataset.tab);
+            if (tabPanel) tabPanel.style.display = 'block';
+        });
     });
-});
 
-// ===== Modal =====
-const modal = document.getElementById('propertyModal');
-const modalBody = document.getElementById('modalBody');
-const closeBtn = modal.querySelector('.close');
+    // ===== Modal =====
+    const modal = document.getElementById('propertyModal');
+    const modalBody = document.getElementById('modalBody');
+    const closeBtn = modal.querySelector('.close');
 
-// Close modal
-closeBtn.addEventListener('click', () => modal.style.display = 'none');
-window.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+    // Close modal
+    closeBtn.addEventListener('click', () => modal.style.display = 'none');
+    window.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
 
-// ===== View Property Post =====
-document.addEventListener('click', async e => {
-    if (!e.target.classList.contains('btn-view')) return;
+    // ===== View Property Post =====
+    document.addEventListener('click', async e => {
+        if (!e.target.classList.contains('btn-view')) return;
 
-    const propertyId = e.target.dataset.id;
-    if (!propertyId) return;
+        const propertyId = e.target.dataset.id;
+        if (!propertyId) return;
 
-    // Get property_type from button data attribute
-    const propertyTypeFromBtn = e.target.dataset.type || '-';
+        // Get property_type from button data attribute
+        const propertyTypeFromBtn = e.target.dataset.type || '-';
 
-    modal.style.display = 'block';
+        modal.style.display = 'block';
 
-    // Clear existing content
-    const mainImage = modal.querySelector('.property-main-image');
-    modal.querySelector('.property-name').textContent = '';
-    modal.querySelector('.property-type').textContent = '';
-    modal.querySelectorAll('.modal-right .value').forEach(v => v.textContent = '');
-    modal.querySelector('.property-images').innerHTML = '';
-    modal.querySelector('.property-description').textContent = '';
+        // Clear existing content
+        const mainImage = modal.querySelector('.property-main-image');
+        modal.querySelector('.property-name').textContent = '';
+        modal.querySelector('.property-type').textContent = '';
+        modal.querySelectorAll('.modal-right .value').forEach(v => v.textContent = '');
+        modal.querySelector('.property-images').innerHTML = '';
+        modal.querySelector('.property-description').textContent = '';
 
-    try {
-        const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${propertyId}`);
-        const data = await res.json();
+        try {
+            const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${propertyId}`);
+            const data = await res.json();
 
-        if (!data.success || !data.property) {
-            alert(data.error || 'Failed to load property details.');
-            modal.style.display = 'none';
-            return;
-        }
+            if (!data.success || !data.property) {
+                alert(data.error || 'Failed to load property details.');
+                modal.style.display = 'none';
+                return;
+            }
 
-        const prop = data.property;
+            const prop = data.property;
 
-        // Populate left column
-        mainImage.style.backgroundImage = `url('${prop.images?.[0] || '/BatEstateExplorer/assets/images/bg4.jpg'}')`;
-        modal.querySelector('.property-name').textContent = prop.title || '-';
+            // Populate left column
+            mainImage.style.backgroundImage = `url('${prop.images?.[0] || '/BatEstateExplorer/assets/images/bg4.jpg'}')`;
+            modal.querySelector('.property-name').textContent = prop.title || '-';
 
-        // Populate right column
-        modal.querySelector('.location').textContent = prop.location || '-';
-        modal.querySelector('.price').textContent = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
-        modal.querySelector('.property-type').textContent = prop.property_type || propertyTypeFromBtn || '-'; // fallback
-        modal.querySelector('.bedrooms').textContent = prop.bedrooms || 0;
-        modal.querySelector('.bathrooms').textContent = prop.bathrooms || 0;
-        modal.querySelector('.sqm').textContent = `${prop.sqm || 0} sqm`;
-        modal.querySelector('.lot_size').textContent = `${prop.lot_size || 0} sqm`;
-        modal.querySelector('.status').textContent = prop.status || '-';
-        modal.querySelector('.date_uploaded').textContent = prop.date_uploaded || '-';
+            // Populate right column
+            modal.querySelector('.location').textContent = prop.location || '-';
+            modal.querySelector('.price').textContent = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
+            modal.querySelector('.property-type').textContent = prop.property_type || propertyTypeFromBtn || '-'; // fallback
+            modal.querySelector('.bedrooms').textContent = prop.bedrooms || 0;
+            modal.querySelector('.bathrooms').textContent = prop.bathrooms || 0;
+            modal.querySelector('.sqm').textContent = `${prop.sqm || 0} sqm`;
+            modal.querySelector('.lot_size').textContent = `${prop.lot_size || 0} sqm`;
+            modal.querySelector('.status').textContent = prop.status || '-';
+            modal.querySelector('.date_uploaded').textContent = prop.date_uploaded || '-';
 
-        // Description
-        modal.querySelector('.property-description').textContent = prop.description || '';
+            // Description
+            modal.querySelector('.property-description').textContent = prop.description || '';
 
-        // Populate images gallery with selection functionality
-        const gallery = modal.querySelector('.property-images');
-        (prop.images || []).forEach((img, idx) => {
-            const imgEl = document.createElement('img');
-            imgEl.src = img;
+            // Populate images gallery with selection functionality
+            const gallery = modal.querySelector('.property-images');
+            (prop.images || []).forEach((img, idx) => {
+                const imgEl = document.createElement('img');
+                imgEl.src = img;
 
-            if(idx === 0) imgEl.classList.add('active'); // first image selected by default
+                if(idx === 0) imgEl.classList.add('active'); // first image selected by default
 
-            imgEl.addEventListener('click', () => {
-                mainImage.style.backgroundImage = `url('${img}')`;
-                gallery.querySelectorAll('img').forEach(i => i.classList.remove('active'));
-                imgEl.classList.add('active');
+                imgEl.addEventListener('click', () => {
+                    mainImage.style.backgroundImage = `url('${img}')`;
+                    gallery.querySelectorAll('img').forEach(i => i.classList.remove('active'));
+                    imgEl.classList.add('active');
+                });
+
+                gallery.appendChild(imgEl);
             });
 
-            gallery.appendChild(imgEl);
-        });
+        } catch (err) {
+            console.error(err);
+            alert('An unexpected error occurred.');
+            modal.style.display = 'none';
+        }
+    });
 
-    } catch (err) {
-        console.error(err);
-        alert('An unexpected error occurred.');
-        modal.style.display = 'none';
-    }
-});
+    // ===== Admin Actions: Approve / Reject / Remove =====
+    document.addEventListener('click', async e => {
+        if (!e.target.classList.contains('btn-approve') &&
+            !e.target.classList.contains('btn-reject') &&
+            !e.target.classList.contains('btn-remove')) return;
 
-// ===== Admin Actions: Approve / Reject / Remove =====
-document.addEventListener('click', async e => {
-    if (!e.target.classList.contains('btn-approve') &&
-        !e.target.classList.contains('btn-reject') &&
-        !e.target.classList.contains('btn-remove')) return;
+        const propertyId = e.target.dataset.id;
+        if (!propertyId) return;
 
-    const propertyId = e.target.dataset.id;
-    if (!propertyId) return;
+        let action = '';
+        if (e.target.classList.contains('btn-approve')) action = 'approve';
+        if (e.target.classList.contains('btn-reject')) action = 'reject';
+        if (e.target.classList.contains('btn-remove')) action = 'remove';
 
-    let action = '';
-    if (e.target.classList.contains('btn-approve')) action = 'approve';
-    if (e.target.classList.contains('btn-reject')) action = 'reject';
-    if (e.target.classList.contains('btn-remove')) action = 'remove';
+        if (!action) return;
 
-    if (!action) return;
+        if (!confirm(`Are you sure you want to ${action} this property?`)) return;
 
-    if (!confirm(`Are you sure you want to ${action} this property?`)) return;
+        try {
+            const formData = new FormData();
+            formData.append('property_id', propertyId);
+            formData.append('action', action);
 
-    try {
-        const formData = new FormData();
-        formData.append('property_id', propertyId);
-        formData.append('action', action);
+            const res = await fetch('/BatEstateExplorer/public/api/admin_property_action.php', {
+                method: 'POST',
+                body: formData
+            });
 
-        const res = await fetch('/BatEstateExplorer/public/api/admin_property_action.php', {
-            method: 'POST',
-            body: formData
-        });
+            const data = await res.json();
+            alert(data.message || data.error || 'Unexpected response');
 
-        const data = await res.json();
-        alert(data.message || data.error || 'Unexpected response');
-
-        if (data.success) location.reload();
-    } catch (err) {
-        console.error(err);
-        alert('An error occurred while performing the action.');
-    }
-});
+            if (data.success) location.reload();
+        } catch (err) {
+            console.error(err);
+            alert('An error occurred while performing the action.');
+        }
+    });
 </script>
 

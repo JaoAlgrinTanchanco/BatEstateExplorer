@@ -33,10 +33,9 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_ac
         <nav class="sidebar-nav">
           <ul>
             <li><a href="admin_dashboard.php?view=dashboard"><i class="fa-solid fa-chart-pie"></i><span>Dashboard</span></a></li>
-            <li><a href="admin_dashboard.php?view=direct_agents"><i class="fa-solid fa-user-tie"></i><span>Direct Agents</span></a></li>
-            <li><a href="admin_dashboard.php?view=associate_agents"><i class="fa-solid fa-people-group"></i><span>Associate Agents</span></a></li>
-            <li><a href="admin_dashboard.php?view=properties"><i class="fa-solid fa-building"></i><span>Property Listings</span></a></li>
             <li><a href="admin_dashboard.php?view=applications"><i class="fa-solid fa-file-signature"></i><span>Applications</span></a></li>
+            <li><a href="admin_dashboard.php?view=agents"><i class="fa-solid fa-users"></i><span>Agents</span></a></li>
+            <li><a href="admin_dashboard.php?view=properties"><i class="fa-solid fa-building"></i><span>Property Listings</span></a></li>
             <li><a href="admin_dashboard.php?view=reports"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a></li>
             <li><a href="admin_dashboard.php?view=performance"><i class="fa-solid fa-ranking-star"></i><span>Performance</span></a></li>
             <li><a href="admin_dashboard.php?view=wallet"><i class="fa-solid fa-wallet"></i><span>Wallet</span></a></li>
