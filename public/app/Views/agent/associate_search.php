@@ -87,7 +87,7 @@
     // ================================
     // Count Query
     // ================================
-    $countSql = "SELECT COUNT(*) AS total FROM properties p WHERE p.status = 'available'";
+    $countSql = "SELECT COUNT(*) AS total FROM properties p WHERE p.status IN ('available', 'sold')";
     $params   = [];
     $types    = "";
     applyFilters($countSql, $params, $types, $location, $property_type, $bedrooms, $bathrooms, $price_range, $size);
@@ -113,11 +113,18 @@
     // ================================
     // Main Query
     // ================================
-    $sql = "SELECT p.*, pi.image_path
-            FROM properties p
-            LEFT JOIN property_images pi 
-                ON p.id = pi.property_id AND pi.is_primary = 1
-            WHERE p.status = 'available'";
+    $sql = "
+        SELECT p.*, 
+            (
+                SELECT image_path 
+                FROM property_images 
+                WHERE property_id = p.id 
+                ORDER BY is_primary DESC, id ASC 
+                LIMIT 1
+            ) AS image_path
+        FROM properties p
+        WHERE p.status IN ('available', 'sold')
+    ";
 
     $params = [];
     $types  = "";

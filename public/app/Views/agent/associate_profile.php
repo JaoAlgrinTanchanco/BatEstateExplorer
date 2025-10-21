@@ -61,7 +61,7 @@
             $company_name = $company['name'] ?? $company_name;
         }
 
-        // Fetch all properties for this agent
+        // Fetch all properties for this agent with conditional logic
         $stmt = $conn->prepare("
             SELECT DISTINCT p.*, 
                 sa.id AS sold_by_agent_id, 
@@ -69,10 +69,24 @@
             FROM properties p
             LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
             LEFT JOIN users su ON sa.user_id = su.id
-            WHERE p.agent_id = ? OR p.sold_by_agent_id = ?
+            WHERE 
+                (
+                    -- Case 1: Property created by this agent and not sold by anyone
+                    (p.agent_id = ? AND (p.sold_by_agent_id IS NULL))
+                    
+                    OR
+                    
+                    -- Case 2: Property created and sold by the same agent
+                    (p.agent_id = ? AND p.sold_by_agent_id = ?)
+                    
+                    OR
+                    
+                    -- Case 3: Property sold by this agent, even if created by another
+                    (p.sold_by_agent_id = ?)
+                )
             ORDER BY p.created_at DESC
         ");
-        $stmt->bind_param("ii", $agent_id, $agent_id);
+        $stmt->bind_param("iiii", $agent_id, $agent_id, $agent_id, $agent_id);
         $stmt->execute();
         $listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
