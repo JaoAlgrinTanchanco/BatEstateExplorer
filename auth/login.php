@@ -1,14 +1,22 @@
 <?php
-session_start();
-require_once '../config/database.php';
-require_once __DIR__ . '/../public/app/redirects.php';
+    session_start();
+    require_once '../config/database.php';
+    require_once __DIR__ . '/../public/app/redirects.php';
+    include __DIR__ . "/../components/notification.php";
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
+    // Only handle POST requests with an email field
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST['email'])) {
+        header("Location: login.php");
+        exit;
+    }
+
     $email = sanitize_input($conn, $_POST['email']);
     $password = $_POST['password'] ?? '';
-    $isAjax = isset($_POST['ajax']) ? (bool)$_POST['ajax'] : false;
+    $isAjax = !empty($_POST['ajax']); // will use later if needed for async requests
 
-    // Basic validation
+    // ==============================
+    // 1. Basic Validation
+    // ==============================
     if (empty($email) || empty($password)) {
         $_SESSION['old_email'] = $email;
         $_SESSION['notification'] = [
@@ -19,12 +27,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
         exit;
     }
 
-    // Fetch user by email
-    $stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE email = ?");
-    mysqli_stmt_bind_param($stmt, "s", $email);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    $user = mysqli_fetch_assoc($result);
+    // ==============================
+    // 2. Fetch user by email
+    // ==============================
+    $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
 
     if (!$user) {
         $_SESSION['old_email'] = $email;
@@ -36,7 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
         exit;
     }
 
-    // Verify password
+    // ==============================
+    // 3. Verify password
+    // ==============================
     if (!verify_password($password, $user['password_hash'])) {
         $_SESSION['old_email'] = $email;
         $_SESSION['notification'] = [
@@ -47,7 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
         exit;
     }
 
-    // Check account status
+    // ==============================
+    // 4. Check account status
+    // ==============================
     if ($user['status'] !== 'active') {
         $_SESSION['old_email'] = $email;
         $_SESSION['notification'] = [
@@ -58,7 +72,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
         exit;
     }
 
-    // Successful login
+    // ==============================
+    // 5. Successful login
+    // ==============================
     $_SESSION['user_token'] = generate_token($user['id'], $user['email'], $user['user_type']);
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['user_type'] = $user['user_type'];
@@ -68,9 +84,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
         'message' => 'Logged in successfully!'
     ];
 
-    redirect_by_user_type($user['user_type']); // redirects and exits
+    // Redirect user based on type (agent, admin, etc.)
+    redirect_by_user_type($user['user_type']);
     exit;
-}
 ?>
 
 <!DOCTYPE html>
@@ -121,21 +137,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     </div>
 </div>
 
-<?php include __DIR__ . "/../components/notification.php"; ?>
+<!-- =========================
+     Blocked Account Modal
+========================= -->
+<div id="blockedModal" class="modal hidden">
+  <div class="modal-content">
+    <h2>Your account has been banned</h2>
+    <p id="blockReason">Reason: <span></span></p>
+    <p id="blockDuration">Duration Remaining: <span></span></p>
+    <button id="closeModalBtn">Close</button>
+  </div>
+</div>
 
 <script>
-    const togglePasswordText = document.querySelector('#togglePasswordText');
+    document.addEventListener('DOMContentLoaded', () => {
     const password = document.querySelector('#password');
+    const togglePasswordText = document.querySelector('#togglePasswordText');
+    const modal = document.querySelector('#blockedModal');
+    const closeModalBtn = document.querySelector('#closeModalBtn');
 
+    // ================================
+    // 1. Toggle Password Visibility
+    // ================================
     togglePasswordText.addEventListener('click', () => {
-        if (password.type === 'password') {
-            password.type = 'text';
-            togglePasswordText.textContent = 'Hide';
-        } else {
-            password.type = 'password';
-            togglePasswordText.textContent = 'Show';
-        }
+        const isHidden = password.type === 'password';
+        password.type = isHidden ? 'text' : 'password';
+        togglePasswordText.textContent = isHidden ? 'Hide' : 'Show';
+    });
+
+    // ================================
+    // 2. Show Blocked Modal (for later use)
+    // ================================
+    function showBlockedModal(reason, remainingTime) {
+        document.querySelector('#blockReason span').textContent = reason;
+        document.querySelector('#blockDuration span').textContent = remainingTime;
+        modal.classList.remove('hidden');
+    }
+
+    closeModalBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+    });
+
+    // ================================
+    // 3. (Later) Triggered when login detects blocked account
+    // ================================
+    // Example:
+    // showBlockedModal("Inappropriate behavior", "2 days 5 hours remaining");
     });
 </script>
+
 </body>
 </html>
