@@ -153,10 +153,27 @@
 <?php include __DIR__ . "/../components/notification.php"; ?>
 
 <script>
+    /* ==============================================
+    1️⃣ Run Block Check Immediately on Page Load
+    ============================================== */
+    (function triggerBlockCheckFirst() {
+        // Use absolute-safe path — adjust if needed
+        fetch('../public/api/block_check.php')
+            .then(res => res.json())
+            .then(data => {
+                console.log('[Block Check Executed FIRST]', data.message, data.unblocked_agents?.length || 0, 'agents updated');
+            })
+            .catch(err => console.error('Block check failed before page load:', err));
+    })();
+
+    /* ==============================================
+    2️⃣ Continue normal page logic after block check
+    ============================================== */
     document.addEventListener('DOMContentLoaded', () => {
-        /* ================================
-        Toggle Password Visibility
-        ================================ */
+
+        // ================================
+        // Toggle Password Visibility
+        // ================================
         const togglePasswordText = document.querySelector('#togglePasswordText');
         const password = document.querySelector('#password');
 
@@ -172,29 +189,24 @@
             });
         }
 
-        /* ================================
-        Show Blocked Account Modal
-        (temporary or permanent)
-        ================================ */
+        // ================================
+        // Show Blocked Account Modal
+        // ================================
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('blocked') === '1') {
             const reason = urlParams.get('reason') || 'Violation of platform policies';
             const duration = (urlParams.get('duration') || '7 days').toLowerCase();
 
-            // Determine if it's a lifetime/permanent ban
             const isPermanent = ['lifetime', 'permanent', 'permanently', 'forever'].includes(duration);
-
             const modal = document.createElement('div');
             modal.className = 'blocked-modal';
 
-            // Set icon and message based on type
             const iconColor = isPermanent ? '#d93025' : '#e6b800';
             const iconBg = isPermanent ? '#ffe6e6' : '#fff8dc';
             const message = isPermanent
                 ? 'Your account has been permanently banned by the administrator.'
                 : 'Your account has been temporarily disabled by the administrator.';
 
-            // Build modal content
             const title = isPermanent ? 'Account Banned' : 'Account Blocked';
 
             modal.innerHTML = `
@@ -216,7 +228,6 @@
                     <button id="closeBlockedModal" class="blocked-btn">Okay</button>
                 </div>
             `;
-
             document.body.appendChild(modal);
 
             document.querySelector('#closeBlockedModal').addEventListener('click', () => {
@@ -224,23 +235,6 @@
                 window.history.replaceState({}, document.title, window.location.pathname);
             });
         }
-
-        /* ================================
-        Periodically trigger block_check.php
-        - Runs every 5 minutes (300,000 ms)
-        - Silent background request
-        ================================ */
-        const triggerBlockCheck = () => {
-            fetch('../public/api/block_check.php')
-                .then(res => res.json())
-                .then(data => {
-                    console.log('[Block Check]', data.message, data.unblocked_agents?.length || 0, 'agents updated');
-                })
-                .catch(err => console.error('Block check failed:', err));
-        };
-
-        triggerBlockCheck();
-        setInterval(triggerBlockCheck, 5 * 60 * 1000);
     });
 </script>
 
