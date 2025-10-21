@@ -36,9 +36,8 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_ac
             <li><a href="admin_dashboard.php?view=applications"><i class="fa-solid fa-file-signature"></i><span>Applications</span></a></li>
             <li><a href="admin_dashboard.php?view=agents"><i class="fa-solid fa-users"></i><span>Agents</span></a></li>
             <li><a href="admin_dashboard.php?view=properties"><i class="fa-solid fa-building"></i><span>Property Listings</span></a></li>
-            <li><a href="admin_dashboard.php?view=reports"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a></li>
             <li><a href="admin_dashboard.php?view=performance"><i class="fa-solid fa-ranking-star"></i><span>Performance</span></a></li>
-            <li><a href="admin_dashboard.php?view=reported_accounts"><i class="fa-solid fa-user-slash"></i><span>Reported Accounts</span></a></li>
+            <li><a href="admin_dashboard.php?view=reported_accounts"><i class="fa-solid fa-flag"></i><span>Reported Accounts</span></a></li>
             <li><a href="admin_dashboard.php?view=wallet"><i class="fa-solid fa-wallet"></i><span>Wallet</span></a></li>
           </ul>
         </nav>

@@ -88,96 +88,149 @@ while ($row = $result->fetch_assoc()) {
 </div>
 
 <!-- Modal -->
-<div id="reportModal" class="modal" style="display:none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Report Details</h2>
-        </div>
-        <div class="modal-body" id="modalBody">
-            <!-- Dynamic content -->
-        </div>
-        <div class="modal-footer">
-            <button id="blockAgentBtn" class="btn btn-danger">Block Agent</button>
-            <button class="cancel-btn">Close</button>
-        </div>
+<div id="reportModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Report Details</h2>
+      <button class="cancel-btn">&times;</button>
     </div>
+    <div class="modal-body" id="modalBody">
+      <!-- Dynamic content -->
+    </div>
+    <div class="modal-footer">
+      <button id="blockUnblockBtn" class="btn btn-danger">Block Agent</button>
+      <button id="deleteReportBtn" class="btn btn-warning">Delete Report</button>
+      <button class="cancel-btn">Close</button>
+    </div>
+  </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const statusFilter = document.getElementById('statusFilter');
-    const reportsBody = document.getElementById('reportsBody');
-    const reportModal = document.getElementById('reportModal');
-    const modalBody = document.getElementById('modalBody');
-    const blockBtn = document.getElementById('blockAgentBtn');
+    document.addEventListener('DOMContentLoaded', () => {
+        const statusFilter = document.getElementById('statusFilter');
+        const reportsBody = document.getElementById('reportsBody');
+        const reportModal = document.getElementById('reportModal');
+        const modalBody = document.getElementById('modalBody');
+        const blockUnblockBtn = document.getElementById('blockUnblockBtn');
+        const deleteReportBtn = document.getElementById('deleteReportBtn');
 
-    const penaltyNotes = {
-        'fraudulent_listing': '⚠️ This account will be banned for life due to fraudulent/fake listings.',
-        'harassment': '⚠️ This account may be banned for life for harassment or inappropriate behavior.',
-        'misinformation': '⚠️ This account will be suspended for 7 days due to false/misleading info.',
-        'spam': '⚠️ This account will be suspended for 48 hours due to spam or irrelevant contact.',
-        'other': '⚠️ The account may face temporary suspension depending on severity.'
-    };
+        const penaltyNotes = {
+            'fraudulent_listing': 'This account will be banned for life due to fraudulent/fake listings.',
+            'harassment': 'This account may be banned for life for harassment or inappropriate behavior.',
+            'misinformation': 'This account will be suspended for 7 days due to false/misleading information.',
+            'spam': 'This account will be suspended for 48 hours due to spam or irrelevant contact.',
+            'other': 'The account may face temporary suspension depending on severity.'
+        };
 
-    // Filter by status
-    if (statusFilter && reportsBody) {
-        statusFilter.addEventListener('change', () => {
-            const selected = statusFilter.value;
-            const rows = reportsBody.querySelectorAll('tr.clickable-row');
-            rows.forEach(row => {
-                if (selected === 'all' || row.dataset.status === selected) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
+        const categoryFullNames = {
+            'fraudulent_listing': 'Fraudulent or fake listing',
+            'harassment': 'Harassment or inappropriate behavior',
+            'misinformation': 'False or misleading information',
+            'spam': 'Spam or irrelevant contact',
+            'other': 'Other'
+        };
+
+        let currentAgentId = null;
+        let currentCategory = null;
+        let currentStatus = null;
+
+        // Filter by status
+        if (statusFilter && reportsBody) {
+            statusFilter.addEventListener('change', () => {
+                const selected = statusFilter.value;
+                reportsBody.querySelectorAll('tr.clickable-row').forEach(row => {
+                    row.style.display = (selected === 'all' || row.dataset.status === selected) ? '' : 'none';
+                });
             });
-        });
-    }
-
-    // Click row to open modal
-    if (reportsBody) {
-        reportsBody.addEventListener('click', (e) => {
-            let row = e.target.closest('tr.clickable-row');
-            if (!row) return;
-
-            const category = row.dataset.category || 'other';
-            modalBody.innerHTML = `
-                <p><strong>Reporter:</strong> ${row.dataset.reporter}</p>
-                <p><strong>Reported Agent:</strong> ${row.dataset.agent}</p>
-                <p><strong>Reason:</strong> ${row.dataset.reason}</p>
-                <p><strong>Other Reason:</strong> ${row.dataset.otherReason || 'N/A'}</p>
-                <p><strong>Details:</strong> ${row.dataset.details}</p>
-                <p><strong>Reported On:</strong> ${new Date(row.dataset.createdAt).toLocaleString()}</p>
-                <p style="color:red;"><strong>Penalty Note:</strong> ${penaltyNotes[category] || penaltyNotes['other']}</p>
-            `;
-            blockBtn.dataset.agentId = row.dataset.agentId;
-            reportModal.style.display = 'block';
-        });
-    }
-
-    // Block agent confirmation
-    blockBtn.addEventListener('click', () => {
-        const agentId = blockBtn.dataset.agentId;
-        if (!agentId) return;
-        if (confirm("Are you sure you want to block this agent?")) {
-            // Make AJAX request to block agent
-            fetch('/BatEstateExplorer/public/admin_block_agent.php', {
-                method: 'POST',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({agent_id: agentId})
-            })
-            .then(res => res.json())
-            .then(data => {
-                alert(data.message || 'Agent blocked successfully.');
-                reportModal.style.display = 'none';
-                location.reload();
-            })
-            .catch(err => alert('Error blocking agent.'));
         }
-    });
 
-    // Close modal
-    reportModal.querySelectorAll('.cancel-btn').forEach(btn => btn.addEventListener('click', () => reportModal.style.display = 'none'));
-    window.addEventListener('click', e => { if(e.target===reportModal) reportModal.style.display='none'; });
-});
+        // Click row to open modal
+        if (reportsBody) {
+            reportsBody.addEventListener('click', (e) => {
+                const row = e.target.closest('tr.clickable-row');
+                if (!row) return;
+
+                currentAgentId = row.dataset.agentId;
+                currentCategory = row.dataset.category || 'other';
+                currentStatus = row.dataset.status;
+
+                let penaltyHtml = `<p style="color:red;"><strong>Penalty Note:</strong> ${penaltyNotes[currentCategory]}</p>`;
+
+                // Duration selection if 'other'
+                if (currentCategory === 'other') {
+                    penaltyHtml += `
+                        <p><strong>Set Ban Duration:</strong>
+                            <select id="banDurationSelect">
+                                <option value="48hrs">48 hours</option>
+                                <option value="7days">7 days</option>
+                                <option value="30days">30 days</option>
+                                <option value="lifetime">Banned for life</option>
+                            </select>
+                        </p>
+                    `;
+                }
+
+                modalBody.innerHTML = `
+                    <p><strong>Reporter:</strong> ${row.dataset.reporter}</p>
+                    <p><strong>Reported Agent:</strong> ${row.dataset.agent}</p>
+                    <p><strong>Reason:</strong> ${categoryFullNames[currentCategory]}</p>
+                    <p><strong>Other Reason:</strong> ${row.dataset.otherReason || 'N/A'}</p>
+                    <p><strong>Details:</strong> ${row.dataset.details}</p>
+                    <p><strong>Reported On:</strong> ${new Date(row.dataset.createdAt).toLocaleString()}</p>
+                    ${penaltyHtml}
+                `;
+
+                // Update Block/Unblock button text based on agent's current status
+                blockUnblockBtn.textContent = currentStatus === 'resolved' ? 'Unblock Agent' : 'Block Agent';
+
+                reportModal.style.display = 'block';
+            });
+        }
+
+        // Block / Unblock agent
+        blockUnblockBtn.addEventListener('click', () => {
+            if (!currentAgentId) return;
+
+            const duration = document.getElementById('banDurationSelect')?.value || null;
+            const action = blockUnblockBtn.textContent.includes('Unblock') ? 'unblock' : 'block';
+
+            if (confirm(`Are you sure you want to ${action} this agent?`)) {
+                fetch('/BatEstateExplorer/public/api/admin_block_agent.php', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ agent_id: currentAgentId, duration: duration, action: action })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message || `Agent ${action}ed successfully.`);
+                    reportModal.style.display = 'none';
+                    location.reload();
+                })
+                .catch(err => alert(`Error trying to ${action} agent.`));
+            }
+        });
+
+        // Delete report
+        deleteReportBtn.addEventListener('click', () => {
+            if (!currentAgentId) return;
+            if (confirm("Are you sure you want to delete this report?")) {
+                fetch('/BatEstateExplorer/public/admin_delete_report.php', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ agent_id: currentAgentId })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message || 'Report deleted successfully.');
+                    reportModal.style.display = 'none';
+                    location.reload();
+                })
+                .catch(err => alert('Error deleting report.'));
+            }
+        });
+
+        // Close modal
+        reportModal.querySelectorAll('.cancel-btn').forEach(btn => btn.addEventListener('click', () => reportModal.style.display = 'none'));
+        window.addEventListener('click', e => { if(e.target === reportModal) reportModal.style.display = 'none'; });
+    });
 </script>
