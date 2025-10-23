@@ -25,8 +25,16 @@ if (!$first_name || !$last_name || !$email || !$password || !$confirm) {
     exit;
 }
 
+// Validate email
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $_SESSION['notification'] = ['type' => 'error', 'message' => 'Invalid email address format.'];
+    header('Location: signup.php');
+    exit;
+}
+
+// Validate phone (digits only, optional +, length 7-15)
+if (!preg_match('/^\+?[0-9]{7,15}$/', $phone)) {
+    $_SESSION['notification'] = ['type' => 'error', 'message' => 'Invalid phone number format.'];
     header('Location: signup.php');
     exit;
 }
@@ -84,36 +92,39 @@ mysqli_stmt_close($stmt);
 // === Hash password ===
 $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-// === Handle profile picture (optional) ===
-$profile_picture_path = null;
-if (!empty($_FILES['profile_picture']['name']) && $_FILES['profile_picture']['error'] !== UPLOAD_ERR_NO_FILE) {
-    $file = $_FILES['profile_picture'];
-    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-
-    if (!in_array($file['type'], $allowedTypes, true)) {
-        $_SESSION['notification'] = ['type' => 'error', 'message' => 'Invalid profile picture type.'];
-        header('Location: signup.php');
-        exit;
-    }
-
-    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    $filename = 'pfp_' . uniqid('', true) . '.' . $ext;
-    $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/storage/uploads/profile_images/';
-    
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
-    }
-
-    $destination = $uploadDir . $filename;
-    if (!move_uploaded_file($file['tmp_name'], $destination)) {
-        $_SESSION['notification'] = ['type' => 'error', 'message' => 'Failed to upload profile picture.'];
-        header('Location: signup.php');
-        exit;
-    }
-
-    // Store relative path
-    $profile_picture_path = str_replace($_SERVER['DOCUMENT_ROOT'] . '/', '', $destination);
+// === Handle profile picture (now required) ===
+if (empty($_FILES['profile_picture']['name']) || $_FILES['profile_picture']['error'] === UPLOAD_ERR_NO_FILE) {
+    $_SESSION['notification'] = ['type' => 'error', 'message' => 'Profile picture is required.'];
+    header('Location: signup.php');
+    exit;
 }
+
+$file = $_FILES['profile_picture'];
+$allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+
+if (!in_array($file['type'], $allowedTypes, true)) {
+    $_SESSION['notification'] = ['type' => 'error', 'message' => 'Invalid profile picture type.'];
+    header('Location: signup.php');
+    exit;
+}
+
+$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+$filename = 'pfp_' . uniqid('', true) . '.' . $ext;
+$uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/storage/uploads/profile_images/';
+
+if (!is_dir($uploadDir)) {
+    mkdir($uploadDir, 0755, true);
+}
+
+$destination = $uploadDir . $filename;
+if (!move_uploaded_file($file['tmp_name'], $destination)) {
+    $_SESSION['notification'] = ['type' => 'error', 'message' => 'Failed to upload profile picture.'];
+    header('Location: signup.php');
+    exit;
+}
+
+// Store relative path
+$profile_picture_path = str_replace($_SERVER['DOCUMENT_ROOT'] . '/', '', $destination);
 
 // === Insert user into DB ===
 $stmt = mysqli_prepare($conn, 'INSERT INTO users 

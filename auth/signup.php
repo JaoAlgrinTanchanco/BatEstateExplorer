@@ -47,9 +47,9 @@ session_start();
         <form id="signupForm" action="../auth/signup_user.php" method="POST" enctype="multipart/form-data">
             <!-- Profile Picture Upload -->
             <div class="form-group profile-pic-group stagger-item">
-                <label>Profile Picture (Optional)</label>
+                <label>Profile Picture *</label>
                 <div class="profile-pic-wrapper">
-                    <input type="file" id="profile_picture" name="profile_picture" accept="image/png, image/jpeg, image/jpg, image/gif">
+                    <input type="file" id="profile_picture" name="profile_picture" accept="image/png, image/jpeg, image/jpg, image/gif" required>
                     <div class="profile-pic-preview" id="profilePicPreview">
                         <span class="upload-text">Upload Here</span>
                     </div>
@@ -70,11 +70,12 @@ session_start();
             <div class="form-row stagger-item">
                 <div class="form-group">
                     <label for="email">Email Address *</label>
-                    <input type="email" id="email" name="email" required>
+                    <input type="email" id="email" name="email" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" title="Enter a valid email address">
                 </div>
+
                 <div class="form-group">
-                    <label for="phone">Phone Number</label>
-                    <input type="tel" id="phone" name="phone">
+                    <label for="phone">Phone Number *</label>
+                    <input type="tel" id="phone" name="phone" required pattern="^\+?[0-9]{7,15}$" title="Enter a valid phone number (digits only, optional +, 7-15 characters)">
                 </div>
             </div>
             

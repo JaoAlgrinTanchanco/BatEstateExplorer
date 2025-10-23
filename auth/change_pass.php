@@ -52,17 +52,17 @@ function send_otp($email, $otp) {
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'johnanseldoton@gmail.com';
-        $mail->Password   = 'smcnahgndykgieab'; // Gmail App Password
+        $mail->Username   = 'batestate07@gmail.com';
+        $mail->Password   = 'jgsiczkzxyvuxvgb'; // Gmail App Password
         $mail->SMTPSecure = 'tls';
         $mail->Port       = 587;
 
-        $mail->setFrom('johnanseldoton@gmail.com', 'BatEstate');
+        $mail->setFrom('batestate07@gmail.com', 'BatEstate Explorer');
         $mail->addAddress($email);
         $mail->isHTML(true);
         $mail->CharSet = 'UTF-8'; // for emoji & special chars
         $mail->Encoding = 'base64';
-        $mail->Subject = 'Password Reset OTP - BatEstate';
+        $mail->Subject = 'Password Reset OTP - BatEstate Explorer';
 
         // Embed your local logo
         $mail->addEmbeddedImage(
