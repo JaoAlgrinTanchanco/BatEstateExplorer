@@ -1,0 +1,211 @@
+/* =========================
+   Associate Home Styles
+========================= */
+
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  height: 100%;
+  min-height: 100vh;
+  font-family: 'Satoshi', sans-serif;
+  background: #fff;
+  color: #222;
+  line-height: 1.5;
+}
+
+/* ---------------- Welcome Card ---------------- */
+.welcome-card {
+  width: 100%;
+  max-width: 1300px;
+  padding: 0 1rem 0 1rem;
+  margin: 3.5rem auto 2rem; /* center + space below */
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.welcome-card .welcome-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+/* ---------------- Section Titles ---------------- */
+.section-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #111;
+  font-family: 'Satoshi', sans-serif;
+}
+
+/* ---------------- Container ---------------- */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* =========================
+   Properties Section Layout
+========================= */
+.properties {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* center everything horizontally */
+  width: 100%;
+  min-height: 800px;
+  padding: 2rem 0;
+}
+
+.properties .container {
+  width: 100%;
+  max-width: 1700px; /* same width for title + grid */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Section Title */
+.properties .section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111;
+  font-family: 'Satoshi', 'Inter', sans-serif;
+  text-align: left; /* change to center if you want */
+  margin: 0;
+}
+
+/* Properties Grid */
+.properties-grid {
+  width: 100%; /* now matches container width */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+/* =========================
+   Town / Horizontal Scroll Styles
+========================= */
+
+/* Category spacing & font */
+.town-section {
+    margin-bottom: 3rem;
+}
+.town-section h3.section-title {
+    font-size: 1.9rem; /* larger font for town categories */
+    margin-bottom: 1rem;
+}
+
+/* Horizontal scrolling row with fixed card width */
+.town-grid-wrapper {
+    display: flex;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    gap: 1.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.town-grid-wrapper::-webkit-scrollbar { display: none; }
+.town-grid-wrapper { -ms-overflow-style: none; scrollbar-width: none; }
+
+.town-grid {
+    display: flex; /* horizontal scroll using flex */
+    gap: 1.5rem;
+}
+
+/* Force all cards to have same width for consistency */
+.town-grid .property-card {
+    flex: 0 0 250px; /* fixed width */
+    max-width: 250px;
+}
+
+/* "See More" text link inside horizontal scroll */
+.town-grid .see-more-text {
+    flex: 0 0 250px; /* same width as property cards */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #111;
+    text-decoration: none; /* remove underline */
+    border: 1px dashed transparent; /* invisible by default */
+    padding: 0.5rem 0;
+    cursor: pointer;
+    transition: color 0.2s ease, border 0.2s ease, background 0.2s ease;
+}
+
+.town-grid .see-more-text:hover {
+    border: 2px dashed #000; /* black broken line border */
+    background: #c9c9c9;
+    color: #000; /* dimmed color */
+    border-radius: 20px;
+}
+
+/* =========================
+   Associate Home Responsive Property Grid
+========================= */
+
+/* ---------------- Desktop (≥1200px) ---------------- */
+.town-grid .property-card,
+.town-grid .see-more-text {
+    flex: 0 0 260px; /* bigger default width */
+    max-width: 260px;
+}
+
+/* ---------------- Large Tablets (≤1200px) ---------------- */
+@media (max-width: 1200px) {
+    .town-grid .property-card,
+    .town-grid .see-more-text {
+        flex: 0 0 240px;
+        max-width: 240px;
+    }
+}
+
+/* ---------------- Tablets (≤992px) ---------------- */
+@media (max-width: 992px) {
+    .town-grid .property-card,
+    .town-grid .see-more-text {
+        flex: 0 0 200px;
+        max-width: 200px;
+    }
+
+    .town-section h3.section-title {
+        font-size: 1.6rem; /* scale down titles */
+    }
+}
+
+/* ---------------- Small Tablets / Large Mobile (≤768px) ---------------- */
+@media (max-width: 768px) {
+    .town-grid .property-card,
+    .town-grid .see-more-text {
+        flex: 0 0 170px;
+        max-width: 170px;
+    }
+
+    .town-section h3.section-title {
+        font-size: 1.4rem;
+    }
+    .property-card .property-overlay {
+    font-size: 0.75rem; /* tiny bit larger */
+    border-radius: 8px;
+    padding: 0.35rem 0.6rem;
+  }
+}
+
+html, body {
+  height: 100%;
+  min-height: 100vh;
+}
+
+.search-container,
+.properties {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

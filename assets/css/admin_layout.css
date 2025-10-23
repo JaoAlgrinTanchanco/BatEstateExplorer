@@ -1,0 +1,524 @@
+@font-face {
+  font-family: 'satoshi';
+  src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+  font-weight: 1200;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi-Light';
+  src: url('../fonts/Satoshi-Light.otf') format('opentype');
+  font-weight: 500;      /* light weight */
+  font-style: normal;
+}
+@font-face { font-family: 'Satoshi-Regular'; src: url('../fonts/Satoshi-Regular.otf') format('opentype'); font-style: normal; }
+
+
+/* ---------------- Global Reset ---------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  font-family: 'satoshi';
+  background: #f5f6f8ff;
+  color: #222;
+  margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  /* line-height: 1.5; */
+}
+
+/* ---------------- Layout ---------------- */
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+  gap: 0.75rem;
+  padding: 1.5rem;
+}
+
+/* ---------------- Sidebar Wrapper ---------------- */
+.sidebar-wrapper {
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 1.5rem;
+  height: calc(100vh - 3rem);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Collapsed Mode */
+.sidebar-wrapper.collapsed {
+  width: 80px;
+}
+
+/* Keep icons always aligned */
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* space between icon and label */
+}
+
+.sidebar-nav a span {
+  font-family: 'satoshi-regular';
+}
+
+/* Animate ONLY the labels (span inside links) */
+.sidebar-header h2,
+.sidebar-nav a span,
+.sidebar-footer a span {
+  opacity: 1;
+  white-space: nowrap;
+  transition: opacity 0.2s ease, transform 0.25s ease;
+  transition-delay: 0.1s;
+}
+
+.sidebar-wrapper.collapsed .sidebar-header h2,
+.sidebar-wrapper.collapsed .sidebar-nav a span,
+.sidebar-wrapper.collapsed .sidebar-footer a span {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition-delay: 0s;
+  pointer-events: none; /* prevent accidental clicks */
+}
+
+/* Role remains visible in collapsed */
+.sidebar-wrapper.collapsed .role {
+  display: block;
+}
+
+/* Logo sizing in collapsed */
+.sidebar-wrapper.collapsed .sidebar-logo {
+  max-width: 50px;
+  margin: 0 auto;
+}
+
+/* --- Expand on hover --- */
+.sidebar-wrapper.collapsed:hover {
+  width: 260px;
+}
+
+.sidebar-wrapper.collapsed:hover .sidebar-header h2,
+.sidebar-wrapper.collapsed:hover .sidebar-nav a span,
+.sidebar-wrapper.collapsed:hover .sidebar-footer a span {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 0.15s; /* fade in after width expands */
+}
+
+/* Grow logo when hover-expanded */
+.sidebar-wrapper.collapsed:hover .sidebar-logo {
+  max-width: 80px;
+  transition: max-width 0.3s ease;
+}
+
+/* ---------------- Role Strip ---------------- */
+.role {
+  background: #e1f4ff;
+  border: 4px solid #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+.role p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #008dff;
+  font-family: "satoshi", sans-serif;
+}
+
+/* ---------------- Sidebar ---------------- */
+.sidebar {
+  flex: 1;
+  background: #fff;
+  color: #111;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.5rem 1rem;
+}
+
+/* Sidebar Logo */
+.sidebar-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.sidebar-logo {
+  display: block;
+  max-width: 80px;
+  margin: 1rem auto 0 auto;
+}
+.sidebar-header h2 {
+  font-family: "satoshi", sans-serif;
+  font-size: 20px;
+  color: #111;
+  text-align: center;
+}
+
+/* Sidebar Nav */
+.sidebar-nav ul {
+  list-style: none;
+}
+.sidebar-nav li {
+  margin-bottom: 0.75rem;
+}
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+.sidebar-nav a i {
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.sidebar-nav a:hover,
+.sidebar-nav a.active {
+  background: #f3f4f6;
+  color: #111;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+.sidebar-footer a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #ef4444;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+.sidebar-footer a:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ---------------- Main Content ---------------- */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5 {
+  font-family: 'satoshi';
+  /* margin-bottom: 1rem; */
+  font-weight: 700;
+  color: #111;
+}
+
+/* ---------------- Utilities ---------------- */
+/* Card */
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom: 1.5rem;
+}
+
+/* Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+th, td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+th {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+tr:hover td {
+  background: #f9fafb;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background 0.3s ease;
+}
+.btn-primary {
+  background: #111827;
+  color: #fff;
+}
+.btn-primary:hover {
+  background: #1f2937;
+}
+.btn-danger {
+  background: #ef4444;
+  color: #fff;
+}
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+/* Floating toggle button */
+.sidebar-toggle-btn {
+  position: fixed;
+  top: 1rem;
+  left: 0.75rem; /* small spacing from edge */
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #fff;
+  display: none; /* only show <=1024px */
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+  z-index: 1200;
+  transition: left 0.3s ease, background 0.3s ease;
+}
+
+.sidebar-toggle-btn:hover {
+  background: #f3f4f6;
+}
+
+.sidebar-toggle-btn i {
+  font-size: 18px;
+  color: #111;
+  transition: transform 0.3s ease;
+}
+
+/* =========================
+   Admin Logout Modal
+========================= */
+.modal-admin {
+  display: none; /* hidden by default */
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  font-family: 'Satoshi-Regular', sans-serif !important;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.modal-admin.active-admin {
+  display: flex;
+}
+
+.modal-content-admin {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 20px;
+  max-width: 450px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  text-align: center;
+  position: relative;
+  animation: fadeInUp 0.3s ease;
+}
+
+.modal-content-admin h4 {
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+  font-family: 'Satoshi-Bold', sans-serif;
+  color: #111;
+}
+
+.modal-content-admin p {
+  margin-bottom: 1.5rem;
+  color: #444;
+  line-height: 1.5;
+}
+
+.modal-actions-admin {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.delete-btn-admin {
+  background: #111;
+  color: #fff;
+  padding: 0.7rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Satoshi-Medium', sans-serif;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.15s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.delete-btn-admin:hover {
+  background: #b91c1c;
+  transform: translateY(-2px);
+}
+
+.cancel-btn-admin {
+  padding: 0.7rem 1.5rem;
+  border-radius: 12px;
+  background: #e5e7eb;
+  color: #111;
+  border: none;
+  cursor: pointer;
+  font-family: 'Satoshi-Medium', sans-serif;
+  transition: background 0.25s ease, transform 0.15s ease;
+}
+
+.cancel-btn-admin:hover {
+  background: #d1d5db;
+  transform: translateY(-2px);
+}
+
+/* Spinner inside modal */
+.spinner-admin {
+  display: none;
+  margin-top: 1rem;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.spinner-admin .loader {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #ddd;
+  border-top: 3px solid #111;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Modal animation */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal-content-admin {
+    padding: 1.5rem;
+    width: 95%;
+  }
+}
+
+
+/* Responsive: <=1024px */
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 0;
+  }
+
+  .sidebar-wrapper.collapsed,
+  .sidebar-wrapper.collapsed:hover {
+    width: 260px;
+  }
+
+  .sidebar-wrapper.collapsed .sidebar-header h2,
+  .sidebar-wrapper.collapsed .sidebar-nav a span,
+  .sidebar-wrapper.collapsed .sidebar-footer a span,
+  .sidebar-wrapper.collapsed .role {
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto;
+  }
+
+  .role {
+    border-radius: 0 !important;
+  }
+  
+  .sidebar-wrapper.collapsed .sidebar-logo {
+    max-width: 80px;
+    margin: 0 auto 1rem;
+  }
+
+  .sidebar-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 260px;
+    transform: translateX(-100%); /* hidden */
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    border-radius: 0;
+  }
+
+  .sidebar-wrapper.open {
+    transform: translateX(0); /* visible */
+  }
+
+  .sidebar-toggle-btn {
+    display: flex;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 1rem;
+  }
+
+  /* backdrop */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
+  }
+  .sidebar-backdrop.show {
+    display: block;
+  }
+}
+
+/* Desktop: hide toggle */
+@media (min-width: 1025px) {
+  
+  .sidebar-toggle-btn {
+    display: none !important;
+  }
+}

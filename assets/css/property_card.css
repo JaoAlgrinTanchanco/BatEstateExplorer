@@ -1,0 +1,868 @@
+/* ===========================
+   Property Card (Square + Overlay)
+=========================== */
+.property-card {
+  position: relative;
+  flex: 0 1 320px;
+  aspect-ratio: 1 / 1;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.property-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+}
+
+/* Image Section */
+.property-image {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.property-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease, filter 0.35s ease;
+}
+
+.property-card:hover .property-image img {
+  transform: scale(1.08);
+  filter: brightness(0.7);
+}
+
+/* Overlay */
+.property-overlay {
+  position: absolute;
+  bottom: -100%;
+  left: 0;
+  width: 100%;
+  background: rgba(255,255,255,0.95);
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: bottom 0.4s ease;
+  box-sizing: border-box;
+}
+
+.property-card:hover .property-overlay {
+  bottom: 0;
+}
+
+/* Overlay Content */
+.property-overlay h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.property-location {
+  font-size: 0.85rem;
+  color: #777;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 !important;
+}
+
+.property-location i {
+  font-size: 0.9rem;
+  color: #e74c3c;
+}
+
+.property-price {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #27ae60;
+  margin: 0 !important;
+}
+
+.property-features {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.property-features span {
+  font-size: 0.8rem;
+  color: #555;
+  background: #f5f7fa;
+  padding: 4px 10px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.property-features span:hover {
+  background: #3498db;
+  color: #fff;
+}
+
+/* ================================
+   PROPERTY MODAL OVERLAY
+================================ */
+#propertyModal.custom-modal {
+  position: fixed;
+  inset: 0; /* shorthand for top:0; right:0; bottom:0; left:0 */
+  width: 100%;
+  height: 100%;
+  z-index: 9999 !important;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1rem;
+
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+
+  overflow-y: auto; /* allows scroll when modal is taller than viewport */
+  box-sizing: border-box;
+}
+
+/* ================================
+   MODAL CONTENT
+================================ */
+#propertyModal .custom-modal-content {
+  display: grid;
+  grid-template-columns: 585px 359px 359px;
+  gap: 16px;
+
+  width: 95%;
+  max-width: 1388px;
+
+  /* dynamic height based on viewport */
+  max-height: 90vh;
+  height: auto;
+  overflow-y: auto; /* vertical scroll inside modal if content overflows */
+  overflow-x: hidden;
+
+  border-radius: 20px;
+  position: relative;
+  align-items: start;
+  padding: 1.5rem;
+  box-sizing: border-box;
+
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+}
+
+/* Optional: hide scrollbar while keeping scroll functional */
+#propertyModal .custom-modal-content::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+}
+
+/* ================================
+   CLOSE BUTTON
+================================ */
+#propertyModal .close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+  border: none;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+#propertyModal .close:hover {
+  background: #fff;
+  color: #111;
+  transform: scale(1.1);
+}
+
+/* ===========================================
+   HIDE SCROLLBAR (but keep scroll functional)
+   =========================================== */
+#propertyModal.custom-modal,
+#propertyModal .custom-modal-content {
+  -ms-overflow-style: none;  /* IE & Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+#propertyModal.custom-modal::-webkit-scrollbar,
+#propertyModal .custom-modal-content::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari */
+}
+
+/* ================================
+   RESPONSIVE BEHAVIOR
+================================ */
+
+/* Medium screens (tablets) — 2 columns */
+@media (max-width: 1200px) {
+  #propertyModal .custom-modal-content {
+    grid-template-columns: 1fr 1fr;
+    max-width: 95%;
+    max-height: 90vh;
+  }
+}
+
+/* Small screens (mobile) — single column stack */
+@media (max-width: 768px) {
+  #propertyModal .custom-modal-content {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    max-height: 100vh;
+    height: auto;
+    border-radius: 0;
+    padding: 1rem;
+  }
+
+  #propertyModal .close {
+    top: 10px;
+    right: 10px;
+  }
+}
+
+/* ---------------------------------- */
+/* Modal Left Column (Image Gallery) */
+/* ---------------------------------- */
+.modal-left {
+  width: 585px; /* UPDATED Locked width */
+  height: 595px; /* Locked height */
+  overflow-y: hidden; 
+  
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 15px;
+  padding: 1.5rem;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.property-main-image {
+  flex-shrink: 0; 
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  height: auto; 
+  background-size: cover;
+  background-position: center;
+  border-radius: 15px;
+  margin-bottom: 1rem;
+}
+
+.property-name {
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: #000;
+  margin: 0;
+  text-align: center;
+}
+
+.property-images {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  width: 100%;
+  padding: 0.5rem 0;
+  scroll-behavior: smooth;
+}
+
+.property-images img {
+  flex: 0 0 auto;
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border 0.2s ease, transform 0.2s ease;
+}
+
+.property-images img:hover,
+.property-images img.active {
+  border-color: #000;
+  transform: scale(1.05);
+}
+
+.property-images::-webkit-scrollbar {
+  height: 6px;
+}
+
+.property-images::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+
+.property-images::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ================================
+   Agent Info Section (Modal)
+================================ */
+.modal-right section.agent-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.modal-right section.agent-info:hover {
+  background: rgba(0,0,0,0.03);
+  border-radius: 8px;
+}
+
+.modal-right section.agent-info img.agent-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid #ddd;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.modal-right section.agent-info img.agent-avatar:hover {
+  border-color: #27ae60;
+  transform: scale(1.05);
+}
+
+.modal-right section.agent-info span.agent-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .modal-right section.agent-info {
+    gap: 8px;
+  }
+
+  .modal-right section.agent-info img.agent-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .modal-right section.agent-info span.agent-name {
+    font-size: 0.95rem;
+  }
+}
+
+/* ---------------------------------- */
+/* Modal Right Column (Details) */
+/* ---------------------------------- */
+.modal-right {
+  width: 359px; /* UPDATED Locked width */
+  height: 595px; /* Locked height */
+  overflow-y: hidden; /* Prevents scrollbar on the column itself */
+
+  display: flex;
+  flex-direction: column;
+  color: #000;
+  background: #fff;
+  border-radius: 15px;
+  padding: 1.5rem;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.modal-right section {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.modal-right section:last-child {
+  border-bottom: none;
+}
+
+.modal-right .label {
+  font-weight: 600;
+  color: #333;
+}
+
+.modal-right .details {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; /* Scrollable area for content */
+}
+
+.modal-right .details section.desc {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-right .details section.desc .property-description {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  margin-top: 0.5rem;
+}
+
+
+/* ===========================
+   Modal Actions - Flexible Full-Width Buttons
+=========================== */
+#leaveReviewBtn{
+  display: flex;
+  flex-direction: row;
+}
+
+.modal-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
+.modal-actions .btn {
+  flex: 1 1 0;
+  padding: 10px 16px;
+  font-size: 13px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #fff;
+  background-color: #000;
+  border: 1px solid #fff;
+  line-height: 1;
+  transition: all 0.25s ease;
+}
+
+.modal-actions .btn i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.modal-actions .btn:hover {
+  background-color: #fff;
+  color: #111;
+  border: 1px solid #111;
+}
+
+
+/* ---------------------------------- */
+/* Modal Reviews Section */
+/* ---------------------------------- */
+.modal-review {
+  width: 359px; /* Locked width */
+  height: 595px; /* Locked height */
+  overflow-y: auto; /* Scrollable area for reviews */
+  
+  background: #fff;
+  border-radius: 15px;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-sizing: border-box;
+}
+
+.modal-review h3 {
+  margin: 0 0 1.5rem 0;
+  border-bottom: 1px solid #ddd;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+#modalPastReviews {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Individual Review Card */
+.review-item {
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.review-item .review-author {
+  font-weight: 600;
+  color: #34495e;
+}
+
+.review-item .review-date {
+  font-size: 0.75rem;
+  color: #888;
+  margin-left: 5px;
+}
+
+.review-item .review-text {
+  margin-top: 4px;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+/* Scrollbar Styling */
+.modal-review::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-review::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+
+.modal-review::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Review Stars */
+.review-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.review-stars i {
+  color: #ccc;
+  font-size: 14px;
+}
+
+.review-stars i.filled {
+  color: #f5b50a;
+}
+
+.rating-stars span {
+  color: #ccc;
+  transition: color 0.2s;
+}
+
+.rating-stars span.selected,
+.rating-stars span:hover,
+.rating-stars span:hover ~ span {
+  color: #f5b301;
+}
+
+/* ===========================
+   Review Modal Styles
+=========================== */
+
+/* Modal Backdrop */
+#reviewModal {
+  display: none;           /* Hidden by default */
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  z-index: 9999;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Satoshi', sans-serif;
+}
+
+/* Modal Content */
+#reviewModal .reviewModal-content {
+  background: #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 480px;
+  padding: 1.5rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  animation: modalFadeIn 0.25s ease;
+}
+
+/* Modal Header */
+#reviewModal .modal-header h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+  text-align: center;
+}
+
+/* Close Button */
+#reviewModal .modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+#reviewModal .modal-close:hover {
+  background: #fff;
+  color: #111;
+  transform: scale(1.1);
+}
+
+/* Rating Stars */
+#reviewModal .rating-stars {
+  display: flex;
+  gap: 5px;
+  font-size: 1.5rem;
+  justify-content: center;
+  cursor: pointer;
+}
+
+#reviewModal .rating-stars span {
+  color: #ccc;
+  transition: color 0.2s;
+}
+
+#reviewModal .rating-stars span:hover,
+#reviewModal .rating-stars span.selected,
+#reviewModal .rating-stars span:hover ~ span {
+  color: #f5b301;
+}
+
+/* Textarea */
+#reviewModal textarea[name="review_text"] {
+  width: 100%;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  resize: none;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+#reviewModal textarea[name="review_text"]:focus {
+  border-color: #27ae60;
+  outline: none;
+}
+
+/* Submit Button */
+#reviewModal .btn-success {
+  width: 100%;
+  padding: 10px 0;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  background-color: #111;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#reviewModal .btn-success:hover {
+  background-color: #666;
+}
+
+/* Animations */
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* *************************************** */
+/* RESPONSIVE ADJUSTMENTS (CRITICAL OVERRIDES) */
+/* *************************************** */
+
+/* --- Desktop/Large Tablet Breakpoint (<= 1300px) --- */
+/* Reduces the main modal to 2 columns and limits overall width */
+@media (max-width: 1300px) {
+  #propertyModal .custom-modal-content {
+    /* Switch to 2 columns and use fractional units (fr) for scaling */
+    grid-template-columns: 1fr 1fr;
+    max-width: 1100px;
+    height: auto; /* Allow height to adjust based on content */
+    gap: 1rem;
+  }
+  
+  /* Resetting fixed dimensions for scaling */
+  .modal-left,
+  .modal-right,
+  .modal-review {
+    width: auto;
+    height: auto; 
+    overflow-y: auto; /* All columns must be scrollable if content is long */
+  }
+
+  /* Force the review column to span two columns and move to the bottom */
+  .modal-review {
+    grid-column: span 2; 
+    order: 3;
+  }
+  
+  /* Ensure details and images scale evenly */
+  .modal-left {
+    order: 1;
+  }
+
+  .modal-right {
+    order: 2;
+  }
+}
+
+/* --- Tablet Breakpoint (<= 992px) --- */
+/* Further adjusts property card sizing and modal layout for tablets */
+@media (max-width: 992px) {
+  /* Property Card Adjustments */
+  .property-card {
+    flex: 0 1 260px;
+    border-radius: 16px;
+  }
+
+  .property-overlay {
+    padding: 14px 16px;
+    border-top-left-radius: 22px;
+    border-top-right-radius: 22px;
+  }
+
+  .property-overlay h3 {
+    font-size: 18px;
+  }
+
+  .property-price {
+    font-size: 1.05rem;
+  }
+
+  /* Modal Content Adjustments (2 columns, tighter fit) */
+  #propertyModal .custom-modal-content {
+    max-width: 720px;
+    gap: 0.75rem;
+  }
+  
+  #propertyModal .modal-right .details {
+    /* Ensures details section maintains height */
+    max-height: calc(100% - 60px); 
+  }
+}
+
+/* --- Mobile Landscape/Small Tablet Breakpoint (<= 768px) --- */
+/* Stacks the main property modal content into a single column */
+@media (max-width: 768px) {
+  #propertyModal .custom-modal-content {
+    grid-template-columns: 1fr; /* Stack into 1 column */
+    max-width: 95%;
+    gap: 1rem;
+  }
+
+  /* All three columns stack */
+  .modal-left,
+  .modal-right,
+  .modal-review {
+    grid-column: span 1; /* Reset to single column span */
+    order: initial;
+  }
+
+  .modal-review {
+    order: 3; /* Keep reviews last */
+  }
+}
+
+/* --- Mobile Portrait Breakpoint (<= 576px) --- */
+/* Fine-tunes sizes for mobile screens */
+@media (max-width: 576px) {
+  /* Property Card Adjustments */
+  .property-card {
+    flex: 0 1 160px;
+    border-radius: 12px;
+  }
+
+  .property-overlay {
+    padding: 10px 12px;
+    gap: 6px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
+
+  .property-overlay h3 {
+    font-size: 16px;
+  }
+
+  .property-location {
+    font-size: 0.75rem;
+  }
+
+  .property-price {
+    font-size: 0.9rem;
+  }
+
+  .property-features span {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 10px;
+  }
+
+  /* Modal Adjustments */
+  #propertyModal .custom-modal-content {
+    padding: 1rem;
+  }
+
+  #propertyModal .modal-actions {
+    flex-direction: column; /* Stack buttons vertically on small screens */
+    gap: 8px;
+  }
+
+  #propertyModal .modal-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  #propertyModal .close {
+    /* Reposition close button slightly on mobile */
+    right: 1rem;
+    top: 1rem;
+  }
+
+  /* Review Modal Adjustments */
+  #reviewModal .reviewModal-content {
+    padding: 1rem;
+    max-width: 90%;
+  }
+
+  #reviewModal .modal-header h3 {
+    font-size: 1.2rem;
+  }
+
+  #reviewModal .rating-stars {
+    font-size: 1.3rem;
+  }
+}
