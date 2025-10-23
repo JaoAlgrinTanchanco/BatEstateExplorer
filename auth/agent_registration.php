@@ -87,11 +87,80 @@
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="address">Address *</label>
-            <textarea id="address" name="address" rows="3"><?= htmlspecialchars($old['address'] ?? $user['address'] ?? '') ?></textarea>
+        <!-- Address Section -->
+        <h3>Address Information</h3>
+        <div class="form-group address-section">
+
+        <!-- First Row: Region | Province | City | Barangay -->
+        <div class="address-row">
+            <!-- Region Dropdown -->
+            <div class="form-group">
+            <label for="region">Region</label>
+            <select id="region" name="region" required>
+                <option value="">Select Region</option>
+                <option value="Region I (Ilocos Region)">Region I (Ilocos Region)</option>
+                <option value="Region III (Central Luzon)">Region III (Central Luzon)</option>
+                <option value="Region IV-A (CALABARZON)">Region IV-A (CALABARZON)</option>
+                <option value="NCR (National Capital Region)">NCR (National Capital Region)</option>
+                <option value="Region VII (Central Visayas)">Region VII (Central Visayas)</option>
+            </select>
+            </div>
+
+            <!-- Province Dropdown -->
+            <div class="form-group">
+            <label for="province">Province</label>
+            <select id="province" name="province" required>
+                <option value="">Select Province</option>
+                <option value="Batangas">Batangas</option>
+                <option value="Laguna">Laguna</option>
+                <option value="Quezon">Quezon</option>
+                <option value="Cavite">Cavite</option>
+                <option value="Rizal">Rizal</option>
+            </select>
+            </div>
+
+            <!-- City Dropdown -->
+            <div class="form-group">
+            <label for="city">City / Municipality</label>
+            <select id="city" name="city" required>
+                <option value="">Select City</option>
+                <option value="Lipa City">Lipa City</option>
+                <option value="Batangas City">Batangas City</option>
+                <option value="Tanauan City">Tanauan City</option>
+                <option value="Sto. Tomas City">Sto. Tomas City</option>
+                <option value="San Jose">San Jose</option>
+            </select>
+            </div>
+
+            <!-- Barangay Dropdown -->
+            <div class="form-group">
+            <label for="barangay">Barangay</label>
+            <select id="barangay" name="barangay" required>
+                <option value="">Select Barangay</option>
+                <option value="Balintawak">Balintawak</option>
+                <option value="Banay-Banay">Banay-Banay</option>
+                <option value="Sabang">Sabang</option>
+                <option value="Marawoy">Marawoy</option>
+                <option value="Santo Toribio">Santo Toribio</option>
+            </select>
+            </div>
         </div>
 
+        <!-- Second Row: Street / Postal Code -->
+        <div class="address-row-2">
+            <div class="form-group">
+            <label for="street">Street / Building / House No.</label>
+            <input type="text" id="street" name="street" placeholder="e.g. P. Torres St. Bldg 21 Lot 2" required>
+            </div>
+
+            <div class="form-group">
+            <label for="postal_code">Postal Code</label>
+            <input type="text" id="postal_code" name="postal_code" placeholder="e.g. 4217" required>
+            </div>
+        </div>
+        </div>
+
+        <h3>Security Information</h3>
         <div class="form-row">
             <div class="form-group">
                 <label for="password">Password *</label>

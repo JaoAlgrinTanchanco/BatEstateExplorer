@@ -12,6 +12,11 @@
     padding: 0;
 }
 
+h3 {
+    margin: 4rem 0 1.5rem 0;
+    /* border-top: 3px dashed #e1e5e9; */
+}
+
 body {
     font-family: "Inter", Arial, sans-serif;
     background: #f9fafc;
@@ -47,7 +52,7 @@ body::before {
     background: #fff;
     border-radius: 20px;
     padding: 3rem;
-    max-width: 900px;
+    max-width: 1050px;
     width: 100%;
     box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     animation: fadeInUp 0.6s ease;
@@ -65,7 +70,7 @@ body::before {
 
 .registration-container p {
     margin-bottom: 2rem;
-    color: #555;
+    color: #111;
     font-size: 0.95rem;
 }
 
@@ -85,48 +90,115 @@ body::before {
     text-decoration: underline;
 }
 
-/* =========================
-   Form Styles
-========================= */
-form {
-    width: 100%;
+/* =======================================
+   ADDRESS SECTION STYLES
+======================================= */
+.address-section h3 {
+  margin: 2rem 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111;
 }
 
+/* ---- ROW 1: Region | Province | City | Barangay ---- */
+.address-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  align-items: end;
+}
+
+/* ---- ROW 2: Street / Building / House No. | Postal Code ---- */
+.address-row-2 {
+  display: grid;
+  grid-template-columns: 3.2fr 1fr;
+  gap: 1.25rem;
+  align-items: end;
+}
+
+/* =======================================
+   FORM FIELD STYLES
+======================================= */
 .form-group {
-    margin-bottom: 1.5rem;
-    width: 100%;
+  width: 100%;
+  margin-bottom: 0.5rem;
 }
+
 .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: #333;
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #999;
 }
+
+/* ---- Inputs, Selects, and Textareas ---- */
 .form-group input,
 .form-group select,
 .form-group textarea {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 2px solid #e1e5e9;
-    border-radius: 12px;
-    font-size: 1rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e1e5e9;
+  border-radius: 12px;
+  font-size: 1rem;
+  background-color: #fff;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
+
+/* ---- Dropdown styling ---- */
+.form-group select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23333' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 12px 8px;
+  padding-right: 2.5rem;
+}
+
+/* ---- Focus State ---- */
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-    outline: none;
-    border-color: #111;
-    box-shadow: 0 0 0 4px rgba(17,17,17,0.1);
+  outline: none;
+  border-color: #111;
+  box-shadow: 0 0 0 4px rgba(17, 17, 17, 0.1);
 }
 
-/* Two-column layout for inputs */
-.form-row {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
+/* =======================================
+   FORM LAYOUT
+======================================= */
+form {
+  width: 100%;
 }
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+/* =======================================
+   RESPONSIVE TWEAKS
+======================================= */
+@media (max-width: 992px) {
+  .address-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .address-row-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .address-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 /* Buttons */
 .submit-btn {
