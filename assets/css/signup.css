@@ -32,8 +32,24 @@ body::before {
   z-index: 0;
 }
 
+/* Show/Hide toggle */
+.toggle-password {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    color: #111;
+    cursor: pointer;
+    user-select: none;
+}
+.toggle-password:hover {
+    color: #000;
+}
+
+
 /* =========================
-   Email Verification Modal
+   Common Modal Styles
 ========================= */
 .modal {
     position: fixed;
@@ -60,7 +76,7 @@ body::before {
 .modal-content p {
     font-size: 1rem;
     color: #333;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     line-height: 1.5;
 }
 
@@ -81,7 +97,9 @@ body::before {
     margin: 0 0.5rem;
 }
 
-/* Email container inside modal */
+/* =========================
+   First Modal (emailVerifyModal)
+========================= */
 .email-container {
     font-weight: 600;
     color: #111;
@@ -90,7 +108,6 @@ body::before {
     font-size: 0.95rem;
 }
 
-/* Wrap buttons for better spacing on mobile */
 .modal-buttons {
     display: flex;
     justify-content: center;
@@ -114,7 +131,56 @@ body::before {
     background: #e1e5e9;
 }
 
-/* Small responsive tweak */
+/* =========================
+   Second Modal (emailSentModal)
+========================= */
+#emailSentModal .spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #ccc;
+    border-top-color: #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+#emailVerifiedMessage {
+    display: none;
+    text-align: center;
+    font-size: 18px;
+    color: #28a745;
+    margin-top: 20px;
+}
+
+#proceedSignup {
+    padding: 12px 25px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+#proceedSignup:hover {
+    background: #0056b3;
+}
+
+/* =========================
+   Animations
+========================= */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeInUp {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================
+   Responsive
+========================= */
 @media (max-width: 600px) {
     .modal-content {
         padding: 1.5rem 1rem;

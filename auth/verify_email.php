@@ -40,22 +40,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Generate OTP
-    $otp = rand(100000, 999999);
+    // Generate a unique verification token
+    $token = bin2hex(random_bytes(32));
     $_SESSION['signup_email'] = $email;
     $_SESSION['signup_first_name'] = $firstName;
     $_SESSION['signup_last_name'] = $lastName;
-    $_SESSION['signup_otp'] = $otp;
-    $_SESSION['signup_otp_expires'] = time() + 300; // 5 minutes
+    $_SESSION['signup_token'] = $token;
 
-    // Send OTP Email
+    // Save token in a verification table
+    $stmt = $pdo->prepare("INSERT INTO email_verifications (email, first_name, last_name, token, created_at) VALUES (?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE token=?, created_at=NOW()");
+    $stmt->execute([$email, $firstName, $lastName, $token, $token]);
+
+    // Verification link
+    $verifyUrl = "http://localhost/BatEstateExplorer/auth/verify_email_button.php?token=$token";
+
+    // Send verification email
     $mail = new PHPMailer(true);
     try {
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
         $mail->Username   = 'batestate07@gmail.com';
-        $mail->Password   = 'jgsiczkzxyvuxvgb';
+        $mail->Password   = 'jgsiczkzxyvuxvgb'; // App password
         $mail->SMTPSecure = 'tls';
         $mail->Port       = 587;
 
@@ -71,19 +77,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tr>
                     <td>
                         <h2>Hi ' . htmlspecialchars($firstName) . '!</h2>
-                        <p>Please use the OTP below to verify your email address:</p>
-                        <div style="font-size:24px; font-weight:bold; margin:20px 0;">' . $otp . '</div>
-                        <p>This OTP will expire in 5 minutes.</p>
+                        <p>Click the button below to verify your email and proceed with signup:</p>
+                        <a href="' . $verifyUrl . '" style="display:inline-block; padding:12px 20px; background:#007bff; color:#fff; border-radius:5px; text-decoration:none; margin-top:20px;">Verify Email</a>
+                        <p style="margin-top:20px; font-size:12px; color:#555;">If you did not register, please ignore this email.</p>
                     </td>
                 </tr>
             </table>
         </div>';
 
-        $mail->AltBody = "Your OTP is: $otp (expires in 5 minutes)";
+        $mail->AltBody = "Click this link to verify your email: $verifyUrl";
 
         $mail->send();
 
-        echo json_encode(['status' => 'success', 'message' => 'OTP sent to your email.']);
+        echo json_encode(['status' => 'success', 'message' => 'Verification email sent.']);
     } catch (Exception $e) {
         echo json_encode(['status' => 'error', 'message' => 'Mailer Error: ' . $mail->ErrorInfo]);
     }
