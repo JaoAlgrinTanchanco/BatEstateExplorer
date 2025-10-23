@@ -1,0 +1,480 @@
+/* ===========================
+   Fonts
+=========================== */
+@font-face {
+  font-family: 'Satoshi';
+  src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi-Bold';
+  src: url('../fonts/Satoshi-Bold.otf') format('opentype');
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi-Medium';
+  src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi-Regular';
+  src: url('../fonts/Satoshi-Regular.otf') format('opentype');
+  font-style: normal;
+}
+
+/* ===========================
+   Content Header
+=========================== */
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.content-header h1 {
+  background: #fff;
+  padding: 0.75rem 2rem;
+  font-family: 'Satoshi', sans-serif;
+  margin-bottom: 1.5rem;
+  font-size: 2.5rem;
+  color: #111827;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  display: inline-block;
+}
+
+/* ===========================
+   Direct Agents List & Cards
+=========================== */
+.direct-agent-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(245px, 245px)); 
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  justify-content: start;
+}
+
+.direct-agent-card {
+  background: #fff;
+  border-radius: 40px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  position: relative;
+  aspect-ratio: 1 / 1;
+  max-width: 245px;
+  transform: translateZ(0);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, margin 0.4s ease-in-out,
+              top 0.4s ease-in-out, left 0.4s ease-in-out;
+}
+.direct-agent-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+/* ===== Tabs ===== */
+.tab-bar {
+  display: flex;
+  gap: 2rem; /* space between tabs */
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 0.5rem 0;
+  font-family: 'Satoshi-Regular', sans-serif;
+  font-weight: 400;
+  font-size: 1rem;
+  color: #374151; /* dark gray for inactive */
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: #111827; /* darker on hover */
+}
+
+.tab-btn.active {
+  color: #111827; /* black for active tab */
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; /* aligns with tab bar bottom */
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #111827; /* underline for active tab */
+  border-radius: 2px;
+}
+
+/* ===========================
+   Agent Modal Header (Standalone)
+=========================== */
+.agent-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  padding: 1.5rem 1rem;
+  background-color: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+
+}
+
+.agent-modal-header .profile-col {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-modal-header .modal-profile-img {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #f3f4f6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.agent-modal-header .modal-profile-icon {
+  font-size: 100px;
+  color: #9ca3af;
+}
+
+.agent-modal-header .info-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.agent-modal-header .agent-fullname {
+  font-family: 'Satoshi-Bold', sans-serif;
+  font-size: 1.6rem;
+  color: #111827;
+  margin: 0;
+}
+
+.agent-modal-header .agent-email {
+  font-family: 'Satoshi-Regular', sans-serif;
+  font-size: 1rem;
+  color: #4b5563;
+  margin: 0;
+}
+
+.agent-modal-header .agent-type {
+  font-family: 'Satoshi-Medium', sans-serif;
+  font-size: 0.95rem;
+  color: #374151;
+  background: #e5e7eb;
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  width: fit-content;
+  margin-top: 0.3rem;
+}
+
+/* ===========================
+   Avatar & Info
+=========================== */
+
+.agent-profile-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.direct-agent-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.direct-agent-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.direct-agent-name {
+  font-family: 'Satoshi-Bold', sans-serif;
+  font-size: 1.1rem;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.direct-agent-details {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+/* ===========================
+   Actions & Buttons
+=========================== */
+.direct-agent-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.btn-view,
+.btn-remove {
+  flex: 1 1 calc(50% - 0.5rem);
+  padding: 0.6rem 1.25rem;
+  font-size: 0.9rem;
+  font-family: 'Satoshi', sans-serif;
+  font-weight: 600;
+  border-radius: 30px;
+  border: 1px solid #111;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* View button */
+.btn-view {
+  background: #111;
+  color: #fff;
+}
+.btn-view:hover {
+  background: transparent;
+  color: #111;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+/* Remove button */
+.btn-remove {
+  background: transparent;
+  color: #111;
+}
+.btn-remove:hover {
+  background: #111;
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+/* ===========================
+   Modal Styling
+=========================== */
+#agentModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(17,24,39,0.55);
+  z-index: 9999;
+  overflow-y: auto;
+  padding: 2rem;
+  backdrop-filter: blur(6px);
+  font-family: 'Satoshi', sans-serif !important;
+}
+
+#agentModal .modal-content {
+  background: #fff;
+  border-radius: 20px;
+  max-width: 950px;
+  margin: 3rem auto;
+  padding: 2rem 2.5rem;
+  position: relative;
+  animation: slideIn 0.3s ease-out;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+#agentModal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #000;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+#agentModal .modal-header h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #111827;
+}
+#agentModal .close {
+  cursor: pointer;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #6b7280;
+  transition: color 0.2s ease;
+}
+#agentModal .close:hover { color: #111; }
+
+/* Body */
+#agentModal .modal-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  font-size: 1.1rem;
+  color: #374151;
+  line-height: 1.6;
+}
+#agentModal .modal-body section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+}
+#agentModal .modal-body h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.25rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #000;
+}
+
+/* Rows */
+.detail-row { display: flex; justify-content: space-between; }
+.detail-label { flex: 1; font-size: 1rem; color: #374151; }
+.detail-value { flex: 1; text-align: right; font-size: 1rem; color: #4b5563; word-break: break-word; }
+
+/* Footer */
+#agentModal .modal-footer { text-align: right; margin-top: 1.5rem; }
+.cancel-btn {
+  background: #111827;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.cancel-btn:hover { background: #374151; }
+
+/* Animation */
+@keyframes slideIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ===========================
+   Sorting Row
+=========================== */
+.sort-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+.sort-by select {
+  width: 150px;
+  padding: 0.6rem 1rem;
+  border-radius: 30px;
+  border: 1px solid #d1d5db;
+  font-size: 0.95rem;
+  font-family: 'Satoshi', sans-serif;
+  font-weight: 500;
+  background: #fff;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg width='14' height='8' viewBox='0 0 14 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%236B7280' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 14px 8px;
+}
+.sort-by select:hover,
+.sort-by select:focus {
+  border-color: #111;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  outline: none;
+}
+
+/* ===========================
+   No Agents Message
+=========================== */
+.no-agents {
+  text-align: center;
+  font-size: 1rem;
+  color: #6b7280;
+  margin-top: 2rem;
+}
+
+/* ===========================
+   Responsive
+=========================== */
+@media (max-width: 992px) { .direct-agent-list { grid-template-columns: repeat(auto-fit, minmax(245px, 350px)); justify-content: center; gap: 1rem; } .direct-agent-card { max-width: 350px; aspect-ratio: 1 / 1; padding: 1rem; } }
+
+@media (max-width: 768px) {
+  .content-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+  }
+  .content-header h1 {
+      font-size: 1.75rem;
+      padding: 0.5rem 1rem;
+  }
+  .direct-agent-list {
+    grid-template-columns: repeat(auto-fit, minmax(245px, 350px));
+    justify-content: center;
+  }
+  .direct-agent-card {
+    max-width: 350px;
+    aspect-ratio: 1 / 1;
+    padding: 1rem;
+  }
+  #agentModal .modal-body { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  
+  .direct-agent-list {
+    grid-template-columns: 1fr; 
+    justify-content: center;
+  }
+
+  .direct-agent-card {
+    width: 100%;
+    height: 250px;      
+    max-width: none;     
+    aspect-ratio: auto;  
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-header h1 {
+      font-size: 1.5rem;
+  }
+  .direct-agent-card {
+    max-width: 300px;
+    aspect-ratio: 1 / 1;
+    padding: 0.75rem;
+  }
+  .direct-agent-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+  .direct-agent-name { font-size: 0.95rem; }
+  .direct-agent-details { font-size: 0.8rem; }
+}

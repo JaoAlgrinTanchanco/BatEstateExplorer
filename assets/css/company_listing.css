@@ -1,0 +1,117 @@
+/* Container for company listings */
+.company-listings-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 100vh;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+.company {
+  font-size: 1.5rem;
+}
+
+/* Individual listing card */
+.company-listings-container .company-listing-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: row; /* horizontal layout */
+    gap: 1.5rem;
+    align-items: center; /* vertically center content */
+    flex-wrap: wrap; /* wrap on smaller screens */
+}
+
+/* Title inside each card - takes more space */
+.company-listings-container .company-listing-card .listing-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111;
+    flex: 1.5; /* larger portion of horizontal space */
+    text-align: left;
+}
+
+/* Data paragraphs inside card - very specific selector */
+.company-listings-container .company-listing-card p {
+    margin: 0 !important;       /* override global p margin */
+    font-size: 0.85rem;         /* smaller font for details */
+    color: #333;
+    text-align: left !important; 
+    flex: 1;                     /* equal width columns */
+    border-right: 1px solid #ccc; /* subtle vertical divider */
+    padding-right: 0.5rem;       /* spacing before border */
+}
+
+/* Remove border from the last column */
+.company-listings-container .company-listing-card p:last-child {
+    border-right: none;
+    padding-right: 0;
+}
+
+/* No listings message */
+.company-listings-container .no-listings {
+    text-align: center;
+    font-style: italic;
+    color: #777;
+    padding: 1rem 0;
+}
+
+/* Responsive adjustments for medium screens */
+@media (max-width: 992px) {
+    .company-listings-container .company-listing-card {
+        gap: 1rem; /* slightly reduce gap */
+    }
+}
+
+/* Responsive adjustments for tablets / small screens */
+/* Responsive: tablets / small screens */
+@media (max-width: 768px) {
+    /* Make container scrollable horizontally */
+    .company-listings-container {
+        overflow-x: auto;      /* scroll inside container only */
+        width: 100%;           /* full width of parent (.right-side) */
+        padding-bottom: 0.5rem;
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    /* Cards: fixed min-width to keep tabular layout */
+    .company-listings-container .company-listing-card {
+        min-width: 1000px;      /* adjust based on your tabular data */
+        flex: 0 0 auto;        /* prevent shrinking */
+        display: flex;         /* maintain row layout */
+        flex-direction: row;
+        gap: 0.3rem;
+        align-items: flex-start;
+    }
+
+    .company-listings-container .company-listing-card .listing-title {
+        flex: 1.5;
+        font-size: 0.95rem;
+    }
+
+    .company-listings-container .company-listing-card p {
+        flex: 1;
+        font-size: 0.85rem;
+    }
+}
+
+/* Mobile / very small screens */
+@media (max-width: 480px) {
+    .company-listings-container .company-listing-card {
+        min-width: 500px;      /* smaller width for mobile */
+        padding: 0.75rem 1rem;
+        gap: 0.4rem;
+    }
+
+    .company-listings-container .company-listing-card .listing-title {
+        font-size: 0.9rem;
+    }
+
+    .company-listings-container .company-listing-card p {
+        font-size: 0.8rem;
+    }
+}

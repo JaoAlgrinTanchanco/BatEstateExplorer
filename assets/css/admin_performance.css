@@ -1,0 +1,169 @@
+/* ====== Fonts ====== */
+@font-face {
+    font-family: 'Satoshi';
+    src: url('../fonts/Satoshi-Medium.otf') format('opentype');
+    font-weight: 900;
+    font-style: normal;
+}
+@font-face { font-family: 'Satoshi-Bold'; src: url('../fonts/Satoshi-Bold.otf') format('opentype'); font-style: normal; }
+@font-face { font-family: 'Satoshi-Medium'; src: url('../fonts/Satoshi-Medium.otf') format('opentype'); font-style: normal; }
+@font-face { font-family: 'Satoshi-Regular'; src: url('../fonts/Satoshi-Regular.otf') format('opentype'); font-style: normal; }
+
+/* ---------------- Content Header ---------------- */
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+.content-header h1 {
+    background: #fff;
+    padding: 0.75rem 2rem;
+    font-size: 2.5rem;
+    color: #111827;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    display: inline-block;
+}
+/* ===== Metrics Summary ===== */
+.metrics-summary {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin: 0 15rem 1.5rem 15rem;
+}
+
+.metric-box {
+    flex: 1 1 250px;
+    background: #fff;
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.metric-title {
+    font-size: 0.85rem;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.metric-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.metric-highlight {
+    color: #2563eb; /* highlight top agent */
+}
+
+.metric-property {
+    color: #10b981; /* highlight top property */
+}
+
+/* ===== Chart Sections ===== */
+.chart-wrapper {
+  width: 100%;
+  min-height: 250px;     /* ensure enough space */
+  height: 35vh;          /* responsive to viewport height */
+  max-height: 500px;     /* prevent overly tall charts */
+  position: relative;
+}
+
+canvas {
+  width: 100% !important;
+  height: 100% !important; /* match wrapper size */
+  max-width: 100%;
+}
+.chart-section {
+    background: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    margin: 0 15rem 1.5rem 15rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.chart-section h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.75rem;
+}
+
+/* ===== No Data Messages ===== */
+.no-data {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #6b7280;
+    padding: 1rem;
+    border: 1px dashed #d1d5db;
+    border-radius: 8px;
+    background: #f3f4f6;
+}
+
+/* ===== Chart Canvas Styling ===== */
+canvas {
+    width: 100% !important;
+    max-width: 100%;
+    height: auto !important;
+}
+
+/* ===== Responsive ===== */
+
+/* Tablets / medium screens */
+/* Tablets / medium screens */
+@media (max-width: 1024px) {
+  .metrics-summary, .chart-section {
+    margin: 0 3rem 1.5rem 3rem;
+  }
+
+  .chart-wrapper {
+    height: 40vh;       /* slightly taller for tablets */
+  }
+}
+
+/* Small screens */
+@media (max-width: 768px) {
+  .content-header h1 {
+    font-size: 1.75rem;
+    padding: 0.5rem 1rem;
+  }
+  .metrics-summary, .chart-section {
+    margin: 0 1rem 1.5rem 1rem;
+  }
+
+  .metric-box {
+    flex: 1 1 180px;
+    padding: 0.75rem 1rem;
+  }
+
+  .metric-value { font-size: 1rem; }
+  .metric-title { font-size: 0.8rem; }
+
+  .chart-wrapper {
+    height: 45vh;       /* give more room on smaller screens */
+  }
+}
+
+/* Extra small / mobile screens */
+@media (max-width: 480px) {
+  .metrics-summary {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .metric-box {
+    flex: 1 1 100%;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .metric-value { font-size: 0.9rem; }
+  .metric-title { font-size: 0.75rem; }
+
+  .chart-wrapper {
+    height: 50vh;       /* charts get tallest on phones */
+  }
+}

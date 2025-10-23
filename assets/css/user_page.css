@@ -1,0 +1,734 @@
+/* ============================================
+   AIRBNB-STYLE AGENT PROFILE PAGE (Jamie Layout)
+   ============================================ */
+@font-face {
+    font-family: 'satoshi';
+    src: url('../fonts/Satoshi-Bold.otf') format('opentype');
+    font-weight: 600;
+    font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi-Regular';
+  src: url('../fonts/Satoshi-Regular.otf') format('opentype');
+  font-style: normal;
+}
+
+.host-name,
+.agent-about h3,
+.agent-reviews-section h3 {
+  font-family: 'satoshi';
+}
+
+.agent-profile-page,
+.agent-top-section,
+.host-profile-card,
+.agent-about,
+.agent-reviews-section,
+.properties-grid {
+  position: static !important;
+  z-index: auto !important;
+}
+
+body {
+  font-family: 'Satoshi-Regular', sans-serif;
+  background: #f9fafc;
+  color: #111;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
+  margin: 0;
+}
+
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("../images/Vector 1.png") center repeat;
+  background-size: 30% auto;
+  opacity: 0.03;
+  z-index: -1;
+}
+
+/* Bring all content sections above background */
+.agent-profile-page,
+.agent-top-section,
+.host-profile-card,
+.agent-about,
+.agent-reviews-section,
+.properties-grid,
+.property-card,
+.review-card {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== PAGE CONTAINER ===== */
+.agent-profile-page {
+  width: 95%;
+  max-width: 1290px;
+  height: 100vh;
+  margin: 0 auto;
+  padding: 6.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+/* ===== TOP SECTION (Profile Info) ===== */
+.agent-top-section {
+  display: grid;
+  grid-template-columns: minmax(320px, 380px) 1fr;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.host-profile-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  min-height: 259px;
+  background-color: white;
+  border: 1px solid #DDDDDD;
+  border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  box-sizing: border-box;
+  gap: 1.5rem;
+}
+
+.host-info-left {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  flex-basis: 55%;
+  text-align: center;
+}
+
+.agent-type {
+  font-size: 14px;
+  font-weight: 500;
+  color: #717171;
+  text-transform: capitalize;
+}
+
+.profile-image-container {
+    position: relative;
+}
+
+.profile-image {
+    width: 110px; 
+    height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+.host-name {
+    font-size: 32px;
+    font-weight: 600;
+    margin: 0;
+    color: #222222;
+    text-align: center;    
+}
+
+/* Style for the Identity Verified Badge */
+.verify-badge {
+    font-size: 13px;
+    color: #717171;
+    margin-top: 5px;
+    font-weight: 500;
+}
+
+.verify-badge .fa-shield-check {
+    color: #222222;
+    margin-right: 3px;
+}
+
+/* --- Right Section: Statistics --- */
+.star-icon {
+    color: #000;
+    font-size: 16px;
+    margin-left: 5px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.host-stats-right {
+    display: flex;
+    flex-direction: column;
+    flex-basis: 45%;
+    justify-content: center;
+}
+
+.stat-item {
+    padding: 10px 0;
+    width: 100%;
+    text-align: left;
+    border-bottom: 1px solid #DDDDDD;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: #222222;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #717171;
+    margin-top: 2px;
+}
+
+.rating-value {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* ===== RIGHT COLUMN: ABOUT SECTION ===== */
+.agent-details {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.agent-detail-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+    color: #444;
+}
+
+.agent-detail-item i {
+    margin-right: 0.75rem;
+    color: #222;
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.agent-about {
+  background: white;
+  border: 1px solid #DDDDDD;
+  border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  padding: 2rem;
+  min-height: 193px;
+}
+
+.agent-about h3 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+  color: #222;
+}
+
+.agent-about p {
+  font-size: 0.95rem;
+  color: #444;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.agent-about .specialization {
+  background-color: #fafafa;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: #333;
+  margin-top: 0.75rem;
+}
+
+/* ===== REVIEW CARD STYLING ===== */
+.agent-reviews-section {
+  padding: 2rem;
+  border-radius: 30px;
+  background-color: #fafafa;
+  border: 1px solid #ddd;
+  position: relative;
+}
+
+.agent-reviews-section h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #222;
+  margin: 0 0 1rem 0;
+}
+
+/* Scroll Wrapper */
+.agent-reviews-section .reviews-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Scroll Row */
+.agent-reviews-section .reviews-row {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 1.5rem 0;
+}
+
+/* Hide native scrollbar */
+.agent-reviews-section .reviews-row::-webkit-scrollbar {
+  display: none;
+}
+.agent-reviews-section .reviews-row {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Fixed-width review card */
+.agent-reviews-section .review-card {
+  flex: 0 0 400px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: #fff;
+  border-radius: 15px;
+  border: 1px solid #eee;
+  padding: 1.25rem;
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.12);
+}
+
+/* Inner review styling */
+.agent-reviews-section .review-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.agent-reviews-section .review-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.agent-reviews-section .reviewer-name-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #222;
+}
+
+.agent-reviews-section .review-stars i {
+  font-size: 14px;
+}
+
+.agent-reviews-section .review-date {
+  font-size: 0.8rem;
+  color: #777;
+}
+
+.agent-reviews-section .review-text {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+/* Scroll buttons */
+.agent-reviews-section .scroll-btn {
+  background: #111;
+  color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 22px;
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-reviews-section .scroll-btn.left-btn {
+  left: -58px;
+}
+
+.agent-reviews-section .scroll-btn.right-btn {
+  right: -58px;
+}
+
+/* ===== PROPERTY LISTINGS GRID WITH HORIZONTAL SCROLL ===== */
+.properties-grid {
+    font-family: 'Satoshi-Regular';
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 220px;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 0.5rem;
+
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.properties-grid::-webkit-scrollbar {
+    display: none;
+}
+
+.properties-grid > * {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    scroll-snap-align: start;
+    box-sizing: border-box;
+}
+
+.price {
+    font-size: 20px;
+    color: #28a745;
+    margin: 8px 0;
+    font-weight: bold;
+}
+
+/* Report Agent link */
+.nav-link.report-user {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-style: italic;
+    font-size: 18px;
+    color: #111;
+    cursor: pointer;
+    text-decoration: none;
+    width: 10%;
+    padding: 0;
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.nav-link.report-user i {
+    font-size: 1em;
+}
+
+.nav-link.report-user:hover {
+    color: #e74c3c;
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   REPORT AGENT MODAL (Airbnb-style)
+   ============================================ */
+.report-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 17, 17, 0.45);
+  backdrop-filter: blur(4px);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.report-modal-content {
+  background: #fff;
+  border-radius: 24px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  font-family: 'Satoshi-Regular', sans-serif;
+  position: relative;
+  transform: translateY(-10px);
+  animation: slideUp 0.35s ease forwards;
+}
+
+.report-modal-content h2 {
+  font-family: 'satoshi';
+  font-size: 24px;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
+.report-modal-content label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 0.5rem;
+}
+
+.report-modal-content select,
+.report-modal-content textarea,
+.report-modal-content input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 0.75rem;
+  font-size: 0.95rem;
+  font-family: 'Satoshi-Regular', sans-serif;
+  transition: border 0.25s ease, box-shadow 0.25s ease;
+}
+
+.report-modal-content select:focus,
+.report-modal-content textarea:focus,
+.report-modal-content input[type="text"]:focus {
+  outline: none;
+  border-color: #222;
+  box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.1);
+}
+
+#otherReasonContainer {
+  display: none;
+  margin-top: 1rem;
+}
+
+.report-modal-content textarea {
+  resize: none;
+  height: 110px;
+}
+
+.report-modal-content button {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.9rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: 'Satoshi-Regular', sans-serif;
+}
+
+.report-modal-content button:hover {
+  background: #e74c3c;
+  transform: translateY(-2px);
+}
+
+.report-modal-content .close {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  font-size: 22px;
+  color: #555;
+  cursor: pointer;
+  transition: color 0.25s ease, transform 0.2s ease;
+}
+
+.report-modal-content .close:hover {
+  color: #e74c3c;
+  transform: rotate(90deg);
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 480px) {
+  .report-modal-content {
+    padding: 1.25rem;
+    max-width: 90%;
+    border-radius: 18px;
+  }
+
+  .report-modal-content h2 {
+    font-size: 20px;
+  }
+
+  .report-modal-content button {
+    padding: 0.75rem;
+  }
+}
+
+/* Medium screens / tablets */
+@media (max-width: 1024px) {
+  .agent-profile-page {
+    padding: 5rem 1rem;
+  }
+
+  .host-name {
+    font-size: 28px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .agent-about h3 {
+    font-size: 24px;
+  }
+
+  .agent-reviews-section .review-card {
+    flex: 0 0 320px;
+  }
+}
+
+/* Small screens / mobile */
+@media (max-width: 850px) {
+  .agent-top-section {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    justify-items: center;
+    align-items: center;
+    text-align: center;
+  }
+
+  .host-profile-card {
+    max-width: 60%;
+  }
+
+  .profile-image {
+    width: 90px;
+    height: 90px;
+  }
+
+  .host-info-left {
+    text-align: center;
+    flex-basis: auto;
+  }
+
+  .host-name {
+    font-size: 22px;
+  }
+
+  .agent-type {
+    font-size: 12px;
+  }
+
+  .host-stats-right {
+    flex-basis: auto;
+    width: 100%;
+    flex-direction: column;
+    justify-content: space-around;
+  }
+
+  .rating-value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .stat-item {
+    padding: 0.35rem 0;
+    text-align: center;
+    border-bottom: none;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .agent-about {
+    padding: 1rem;
+  }
+
+  .agent-about h3 {
+    font-size: 20px;
+  }
+
+  .agent-reviews-section {
+    padding: 1rem;
+  }
+
+  .agent-reviews-section .review-card {
+    flex: 0 0 260px;
+  }
+
+  .agent-reviews-section .scroll-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .agent-reviews-section .scroll-btn.left-btn {
+    left: -24px;
+  }
+  .agent-reviews-section .scroll-btn.right-btn {
+    right: -24px;
+  }
+
+  .nav-link.report-agent {
+    font-size: 18px;
+  }
+}
+
+/* Extra small screens / very small phones */
+@media (max-width: 480px) {
+  .agent-profile-page {
+    padding: 2rem 0.5rem;
+  }
+
+  .host-profile-card {
+    padding: 0.5rem 0.75rem;
+    max-width: 95%;
+  }
+
+  .profile-image {
+    width: 80px;
+    height: 80px;
+  }
+
+  .host-name {
+    font-size: 20px;
+  }
+
+  .agent-type {
+    font-size: 11px;
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  .agent-about h3 {
+    font-size: 18px;
+  }
+
+  .agent-reviews-section .review-card {
+    flex: 0 0 220px;
+  }
+
+  .agent-reviews-section .scroll-btn.left-btn {
+    left: -25px;
+  }
+  .agent-reviews-section .scroll-btn.right-btn {
+    right: -25px;
+  }
+
+  .nav-link.report-agent {
+    font-size: 16px;
+  }
+}
