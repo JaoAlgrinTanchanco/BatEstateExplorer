@@ -454,12 +454,43 @@
             notif.querySelector('.notification__close').addEventListener('click', () => notif.remove());
         };
 
+        // === FORM VALIDATION HELPERS ===
+        function validateProfilePicture() {
+            const file = profileInput.files[0];
+            if (!file) {
+                showAjaxNotification('Please upload a profile picture before submitting.', 'error');
+                profileInput.focus();
+                return false;
+            }
+
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                showAjaxNotification('Invalid image type. Please use JPG, PNG, or WEBP.', 'error');
+                profileInput.value = '';
+                profilePreview.innerHTML = '<span class="upload-text">Upload Here</span>';
+                return false;
+            }
+
+            const maxSize = 2 * 1024 * 1024; // 2MB
+            if (file.size > maxSize) {
+                showAjaxNotification('Profile picture must be smaller than 2 MB.', 'error');
+                profileInput.value = '';
+                profilePreview.innerHTML = '<span class="upload-text">Upload Here</span>';
+                return false;
+            }
+
+            return true;
+        }
+
         // === AJAX FORM SUBMISSION ===
         form.addEventListener('submit', async e => {
             e.preventDefault();
 
+            // Profile picture validation (frontend)
+            if (!validateProfilePicture()) return;
+
             const formData = new FormData(form);
-            formData.append('ajax', 1); // ensure server detects AJAX
+            formData.append('ajax', 1);
 
             try {
                 const res = await fetch('../public/api/agent_registration_complete.php', {

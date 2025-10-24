@@ -61,12 +61,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') respond('error','Invalid request meth
 try {
     // Collect and sanitize inputs
     $fields = [
-        'first_name','last_name','email','password','user_type','phone','address',
+        'first_name','last_name','email','password','user_type','phone',
+        // old 'address' removed; replaced with separated fields
+        'region','province','city','barangay','street','postal_code',
         'company_id','broker_id','prc_number','experience_years','specializations','experience_details',
         'education','school','course','graduation_year','certifications','training'
     ];
+
     $old_inputs = [];
-    foreach ($fields as $f) $old_inputs[$f] = isset($_POST[$f]) ? sanitize($_POST[$f]) : '';
+    foreach ($fields as $f) {
+        $old_inputs[$f] = isset($_POST[$f]) ? sanitize($_POST[$f]) : '';
+    }
     $old_inputs['company_id'] = !empty($_POST['company_id']) ? (int)$_POST['company_id'] : null;
 
     // === REQUIRED FIELDS VALIDATION ===
@@ -78,11 +83,15 @@ try {
         'password',
         'user_type',
         'phone',
-        'address',
+        'region',
+        'province',
+        'city',
+        'barangay',
+        'street',
+        'postal_code',
 
         // Professional Information
-        'experience_years',  // required
-        // 'experience_details' is optional
+        'experience_years',
 
         // Educational Background
         'education',
@@ -106,6 +115,10 @@ try {
     $stmt = $pdo->prepare("SELECT id FROM applications WHERE email=? AND status='pending'"); 
     $stmt->execute([$old_inputs['email']]);
     if ($stmt->fetch(PDO::FETCH_ASSOC)) throw new Exception("You already submitted an application. Please wait for approval.");
+
+    // === CONCATENATE ADDRESS ===
+    $full_address = "{$old_inputs['street']}, {$old_inputs['barangay']}, {$old_inputs['city']}, {$old_inputs['province']}, {$old_inputs['region']}, {$old_inputs['postal_code']}";
+    $old_inputs['address'] = $full_address; // keep compatibility with rest of code
 
     $password_hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
@@ -132,19 +145,21 @@ try {
         }
     }
 
-    // Profile picture is now optional
-    $profile_picture = null;
-    if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] !== UPLOAD_ERR_NO_FILE) {
-        $profile_picture = handleUpload(
-            $_FILES['profile_picture'],
-            'pfp',
-            $docsDir,
-            $profileDir,
-            ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'],
-            $debug
-        );
-        if (!$profile_picture) $debug[] = "Profile picture handling returned null";
+    // === PROFILE PICTURE IS NOW REQUIRED ===
+    if (!isset($_FILES['profile_picture']) || $_FILES['profile_picture']['error'] === UPLOAD_ERR_NO_FILE) {
+        throw new Exception("Profile picture is required.");
     }
+
+    $profile_picture = handleUpload(
+        $_FILES['profile_picture'],
+        'pfp',
+        $docsDir,
+        $profileDir,
+        ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
+        $debug
+    );
+
+    if (!$profile_picture) throw new Exception("Failed to process profile picture.");
 
     // Specializations
     $specializations = trim($old_inputs['specializations']);
