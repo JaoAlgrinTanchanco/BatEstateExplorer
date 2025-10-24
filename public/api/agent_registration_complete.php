@@ -134,15 +134,42 @@ try {
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ];
 
-    // Handle required docs for direct agents
+    // === DOCUMENT HANDLING PER AGENT TYPE ===
     $broker_license = $prc_license = $resume = $valid_id = null;
-    if ($old_inputs['user_type'] === 'direct_agent') {
-        $requiredDocs = ['broker_license','prc_license','resume','valid_id'];
-        foreach($requiredDocs as $doc){
+    $endorsement_letter = $nbi_clearance = $company_id_doc = null;
+
+    if ($old_inputs['user_type'] === 'associate_agent') {
+        // Associate Agent Required Docs
+        $requiredDocs = ['broker_license', 'prc_license', 'resume', 'valid_id'];
+        foreach ($requiredDocs as $doc) {
+            $file = getNestedFile($_FILES['documents'], $doc);
+            ${$doc} = handleUpload($file, $doc, $docsDir, $imgsDir, $allowedTypes, $debug);
+            if (${$doc} === null) throw new Exception("All required documents must be uploaded for Associate Agents.");
+        }
+
+        $property_location = null;
+        $property_image = null;
+        $property_document = null;
+    }
+
+    elseif ($old_inputs['user_type'] === 'direct_agent') {
+        // Direct Agent Required Docs
+        $requiredDocs = ['valid_id', 'property_image', 'property_document'];
+        foreach ($requiredDocs as $doc) {
             $file = getNestedFile($_FILES['documents'], $doc);
             ${$doc} = handleUpload($file, $doc, $docsDir, $imgsDir, $allowedTypes, $debug);
             if (${$doc} === null) throw new Exception("All required documents must be uploaded for Direct Agents.");
         }
+
+        // Property Location is TEXT, not file
+        $property_location = $_POST['property_location'] 
+            ?? ($_POST['documents']['property_location'] ?? '');
+        $property_location = sanitize($property_location);
+        if (empty($property_location)) throw new Exception("Property location is required for Direct Agents.");
+
+        $broker_license = null;
+        $prc_license = null;
+        $resume = null;
     }
 
     // === PROFILE PICTURE IS NOW REQUIRED ===
@@ -165,24 +192,27 @@ try {
     $specializations = trim($old_inputs['specializations']);
     $specializations = !empty($specializations) ? json_encode(array_map('trim', explode(',', $specializations))) : null;
 
-    // Insert application
+    // === Insert application ===
     $pdo->beginTransaction();
     $stmt = $pdo->prepare("INSERT INTO applications (
         first_name, last_name, email, password_hash, phone, address,
         education, school, course, graduation_year, certifications, training,
         broker_license_path, prc_license_path, resume_path, valid_id_path,
-        agent_type, company_id, broker_id, license_number, experience_years, specialization, bio,
-        profile_image_path
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+        property_location, property_image_path, property_document_path,
+        agent_type, company_id, broker_id, license_number, experience_years,
+        specialization, bio, profile_image_path
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
     $stmt->execute([
-        $old_inputs['first_name'],$old_inputs['last_name'],$old_inputs['email'],$password_hash,
-        $old_inputs['phone'],$old_inputs['address'],$old_inputs['education'],$old_inputs['school'],$old_inputs['course'],
-        $old_inputs['graduation_year'],$old_inputs['certifications']?:null,$old_inputs['training']?:null,
-        $broker_license,$prc_license,$resume,$valid_id,
-        $old_inputs['user_type'],$old_inputs['company_id'],$old_inputs['broker_id']?:null,
-        $old_inputs['prc_number']?:null,$old_inputs['experience_years'],$specializations,$old_inputs['experience_details'],
-        $profile_picture
+        $old_inputs['first_name'], $old_inputs['last_name'], $old_inputs['email'], $password_hash,
+        $old_inputs['phone'], $old_inputs['address'],
+        $old_inputs['education'], $old_inputs['school'], $old_inputs['course'],
+        $old_inputs['graduation_year'], $old_inputs['certifications'] ?: null, $old_inputs['training'] ?: null,
+        $broker_license, $prc_license, $resume, $valid_id,
+        $property_location, $property_image, $property_document,
+        $old_inputs['user_type'], $old_inputs['company_id'], $old_inputs['broker_id'] ?: null,
+        $old_inputs['prc_number'] ?: null, $old_inputs['experience_years'],
+        $specializations, $old_inputs['experience_details'], $profile_picture
     ]);
 
     $application_id = $pdo->lastInsertId();

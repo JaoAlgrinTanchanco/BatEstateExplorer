@@ -343,8 +343,6 @@
     </form>
 </div>
 
-<?php include '../components/notification.php'; ?>
-
 <!-- AJAX Notification Container -->
 <div id="ajax-notification-container" class="notification-container"></div>
 
@@ -367,7 +365,7 @@
 
         let selectedTags = [];
 
-        // === SPECIALIZATION TAGS ===
+        // === SPECIALIZATION TAG LOGIC ===
         specializationSelect.addEventListener('change', () => {
             const value = specializationSelect.value;
             if (!value || selectedTags.includes(value)) {
@@ -401,20 +399,98 @@
             }
         });
 
+        // === FILE GROUPS (for easier toggle) ===
+        const docInputs = {
+            associate: ['broker_license', 'prc_license', 'resume', 'valid_id'],
+            direct: ['valid_id', 'property_location', 'property_image', 'property_document']
+        };
+
+        // Create new Direct Agent document inputs dynamically
+        const newDirectDocs = [
+            { id: 'property_location', label: 'Property Location *' },
+            { id: 'property_image', label: 'At least One Property Image *' },
+            { id: 'property_document', label: 'Property Document *' }
+        ];
+
+        function ensureDirectDocFields() {
+            const locations = [
+                "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
+                "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
+                "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
+                "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
+            ];
+
+            // Broker/PRC/Resume/Valid ID already exist above
+            const directDocFields = [
+                {
+                    id: "property_location",
+                    label: "Property Location *",
+                    html: `
+                        <label for="property_location"><strong>Property Location *</strong></label>
+                        <select id="property_location" name="documents[property_location]" required>
+                            <option value="">Select Location</option>
+                            ${locations.map(l => `<option value="${l}">${l}</option>`).join('')}
+                        </select>
+                    `
+                },
+                {
+                    id: "property_image",
+                    label: "At least One Property Image *",
+                    html: `<label for="property_image">At least One Property Image *</label>
+                        <input type="file" id="property_image" name="documents[property_image]" accept=".jpg,.jpeg,.png" required>`
+                },
+                {
+                    id: "property_document",
+                    label: "Property Document *",
+                    html: `<label for="property_document">Property Document *</label>
+                        <input type="file" id="property_document" name="documents[property_document]" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" required>`
+                }
+            ];
+
+            directDocFields.forEach(doc => {
+                if (!document.getElementById(doc.id)) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'form-group';
+                    wrapper.innerHTML = doc.html;
+                    docsSection.appendChild(wrapper);
+                }
+            });
+        }
+        ensureDirectDocFields();
+
         // === TOGGLE FIELDS BASED ON AGENT TYPE ===
         function toggleFields() {
             const type = userType.value;
-            const showDocs = type === 'direct_agent';
-            const showCompany = type === 'associate_agent';
 
-            docsSection.style.display = showDocs ? 'block' : 'none';
-            companyField.style.display = showCompany ? 'block' : 'none';
-            companySelect.required = showCompany;
+            // Always show the section if either type selected
+            docsSection.style.display = type ? 'block' : 'none';
+            companyField.style.display = (type === 'associate_agent') ? 'block' : 'none';
+            companySelect.required = (type === 'associate_agent');
 
-            // Set required state for file inputs
-            docsSection.querySelectorAll('input[type="file"]').forEach(input => {
-                input.required = showDocs;
-            });
+            // Hide all file inputs initially
+            docsSection.querySelectorAll('.form-group').forEach(g => g.style.display = 'none');
+
+            if (type === 'associate_agent') {
+                // Show all associate docs
+                docInputs.associate.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.closest('.form-group').style.display = 'block';
+                    if (el) el.required = true;
+                });
+            } 
+            else if (type === 'direct_agent') {
+                // Show only direct-agent documents
+                docInputs.direct.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.closest('.form-group').style.display = 'block';
+                    if (el) el.required = true;
+                });
+            }
+
+            // If nothing selected, hide section
+            if (!type) {
+                docsSection.style.display = 'none';
+            }
         }
 
         toggleFields();
@@ -437,7 +513,7 @@
             reader.readAsDataURL(file);
         });
 
-        // === AJAX NOTIFICATION HELPER ===
+        // === NOTIFICATION HELPER ===
         window.showAjaxNotification = (message, type = 'success') => {
             if (!ajaxContainer) return;
 
@@ -454,7 +530,7 @@
             notif.querySelector('.notification__close').addEventListener('click', () => notif.remove());
         };
 
-        // === FORM VALIDATION HELPERS ===
+        // === PROFILE PIC VALIDATION ===
         function validateProfilePicture() {
             const file = profileInput.files[0];
             if (!file) {
@@ -482,11 +558,9 @@
             return true;
         }
 
-        // === AJAX FORM SUBMISSION ===
+        // === AJAX FORM SUBMIT ===
         form.addEventListener('submit', async e => {
             e.preventDefault();
-
-            // Profile picture validation (frontend)
             if (!validateProfilePicture()) return;
 
             const formData = new FormData(form);
@@ -500,7 +574,7 @@
                 });
 
                 const data = await res.json();
-                window.showAjaxNotification(data.message || 'No message from server.', data.status);
+                showAjaxNotification(data.message || 'No message from server.', data.status);
 
                 if (data.status === 'success') {
                     form.reset();
@@ -511,7 +585,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                window.showAjaxNotification('An error occurred. Please try again.', 'error');
+                showAjaxNotification('An error occurred. Please try again.', 'error');
             }
         });
     });
