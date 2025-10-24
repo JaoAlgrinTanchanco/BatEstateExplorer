@@ -50,7 +50,7 @@
     <form id="agentRegistrationForm" enctype="multipart/form-data">
         <!-- Profile Picture Upload -->
         <div class="form-group profile-pic-group">
-            <label>Profile Picture (Optional)</label>
+            <label>Profile Picture *</label>
             <div class="profile-pic-wrapper">
                 <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
                 <div class="profile-pic-preview" id="profilePicPreview">
@@ -210,36 +210,44 @@
                     ?>
                 </select>
             </div>
+
             <div class="form-group specialization-group">
                 <label for="specializationSelect">Specializations *</label>
-                <select id="specializationSelect" class="form-control">
-                    <option value="" disabled selected>Select a specialization</option>
-                    <option value="Condominium">Condominium</option>
-                    <option value="Apartment">Apartment</option>
-                    <option value="Townhouse">Townhouse</option>
-                    <option value="House and Lot">House and Lot</option>
-                    <option value="Commercial Building">Commercial Building</option>
-                    <option value="Lot Only">Lot Only</option>
-                    <option value="Farm Lot">Farm Lot</option>
-                    <option value="Industrial Lot">Industrial Lot</option>
-                    <option value="Beachfront Property">Beachfront Property</option>
-                    <option value="Resort">Resort</option>
-                    <option value="Hotels and Motels">Hotels and Motels</option>
-                    <option value="Dormitory">Dormitory</option>
-                    <option value="Office Space">Office Space</option>
-                    <option value="Warehouse">Warehouse</option>
-                    <option value="Retail Space">Retail Space</option>
-                    <option value="Mixed-Use Development">Mixed-Use Development</option>
-                    <option value="Luxury Estate">Luxury Estate</option>
-                    <option value="Foreclosed Property">Foreclosed Property</option>
-                    <option value="Subdivision Development">Subdivision Development</option>
-                    <option value="Others">Others</option>
-                </select>
+                <div class="specialization-select-row">
+                    <select id="specializationSelect" class="form-control">
+                        <option value="" disabled selected>Select a specialization</option>
+                        <option value="Condominium">Condominium</option>
+                        <option value="Apartment">Apartment</option>
+                        <option value="Townhouse">Townhouse</option>
+                        <option value="House and Lot">House and Lot</option>
+                        <option value="Commercial Building">Commercial Building</option>
+                        <option value="Lot Only">Lot Only</option>
+                        <option value="Farm Lot">Farm Lot</option>
+                        <option value="Industrial Lot">Industrial Lot</option>
+                        <option value="Beachfront Property">Beachfront Property</option>
+                        <option value="Resort">Resort</option>
+                        <option value="Hotels and Motels">Hotels and Motels</option>
+                        <option value="Dormitory">Dormitory</option>
+                        <option value="Office Space">Office Space</option>
+                        <option value="Warehouse">Warehouse</option>
+                        <option value="Retail Space">Retail Space</option>
+                        <option value="Mixed-Use Development">Mixed-Use Development</option>
+                        <option value="Luxury Estate">Luxury Estate</option>
+                        <option value="Foreclosed Property">Foreclosed Property</option>
+                        <option value="Subdivision Development">Subdivision Development</option>
+                        <option value="Others">Others</option>
+                    </select>
+
+                    <button type="button" id="selectAllSpecializations" class="select-all-btn">
+                        Select All
+                    </button>
+                </div>
             </div>
 
             <div class="form-group specialization-tags-group">
                 <div class="specialization-tags" id="specializationTags"></div>
             </div>
+
             <input type="hidden" name="specializations" id="specializationInput"
                 value="<?= htmlspecialchars($old_inputs['specializations'] ?? '') ?>">
         </div>
@@ -251,11 +259,14 @@
         </div>
 
         <!-- Education -->
-        <h3>Educational Background</h3>
+        <h3>Educational Background (Optional)</h3>
+        <p class="note-text">You may skip this section if not applicable.</p>
+
         <div class="form-row">
             <div class="form-group">
-                <label for="education">Education Level *</label>
+                <label for="education">Education Level</label>
                 <select id="education" name="education">
+                    <option value="">-- Select Education Level (Optional) --</option>
                     <?php
                     $edu_levels = ['High School','Associate','Bachelor','Master','PhD'];
                     foreach($edu_levels as $edu) {
@@ -266,21 +277,24 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="school">School/University *</label>
+                <label for="school">School / University</label>
                 <input type="text" id="school" name="school"
+                    placeholder="e.g. Batangas State University"
                     value="<?= htmlspecialchars($old['school'] ?? $user['school'] ?? '') ?>">
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label for="course">Course/Major *</label>
+                <label for="course">Course / Major</label>
                 <input type="text" id="course" name="course"
+                    placeholder="e.g. BS Real Estate Management"
                     value="<?= htmlspecialchars($old['course'] ?? $user['course'] ?? '') ?>">
             </div>
             <div class="form-group">
-                <label for="graduation_year">Graduation Year (Applicable if graduated)</label>
+                <label for="graduation_year">Graduation Year</label>
                 <input type="number" id="graduation_year" name="graduation_year" min="1950" max="2030"
+                    placeholder="Optional"
                     value="<?= htmlspecialchars($old['graduation_year'] ?? $user['graduation_year'] ?? '') ?>">
             </div>
         </div>
@@ -391,6 +405,19 @@
             hiddenInput.value = selectedTags.join(', ');
         }
 
+        // === SELECT ALL SPECIALIZATIONS BUTTON ===
+        const selectAllBtn = document.getElementById('selectAllSpecializations');
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', () => {
+                const allOptions = Array.from(specializationSelect.options)
+                    .map(opt => opt.value)
+                    .filter(v => v && v !== '' && v !== 'Others'); // skip placeholder and "Others"
+
+                selectedTags = Array.from(new Set([...selectedTags, ...allOptions]));
+                renderTags();
+            });
+        }
+
         tagsContainer.addEventListener('click', e => {
             if (e.target.classList.contains('remove-tag')) {
                 const value = e.target.dataset.value;
@@ -467,27 +494,35 @@
             companyField.style.display = (type === 'associate_agent') ? 'block' : 'none';
             companySelect.required = (type === 'associate_agent');
 
-            // Hide all file inputs initially
-            docsSection.querySelectorAll('.form-group').forEach(g => g.style.display = 'none');
+            // Hide all groups and remove required from everything first
+            docsSection.querySelectorAll('.form-group').forEach(g => {
+                g.style.display = 'none';
+                const input = g.querySelector('input, select, textarea');
+                if (input) input.removeAttribute('required');
+            });
 
             if (type === 'associate_agent') {
-                // Show all associate docs
+                // Show Associate documents
                 docInputs.associate.forEach(id => {
                     const el = document.getElementById(id);
-                    if (el) el.closest('.form-group').style.display = 'block';
-                    if (el) el.required = true;
+                    if (el) {
+                        el.closest('.form-group').style.display = 'block';
+                        el.setAttribute('required', 'required');
+                    }
                 });
             } 
             else if (type === 'direct_agent') {
-                // Show only direct-agent documents
+                // Show Direct documents
                 docInputs.direct.forEach(id => {
                     const el = document.getElementById(id);
-                    if (el) el.closest('.form-group').style.display = 'block';
-                    if (el) el.required = true;
+                    if (el) {
+                        el.closest('.form-group').style.display = 'block';
+                        el.setAttribute('required', 'required');
+                    }
                 });
             }
 
-            // If nothing selected, hide section
+            // If nothing selected, hide section entirely
             if (!type) {
                 docsSection.style.display = 'none';
             }

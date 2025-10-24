@@ -91,12 +91,7 @@ try {
         'postal_code',
 
         // Professional Information
-        'experience_years',
-
-        // Educational Background
-        'education',
-        'school',
-        'course'
+        'experience_years'
     ];
 
     foreach ($required_fields as $f) {
@@ -191,6 +186,11 @@ try {
     // Specializations
     $specializations = trim($old_inputs['specializations']);
     $specializations = !empty($specializations) ? json_encode(array_map('trim', explode(',', $specializations))) : null;
+
+    // Handle optional educational fields (convert empty strings to null)
+    foreach (['education','school','course','graduation_year'] as $field) {
+        if (empty($old_inputs[$field])) $old_inputs[$field] = null;
+    }
 
     // === Insert application ===
     $pdo->beginTransaction();
