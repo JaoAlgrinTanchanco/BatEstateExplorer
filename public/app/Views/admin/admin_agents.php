@@ -31,7 +31,13 @@
     // Fetch agents by type
     // ==============================
     function fetchAgents(string $type, $conn): array {
-        $stmt = $conn->prepare("SELECT * FROM users WHERE user_type = ?");
+        // Join with companies table to get the company name
+        $stmt = $conn->prepare("
+            SELECT u.*, c.name AS company_name
+            FROM users u
+            LEFT JOIN companies c ON u.company_id = c.id
+            WHERE u.user_type = ?
+        ");
         $stmt->bind_param("s", $type);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -56,6 +62,11 @@
                 $row['additional_docs_path'] = implode(',', $docs);
             } else {
                 $row['additional_docs_path'] = '';
+            }
+
+            // fallback if company_name is null
+            if (empty($row['company_name'])) {
+                $row['company_name'] = 'N/A';
             }
 
             $agents[] = $row;
@@ -105,7 +116,7 @@
                             data-profile-image-path="<?= htmlspecialchars($agent['profile_image_path']); ?>"
                             data-experience-years="<?= intval($agent['experience_years'] ?? 0); ?>"
                             data-specialization="<?= htmlspecialchars($agent['specialization'] ?? ''); ?>"
-                            data-company-name="<?= htmlspecialchars($agent['company_id'] ?? 'N/A'); ?>"
+                            data-company-name="<?= htmlspecialchars($agent['company_name']); ?>"
                             data-education="<?= htmlspecialchars($agent['education'] ?? ''); ?>"
                             data-school="<?= htmlspecialchars($agent['school'] ?? ''); ?>"
                             data-course="<?= htmlspecialchars($agent['course'] ?? ''); ?>"
@@ -161,7 +172,7 @@
                             data-profile-image-path="<?= htmlspecialchars($agent['profile_image_path']); ?>"
                             data-experience-years="<?= intval($agent['experience_years'] ?? 0); ?>"
                             data-specialization="<?= htmlspecialchars($agent['specialization'] ?? ''); ?>"
-                            data-company-name="<?= htmlspecialchars($agent['company_id'] ?? 'N/A'); ?>"
+                            data-company-name="<?= htmlspecialchars($agent['company_name']); ?>"
                             data-education="<?= htmlspecialchars($agent['education'] ?? ''); ?>"
                             data-school="<?= htmlspecialchars($agent['school'] ?? ''); ?>"
                             data-course="<?= htmlspecialchars($agent['course'] ?? ''); ?>"
