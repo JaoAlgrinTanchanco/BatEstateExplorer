@@ -5,8 +5,9 @@
     function buildUploadUrl(string $filePath): string {
         if (empty($filePath)) return '';
 
-        if (str_starts_with($filePath, 'http://') || str_starts_with($filePath, 'https://')) {
-            return $filePath;
+        // Already full URL or starts with /BatEstateExplorer/storage
+        if (str_starts_with($filePath, 'http://') || str_starts_with($filePath, 'https://') || str_starts_with($filePath, 'BatEstateExplorer/storage')) {
+            return '/' . ltrim($filePath, '/');
         }
 
         $filePath = ltrim($filePath, '/');
@@ -148,26 +149,31 @@
             <?php if (empty($associate_agents)): ?>
                 <div class="no-agents">No approved associate agents found.</div>
             <?php else: ?>
-                <div class="direct-agent-list"><!-- use same class as direct for styling -->
+                <div class="direct-agent-list"><!-- reuse class for styling -->
                     <?php foreach ($associate_agents as $agent): ?>
                         <div class="direct-agent-card agent-card"
-                             data-first-name="<?= htmlspecialchars($agent['first_name']); ?>"
-                             data-last-name="<?= htmlspecialchars($agent['last_name']); ?>"
-                             data-email="<?= htmlspecialchars($agent['email']); ?>"
-                             data-phone="<?= htmlspecialchars($agent['phone']); ?>"
-                             data-address="<?= htmlspecialchars($agent['address']); ?>"
-                             data-user-type="Associate Agent"
-                             data-profile-image-path="<?= htmlspecialchars($agent['profile_image_path']); ?>"
-                             data-experience-years="<?= intval($agent['experience_years'] ?? 0); ?>"
-                             data-specialization="<?= htmlspecialchars($agent['specialization'] ?? ''); ?>"
-                             data-company-name="<?= htmlspecialchars($agent['company_id'] ?? 'N/A'); ?>"
-                             data-education="<?= htmlspecialchars($agent['education'] ?? ''); ?>"
-                             data-school="<?= htmlspecialchars($agent['school'] ?? ''); ?>"
-                             data-course="<?= htmlspecialchars($agent['course'] ?? ''); ?>"
-                             data-graduation-year="<?= htmlspecialchars($agent['graduation_year'] ?? ''); ?>"
-                             data-status="<?= htmlspecialchars($agent['status'] ?? 'Active'); ?>"
-                             data-account-created="<?= htmlspecialchars($agent['created_at']); ?>">
-                            
+                            data-first-name="<?= htmlspecialchars($agent['first_name']); ?>"
+                            data-last-name="<?= htmlspecialchars($agent['last_name']); ?>"
+                            data-email="<?= htmlspecialchars($agent['email']); ?>"
+                            data-phone="<?= htmlspecialchars($agent['phone']); ?>"
+                            data-address="<?= htmlspecialchars($agent['address']); ?>"
+                            data-user-type="Associate Agent"
+                            data-profile-image-path="<?= htmlspecialchars($agent['profile_image_path']); ?>"
+                            data-experience-years="<?= intval($agent['experience_years'] ?? 0); ?>"
+                            data-specialization="<?= htmlspecialchars($agent['specialization'] ?? ''); ?>"
+                            data-company-name="<?= htmlspecialchars($agent['company_id'] ?? 'N/A'); ?>"
+                            data-education="<?= htmlspecialchars($agent['education'] ?? ''); ?>"
+                            data-school="<?= htmlspecialchars($agent['school'] ?? ''); ?>"
+                            data-course="<?= htmlspecialchars($agent['course'] ?? ''); ?>"
+                            data-graduation-year="<?= htmlspecialchars($agent['graduation_year'] ?? ''); ?>"
+                            data-broker-license-path="<?= htmlspecialchars($agent['broker_license_path'] ?? ''); ?>"
+                            data-prc-license-path="<?= htmlspecialchars($agent['prc_license_path'] ?? ''); ?>"
+                            data-resume-path="<?= htmlspecialchars($agent['resume_path'] ?? ''); ?>"
+                            data-valid-id-path="<?= htmlspecialchars($agent['valid_id_path'] ?? ''); ?>"
+                            data-additional-docs-path="<?= htmlspecialchars($agent['additional_docs_path'] ?? ''); ?>"
+                            data-status="<?= htmlspecialchars($agent['status'] ?? 'Active'); ?>"
+                            data-account-created="<?= htmlspecialchars($agent['created_at']); ?>">
+
                             <div class="direct-agent-avatar agent-avatar">
                                 <?php if (!empty($agent['profile_image_path'])): ?>
                                     <img src="<?= htmlspecialchars($agent['profile_image_path']); ?>" alt="Profile" class="agent-profile-img" />
@@ -311,26 +317,32 @@
                 </section>
 
                 <section class="documents">
-                <h3>Uploaded Documents</h3>
+                    <h3>Uploaded Documents</h3>
                     ${
-                        userType.toLowerCase() === 'associate_agent'
-                        ? `
-                            ${docLink('Broker’s License', card.dataset.brokerLicensePath, true)}
-                            ${docLink('PRC License', card.dataset.prcLicensePath, true)}
-                            ${docLink('Resume/CV', card.dataset.resumePath, true)}
-                            ${docLink('Valid ID', card.dataset.validIdPath, true)}
-                        `
-                        : `
-                            ${docLink('Valid ID', card.dataset.validIdPath, true)}
-                            <div class="detail-row">
-                                <div class="detail-label">Property Location:</div>
-                                <div class="detail-value">${card.dataset.propertyLocation || 'Not available'}</div>
-                            </div>
-                            ${docLink('Property Image', card.dataset.propertyImagePath, true)}
-                            ${docLink('Property Document', card.dataset.propertyDocumentPath, true)}
-                        `
+                        // normalize userType: lowercase, remove spaces/underscores
+                        (() => {
+                            const type = userType.toLowerCase().replace(/\s|_/g, '');
+                            if (type === 'associateagent') {
+                                return `
+                                    ${docLink('Broker’s License', card.dataset.brokerLicensePath, true)}
+                                    ${docLink('PRC License', card.dataset.prcLicensePath, true)}
+                                    ${docLink('Resume/CV', card.dataset.resumePath, true)}
+                                    ${docLink('Valid ID', card.dataset.validIdPath, true)}
+                                `;
+                            } else { // direct agent
+                                return `
+                                    ${docLink('Valid ID', card.dataset.validIdPath, true)}
+                                    <div class="detail-row">
+                                        <div class="detail-label">Property Location:</div>
+                                        <div class="detail-value">${card.dataset.propertyLocation || 'Not available'}</div>
+                                    </div>
+                                    ${docLink('Property Image', card.dataset.propertyImagePath, true)}
+                                    ${docLink('Property Document', card.dataset.propertyDocumentPath, true)}
+                                `;
+                            }
+                        })()
                     }
-                ${additionalDocsHtml}
+                    ${additionalDocsHtml}
                 </section>
 
                 <section class="account">
