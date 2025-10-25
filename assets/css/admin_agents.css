@@ -59,20 +59,26 @@
 .direct-agent-card {
   background: #fff;
   border-radius: 40px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
   position: relative;
-  aspect-ratio: 1 / 1;
-  max-width: 245px;
+  width: 245px;
+  height: 245px;
+  overflow: hidden;
   transform: translateZ(0);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, margin 0.4s ease-in-out,
-              top 0.4s ease-in-out, left 0.4s ease-in-out;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    margin 0.4s ease-in-out,
+    top 0.4s ease-in-out,
+    left 0.4s ease-in-out;
 }
+
 .direct-agent-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
 }
 
 /* ===== Tabs ===== */
@@ -223,6 +229,11 @@
 .direct-agent-details {
   font-size: 0.9rem;
   color: #6b7280;
+  white-space: nowrap;        /* stay on one line */
+  overflow: hidden;           /* hide overflowing text */
+  text-overflow: ellipsis;    /* show "..." at the end */
+  display: block;             /* make sure it behaves properly */
+  width: 100%;                /* needed for text-overflow to work */
 }
 
 /* ===========================

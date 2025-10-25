@@ -60,7 +60,7 @@
         $stmt->close();
         return $agents;
     }
-
+    
     // ==============================
     // Fetch direct and associate agents
     // ==============================
@@ -306,12 +306,23 @@
                 </section>
 
                 <section class="documents">
-                    <h3>Uploaded Documents</h3>
-                    ${docLink('Broker License', card.dataset.brokerLicensePath, userType.toLowerCase() === 'direct agent')}
-                    ${docLink('PRC License', card.dataset.prcLicensePath, userType.toLowerCase() === 'direct agent')}
-                    ${docLink('Resume/CV', card.dataset.resumePath, userType.toLowerCase() === 'direct agent')}
-                    ${docLink('Valid ID', card.dataset.validIdPath, userType.toLowerCase() === 'direct agent')}
-                    ${additionalDocsHtml}
+                <h3>Uploaded Documents</h3>
+                ${
+                    userType.toLowerCase() === 'associate_agent'
+                    ? `
+                        ${docLink('Broker’s License', card.dataset.brokerLicensePath, true)}
+                        ${docLink('PRC License', card.dataset.prcLicensePath, true)}
+                        ${docLink('Resume/CV', card.dataset.resumePath, true)}
+                        ${docLink('Valid ID', card.dataset.validIdPath, true)}
+                    `
+                    : `
+                        ${docLink('Valid ID', card.dataset.validIdPath, true)}
+                        ${docLink('Property Location', card.dataset.propertyLocationPath, true)}
+                        ${docLink('Property Image', card.dataset.propertyImagePath, true)}
+                        ${docLink('Property Document', card.dataset.propertyDocumentPath, true)}
+                    `
+                }
+                ${additionalDocsHtml}
                 </section>
 
                 <section class="account">
