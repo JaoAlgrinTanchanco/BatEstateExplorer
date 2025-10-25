@@ -5,7 +5,10 @@ require_once __DIR__ . '/../../config/pdo_database.php';
 // --- Security check ---
 if (!is_logged_in() || !is_admin()) {
     http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Unauthorized'
+    ]);
     exit;
 }
 
@@ -13,16 +16,22 @@ if (!is_logged_in() || !is_admin()) {
 $input = json_decode(file_get_contents('php://input'), true);
 if (!$input || !isset($input['id'], $input['action'])) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid request']);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Invalid request'
+    ]);
     exit;
 }
 
-$id = (int) $input['id'];
+$id = (int)$input['id'];
 $action = strtolower($input['action']);
 
 if (!in_array($action, ['approve', 'reject'])) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid action']);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Invalid action'
+    ]);
     exit;
 }
 
@@ -41,7 +50,7 @@ try {
     }
 
     if ($action === 'approve') {
-        // Map agent_type to user_type
+        // --- Map agent_type to user_type ---
         $user_type = match ($application['agent_type'] ?? '') {
             'direct_agent' => 'direct_agent',
             'associate_agent' => 'associate_agent',
@@ -58,9 +67,12 @@ try {
 
         if ($existingUser) {
             if ($existingUser['user_type'] === 'user') {
-                $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$existingUser['id']]);
+                $pdo->prepare("DELETE FROM users WHERE id = ?")
+                    ->execute([$existingUser['id']]);
             } else {
-                throw new Exception("Email {$application['email']} is already an {$existingUser['user_type']}");
+                throw new Exception(
+                    "Email {$application['email']} is already an {$existingUser['user_type']}"
+                );
             }
         }
 
@@ -70,20 +82,15 @@ try {
         if (!empty($application['specialization'])) {
             $spec = $application['specialization'];
 
-            // If it's a string, try decoding it first
             if (is_string($spec)) {
                 $decoded = json_decode($spec, true);
-
                 if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    // It was already JSON
                     $specialization_json = json_encode($decoded, JSON_UNESCAPED_UNICODE);
                 } else {
-                    // It’s a comma-separated list
                     $items = array_map('trim', explode(',', $spec));
                     $specialization_json = json_encode($items, JSON_UNESCAPED_UNICODE);
                 }
             } elseif (is_array($spec)) {
-                // Already an array
                 $specialization_json = json_encode($spec, JSON_UNESCAPED_UNICODE);
             }
         }
@@ -142,8 +149,11 @@ try {
 
         // --- Insert into agents ---
         $stmt = $pdo->prepare("
-            INSERT INTO agents (user_id, company_id, broker_id, license_number, experience_years, specialization, bio)
-            VALUES (:user_id, :company_id, :broker_id, :license_number, :experience_years, :specialization, :bio)
+            INSERT INTO agents (
+                user_id, company_id, broker_id, license_number, experience_years, specialization, bio
+            ) VALUES (
+                :user_id, :company_id, :broker_id, :license_number, :experience_years, :specialization, :bio
+            )
         ");
         $stmt->execute([
             ':user_id' => $new_user_id,
@@ -168,5 +178,8 @@ try {
 
 } catch (Exception $e) {
     $pdo->rollBack();
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }

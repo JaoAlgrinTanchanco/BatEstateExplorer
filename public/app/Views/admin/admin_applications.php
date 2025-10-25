@@ -30,6 +30,20 @@
         $result = mysqli_query($conn, $query);
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
+
+                // Decode specialization JSON string to array
+                $row['specializations'] = [];
+                if (!empty($row['specialization'])) {
+                    $decoded = json_decode($row['specialization'], true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $row['specializations'] = $decoded;
+                    } else {
+                        // fallback: comma-separated string
+                        $row['specializations'] = array_map('trim', explode(',', $row['specialization']));
+                    }
+                }
+                unset($row['specialization']); // remove raw DB string
+
                 $applications[] = $row;
             }
         }
@@ -198,7 +212,7 @@
 </style>
 
 <script>
-    // === UTILITY: ESCAPE HTML (GLOBAL) ===
+    // === UTILITY: ESCAPE HTML ===
     function escapeHtml(str) {
         if (!str) return '';
         return String(str)
@@ -210,30 +224,18 @@
     }
 
     // === RENDER SPECIALIZATIONS ===
-    function renderSpecializations(specializations) {
-        if (!specializations || (Array.isArray(specializations) && specializations.length === 0)) {
-            return 'N/A';
+    function renderSpecializations(specs) {
+        if (!specs || (Array.isArray(specs) && specs.length === 0)) return 'N/A';
+        if (typeof specs === 'string') {
+            try { specs = JSON.parse(specs); }
+            catch { specs = specs.split(',').map(s => s.trim()); }
         }
-
-        if (typeof specializations === 'string') {
-            try {
-                specializations = JSON.parse(specializations);
-            } catch {
-                specializations = specializations.split(',').map(s => s.trim());
-            }
-        }
-
-        if (Array.isArray(specializations)) {
-            // Join with commas instead of tags
-            return specializations.map(spec => escapeHtml(spec)).join(', ');
-        }
-
-        return escapeHtml(String(specializations));
+        if (Array.isArray(specs)) return specs.map(s => escapeHtml(s)).join(', ');
+        return escapeHtml(String(specs));
     }
 
-    // === DETAIL ROW ===
+    // === DETAIL ROW HELPER ===
     function detailRow(label, value) {
-        // Two-column layout: label and value
         return `
             <div class="detail-row">
                 <div class="detail-label">${label}:</div>
@@ -242,82 +244,78 @@
         `;
     }
 
+    // === BUILD PUBLIC URL FROM STORAGE PATH ===
+    function buildFileUrl(path) {
+        if (!path) return null;
+        const filename = path.split(/[/\\]/).pop();
+        if (path.includes('documents')) return `/BatEstateExplorer/storage/uploads/documents/${filename}`;
+        if (path.includes('images')) return `/BatEstateExplorer/storage/uploads/images/${filename}`;
+        if (path.includes('property_images')) return `/BatEstateExplorer/storage/uploads/property_images/${filename}`;
+        return '';
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
-        // === ELEMENT REFERENCES ===
         const applicationList = document.getElementById('applicationList');
         const modal = document.getElementById('applicationModal');
         const modalBody = document.getElementById('modalBody');
         const sortSelect = document.getElementById('sort');
 
-        // === EVENT LISTENERS ===
         if (applicationList) applicationList.addEventListener('click', handleApplicationClick);
         if (sortSelect) sortSelect.addEventListener('change', handleSortChange);
         initModalCloseEvents();
 
-        // === MAIN CLICK HANDLER FOR APPLICATION LIST ===
+        // === CLICK HANDLER ===
         function handleApplicationClick(e) {
-            const targetBtn = e.target.closest('.view-btn, .approve-btn, .reject-btn');
-            if (!targetBtn) return;
-
-            const id = targetBtn.dataset.id;
+            const btn = e.target.closest('.view-btn, .approve-btn, .reject-btn');
+            if (!btn) return;
+            const id = btn.dataset.id;
             if (!id) return;
 
-            if (targetBtn.classList.contains('view-btn')) {
-                fetchApplicationDetails(id);
-            } else if (targetBtn.classList.contains('approve-btn')) {
-                reviewApplication(id, 'approve', targetBtn);
-            } else if (targetBtn.classList.contains('reject-btn')) {
-                reviewApplication(id, 'reject', targetBtn);
-            }
+            if (btn.classList.contains('view-btn')) fetchApplicationDetails(id);
+            else if (btn.classList.contains('approve-btn')) reviewApplication(id, 'approve', btn);
+            else if (btn.classList.contains('reject-btn')) reviewApplication(id, 'reject', btn);
         }
 
-        // === FETCH APPLICATION DETAILS ===
+        // === FETCH DETAILS ===
         function fetchApplicationDetails(id) {
             fetch(`/BatEstateExplorer/public/api/get_application_details.php?id=${encodeURIComponent(id)}`)
-                .then(res => {
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    return res.json();
-                })
+                .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
                 .then(data => {
-                    console.log('Parsed JSON:', data);
-                    if (!data || !data.success) {
-                        alert('Failed to load application details');
-                        return;
-                    }
+                    if (!data || !data.success) { alert('Failed to load application details'); return; }
                     renderApplicationDetails(data.application);
                     showModal();
                 })
-                .catch(err => {
-                    console.error('Fetch error:', err);
-                    alert('Error loading application details');
-                });
+                .catch(err => { console.error(err); alert('Error loading application details'); });
         }
 
-        // === RENDER APPLICATION DETAILS IN MODAL ===
+        // === RENDER DETAILS ===
         function renderApplicationDetails(app) {
             let docSection = '';
+            const profileImageUrl = app.profile_image_path ? buildFileUrl(app.profile_image_path) : '';
 
-            // Prepare profile image URL
-            const profileImageUrl = app.profile_image_path 
-                ? '/BatEstateExplorer/storage/uploads/profile_images/' + app.profile_image_path.split('/').pop() 
-                : '';
-
-            // Documents section for direct agents
-            if (app.agent_type === 'direct_agent') {
+            if (app.agent_type === 'associate_agent') {
                 docSection = `
                     <h3>Documents Submitted</h3>
-                    <div class="detail-row"><a href="${escapeHtml(app.broker_license_path)}" target="_blank">View Broker License</a></div>
-                    <div class="detail-row"><a href="${escapeHtml(app.prc_license_path)}" target="_blank">View PRC License</a></div>
-                    <div class="detail-row"><a href="${escapeHtml(app.resume_path)}" target="_blank">View Resume / CV</a></div>
-                    <div class="detail-row"><a href="${escapeHtml(app.valid_id_path)}" target="_blank">View Valid ID</a></div>
+                    ${app.broker_license_path ? detailRow('Broker License', `<a href="${escapeHtml(buildFileUrl(app.broker_license_path))}" target="_blank">View</a>`) : ''}
+                    ${app.prc_license_path ? detailRow('PRC License', `<a href="${escapeHtml(buildFileUrl(app.prc_license_path))}" target="_blank">View</a>`) : ''}
+                    ${app.resume_path ? detailRow('Resume / CV', `<a href="${escapeHtml(buildFileUrl(app.resume_path))}" target="_blank">View</a>`) : ''}
+                    ${app.valid_id_path ? detailRow('Valid ID', `<a href="${escapeHtml(buildFileUrl(app.valid_id_path))}" target="_blank">View</a>`) : ''}
+                `;
+            } else if (app.agent_type === 'direct_agent') {
+                docSection = `
+                    <h3>Documents Submitted</h3>
+                    ${app.valid_id_path ? detailRow('Valid ID', `<a href="${escapeHtml(buildFileUrl(app.valid_id_path))}" target="_blank">View</a>`) : ''}
+                    ${detailRow('Property Location', escapeHtml(app.property_location || 'N/A'))}
+                    ${app.property_image_path ? detailRow('Property Image', `<a href="${escapeHtml(buildFileUrl(app.property_image_path))}" target="_blank">View</a>`) : ''}
+                    ${app.property_document_path ? detailRow('Property Document', `<a href="${escapeHtml(buildFileUrl(app.property_document_path))}" target="_blank">View</a>`) : ''}
                 `;
             }
 
             modalBody.innerHTML = `
                 <div class="detail-section">
-                    ${profileImageUrl 
-                        ? `<div class="modal-avatar"><img src="${escapeHtml(profileImageUrl)}" alt="Profile" class="avatar-img" style="width:100px;height:100px;border-radius:50%;margin-bottom:15px;"> </div>` 
-                        : `<i class="fa-solid fa-user default-avatar" style="font-size: 80px; display:block; margin-bottom:15px;"></i>`}
+                    ${profileImageUrl
+                        ? `<div class="modal-avatar"><img src="${escapeHtml(profileImageUrl)}" alt="Profile" class="avatar-img" style="width:100px;height:100px;border-radius:50%;margin-bottom:15px;"></div>`
+                        : `<i class="fa-solid fa-user default-avatar" style="font-size:80px; display:block; margin-bottom:15px;"></i>`}
                     
                     <h3>Applicant Info</h3>
                     ${detailRow('Full Name', `${escapeHtml(app.first_name)} ${escapeHtml(app.last_name)}`)}
@@ -327,10 +325,10 @@
                     ${detailRow('Agent Type', escapeHtml(app.agent_type))}
                     ${app.company_name ? detailRow('Company', escapeHtml(app.company_name)) : ''}
                     ${detailRow('Broker ID', escapeHtml(app.broker_id || 'N/A'))}
-                    ${detailRow('PRC Number', escapeHtml(app.prc_number || 'N/A'))}
+                    ${detailRow('License Number', escapeHtml(app.license_number || 'N/A'))}
                     ${detailRow('Experience Years', escapeHtml(app.experience_years || 'N/A'))}
                     ${detailRow('Specializations', renderSpecializations(app.specializations))}
-                    ${detailRow('Experience Details', escapeHtml(app.experience_details || 'N/A'))}
+                    ${detailRow('Bio', escapeHtml(app.bio || 'N/A'))}
                     ${detailRow('Education', escapeHtml(app.education || 'N/A'))}
                     ${detailRow('School', escapeHtml(app.school || 'N/A'))}
                     ${detailRow('Course', escapeHtml(app.course || 'N/A'))}
@@ -342,35 +340,26 @@
             `;
         }
 
-        function detailRow(label, value) {
-            return `
-                <div class="detail-row">
-                    <div class="detail-label">${label}:</div>
-                    <div class="detail-value">${value}</div>
-                </div>
-            `;
-        }
-
-        // === CUSTOM CONFIRMATION MODAL ===
-        function showConfirm(message) {
+        // === CONFIRM MODAL ===
+        function showConfirm(msg) {
             return new Promise(resolve => {
-                const modal = document.createElement('div');
-                modal.className = 'confirm-modal';
-                modal.innerHTML = `
+                const confirmModal = document.createElement('div');
+                confirmModal.className = 'confirm-modal';
+                confirmModal.innerHTML = `
                     <div class="modal-content">
-                        <p style="margin-bottom: 15px; font-size: 15px;">${message}</p>
+                        <p style="margin-bottom:15px; font-size:15px;">${msg}</p>
                         <button class="btn btn-primary" id="confirmYes">Yes</button>
                         <button class="btn btn-secondary" id="confirmNo">No</button>
                     </div>
                 `;
-                document.body.appendChild(modal);
-                modal.querySelector('#confirmYes').addEventListener('click', () => { modal.remove(); resolve(true); });
-                modal.querySelector('#confirmNo').addEventListener('click', () => { modal.remove(); resolve(false); });
+                document.body.appendChild(confirmModal);
+                confirmModal.querySelector('#confirmYes').addEventListener('click', () => { confirmModal.remove(); resolve(true); });
+                confirmModal.querySelector('#confirmNo').addEventListener('click', () => { confirmModal.remove(); resolve(false); });
             });
         }
 
         // === APPROVE / REJECT ===
-        async function reviewApplication(id, action, button) {
+        async function reviewApplication(id, action, btn) {
             const confirmed = await showConfirm(`Are you sure you want to ${action} this application?`);
             if (!confirmed) return;
 
@@ -383,7 +372,7 @@
             .then(data => {
                 if (data.success) {
                     alert(`Application ${action}d`);
-                    button.closest('.application-card')?.remove();
+                    btn.closest('.application-card')?.remove();
                 } else {
                     alert(`Error: ${data.message}`);
                 }
@@ -395,7 +384,6 @@
         function handleSortChange() {
             const sortBy = sortSelect.value;
             const cards = Array.from(applicationList.querySelectorAll('.application-card'));
-
             cards.sort((a, b) => {
                 switch (sortBy) {
                     case 'newest': return new Date(b.dataset.date) - new Date(a.dataset.date);
@@ -405,8 +393,7 @@
                     default: return 0;
                 }
             });
-
-            cards.forEach(card => applicationList.appendChild(card));
+            cards.forEach(c => applicationList.appendChild(c));
         }
 
         // === MODAL HANDLING ===
@@ -415,15 +402,7 @@
             window.addEventListener('click', e => { if (e.target === modal) closeModal(); });
         }
 
-        function showModal() {
-            modal.style.display = 'flex';
-            modal.setAttribute('aria-hidden', 'false');
-        }
-
-        function closeModal() {
-            modal.style.display = 'none';
-            modal.setAttribute('aria-hidden', 'true');
-            document.querySelector('#openModalBtn')?.focus();
-        }
+        function showModal() { modal.style.display = 'flex'; modal.setAttribute('aria-hidden', 'false'); }
+        function closeModal() { modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true'); document.querySelector('#openModalBtn')?.focus(); }
     });
 </script>
