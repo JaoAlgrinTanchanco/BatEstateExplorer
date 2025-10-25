@@ -147,22 +147,60 @@ try {
 
         $new_user_id = $pdo->lastInsertId();
 
-        // --- Insert into agents ---
-        $stmt = $pdo->prepare("
-            INSERT INTO agents (
-                user_id, company_id, broker_id, license_number, experience_years, specialization, bio
+        // --- Insert into users ---
+        $insertUserSQL = "
+            INSERT INTO users (
+                first_name, last_name, email, password_hash, phone, address,
+                user_type, status,
+                education, school, course, graduation_year,
+                certifications, training,
+                broker_license_path, prc_license_path, resume_path, valid_id_path,
+                property_location, property_image_path, property_document_path, additional_docs_path,
+                company_id, broker_id, license_number, experience_years,
+                specialization, bio, profile_image_path
             ) VALUES (
-                :user_id, :company_id, :broker_id, :license_number, :experience_years, :specialization, :bio
+                :first_name, :last_name, :email, :password_hash, :phone, :address,
+                :user_type, :status,
+                :education, :school, :course, :graduation_year,
+                :certifications, :training,
+                :broker_license_path, :prc_license_path, :resume_path, :valid_id_path,
+                :property_location, :property_image_path, :property_document_path, :additional_docs_path,
+                :company_id, :broker_id, :license_number, :experience_years,
+                :specialization, :bio, :profile_image_path
             )
-        ");
+        ";
+
+        $stmt = $pdo->prepare($insertUserSQL);
         $stmt->execute([
-            ':user_id' => $new_user_id,
+            ':first_name' => $application['first_name'] ?? '',
+            ':last_name' => $application['last_name'] ?? '',
+            ':email' => $application['email'] ?? '',
+            ':password_hash' => $application['password_hash'] ?? '',
+            ':phone' => $application['phone'] ?? '',
+            ':address' => $application['address'] ?? '',
+            ':user_type' => $user_type,
+            ':status' => 'active',
+            ':education' => $application['education'] ?? '',
+            ':school' => $application['school'] ?? '',
+            ':course' => $application['course'] ?? '',
+            ':graduation_year' => $application['graduation_year'] ?? '',
+            ':certifications' => $application['certifications'] ?? '',
+            ':training' => $application['training'] ?? '',
+            ':broker_license_path' => $application['broker_license_path'] ?? '',
+            ':prc_license_path' => $application['prc_license_path'] ?? '',
+            ':resume_path' => $application['resume_path'] ?? '',
+            ':valid_id_path' => $application['valid_id_path'] ?? '',
+            ':property_location' => $application['property_location'] ?? '',
+            ':property_image_path' => $application['property_image_path'] ?? '',
+            ':property_document_path' => $application['property_document_path'] ?? '',
+            ':additional_docs_path' => $application['additional_docs_path'] ?? '',
             ':company_id' => $company_id,
             ':broker_id' => $application['broker_id'] ?? null,
             ':license_number' => $application['license_number'] ?? null,
             ':experience_years' => $experience_years,
             ':specialization' => $specialization_json,
-            ':bio' => $application['bio'] ?? null
+            ':bio' => $application['bio'] ?? null,
+            ':profile_image_path' => $application['profile_image_path'] ?? null
         ]);
     }
 
