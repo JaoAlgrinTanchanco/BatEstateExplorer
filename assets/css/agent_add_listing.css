@@ -1,6 +1,108 @@
 /* ===========================
    Add Listing Form - Modern Grid Look
 =========================== */
+
+/* Property Documents Upload Area - same height as text inputs */
+#documentUploadArea {
+  max-height: 45px;
+}
+
+.remove-doc {
+  background: #ff4d4f;       /* red background */
+  color: #fff;               /* white X */
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.remove-doc:hover {
+  background: #ff7875;
+}
+
+/* =========================
+   Property Document Preview
+========================= */
+#documentPreview {
+  display: none;                 /* hidden when empty */
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  background: #f9fafb;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #333;
+  align-items: center;
+}
+
+#documentPreview.active {
+  display: flex;                 /* show when documents exist */
+}
+
+#documentPreview .doc-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  max-width: 200px;
+  overflow: hidden;
+}
+
+#documentPreview .doc-item a {
+  text-decoration: none;
+  color: #008dff;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#documentPreview .doc-item button.remove-doc {
+  background: rgba(220, 53, 69, 0.85);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+#documentPreview .doc-item button.remove-doc:hover {
+  background: rgba(220, 53, 69, 1);
+  transform: translateY(-1px);
+}
+
+/* Optional: responsive for small screens */
+@media (max-width: 768px) {
+  #documentPreview {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #documentPreview .doc-item {
+    max-width: 100%;
+  }
+}
+
+
 /* ==========================
    Property Document Preview
 ========================== */
@@ -108,8 +210,6 @@
   width: 100%;
   height: 100%!important;   /* set actual height */
   min-height: 120px !important;
-
-  margin-bottom: 1.5rem;
   resize: vertical;           /* allow user resizing */
 }
 
@@ -453,6 +553,7 @@
     gap: 1px;
     width: 100%;
     align-items: center;
+    margin-top: 1rem
 }
 
 

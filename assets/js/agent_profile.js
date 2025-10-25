@@ -149,12 +149,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
-        removeBtn.className = 'remove-img';
-        removeBtn.innerHTML = '&times;';
+        removeBtn.innerHTML = '&times;'; // × symbol
+        removeBtn.style.position = 'absolute';
+        removeBtn.style.top = '4px';
+        removeBtn.style.right = '4px';
+        removeBtn.style.background = '#000';
+        removeBtn.style.color = '#fff';
+        removeBtn.style.border = 'none';
+        removeBtn.style.borderRadius = '50%';
+        removeBtn.style.width = '24px';
+        removeBtn.style.height = '24px';
+        removeBtn.style.fontSize = '16px';
+        removeBtn.style.cursor = 'pointer';
+        removeBtn.style.display = 'flex';
+        removeBtn.style.alignItems = 'center';
+        removeBtn.style.justifyContent = 'center';
+        removeBtn.style.padding = '0';
+        removeBtn.style.zIndex = '10';
+        removeBtn.style.transition = 'background 0.2s ease';
+
+        removeBtn.addEventListener('mouseenter', () => removeBtn.style.background = 'rgba(255, 120, 117, 0.9)');
+        removeBtn.addEventListener('mouseleave', () => removeBtn.style.background = 'rgba(255, 77, 79, 0.9)');
+
         removeBtn.addEventListener('click', () => {
-          window.selectedFiles.splice(idx, 1);
-          renderPreviews();
+            window.selectedFiles.splice(idx, 1);
+            renderPreviews();
         });
+
+        wrap.style.position = 'relative'; // Ensure parent is relative for absolute positioning
         wrap.appendChild(removeBtn);
 
         const reader = new FileReader();
@@ -245,6 +267,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fd = new FormData(form);
     window.selectedFiles.forEach(f => fd.append('images[]', f));
+    window.selectedDocuments?.forEach(f => fd.append('property_documents[]', f));
+
 
     // Before sending FormData in Save Draft or Save Listing
     const propertyDocInput = document.getElementById('property_document');
@@ -318,6 +342,17 @@ document.addEventListener('DOMContentLoaded', () => {
           }
       });
 
+      // -------------------------
+      // Append property documents
+      // -------------------------
+      window.selectedDocuments?.forEach(f => {
+          if (f instanceof File) {
+              fd.append('property_documents[]', f);
+          } else if (typeof f === 'string') {
+              fd.append('existing_property_documents[]', f);
+          }
+      });
+
       // If editing a draft, send the draft ID
       if (window.currentDraftId) {
           fd.append('draft_id', window.currentDraftId);
@@ -356,8 +391,209 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   });
 
-
   initDraftCards();
+
+  // -------------------------
+  // Property Document Upload (multiple files)
+  // -------------------------
+  window.selectedDocuments = window.selectedDocuments || [];
+
+  const initDocumentUpload = ({ dropAreaId, fileInputId, previewId, maxFiles = 10 }) => {
+      const dropArea = document.getElementById(dropAreaId);
+      const fileInput = document.getElementById(fileInputId);
+      const preview = document.getElementById(previewId);
+
+      if (!dropArea || !fileInput || !preview) return;
+
+      const renderPreviews = () => {
+          preview.innerHTML = '';
+          window.selectedDocuments.forEach((file, idx) => {
+              const wrap = document.createElement('div');
+              wrap.className = 'doc-wrap';
+
+              const nameEl = document.createElement('span');
+              nameEl.className = 'doc-name';
+              nameEl.innerText = file.name;
+              wrap.appendChild(nameEl);
+
+              const removeBtn = document.createElement('button');
+              removeBtn.type = 'button';
+              removeBtn.className = 'remove-doc';
+              removeBtn.innerHTML = '&times;';
+              removeBtn.addEventListener('click', () => {
+                  window.selectedDocuments.splice(idx, 1);
+                  renderPreviews();
+              });
+              wrap.appendChild(removeBtn);
+
+              preview.appendChild(wrap);
+          });
+      };
+
+      const addFiles = (files) => {
+          const incoming = Array.from(files);
+          const existingSigs = new Set(window.selectedDocuments.map(f => `${f.name}|${f.size}|${f.lastModified}`));
+          for (const f of incoming) {
+              if (window.selectedDocuments.length >= maxFiles) break;
+              const sig = `${f.name}|${f.size}|${f.lastModified}`;
+              if (!existingSigs.has(sig)) {
+                  window.selectedDocuments.push(f);
+                  existingSigs.add(sig);
+              }
+          }
+          renderPreviews();
+      };
+
+      // Drag & Drop
+      ['dragenter','dragover','dragleave','drop'].forEach(evt =>
+          dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); })
+      );
+      dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
+      dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
+      dropArea.addEventListener('drop', e => {
+          dropArea.classList.remove('drag-over');
+          addFiles(e.dataTransfer.files);
+      });
+
+      // Click to open file picker
+      dropArea.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', () => {
+          addFiles(fileInput.files);
+          fileInput.value = ''; // reset input
+      });
+
+      // Reset helper
+      window.resetDocumentUpload = () => {
+          window.selectedDocuments.length = 0;
+          renderPreviews();
+      };
+
+      // Initial render
+      renderPreviews();
+  };
+
+  // Initialize
+  initDocumentUpload({
+      dropAreaId: 'documentUploadArea',
+      fileInputId: 'property_document',
+      previewId: 'documentPreview',
+      maxFiles: 10
+  });
+
+  // Initialize selected documents array
+  window.selectedDocuments = window.selectedDocuments || [];
+
+  const docInput = document.getElementById('property_document');
+  const docArea = document.getElementById('documentUploadArea');
+
+  // Function to update the document preview
+  function updateDocumentPreview() {
+    const preview = document.getElementById('documentPreview');
+    if (!preview) {
+      console.warn('Document preview element not found');
+      return;
+    }
+
+    preview.innerHTML = '';
+
+    if (!window.selectedDocuments || window.selectedDocuments.length === 0) {
+      preview.style.display = 'none';
+      return;
+    }
+
+    preview.style.display = 'flex';
+    preview.style.flexWrap = 'wrap';
+    preview.style.gap = '10px';
+
+    window.selectedDocuments.forEach((file, index) => {
+      const item = document.createElement('div');
+      item.className = 'doc-item';
+      item.style.position = 'relative';
+      item.style.padding = '12px 16px';
+      item.style.border = '1px solid #ddd';
+      item.style.borderRadius = '8px';
+      item.style.background = '#f8f8f8';
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.minWidth = '180px';
+      item.style.wordBreak = 'break-word';
+
+      const link = document.createElement('a');
+      link.textContent = file.name;
+      link.href = URL.createObjectURL(file);
+      link.target = '_blank';
+      link.style.color = '#007bff';
+      link.style.textDecoration = 'none';
+      link.style.textAlign = 'center';
+      link.style.fontSize = '14px';
+      link.style.maxWidth = '160px';
+      link.style.overflow = 'hidden';
+      link.style.textOverflow = 'ellipsis';
+      link.style.whiteSpace = 'nowrap';
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.style.position = 'absolute';
+      removeBtn.style.top = '4px';
+      removeBtn.style.right = '4px';
+      removeBtn.style.background = '#000';
+      removeBtn.style.color = '#fff';
+      removeBtn.style.border = 'none';
+      removeBtn.style.borderRadius = '50%';
+      removeBtn.style.width = '22px';
+      removeBtn.style.height = '22px';
+      removeBtn.style.fontSize = '16px';
+      removeBtn.style.cursor = 'pointer';
+      removeBtn.style.display = 'flex';
+      removeBtn.style.alignItems = 'center';
+      removeBtn.style.justifyContent = 'center';
+      removeBtn.style.padding = '0';
+      removeBtn.style.transition = 'background 0.2s ease';
+
+      removeBtn.addEventListener('mouseenter', () => {
+        removeBtn.style.background = 'rgba(255, 77, 79, 0.9)';
+      });
+      removeBtn.addEventListener('mouseleave', () => {
+        removeBtn.style.background = '#000';
+      });
+
+      removeBtn.addEventListener('click', () => {
+        window.selectedDocuments.splice(index, 1);
+        updateDocumentPreview();
+      });
+
+      item.appendChild(link);
+      item.appendChild(removeBtn);
+      preview.appendChild(item);
+    });
+  }
+
+  // Handle file selection via input
+  docInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      window.selectedDocuments.push(...files);
+      updateDocumentPreview();
+  });
+
+  // Handle drag & drop
+  docArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      docArea.classList.add('drag-over');
+  });
+  docArea.addEventListener('dragleave', () => docArea.classList.remove('drag-over'));
+  docArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      docArea.classList.remove('drag-over');
+      const files = Array.from(e.dataTransfer.files);
+      window.selectedDocuments.push(...files);
+      updateDocumentPreview();
+  });
+
+  // Initial call to hide preview if empty
+  updateDocumentPreview();
+
 }); //END OF DOM
 
 // =========================
@@ -625,6 +861,7 @@ function loadDraftIntoForm(draftId) {
           wrap.appendChild(img);
 
           const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-doc';
           removeBtn.type = 'button';
           removeBtn.className = 'remove-img';
           removeBtn.innerHTML = '&times;';
@@ -666,17 +903,34 @@ function loadDraftIntoForm(draftId) {
 
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
-        removeBtn.innerText = 'Remove';
+        removeBtn.innerText = 'x'; // or 'Remove' if you prefer text
         removeBtn.style.marginLeft = '10px';
+        removeBtn.style.background = '#000';
+        removeBtn.style.color = '#fff';
+        removeBtn.style.border = 'none';
+        removeBtn.style.borderRadius = '50%';
+        removeBtn.style.width = '24px';
+        removeBtn.style.height = '24px';
+        removeBtn.style.fontSize = '16px';
+        removeBtn.style.cursor = 'pointer';
+        removeBtn.style.display = 'flex';
+        removeBtn.style.alignItems = 'center';
+        removeBtn.style.justifyContent = 'center';
+        removeBtn.style.padding = '0';
+        removeBtn.style.transition = 'background 0.2s ease';
+
+        removeBtn.addEventListener('mouseenter', () => removeBtn.style.background = 'rgba(255, 77, 79, 0.9)');
+        removeBtn.addEventListener('mouseleave', () => removeBtn.style.background = '#000');
+
         removeBtn.addEventListener('click', () => {
-          docPreview.innerHTML = '';
-          docInput.value = '';
-          // mark for removal
-          const hidden = document.createElement('input');
-          hidden.type = 'hidden';
-          hidden.name = 'remove_property_document';
-          hidden.value = '1';
-          docInput.closest('form').appendChild(hidden);
+            docPreview.innerHTML = '';
+            docInput.value = '';
+            // mark for removal
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'remove_property_document';
+            hidden.value = '1';
+            docInput.closest('form').appendChild(hidden);
         });
 
         docPreview.appendChild(link);
