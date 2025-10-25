@@ -267,42 +267,63 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!form) return;
 
     // ===============================
-    // 📄 Collect all docs in preview
+    // 🏗️ Build FormData
     // ===============================
+    const fd = new FormData(form);
+
+    // ===============================
+    // 🖼️ Property Images
+    // ===============================
+    // Support both manually selected and custom preview
+    const imgInput = document.getElementById('images');
+    if (imgInput?.files?.length > 0) {
+      Array.from(imgInput.files).forEach(file => fd.append('images[]', file));
+    } else if (window.selectedFiles?.length) {
+      window.selectedFiles.forEach(f => fd.append('images[]', f));
+    }
+
+    // ===============================
+    // 📄 Property Documents
+    // ===============================
+    // Handle reloaded previewed docs and new ones
     const docItems = Array.from(document.querySelectorAll('#documentPreview .doc-item'));
-    const existingDocs = [];
     const newDocs = [];
+    const existingDocs = [];
 
     docItems.forEach(item => {
       if (item.file) newDocs.push(item.file);
       else if (item.dataset.path) existingDocs.push(item.dataset.path);
     });
 
-    // ===============================
-    // 🏗️ Build FormData
-    // ===============================
-    const fd = new FormData(form);
-
-    // 🖼️ Property images
-    if (window.selectedFiles?.length) {
-      window.selectedFiles.forEach(f => fd.append('images[]', f));
-    }
-
-    // 📄 Existing + new property documents
+    // Existing docs (for reference if backend supports it later)
     existingDocs.forEach(p => fd.append('existing_docs[]', p));
-    newDocs.forEach(f => fd.append('new_docs[]', f));
 
-    // 🔄 Fallback for manual input (no preview)
-    const propertyDocInput = document.getElementById('property_document');
-    if (propertyDocInput?.files?.length > 0) {
-      for (const f of propertyDocInput.files) {
-        fd.append('new_docs[]', f);
+    // New uploaded files
+    if (newDocs.length > 0) {
+      newDocs.forEach(f => fd.append('property_document[]', f));
+    } else {
+      // Fallback: if using the file input directly
+      const docInput = document.getElementById('property_document');
+      if (docInput?.files?.length > 0) {
+        Array.from(docInput.files).forEach(file => fd.append('property_document[]', file));
       }
     }
 
-    // 🆔 Current draft ID (for update)
+    // ===============================
+    // 🆔 Add Draft ID for Updates
+    // ===============================
     if (window.currentDraftId) fd.append('id', window.currentDraftId);
 
+    // ===============================
+    // 🧩 Debug Preview
+    // ===============================
+    console.group("FormData Before Upload");
+    for (let [key, val] of fd.entries()) console.log(key, val);
+    console.groupEnd();
+
+    // ===============================
+    // 🚀 Submit
+    // ===============================
     try {
       const res = await fetch('/BatEstateExplorer/public/api/save_draft.php', {
         method: 'POST',
@@ -597,11 +618,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function syncDocumentInput() {
+    const docInput = document.getElementById('property_document');
+    const dataTransfer = new DataTransfer();
+
+    window.selectedDocuments.forEach(file => {
+      if (file instanceof File) dataTransfer.items.add(file);
+    });
+
+    docInput.files = dataTransfer.files;
+  }
+
   // Handle file selection via input
   docInput.addEventListener('change', (e) => {
     const files = Array.from(e.target.files);
     window.selectedDocuments.push(...files);
     updateDocumentPreview();
+    syncDocumentInput();
   });
 
   // Handle drag & drop
@@ -616,6 +649,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const files = Array.from(e.dataTransfer.files);
     window.selectedDocuments.push(...files);
     updateDocumentPreview();
+    syncDocumentInput();
   });
 
   // Always visible preview (no hide/show)

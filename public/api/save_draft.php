@@ -19,7 +19,6 @@ try {
     // =========================
     // Collect form data
     // =========================
-    $draft_id      = isset($_POST['id']) ? intval($_POST['id']) : null;
     $title         = trim($_POST['title'] ?? '');
     $description   = trim($_POST['description'] ?? '');
     $price         = isset($_POST['price']) ? floatval($_POST['price']) : null;
@@ -38,128 +37,84 @@ try {
     if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
 
     // =========================
-    // Handle image uploads (multiple)
+    // Handle image uploads
     // =========================
     $uploadedImagePaths = [];
     if (!empty($_FILES['images']['name'][0])) {
-        $file_count = min(count($_FILES['images']['name']), 10);
-        for ($i = 0; $i < $file_count; $i++) {
-            $tmp   = $_FILES['images']['tmp_name'][$i];
-            $name  = $_FILES['images']['name'][$i];
-            $error = $_FILES['images']['error'][$i];
+        $count = count($_FILES['images']['name']);
+        for ($i = 0; $i < $count; $i++) {
+            if ($_FILES['images']['error'][$i] !== UPLOAD_ERR_OK) continue;
 
-            if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)) continue;
-
+            $tmp = $_FILES['images']['tmp_name'][$i];
+            $name = basename($_FILES['images']['name'][$i]);
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['jpg','jpeg','png','gif'])) continue;
 
-            $newFileName = uniqid('draft_', true) . '.' . $ext;
-            $destination = $upload_dir . $newFileName;
-            $relativePath = $db_path_prefix . $newFileName;
+            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) continue;
 
-            if (!move_uploaded_file($tmp, $destination)) {
-                throw new Exception("Failed to move uploaded image: $name");
+            $newName = uniqid('draft_img_', true) . '.' . $ext;
+            $dest = $upload_dir . $newName;
+            $relativePath = $db_path_prefix . $newName;
+
+            if (move_uploaded_file($tmp, $dest)) {
+                $uploadedImagePaths[] = $relativePath;
             }
-
-            $uploadedImagePaths[] = $relativePath;
         }
     }
-    $image_path = $uploadedImagePaths ? implode(',', $uploadedImagePaths) : null;
+    $image_path = !empty($uploadedImagePaths) ? implode(',', $uploadedImagePaths) : null;
 
     // =========================
-    // Handle property_documents upload (existing + new)
+    // Handle document uploads
     // =========================
-    $existingDocs = $_POST['existing_docs'] ?? [];
-    if (!is_array($existingDocs)) $existingDocs = [];
-
     $uploadedDocPaths = [];
+    if (!empty($_FILES['property_document']['name'][0])) {
+        $count = count($_FILES['property_document']['name']);
+        for ($i = 0; $i < $count; $i++) {
+            if ($_FILES['property_document']['error'][$i] !== UPLOAD_ERR_OK) continue;
 
-    // Handle new file uploads (new_docs[])
-    if (!empty($_FILES['new_docs']['name'][0])) {
-        $doc_count = min(count($_FILES['new_docs']['name']), 10);
-        for ($i = 0; $i < $doc_count; $i++) {
-            $tmp   = $_FILES['new_docs']['tmp_name'][$i];
-            $name  = $_FILES['new_docs']['name'][$i];
-            $error = $_FILES['new_docs']['error'][$i];
-
-            if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)) continue;
-
+            $tmp = $_FILES['property_document']['tmp_name'][$i];
+            $name = basename($_FILES['property_document']['name'][$i]);
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['pdf','doc','docx','jpg','jpeg','png'])) continue;
 
-            $newDocName = uniqid('doc_', true) . '.' . $ext;
-            $destination = $upload_dir . $newDocName;
-            $relativePath = $db_path_prefix . $newDocName;
+            if (!in_array($ext, ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'])) continue;
 
-            if (!move_uploaded_file($tmp, $destination)) {
-                throw new Exception("Failed to move uploaded document: $name");
+            $newName = uniqid('draft_doc_', true) . '.' . $ext;
+            $dest = $upload_dir . $newName;
+            $relativePath = $db_path_prefix . $newName;
+
+            if (move_uploaded_file($tmp, $dest)) {
+                $uploadedDocPaths[] = $relativePath;
             }
-
-            $uploadedDocPaths[] = $relativePath;
         }
     }
-
-    // Merge both old + new paths
-    $allDocs = array_merge($existingDocs, $uploadedDocPaths);
-    $property_document_path = !empty($allDocs) ? implode(',', $allDocs) : null;
+    $property_document_path = !empty($uploadedDocPaths) ? implode(',', $uploadedDocPaths) : null;
 
     // =========================
-    // Insert or Update Draft
+    // Insert new draft
     // =========================
-    if ($draft_id) {
-        // Update existing draft
-        $query = "
-            UPDATE property_drafts
-            SET title = ?, location = ?, price = ?, lot_size = ?, property_type = ?, 
-                bedrooms = ?, bathrooms = ?, description = ?, updated_at = NOW()";
-
-        $params = [$title, $location, $price, $lot_size, $property_type, $bedrooms, $bathrooms, $description];
-
-        if ($image_path) {
-            $query .= ", image_path = CONCAT(IFNULL(image_path, ''), ?, IF(image_path IS NULL OR image_path = '', '', ','))";
-            $params[] = $image_path;
-        }
-        if ($property_document_path) {
-            $query .= ", property_document_path = CONCAT(IFNULL(property_document_path, ''), ?, IF(property_document_path IS NULL OR property_document_path = '', '', ','))";
-            $params[] = $property_document_path;
-        }
-
-        $query .= " WHERE id = ? AND user_id = ?";
-        $params[] = $draft_id;
-        $params[] = $user_id;
-
-        $stmt = $pdo->prepare($query);
-        $stmt->execute($params);
-        $message = "Draft updated successfully!";
-    } else {
-        // Insert new draft
-        $stmt = $pdo->prepare("
-            INSERT INTO property_drafts
-            (user_id, title, location, price, lot_size, property_type, bedrooms, bathrooms, description, image_path, property_document_path, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-        ");
-        $stmt->execute([
-            $user_id,
-            $title,
-            $location,
-            $price,
-            $lot_size,
-            $property_type,
-            $bedrooms,
-            $bathrooms,
-            $description,
-            $image_path,
-            $property_document_path
-        ]);
-        $message = "Draft saved successfully!";
-    }
+    $stmt = $pdo->prepare("
+        INSERT INTO property_drafts 
+        (user_id, title, location, price, lot_size, property_type, bedrooms, bathrooms, description, image_path, property_document_path, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+    ");
+    $stmt->execute([
+        $user_id,
+        $title,
+        $location,
+        $price,
+        $lot_size,
+        $property_type,
+        $bedrooms,
+        $bathrooms,
+        $description,
+        $image_path,
+        $property_document_path
+    ]);
 
     echo json_encode([
         'success' => true,
-        'message' => $message,
+        'message' => 'Draft saved successfully!',
+        'draft_id' => $pdo->lastInsertId(),
         'debug' => [
-            'POST' => $_POST,
-            'FILES' => $_FILES,
             'uploaded_images' => $uploadedImagePaths,
             'uploaded_docs' => $uploadedDocPaths
         ]
@@ -168,7 +123,7 @@ try {
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
-        'error' => 'Error saving draft: ' . $e->getMessage(),
+        'error' => $e->getMessage(),
         'debug' => [
             'POST' => $_POST,
             'FILES' => $_FILES
