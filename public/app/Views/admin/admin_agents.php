@@ -31,21 +31,24 @@
     // ==============================
     function fetchAgents(string $type, $conn): array {
         $stmt = $conn->prepare("SELECT * FROM users WHERE user_type = ?");
-        if (!$stmt) die("Prepare failed: " . $conn->error);
-
         $stmt->bind_param("s", $type);
         $stmt->execute();
         $result = $stmt->get_result();
 
         $agents = [];
         while ($row = $result->fetch_assoc()) {
-            // Normalize all document paths
-            $paths = ['profile_image_path', 'broker_license_path', 'prc_license_path', 'resume_path', 'valid_id_path'];
+            $paths = [
+                'profile_image_path', 'broker_license_path', 'prc_license_path', 
+                'resume_path', 'valid_id_path', 
+                'property_location_path', 'property_image_path', 'property_document_path'
+            ];
             foreach ($paths as $p) {
-                $row[$p] = buildUploadUrl($row[$p] ?? '');
+                if (isset($row[$p])) {
+                    $row[$p] = buildUploadUrl($row[$p]);
+                }
             }
 
-            // Additional documents
+            // Additional docs
             if (!empty($row['additional_docs_path'])) {
                 $docs = array_filter(array_map('trim', explode(',', $row['additional_docs_path'])));
                 $docs = array_map('buildUploadUrl', $docs);
@@ -56,11 +59,10 @@
 
             $agents[] = $row;
         }
-
         $stmt->close();
         return $agents;
     }
-    
+
     // ==============================
     // Fetch direct and associate agents
     // ==============================
@@ -111,6 +113,9 @@
                             data-prc-license-path="<?= htmlspecialchars($agent['prc_license_path'] ?? '') ?>"
                             data-resume-path="<?= htmlspecialchars($agent['resume_path'] ?? '') ?>"
                             data-valid-id-path="<?= htmlspecialchars($agent['valid_id_path'] ?? '') ?>"
+                            data-property-location="<?= htmlspecialchars($agent['property_location'] ?? '') ?>"
+                            data-property-image-path="<?= htmlspecialchars($agent['property_image_path'] ?? '') ?>"
+                            data-property-document-path="<?= htmlspecialchars($agent['property_document_path'] ?? '') ?>"
                             data-additional-docs-path="<?= htmlspecialchars($agent['additional_docs_path'] ?? '') ?>"
                             data-status="<?= htmlspecialchars($agent['status'] ?? 'Active'); ?>"
                             data-account-created="<?= htmlspecialchars($agent['created_at']); ?>">
@@ -307,21 +312,24 @@
 
                 <section class="documents">
                 <h3>Uploaded Documents</h3>
-                ${
-                    userType.toLowerCase() === 'associate_agent'
-                    ? `
-                        ${docLink('Broker’s License', card.dataset.brokerLicensePath, true)}
-                        ${docLink('PRC License', card.dataset.prcLicensePath, true)}
-                        ${docLink('Resume/CV', card.dataset.resumePath, true)}
-                        ${docLink('Valid ID', card.dataset.validIdPath, true)}
-                    `
-                    : `
-                        ${docLink('Valid ID', card.dataset.validIdPath, true)}
-                        ${docLink('Property Location', card.dataset.propertyLocationPath, true)}
-                        ${docLink('Property Image', card.dataset.propertyImagePath, true)}
-                        ${docLink('Property Document', card.dataset.propertyDocumentPath, true)}
-                    `
-                }
+                    ${
+                        userType.toLowerCase() === 'associate_agent'
+                        ? `
+                            ${docLink('Broker’s License', card.dataset.brokerLicensePath, true)}
+                            ${docLink('PRC License', card.dataset.prcLicensePath, true)}
+                            ${docLink('Resume/CV', card.dataset.resumePath, true)}
+                            ${docLink('Valid ID', card.dataset.validIdPath, true)}
+                        `
+                        : `
+                            ${docLink('Valid ID', card.dataset.validIdPath, true)}
+                            <div class="detail-row">
+                                <div class="detail-label">Property Location:</div>
+                                <div class="detail-value">${card.dataset.propertyLocation || 'Not available'}</div>
+                            </div>
+                            ${docLink('Property Image', card.dataset.propertyImagePath, true)}
+                            ${docLink('Property Document', card.dataset.propertyDocumentPath, true)}
+                        `
+                    }
                 ${additionalDocsHtml}
                 </section>
 

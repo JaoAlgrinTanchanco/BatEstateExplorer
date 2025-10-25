@@ -248,9 +248,12 @@
     function buildFileUrl(path) {
         if (!path) return null;
         const filename = path.split(/[/\\]/).pop();
+
+        if (path.includes('profile_images')) return `/BatEstateExplorer/storage/uploads/profile_images/${filename}`;
         if (path.includes('documents')) return `/BatEstateExplorer/storage/uploads/documents/${filename}`;
         if (path.includes('images')) return `/BatEstateExplorer/storage/uploads/images/${filename}`;
         if (path.includes('property_images')) return `/BatEstateExplorer/storage/uploads/property_images/${filename}`;
+        
         return '';
     }
 

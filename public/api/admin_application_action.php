@@ -78,10 +78,8 @@ try {
 
         // --- Convert specialization to JSON ---
         $specialization_json = null;
-
         if (!empty($application['specialization'])) {
             $spec = $application['specialization'];
-
             if (is_string($spec)) {
                 $decoded = json_decode($spec, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
@@ -95,59 +93,7 @@ try {
             }
         }
 
-        // --- Insert into users ---
-        $insertUserSQL = "
-            INSERT INTO users (
-                first_name, last_name, email, password_hash, phone, address,
-                user_type, status,
-                education, school, course, graduation_year,
-                certifications, training,
-                broker_license_path, prc_license_path, resume_path, valid_id_path, additional_docs_path,
-                company_id, broker_id, license_number, experience_years,
-                specialization, bio, profile_image_path
-            ) VALUES (
-                :first_name, :last_name, :email, :password_hash, :phone, :address,
-                :user_type, :status,
-                :education, :school, :course, :graduation_year,
-                :certifications, :training,
-                :broker_license_path, :prc_license_path, :resume_path, :valid_id_path, :additional_docs_path,
-                :company_id, :broker_id, :license_number, :experience_years,
-                :specialization, :bio, :profile_image_path
-            )
-        ";
-        $stmt = $pdo->prepare($insertUserSQL);
-        $stmt->execute([
-            ':first_name' => $application['first_name'] ?? '',
-            ':last_name' => $application['last_name'] ?? '',
-            ':email' => $application['email'] ?? '',
-            ':password_hash' => $application['password_hash'] ?? '',
-            ':phone' => $application['phone'] ?? '',
-            ':address' => $application['address'] ?? '',
-            ':user_type' => $user_type,
-            ':status' => 'active',
-            ':education' => $application['education'] ?? '',
-            ':school' => $application['school'] ?? '',
-            ':course' => $application['course'] ?? '',
-            ':graduation_year' => $application['graduation_year'] ?? '',
-            ':certifications' => $application['certifications'] ?? '',
-            ':training' => $application['training'] ?? '',
-            ':broker_license_path' => $application['broker_license_path'] ?? '',
-            ':prc_license_path' => $application['prc_license_path'] ?? '',
-            ':resume_path' => $application['resume_path'] ?? '',
-            ':valid_id_path' => $application['valid_id_path'] ?? '',
-            ':additional_docs_path' => $application['additional_docs_path'] ?? '',
-            ':company_id' => $company_id,
-            ':broker_id' => $application['broker_id'] ?? null,
-            ':license_number' => $application['license_number'] ?? null,
-            ':experience_years' => $experience_years,
-            ':specialization' => $specialization_json,
-            ':bio' => $application['bio'] ?? null,
-            ':profile_image_path' => $application['profile_image_path'] ?? null
-        ]);
-
-        $new_user_id = $pdo->lastInsertId();
-
-        // --- Insert into users ---
+        // --- Insert into users (merged single insert with all fields) ---
         $insertUserSQL = "
             INSERT INTO users (
                 first_name, last_name, email, password_hash, phone, address,
@@ -202,6 +148,8 @@ try {
             ':bio' => $application['bio'] ?? null,
             ':profile_image_path' => $application['profile_image_path'] ?? null
         ]);
+
+        $new_user_id = $pdo->lastInsertId();
     }
 
     // --- Update application status ---
