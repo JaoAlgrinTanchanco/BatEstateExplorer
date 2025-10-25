@@ -262,34 +262,64 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------
   document.getElementById('saveDraftBtn')?.addEventListener('click', async (e) => {
     e.preventDefault();
+
     const form = document.getElementById('addListingForm');
     if (!form) return;
 
+    // ===============================
+    // 📄 Collect all docs in preview
+    // ===============================
+    const docItems = Array.from(document.querySelectorAll('#documentPreview .doc-item'));
+    const existingDocs = [];
+    const newDocs = [];
+
+    docItems.forEach(item => {
+      if (item.file) newDocs.push(item.file);
+      else if (item.dataset.path) existingDocs.push(item.dataset.path);
+    });
+
+    // ===============================
+    // 🏗️ Build FormData
+    // ===============================
     const fd = new FormData(form);
-    window.selectedFiles.forEach(f => fd.append('images[]', f));
-    window.selectedDocuments?.forEach(f => fd.append('property_documents[]', f));
 
-
-    // Before sending FormData in Save Draft or Save Listing
-    const propertyDocInput = document.getElementById('property_document');
-    if (propertyDocInput && propertyDocInput.files.length > 0) {
-        fd.append('property_document', propertyDocInput.files[0]);
+    // 🖼️ Property images
+    if (window.selectedFiles?.length) {
+      window.selectedFiles.forEach(f => fd.append('images[]', f));
     }
 
-    // If editing an existing draft, append the ID
+    // 📄 Existing + new property documents
+    existingDocs.forEach(p => fd.append('existing_docs[]', p));
+    newDocs.forEach(f => fd.append('new_docs[]', f));
+
+    // 🔄 Fallback for manual input (no preview)
+    const propertyDocInput = document.getElementById('property_document');
+    if (propertyDocInput?.files?.length > 0) {
+      for (const f of propertyDocInput.files) {
+        fd.append('new_docs[]', f);
+      }
+    }
+
+    // 🆔 Current draft ID (for update)
     if (window.currentDraftId) fd.append('id', window.currentDraftId);
 
     try {
-      const res = await fetch('/BatEstateExplorer/public/api/save_draft.php', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const res = await fetch('/BatEstateExplorer/public/api/save_draft.php', {
+        method: 'POST',
+        body: fd,
+      });
 
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json();
+      console.log('Draft Save Response:', data);
+
       if (data.success) {
         notify('success', window.currentDraftId ? 'Draft updated successfully!' : 'Draft saved successfully!');
         form.reset();
         window.resetImageUpload?.();
+        window.resetDocumentUpload?.();
         loadDrafts?.();
-        window.currentDraftId = null; // reset after save
+        window.currentDraftId = null;
       } else {
         notify('error', data.error || 'Failed to save draft.');
       }
@@ -490,10 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Function to update the document preview (always visible)
   function updateDocumentPreview() {
     const preview = document.getElementById('documentPreview');
-    if (!preview) {
-      console.warn('Document preview element not found');
-      return;
-    }
+    if (!preview) return;
 
     preview.innerHTML = '';
 
@@ -511,9 +538,16 @@ document.addEventListener('DOMContentLoaded', () => {
       item.style.minWidth = '180px';
       item.style.wordBreak = 'break-word';
 
+      // ✅ Support both existing URLs and new File objects
       const link = document.createElement('a');
-      link.textContent = file.name;
-      link.href = URL.createObjectURL(file);
+      if (typeof file === 'string') {
+        link.href = file.startsWith('/') ? file : '/' + file;
+        link.textContent = file.split('/').pop();
+      } else {
+        link.href = URL.createObjectURL(file);
+        link.textContent = file.name;
+      }
+
       link.target = '_blank';
       link.style.color = '#007bff';
       link.style.textDecoration = 'none';
@@ -524,6 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
       link.style.textOverflow = 'ellipsis';
       link.style.whiteSpace = 'nowrap';
 
+      // ❌ remove button
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.innerHTML = '&times;';
@@ -871,81 +906,89 @@ function loadDraftIntoForm(draftId) {
       }
 
       // -------------------------
-      // Render property document (draft reload)
+      // Render property documents (draft reload)
       // -------------------------
-      const docInput = document.getElementById('property_document');
       const docPreview = document.getElementById('documentPreview');
+      const docInput = document.getElementById('property_document');
 
       // Clear previous previews and reset state
       window.selectedDocuments = [];
       docPreview.innerHTML = '';
 
       if (data.property_document_path) {
-        const fullPath = '/' + data.property_document_path;
-        const fileName = data.property_document_path.split('/').pop();
+        const docs = data.property_document_path.split(',').filter(Boolean);
 
-        // Create container for document
-        const docWrap = document.createElement('div');
-        docWrap.style.display = 'flex';
-        docWrap.style.alignItems = 'center';
-        docWrap.style.gap = '10px';
-        docWrap.style.border = '1px solid #ddd';
-        docWrap.style.borderRadius = '8px';
-        docWrap.style.padding = '8px 12px';
-        docWrap.style.background = '#f8f8f8';
-        docWrap.style.fontSize = '14px';
-        docWrap.style.position = 'relative';
+        docs.forEach(path => {
+          const fileName = path.split('/').pop();
+          const fullPath = '/' + path.replace(/^\/?/, '');
 
-        // Document link
-        const link = document.createElement('a');
-        link.href = fullPath;
-        link.target = '_blank';
-        link.innerText = `Existing document: ${fileName}`;
-        link.style.color = '#007bff';
-        link.style.textDecoration = 'none';
-        link.style.flex = '1';
+          // Same .doc-item design from updateDocumentPreview()
+          const item = document.createElement('div');
+          item.className = 'doc-item';
+          item.style.position = 'relative';
+          item.style.padding = '12px 16px';
+          item.style.border = '1px solid #ddd';
+          item.style.borderRadius = '8px';
+          item.style.background = '#f8f8f8';
+          item.style.display = 'flex';
+          item.style.alignItems = 'center';
+          item.style.justifyContent = 'center';
+          item.style.minWidth = '180px';
+          item.style.wordBreak = 'break-word';
 
-        // Keep your removeBtn design and logic
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.innerText = 'x'; // or 'Remove' if you prefer text
-        removeBtn.style.marginLeft = '10px';
-        removeBtn.style.background = '#000';
-        removeBtn.style.color = '#fff';
-        removeBtn.style.border = 'none';
-        removeBtn.style.borderRadius = '50%';
-        removeBtn.style.width = '24px';
-        removeBtn.style.height = '24px';
-        removeBtn.style.fontSize = '16px';
-        removeBtn.style.cursor = 'pointer';
-        removeBtn.style.display = 'flex';
-        removeBtn.style.alignItems = 'center';
-        removeBtn.style.justifyContent = 'center';
-        removeBtn.style.padding = '0';
-        removeBtn.style.transition = 'background 0.2s ease';
+          const link = document.createElement('a');
+          link.textContent = fileName;
+          link.href = fullPath;
+          link.target = '_blank';
+          link.style.color = '#007bff';
+          link.style.textDecoration = 'none';
+          link.style.textAlign = 'center';
+          link.style.fontSize = '14px';
+          link.style.maxWidth = '160px';
+          link.style.overflow = 'hidden';
+          link.style.textOverflow = 'ellipsis';
+          link.style.whiteSpace = 'nowrap';
 
-        removeBtn.addEventListener('mouseenter', () => removeBtn.style.background = 'rgba(255, 77, 79, 0.9)');
-        removeBtn.addEventListener('mouseleave', () => removeBtn.style.background = '#000');
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.innerHTML = '&times;';
+          removeBtn.style.position = 'absolute';
+          removeBtn.style.top = '4px';
+          removeBtn.style.right = '4px';
+          removeBtn.style.background = '#000';
+          removeBtn.style.color = '#fff';
+          removeBtn.style.border = 'none';
+          removeBtn.style.borderRadius = '50%';
+          removeBtn.style.width = '22px';
+          removeBtn.style.height = '22px';
+          removeBtn.style.fontSize = '16px';
+          removeBtn.style.cursor = 'pointer';
+          removeBtn.style.display = 'flex';
+          removeBtn.style.alignItems = 'center';
+          removeBtn.style.justifyContent = 'center';
+          removeBtn.style.padding = '0';
+          removeBtn.style.transition = 'background 0.2s ease';
 
-        removeBtn.addEventListener('click', () => {
-          docPreview.innerHTML = '';
-          docInput.value = '';
+          removeBtn.addEventListener('mouseenter', () => removeBtn.style.background = 'rgba(255, 77, 79, 0.9)');
+          removeBtn.addEventListener('mouseleave', () => removeBtn.style.background = '#000');
 
-          // mark for removal
-          const hidden = document.createElement('input');
-          hidden.type = 'hidden';
-          hidden.name = 'remove_property_document';
-          hidden.value = '1';
-          docInput.closest('form').appendChild(hidden);
+          removeBtn.addEventListener('click', () => {
+            item.remove();
+            // mark for removal
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'remove_existing_docs[]';
+            hidden.value = path;
+            docInput.closest('form').appendChild(hidden);
+          });
+
+          item.appendChild(link);
+          item.appendChild(removeBtn);
+          docPreview.appendChild(item);
+
+          // Push into selectedDocuments so saving works again
+          window.selectedDocuments.push(fullPath);
         });
-
-        // Append link and remove button
-        docWrap.appendChild(link);
-        docWrap.appendChild(removeBtn);
-        docPreview.appendChild(docWrap);
-
-        // Push to selectedDocuments (important for saving)
-        window.selectedDocuments.push(fullPath);
       }
 
       // -------------------------

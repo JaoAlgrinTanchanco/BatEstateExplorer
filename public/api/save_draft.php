@@ -40,7 +40,7 @@ try {
     // =========================
     // Handle image uploads (multiple)
     // =========================
-    $uploadedPaths = [];
+    $uploadedImagePaths = [];
     if (!empty($_FILES['images']['name'][0])) {
         $file_count = min(count($_FILES['images']['name']), 10);
         for ($i = 0; $i < $file_count; $i++) {
@@ -58,57 +58,77 @@ try {
             $relativePath = $db_path_prefix . $newFileName;
 
             if (!move_uploaded_file($tmp, $destination)) {
-                throw new Exception("Failed to move uploaded file: $name");
+                throw new Exception("Failed to move uploaded image: $name");
             }
 
-            $uploadedPaths[] = $relativePath;
+            $uploadedImagePaths[] = $relativePath;
         }
     }
-    $image_path = $uploadedPaths ? implode(',', $uploadedPaths) : null;
+    $image_path = $uploadedImagePaths ? implode(',', $uploadedImagePaths) : null;
 
     // =========================
-    // Handle property_document upload (single)
+    // Handle property_documents upload (existing + new)
     // =========================
-    $property_document_path = null;
-    if (!empty($_FILES['property_document']['name'])) {
-        $docTmp   = $_FILES['property_document']['tmp_name'];
-        $docName  = $_FILES['property_document']['name'];
-        $docError = $_FILES['property_document']['error'];
+    $existingDocs = $_POST['existing_docs'] ?? [];
+    if (!is_array($existingDocs)) $existingDocs = [];
 
-        if ($docError === UPLOAD_ERR_OK && is_uploaded_file($docTmp)) {
-            $ext = strtolower(pathinfo($docName, PATHINFO_EXTENSION));
-            if (in_array($ext, ['pdf','doc','docx','jpg','jpeg','png'])) {
-                $newDocName  = uniqid('doc_', true) . '.' . $ext;
-                $destination = $upload_dir . $newDocName;
-                $relativePath = $db_path_prefix . $newDocName;
+    $uploadedDocPaths = [];
 
-                if (!move_uploaded_file($docTmp, $destination)) {
-                    throw new Exception("Failed to move uploaded document: $docName");
-                }
-                $property_document_path = $relativePath;
+    // Handle new file uploads (new_docs[])
+    if (!empty($_FILES['new_docs']['name'][0])) {
+        $doc_count = min(count($_FILES['new_docs']['name']), 10);
+        for ($i = 0; $i < $doc_count; $i++) {
+            $tmp   = $_FILES['new_docs']['tmp_name'][$i];
+            $name  = $_FILES['new_docs']['name'][$i];
+            $error = $_FILES['new_docs']['error'][$i];
+
+            if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)) continue;
+
+            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+            if (!in_array($ext, ['pdf','doc','docx','jpg','jpeg','png'])) continue;
+
+            $newDocName = uniqid('doc_', true) . '.' . $ext;
+            $destination = $upload_dir . $newDocName;
+            $relativePath = $db_path_prefix . $newDocName;
+
+            if (!move_uploaded_file($tmp, $destination)) {
+                throw new Exception("Failed to move uploaded document: $name");
             }
+
+            $uploadedDocPaths[] = $relativePath;
         }
     }
+
+    // Merge both old + new paths
+    $allDocs = array_merge($existingDocs, $uploadedDocPaths);
+    $property_document_path = !empty($allDocs) ? implode(',', $allDocs) : null;
 
     // =========================
     // Insert or Update Draft
     // =========================
     if ($draft_id) {
         // Update existing draft
-        $stmt = $pdo->prepare("
+        $query = "
             UPDATE property_drafts
-            SET title = ?, location = ?, price = ?, lot_size = ?, property_type = ?, bedrooms = ?, bathrooms = ?, description = ?, updated_at = NOW()
-            " . ($image_path ? ", image_path = CONCAT(IFNULL(image_path, ''), ?, ',')" : "") . "
-            " . ($property_document_path ? ", property_document_path = ?" : "") . "
-            WHERE id = ? AND user_id = ?
-        ");
+            SET title = ?, location = ?, price = ?, lot_size = ?, property_type = ?, 
+                bedrooms = ?, bathrooms = ?, description = ?, updated_at = NOW()";
 
         $params = [$title, $location, $price, $lot_size, $property_type, $bedrooms, $bathrooms, $description];
-        if ($image_path) $params[] = $image_path;
-        if ($property_document_path) $params[] = $property_document_path;
+
+        if ($image_path) {
+            $query .= ", image_path = CONCAT(IFNULL(image_path, ''), ?, IF(image_path IS NULL OR image_path = '', '', ','))";
+            $params[] = $image_path;
+        }
+        if ($property_document_path) {
+            $query .= ", property_document_path = CONCAT(IFNULL(property_document_path, ''), ?, IF(property_document_path IS NULL OR property_document_path = '', '', ','))";
+            $params[] = $property_document_path;
+        }
+
+        $query .= " WHERE id = ? AND user_id = ?";
         $params[] = $draft_id;
         $params[] = $user_id;
 
+        $stmt = $pdo->prepare($query);
         $stmt->execute($params);
         $message = "Draft updated successfully!";
     } else {
@@ -118,7 +138,6 @@ try {
             (user_id, title, location, price, lot_size, property_type, bedrooms, bathrooms, description, image_path, property_document_path, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
         ");
-
         $stmt->execute([
             $user_id,
             $title,
@@ -132,7 +151,6 @@ try {
             $image_path,
             $property_document_path
         ]);
-
         $message = "Draft saved successfully!";
     }
 
@@ -140,10 +158,10 @@ try {
         'success' => true,
         'message' => $message,
         'debug' => [
-            'POST'     => $_POST,
-            'FILES'    => $_FILES,
-            'uploaded' => $uploadedPaths,
-            'document' => $property_document_path
+            'POST' => $_POST,
+            'FILES' => $_FILES,
+            'uploaded_images' => $uploadedImagePaths,
+            'uploaded_docs' => $uploadedDocPaths
         ]
     ]);
 
@@ -152,7 +170,7 @@ try {
         'success' => false,
         'error' => 'Error saving draft: ' . $e->getMessage(),
         'debug' => [
-            'POST'  => $_POST,
+            'POST' => $_POST,
             'FILES' => $_FILES
         ]
     ]);
