@@ -399,94 +399,95 @@ document.addEventListener('DOMContentLoaded', () => {
   window.selectedDocuments = window.selectedDocuments || [];
 
   const initDocumentUpload = ({ dropAreaId, fileInputId, previewId, maxFiles = 10 }) => {
-      const dropArea = document.getElementById(dropAreaId);
-      const fileInput = document.getElementById(fileInputId);
-      const preview = document.getElementById(previewId);
+    const dropArea = document.getElementById(dropAreaId);
+    const fileInput = document.getElementById(fileInputId);
+    const preview = document.getElementById(previewId);
 
-      if (!dropArea || !fileInput || !preview) return;
+    if (!dropArea || !fileInput || !preview) return;
 
-      const renderPreviews = () => {
-          preview.innerHTML = '';
-          window.selectedDocuments.forEach((file, idx) => {
-              const wrap = document.createElement('div');
-              wrap.className = 'doc-wrap';
+    const renderPreviews = () => {
+      preview.innerHTML = '';
 
-              const nameEl = document.createElement('span');
-              nameEl.className = 'doc-name';
-              nameEl.innerText = file.name;
-              wrap.appendChild(nameEl);
+      window.selectedDocuments.forEach((file, idx) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'doc-wrap';
 
-              const removeBtn = document.createElement('button');
-              removeBtn.type = 'button';
-              removeBtn.className = 'remove-doc';
-              removeBtn.innerHTML = '&times;';
-              removeBtn.addEventListener('click', () => {
-                  window.selectedDocuments.splice(idx, 1);
-                  renderPreviews();
-              });
-              wrap.appendChild(removeBtn);
+        const nameEl = document.createElement('span');
+        nameEl.className = 'doc-name';
+        nameEl.innerText = file.name;
+        wrap.appendChild(nameEl);
 
-              preview.appendChild(wrap);
-          });
-      };
-
-      const addFiles = (files) => {
-          const incoming = Array.from(files);
-          const existingSigs = new Set(window.selectedDocuments.map(f => `${f.name}|${f.size}|${f.lastModified}`));
-          for (const f of incoming) {
-              if (window.selectedDocuments.length >= maxFiles) break;
-              const sig = `${f.name}|${f.size}|${f.lastModified}`;
-              if (!existingSigs.has(sig)) {
-                  window.selectedDocuments.push(f);
-                  existingSigs.add(sig);
-              }
-          }
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-doc';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.addEventListener('click', () => {
+          window.selectedDocuments.splice(idx, 1);
           renderPreviews();
-      };
+        });
 
-      // Drag & Drop
-      ['dragenter','dragover','dragleave','drop'].forEach(evt =>
-          dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); })
-      );
-      dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
-      dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
-      dropArea.addEventListener('drop', e => {
-          dropArea.classList.remove('drag-over');
-          addFiles(e.dataTransfer.files);
+        wrap.appendChild(removeBtn);
+        preview.appendChild(wrap);
       });
+    };
 
-      // Click to open file picker
-      dropArea.addEventListener('click', () => fileInput.click());
-      fileInput.addEventListener('change', () => {
-          addFiles(fileInput.files);
-          fileInput.value = ''; // reset input
-      });
-
-      // Reset helper
-      window.resetDocumentUpload = () => {
-          window.selectedDocuments.length = 0;
-          renderPreviews();
-      };
-
-      // Initial render
+    const addFiles = (files) => {
+      const incoming = Array.from(files);
+      const existingSigs = new Set(window.selectedDocuments.map(f => `${f.name}|${f.size}|${f.lastModified}`));
+      for (const f of incoming) {
+        if (window.selectedDocuments.length >= maxFiles) break;
+        const sig = `${f.name}|${f.size}|${f.lastModified}`;
+        if (!existingSigs.has(sig)) {
+          window.selectedDocuments.push(f);
+          existingSigs.add(sig);
+        }
+      }
       renderPreviews();
+    };
+
+    // Drag & Drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt =>
+      dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); })
+    );
+    dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
+    dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
+    dropArea.addEventListener('drop', e => {
+      dropArea.classList.remove('drag-over');
+      addFiles(e.dataTransfer.files);
+    });
+
+    // Click to open file picker
+    dropArea.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      addFiles(fileInput.files);
+      fileInput.value = ''; // reset input
+    });
+
+    // Reset helper
+    window.resetDocumentUpload = () => {
+      window.selectedDocuments.length = 0;
+      renderPreviews();
+    };
+
+    // Initial render
+    renderPreviews();
   };
 
   // Initialize
   initDocumentUpload({
-      dropAreaId: 'documentUploadArea',
-      fileInputId: 'property_document',
-      previewId: 'documentPreview',
-      maxFiles: 10
+    dropAreaId: 'documentUploadArea',
+    fileInputId: 'property_document',
+    previewId: 'documentPreview',
+    maxFiles: 10
   });
 
-  // Initialize selected documents array
-  window.selectedDocuments = window.selectedDocuments || [];
-
+  // -------------------------
+  // Document preview styling + inline remove button
+  // -------------------------
   const docInput = document.getElementById('property_document');
   const docArea = document.getElementById('documentUploadArea');
 
-  // Function to update the document preview
+  // Function to update the document preview (always visible)
   function updateDocumentPreview() {
     const preview = document.getElementById('documentPreview');
     if (!preview) {
@@ -495,15 +496,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     preview.innerHTML = '';
-
-    if (!window.selectedDocuments || window.selectedDocuments.length === 0) {
-      preview.style.display = 'none';
-      return;
-    }
-
-    preview.style.display = 'flex';
-    preview.style.flexWrap = 'wrap';
-    preview.style.gap = '10px';
 
     window.selectedDocuments.forEach((file, index) => {
       const item = document.createElement('div');
@@ -572,26 +564,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Handle file selection via input
   docInput.addEventListener('change', (e) => {
-      const files = Array.from(e.target.files);
-      window.selectedDocuments.push(...files);
-      updateDocumentPreview();
+    const files = Array.from(e.target.files);
+    window.selectedDocuments.push(...files);
+    updateDocumentPreview();
   });
 
   // Handle drag & drop
   docArea.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      docArea.classList.add('drag-over');
+    e.preventDefault();
+    docArea.classList.add('drag-over');
   });
   docArea.addEventListener('dragleave', () => docArea.classList.remove('drag-over'));
   docArea.addEventListener('drop', (e) => {
-      e.preventDefault();
-      docArea.classList.remove('drag-over');
-      const files = Array.from(e.dataTransfer.files);
-      window.selectedDocuments.push(...files);
-      updateDocumentPreview();
+    e.preventDefault();
+    docArea.classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files);
+    window.selectedDocuments.push(...files);
+    updateDocumentPreview();
   });
 
-  // Initial call to hide preview if empty
+  // Always visible preview (no hide/show)
   updateDocumentPreview();
 
 }); //END OF DOM
@@ -879,28 +871,41 @@ function loadDraftIntoForm(draftId) {
       }
 
       // -------------------------
-      // Render property document
+      // Render property document (draft reload)
       // -------------------------
       const docInput = document.getElementById('property_document');
-      let docPreview = document.getElementById('propertyDocumentPreview');
+      const docPreview = document.getElementById('documentPreview');
 
-      // Create preview container if not exists
-      if (!docPreview) {
-        docPreview = document.createElement('div');
-        docPreview.id = 'propertyDocumentPreview';
-        docInput.parentNode.insertBefore(docPreview, docInput.nextSibling);
-      }
-
-      docPreview.innerHTML = ''; // clear previous preview
+      // Clear previous previews and reset state
+      window.selectedDocuments = [];
+      docPreview.innerHTML = '';
 
       if (data.property_document_path) {
+        const fullPath = '/' + data.property_document_path;
         const fileName = data.property_document_path.split('/').pop();
 
+        // Create container for document
+        const docWrap = document.createElement('div');
+        docWrap.style.display = 'flex';
+        docWrap.style.alignItems = 'center';
+        docWrap.style.gap = '10px';
+        docWrap.style.border = '1px solid #ddd';
+        docWrap.style.borderRadius = '8px';
+        docWrap.style.padding = '8px 12px';
+        docWrap.style.background = '#f8f8f8';
+        docWrap.style.fontSize = '14px';
+        docWrap.style.position = 'relative';
+
+        // Document link
         const link = document.createElement('a');
-        link.href = '/' + data.property_document_path; // adjust base URL if needed
+        link.href = fullPath;
         link.target = '_blank';
         link.innerText = `Existing document: ${fileName}`;
+        link.style.color = '#007bff';
+        link.style.textDecoration = 'none';
+        link.style.flex = '1';
 
+        // Keep your removeBtn design and logic
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.innerText = 'x'; // or 'Remove' if you prefer text
@@ -923,18 +928,24 @@ function loadDraftIntoForm(draftId) {
         removeBtn.addEventListener('mouseleave', () => removeBtn.style.background = '#000');
 
         removeBtn.addEventListener('click', () => {
-            docPreview.innerHTML = '';
-            docInput.value = '';
-            // mark for removal
-            const hidden = document.createElement('input');
-            hidden.type = 'hidden';
-            hidden.name = 'remove_property_document';
-            hidden.value = '1';
-            docInput.closest('form').appendChild(hidden);
+          docPreview.innerHTML = '';
+          docInput.value = '';
+
+          // mark for removal
+          const hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = 'remove_property_document';
+          hidden.value = '1';
+          docInput.closest('form').appendChild(hidden);
         });
 
-        docPreview.appendChild(link);
-        docPreview.appendChild(removeBtn);
+        // Append link and remove button
+        docWrap.appendChild(link);
+        docWrap.appendChild(removeBtn);
+        docPreview.appendChild(docWrap);
+
+        // Push to selectedDocuments (important for saving)
+        window.selectedDocuments.push(fullPath);
       }
 
       // -------------------------

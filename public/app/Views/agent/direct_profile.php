@@ -527,9 +527,12 @@
                         <textarea id="description" name="description" rows="4" required></textarea>
 
                         <!-- Property Document Upload -->
-                        <label for="property_document"><strong>Upload Property Document</strong></label>
-                        <input type="file" id="property_document" name="property_document" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-                        <p class="note">Accepted formats: PDF, DOC, DOCX, JPG, PNG</p>
+                        <label for="property_document"><strong>Upload Property Documents</strong></label>
+                        <div id="documentUploadArea" class="drag-drop-area" tabindex="0">
+                            <p>Drag & drop documents here or click to browse</p>
+                            <input type="file" id="property_document" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple style="display:none;">
+                        </div>
+                        <div id="documentPreview" class="doc-preview" aria-live="polite"></div>
 
                         <!-- Submit Button -->
                         <div class="add_listing_actions">
