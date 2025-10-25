@@ -246,6 +246,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const fd = new FormData(form);
     window.selectedFiles.forEach(f => fd.append('images[]', f));
 
+    // Before sending FormData in Save Draft or Save Listing
+    const propertyDocInput = document.getElementById('property_document');
+    if (propertyDocInput && propertyDocInput.files.length > 0) {
+        fd.append('property_document', propertyDocInput.files[0]);
+    }
+
     // If editing an existing draft, append the ID
     if (window.currentDraftId) fd.append('id', window.currentDraftId);
 
@@ -587,7 +593,9 @@ function loadDraftIntoForm(draftId) {
     .then(data => {
       if (data.error) return notify('error', data.error);
 
+      // -------------------------
       // Fill form fields
+      // -------------------------
       document.getElementById('title').value         = data.title || '';
       document.getElementById('location').value      = data.location || '';
       document.getElementById('price').value         = data.price || '';
@@ -597,10 +605,14 @@ function loadDraftIntoForm(draftId) {
       document.getElementById('bathrooms').value     = data.bathrooms || '';
       document.getElementById('description').value   = data.description || '';
 
+      // -------------------------
       // Reset previous images
+      // -------------------------
       window.resetImageUpload?.();
 
+      // -------------------------
       // Render draft images
+      // -------------------------
       if (Array.isArray(data.images)) {
         const preview = document.getElementById('imagePreview');
         data.images.forEach(src => {
@@ -629,6 +641,51 @@ function loadDraftIntoForm(draftId) {
         });
       }
 
+      // -------------------------
+      // Render property document
+      // -------------------------
+      const docInput = document.getElementById('property_document');
+      let docPreview = document.getElementById('propertyDocumentPreview');
+
+      // Create preview container if not exists
+      if (!docPreview) {
+        docPreview = document.createElement('div');
+        docPreview.id = 'propertyDocumentPreview';
+        docInput.parentNode.insertBefore(docPreview, docInput.nextSibling);
+      }
+
+      docPreview.innerHTML = ''; // clear previous preview
+
+      if (data.property_document_path) {
+        const fileName = data.property_document_path.split('/').pop();
+
+        const link = document.createElement('a');
+        link.href = '/' + data.property_document_path; // adjust base URL if needed
+        link.target = '_blank';
+        link.innerText = `Existing document: ${fileName}`;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.innerText = 'Remove';
+        removeBtn.style.marginLeft = '10px';
+        removeBtn.addEventListener('click', () => {
+          docPreview.innerHTML = '';
+          docInput.value = '';
+          // mark for removal
+          const hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = 'remove_property_document';
+          hidden.value = '1';
+          docInput.closest('form').appendChild(hidden);
+        });
+
+        docPreview.appendChild(link);
+        docPreview.appendChild(removeBtn);
+      }
+
+      // -------------------------
+      // Set current draft ID
+      // -------------------------
       window.currentDraftId = draftId;
     })
     .catch(err => notify('error', 'Failed to load draft'));

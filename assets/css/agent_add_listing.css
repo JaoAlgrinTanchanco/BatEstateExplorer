@@ -1,6 +1,60 @@
 /* ===========================
    Add Listing Form - Modern Grid Look
 =========================== */
+/* ==========================
+   Property Document Preview
+========================== */
+#propertyDocumentPreview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  background: #f9fafb;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #333;
+  flex-wrap: wrap;
+}
+
+#propertyDocumentPreview a {
+  text-decoration: none;
+  color: #008dff;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+#propertyDocumentPreview button {
+  background: rgba(220, 53, 69, 0.85);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+#propertyDocumentPreview button:hover {
+  background: rgba(220, 53, 69, 1);
+  transform: translateY(-1px);
+}
+
+/* Optional: responsive for small screens */
+@media (max-width: 768px) {
+  #propertyDocumentPreview {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #propertyDocumentPreview a {
+    max-width: 100%;
+  }
+}
 
 #addListingForm {
   display: block;

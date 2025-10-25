@@ -521,17 +521,25 @@
 
                     <!-- Card: Description (with submit button) -->
                     <div class="form-card">
-                    <h3 class="form-card-title">Description</h3>
-                    <label for="description"><strong>Description</strong></label>
-                    <textarea id="description" name="description" rows="4" required></textarea>
+                        <h3 class="form-card-title">Description</h3>
 
-                    <!-- Submit Button moved here -->
-                    <div class="add_listing_actions">
-                        <button type="button" id="saveDraftBtn" class="btn-draft" data-url="/BatEstateExplorer/public/api/save_draft.php">
-                            Save Draft
-                        </button>
-                        <button type="button" id="openListingModalBtn" class="btn-submit">Save Listing (Balance: ₱<?= $walletBalanceFormatted ?? '0.00' ?>)</button>
-                    </div>
+                        <label for="description"><strong>Description</strong></label>
+                        <textarea id="description" name="description" rows="4" required></textarea>
+
+                        <!-- Property Document Upload -->
+                        <label for="property_document"><strong>Upload Property Document</strong></label>
+                        <input type="file" id="property_document" name="property_document" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                        <p class="note">Accepted formats: PDF, DOC, DOCX, JPG, PNG</p>
+
+                        <!-- Submit Button -->
+                        <div class="add_listing_actions">
+                            <button type="button" id="saveDraftBtn" class="btn-draft" data-url="/BatEstateExplorer/public/api/save_draft.php">
+                                Save Draft
+                            </button>
+                            <button type="button" id="openListingModalBtn" class="btn-submit">
+                                Save Listing (Balance: ₱<?= $walletBalanceFormatted ?? '0.00' ?>)
+                            </button>
+                        </div>
                     </div>
 
                 </div>

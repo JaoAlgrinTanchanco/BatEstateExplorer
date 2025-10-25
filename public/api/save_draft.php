@@ -14,13 +14,12 @@ try {
     if (!$user_data) {
         throw new Exception("No logged in user detected.");
     }
-
     $user_id = $user_data['id'];
 
     // =========================
     // Collect form data
     // =========================
-    $draft_id      = isset($_POST['id']) ? intval($_POST['id']) : null; // optional, for update
+    $draft_id      = isset($_POST['id']) ? intval($_POST['id']) : null;
     $title         = trim($_POST['title'] ?? '');
     $description   = trim($_POST['description'] ?? '');
     $price         = isset($_POST['price']) ? floatval($_POST['price']) : null;
@@ -31,13 +30,16 @@ try {
     $property_type = trim($_POST['property_type'] ?? '');
 
     // =========================
-    // Handle image uploads (optional)
+    // Setup upload directories
     // =========================
-    $upload_dir = 'C:/xampp/htdocs/BatEstateExplorer/storage/uploads/draft/';
+    $upload_dir     = 'C:/xampp/htdocs/BatEstateExplorer/storage/uploads/draft/';
     $db_path_prefix = 'storage/uploads/draft/';
 
     if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
 
+    // =========================
+    // Handle image uploads (multiple)
+    // =========================
     $uploadedPaths = [];
     if (!empty($_FILES['images']['name'][0])) {
         $file_count = min(count($_FILES['images']['name']), 10);
@@ -62,8 +64,31 @@ try {
             $uploadedPaths[] = $relativePath;
         }
     }
-
     $image_path = $uploadedPaths ? implode(',', $uploadedPaths) : null;
+
+    // =========================
+    // Handle property_document upload (single)
+    // =========================
+    $property_document_path = null;
+    if (!empty($_FILES['property_document']['name'])) {
+        $docTmp   = $_FILES['property_document']['tmp_name'];
+        $docName  = $_FILES['property_document']['name'];
+        $docError = $_FILES['property_document']['error'];
+
+        if ($docError === UPLOAD_ERR_OK && is_uploaded_file($docTmp)) {
+            $ext = strtolower(pathinfo($docName, PATHINFO_EXTENSION));
+            if (in_array($ext, ['pdf','doc','docx','jpg','jpeg','png'])) {
+                $newDocName  = uniqid('doc_', true) . '.' . $ext;
+                $destination = $upload_dir . $newDocName;
+                $relativePath = $db_path_prefix . $newDocName;
+
+                if (!move_uploaded_file($docTmp, $destination)) {
+                    throw new Exception("Failed to move uploaded document: $docName");
+                }
+                $property_document_path = $relativePath;
+            }
+        }
+    }
 
     // =========================
     // Insert or Update Draft
@@ -74,23 +99,24 @@ try {
             UPDATE property_drafts
             SET title = ?, location = ?, price = ?, lot_size = ?, property_type = ?, bedrooms = ?, bathrooms = ?, description = ?, updated_at = NOW()
             " . ($image_path ? ", image_path = CONCAT(IFNULL(image_path, ''), ?, ',')" : "") . "
+            " . ($property_document_path ? ", property_document_path = ?" : "") . "
             WHERE id = ? AND user_id = ?
         ");
 
         $params = [$title, $location, $price, $lot_size, $property_type, $bedrooms, $bathrooms, $description];
         if ($image_path) $params[] = $image_path;
+        if ($property_document_path) $params[] = $property_document_path;
         $params[] = $draft_id;
         $params[] = $user_id;
 
         $stmt->execute($params);
-
         $message = "Draft updated successfully!";
     } else {
         // Insert new draft
         $stmt = $pdo->prepare("
-            INSERT INTO property_drafts 
-            (user_id, title, location, price, lot_size, property_type, bedrooms, bathrooms, description, image_path, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            INSERT INTO property_drafts
+            (user_id, title, location, price, lot_size, property_type, bedrooms, bathrooms, description, image_path, property_document_path, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
         ");
 
         $stmt->execute([
@@ -103,7 +129,8 @@ try {
             $bedrooms,
             $bathrooms,
             $description,
-            $image_path
+            $image_path,
+            $property_document_path
         ]);
 
         $message = "Draft saved successfully!";
@@ -113,9 +140,10 @@ try {
         'success' => true,
         'message' => $message,
         'debug' => [
-            'POST' => $_POST,
-            'FILES' => $_FILES,
-            'uploaded' => $uploadedPaths
+            'POST'     => $_POST,
+            'FILES'    => $_FILES,
+            'uploaded' => $uploadedPaths,
+            'document' => $property_document_path
         ]
     ]);
 
@@ -124,7 +152,7 @@ try {
         'success' => false,
         'error' => 'Error saving draft: ' . $e->getMessage(),
         'debug' => [
-            'POST' => $_POST,
+            'POST'  => $_POST,
             'FILES' => $_FILES
         ]
     ]);
