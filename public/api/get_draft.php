@@ -35,9 +35,11 @@ if ($draft = $result->fetch_assoc()) {
     // -------------------------
     // Documents
     // -------------------------
+    $docPaths = $draft['property_document_path'] ?? '';
     $draft['property_document_path'] = '';
-    if (!empty($draft['property_document_path'])) {
-        $docs = array_filter(explode(',', $draft['property_document_path']));
+
+    if (!empty($docPaths)) {
+        $docs = array_filter(explode(',', $docPaths));
         $normalized = [];
         foreach ($docs as $d) {
             $urlPath = str_replace('\\', '/', $d);

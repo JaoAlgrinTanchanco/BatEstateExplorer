@@ -300,7 +300,8 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('Draft Save/Update Response:', data);
 
       if (data.success) {
-        notify(isUpdate ? 'Draft updated successfully!' : 'Draft saved successfully!');
+        // If notify expects (type, message)
+        notify('success', isUpdate ? 'Draft updated successfully!' : 'Draft saved successfully!');
         
         // Reset form and uploads
         form.reset();
