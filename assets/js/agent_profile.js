@@ -467,7 +467,8 @@ document.addEventListener('DOMContentLoaded', () => {
           existingSigs.add(sig);
         }
       }
-      renderPreviews();
+      updateDocumentPreview();
+      syncDocumentInput();
     };
 
     // Drag & Drop
@@ -478,13 +479,13 @@ document.addEventListener('DOMContentLoaded', () => {
     dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
     dropArea.addEventListener('drop', e => {
       dropArea.classList.remove('drag-over');
-      addFiles(e.dataTransfer.files);
+      addFiles(e.dataTransfer.files); // ONLY use addFiles
     });
 
     // Click to open file picker
     dropArea.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', () => {
-      addFiles(fileInput.files);
+      addFiles(fileInput.files); // ONLY use addFiles
       fileInput.value = ''; // reset input
     });
 
@@ -969,7 +970,6 @@ function loadDraftIntoForm(draftId) {
     })
     .catch(err => notify('error', 'Failed to load draft'));
 }
-
 
 // Delete draft
 function deleteDraft(draftId, cardEl) {
