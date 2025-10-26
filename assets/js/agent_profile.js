@@ -238,90 +238,110 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------
-  // Unified Save / Update Draft
+  // Unified Save / Update Draft (Deduplication Fix Applied)
   // -------------------------
   document.getElementById('saveDraftBtn')?.addEventListener('click', async e => {
-    e.preventDefault();
+      e.preventDefault();
 
-    const form = document.getElementById('addListingForm');
-    if (!form) return;
+      const form = document.getElementById('addListingForm');
+      if (!form) return;
 
-    const fd = new FormData(form);
-    const isUpdate = !!window.currentDraftId;
+      // 🛑 CRITICAL FIX: Initialize FormData empty. We will append fields manually.
+      const fd = new FormData();
+      const isUpdate = !!window.currentDraftId;
 
-    if (isUpdate) fd.append('id', window.currentDraftId);
-
-    // -------------------------
-    // Handle Images
-    // -------------------------
-    const existingImages = window.existingImages || [];           // URLs loaded from DB
-    const newImages = window.selectedFiles.filter(f => f instanceof File); // new uploads
-    const removedImages = existingImages.filter(url => !window.selectedFiles.includes(url));
-
-    // Mark removed images
-    removedImages.forEach(img => fd.append('remove_images[]', img));
-
-    // Append new image files
-    newImages.forEach(file => fd.append('images[]', file));
-
-    // Include remaining existing images
-    existingImages.forEach(img => {
-      if (!removedImages.includes(img)) fd.append('existing_images[]', img);
-    });
-
-    // -------------------------
-    // Handle Documents
-    // -------------------------
-    const existingDocs = window.existingDocs || [];
-    const newDocs = window.selectedDocuments.filter(f => f instanceof File);
-    const removedDocs = existingDocs.filter(doc => !window.selectedDocuments.includes(doc));
-
-    removedDocs.forEach(doc => fd.append('remove_docs[]', doc));
-    newDocs.forEach(file => fd.append('property_document[]', file));
-    existingDocs.forEach(doc => {
-      if (!removedDocs.includes(doc)) fd.append('existing_property_documents[]', doc);
-    });
-
-    // -------------------------
-    // Debug FormData
-    // -------------------------
-    console.group("FormData Before Upload");
-    for (let [key, val] of fd.entries()) console.log(key, val);
-    console.groupEnd();
-
-    try {
-      const url = isUpdate
-        ? '/BatEstateExplorer/public/api/update_draft.php'
-        : '/BatEstateExplorer/public/api/save_draft.php';
-
-      const res = await fetch(url, { method: 'POST', body: fd });
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-      const data = await res.json();
-      console.log('Draft Save/Update Response:', data);
-
-      if (data.success) {
-        // If notify expects (type, message)
-        notify('success', isUpdate ? 'Draft updated successfully!' : 'Draft saved successfully!');
-        
-        // Reset form and uploads
-        form.reset();
-        window.resetImageUpload?.();
-        window.resetDocumentUpload?.();
-        window.currentDraftId = null;
-        window.existingImages = [];
-        window.existingDocs = [];
-        window.selectedFiles = [];
-        window.selectedDocuments = [];
-
-        loadDrafts?.();
-      } else {
-        notify('error', data.error || 'Failed to save draft.');
+      if (isUpdate) fd.append('id', window.currentDraftId);
+      
+      // Manually append non-file form fields from the form
+      for (const [key, value] of new FormData(form).entries()) {
+          // Exclude file input fields as they are handled manually below.
+          if (key !== 'images[]' && key !== 'property_document[]') {
+              fd.append(key, value);
+          }
       }
 
-    } catch (err) {
-      console.error('Draft save/update error:', err);
-      notify('error', err.message || 'Network error while saving draft.');
-    }
+      // --- IMPORTANT: Ensure Image Deduplication is also performed if needed ---
+      // If your image logic also suffers from listener duplication, implement and call:
+      // deduplicateSelectedImages(); 
+      
+      // -------------------------
+      // Handle Images
+      // -------------------------
+      const existingImages = window.existingImages || [];
+      const newImages = window.selectedFiles.filter(f => f instanceof File); // new uploads
+      const remainingImages = existingImages.filter(url => window.selectedFiles.includes(url));
+      const removedImages = existingImages.filter(url => !window.selectedFiles.includes(url));
+      
+      // 1. Mark images for removal (existing files no longer in window.selectedFiles)
+      removedImages.forEach(img => fd.append('remove_images[]', img));
+
+      // 2. Append new image files (Files from new upload)
+      newImages.forEach(file => fd.append('images[]', file));
+
+      // 3. Include remaining existing images (Paths that should be preserved)
+      remainingImages.forEach(img => fd.append('existing_images[]', img));
+
+
+      // -------------------------
+      // Handle Documents (Deduplication applied here)
+      // -------------------------
+      deduplicateSelectedDocuments(); // Frontend array cleanup
+      
+      const existingDocs = window.existingDocs || [];
+      const newDocs = window.selectedDocuments.filter(f => f instanceof File);
+      const remainingDocs = existingDocs.filter(doc => window.selectedDocuments.includes(doc));
+      const removedDocs = existingDocs.filter(doc => !window.selectedDocuments.includes(doc));
+      
+      // 1. Mark documents for removal
+      removedDocs.forEach(doc => fd.append('remove_docs[]', doc));
+      
+      // 2. Append new document files (This is the clean, deduplicated list of files)
+      newDocs.forEach(file => fd.append('property_document[]', file));
+      
+      // 3. Include remaining existing documents
+      remainingDocs.forEach(doc => fd.append('existing_property_documents[]', doc));
+      
+      
+      // -------------------------
+      // Debug FormData (Now should show exactly what you expect)
+      // -------------------------
+      console.group("FormData Before Upload (Post-Deduplication)");
+      for (let [key, val] of fd.entries()) console.log(key, val);
+      console.groupEnd();
+
+      try {
+          const url = isUpdate
+              ? '/BatEstateExplorer/public/api/update_draft.php'
+              : '/BatEstateExplorer/public/api/save_draft.php';
+
+          const res = await fetch(url, { method: 'POST', body: fd });
+          if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+          const data = await res.json();
+          console.log('Draft Save/Update Response:', data);
+
+          if (data.success) {
+              notify('success', isUpdate ? 'Draft updated successfully!' : 'Draft saved successfully!');
+              
+              // Reset form and global state variables
+              form.reset();
+              window.resetImageUpload?.();
+              window.resetDocumentUpload?.();
+              window.currentDraftId = null;
+              window.existingImages = [];
+              window.existingDocs = [];
+              window.selectedFiles = [];
+              window.selectedDocuments = [];
+
+              // Reload the list of drafts
+              loadDrafts?.();
+          } else {
+              notify('error', data.error || 'Failed to save draft.');
+          }
+
+      } catch (err) {
+          console.error('Draft save/update error:', err);
+          notify('error', err.message || 'Network error while saving draft.');
+      }
   });
 
   // -------------------------
@@ -357,6 +377,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('addListingForm');
       const walletBalanceEl = document.getElementById('agentWalletBalance');
       const fd = new FormData(form);
+
+      deduplicateSelectedDocuments();
 
       // Append images
       window.selectedFiles.forEach(f => {
@@ -991,4 +1013,46 @@ function deleteDraft(draftId, cardEl) {
       }
     })
     .catch(() => notify('error', 'Network error while deleting draft'));
+}
+
+//deduplication
+function deduplicateSelectedDocuments() {
+    console.groupCollapsed('Deduplication Check: window.selectedDocuments');
+    console.log('Array BEFORE deduplication:', window.selectedDocuments);
+    console.log('Total items BEFORE:', window.selectedDocuments.length);
+
+    const uniqueDocuments = [];
+    const fileSignatures = new Set();
+    let duplicatesRemoved = 0;
+
+    for (const doc of window.selectedDocuments) {
+        if (typeof doc === 'string') {
+            // Keep existing document paths (strings)
+            uniqueDocuments.push(doc);
+            console.log('Kept existing path (string):', doc);
+        } else if (doc instanceof File) {
+            // Create a unique signature for the File object
+            const sig = `${doc.name}|${doc.size}|${doc.lastModified}`;
+            
+            if (!fileSignatures.has(sig)) {
+                uniqueDocuments.push(doc);
+                fileSignatures.add(sig);
+                console.log('Kept unique file:', doc.name, '| Sig:', sig);
+            } else {
+                duplicatesRemoved++;
+                console.warn('Removed duplicate file:', doc.name, '| Sig:', sig);
+            }
+        } else {
+             // Catch unexpected items (shouldn't happen, but good for debugging)
+             console.error('Skipped unexpected item type:', doc);
+        }
+    }
+    
+    // Replace the global array with the deduplicated array
+    window.selectedDocuments = uniqueDocuments;
+
+    console.log('Total duplicates removed:', duplicatesRemoved);
+    console.log('Array AFTER deduplication:', window.selectedDocuments);
+    console.log('Total items AFTER:', window.selectedDocuments.length);
+    console.groupEnd();
 }

@@ -75,21 +75,39 @@ try {
     // New image uploads
     // =========================
     $uploadedImagePaths = [];
-    if (!empty($_FILES['images']['name'][0])) {
+    $processedImageTmpNames = []; // Tracker for unique image temporary paths
+    $allowedImageExts = ['jpg', 'jpeg', 'png', 'gif'];
+    
+    // Check if new images were uploaded
+    if (isset($_FILES['images']) && !empty(array_filter($_FILES['images']['name']))) {
+        
         $count = count($_FILES['images']['name']);
         for ($i = 0; $i < $count; $i++) {
+            // Check for upload errors
             if ($_FILES['images']['error'][$i] !== UPLOAD_ERR_OK) continue;
 
-            $tmp  = $_FILES['images']['tmp_name'][$i];
+            $tmp = $_FILES['images']['tmp_name'][$i];
+            
+            // 🛑 DUPLICATION CHECK: Skip if this temporary file has already been processed
+            if (in_array($tmp, $processedImageTmpNames)) {
+                continue; 
+            }
+            $processedImageTmpNames[] = $tmp;
+            
+            // Validate file extension
             $name = basename($_FILES['images']['name'][$i]);
-            $ext  = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['jpg','jpeg','png','gif'])) continue;
+            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowedImageExts)) continue;
 
+            // Generate unique filename and paths
             $newName = uniqid('draft_img_', true) . '.' . $ext;
             $dest = $upload_dir . $newName;
             $relativePath = $db_path_prefix . $newName;
 
-            if (move_uploaded_file($tmp, $dest)) $uploadedImagePaths[] = $relativePath;
+            // Move the file
+            if (move_uploaded_file($tmp, $dest)) {
+                $uploadedImagePaths[] = $relativePath;
+            }
         }
     }
 
@@ -97,21 +115,39 @@ try {
     // New document uploads
     // =========================
     $uploadedDocPaths = [];
-    if (!empty($_FILES['property_document']['name'][0])) {
+    $processedDocTmpNames = []; // Tracker for unique document temporary paths
+    $allowedDocExts = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+    
+    // Check if new documents were uploaded
+    if (isset($_FILES['property_document']) && !empty(array_filter($_FILES['property_document']['name']))) {
+        
         $count = count($_FILES['property_document']['name']);
         for ($i = 0; $i < $count; $i++) {
+            // Check for upload errors
             if ($_FILES['property_document']['error'][$i] !== UPLOAD_ERR_OK) continue;
 
-            $tmp  = $_FILES['property_document']['tmp_name'][$i];
+            $tmp = $_FILES['property_document']['tmp_name'][$i];
+            
+            // 🛑 DUPLICATION CHECK: Skip if this temporary file has already been processed
+            if (in_array($tmp, $processedDocTmpNames)) {
+                continue;
+            }
+            $processedDocTmpNames[] = $tmp;
+            
+            // Validate file extension
             $name = basename($_FILES['property_document']['name'][$i]);
-            $ext  = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['pdf','doc','docx','jpg','jpeg','png'])) continue;
+            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowedDocExts)) continue;
 
+            // Generate unique filename and paths
             $newName = uniqid('draft_doc_', true) . '.' . $ext;
             $dest = $upload_dir . $newName;
             $relativePath = $db_path_prefix . $newName;
 
-            if (move_uploaded_file($tmp, $dest)) $uploadedDocPaths[] = $relativePath;
+            // Move the file
+            if (move_uploaded_file($tmp, $dest)) {
+                $uploadedDocPaths[] = $relativePath;
+            }
         }
     }
 

@@ -59,23 +59,49 @@ try {
     // Handle document uploads
     // =========================
     $uploadedDocPaths = [];
-    if (!empty($_FILES['property_document']['name'])) {
+    $processedTmpNames = []; // Array to track temporary files already processed
+
+    // Check if property documents were uploaded
+    if (isset($_FILES['property_document']) && !empty(array_filter($_FILES['property_document']['name']))) {
+        
+        // Loop through all uploaded documents
         foreach ($_FILES['property_document']['name'] as $i => $name) {
-            if ($_FILES['property_document']['error'][$i] !== UPLOAD_ERR_OK) continue;
+            
+            // Basic validation: check for upload errors
+            if ($_FILES['property_document']['error'][$i] !== UPLOAD_ERR_OK) {
+                continue;
+            }
 
             $tmp = $_FILES['property_document']['tmp_name'][$i];
-            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['pdf','doc','docx','jpg','jpeg','png'])) continue;
 
+            // 🛑 DUPLICATION CHECK: Skip file if its temporary path has already been processed
+            if (in_array($tmp, $processedTmpNames)) {
+                // This entry is a duplicate; do not process or save.
+                continue;
+            }
+            
+            // Mark this temporary file path as processed
+            $processedTmpNames[] = $tmp;
+
+            // Get file extension and validate against allowed types
+            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+            if (!in_array($ext, ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'])) {
+                continue;
+            }
+
+            // Generate a unique filename and define paths
             $newName = uniqid('draft_doc_', true) . '.' . $ext;
             $dest = $upload_dir . $newName;
             $relativePath = $db_path_prefix . $newName;
 
+            // Move the uploaded file to the final destination
             if (move_uploaded_file($tmp, $dest)) {
                 $uploadedDocPaths[] = $relativePath;
             }
         }
     }
+    
+    // Convert the array of paths into a comma-separated string for database storage
     $property_document_path = !empty($uploadedDocPaths) ? implode(',', $uploadedDocPaths) : null;
 
     // =========================
