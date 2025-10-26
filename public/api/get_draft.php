@@ -20,16 +20,32 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($draft = $result->fetch_assoc()) {
+    // -------------------------
+    // Images
+    // -------------------------
     $draft['images'] = [];
     if (!empty($draft['image_path'])) {
         $paths = array_filter(explode(',', $draft['image_path']));
-        // Convert to web URL paths
         foreach ($paths as $p) {
-            // Make sure slashes are forward for URLs
             $urlPath = str_replace('\\', '/', $p);
             $draft['images'][] = '/' . ltrim($urlPath, '/');
         }
     }
+
+    // -------------------------
+    // Documents
+    // -------------------------
+    $draft['property_document_path'] = '';
+    if (!empty($draft['property_document_path'])) {
+        $docs = array_filter(explode(',', $draft['property_document_path']));
+        $normalized = [];
+        foreach ($docs as $d) {
+            $urlPath = str_replace('\\', '/', $d);
+            $normalized[] = '/' . ltrim($urlPath, '/');
+        }
+        $draft['property_document_path'] = implode(',', $normalized);
+    }
+
     echo json_encode($draft);
 } else {
     echo json_encode(['error' => 'Draft not found']);

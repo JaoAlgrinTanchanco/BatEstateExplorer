@@ -242,51 +242,49 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------
   document.getElementById('saveDraftBtn')?.addEventListener('click', async e => {
     e.preventDefault();
+
     const form = document.getElementById('addListingForm');
     if (!form) return;
 
     const fd = new FormData(form);
-
-    // -------------------------
-    // Determine mode (create or update)
-    // -------------------------
     const isUpdate = !!window.currentDraftId;
+
     if (isUpdate) fd.append('id', window.currentDraftId);
 
     // -------------------------
     // Handle Images
     // -------------------------
-    // window.selectedFiles = current files in form
-    // window.existingImages = loaded from DB (for update)
-    const existingImages = window.existingImages || [];
-    const currentImages = window.selectedFiles.map(f => f.name || f); // keep names as signature
+    const existingImages = window.existingImages || [];           // URLs loaded from DB
+    const newImages = window.selectedFiles.filter(f => f instanceof File); // new uploads
+    const removedImages = existingImages.filter(url => !window.selectedFiles.includes(url));
 
-    // Compute removed images (in DB but not in current form)
-    const removedImages = isUpdate
-      ? existingImages.filter(img => !currentImages.includes(img.split('/').pop()))
-      : [];
-
+    // Mark removed images
     removedImages.forEach(img => fd.append('remove_images[]', img));
 
-    // Append new images (not in DB)
-    window.selectedFiles.forEach(f => fd.append('images[]', f));
+    // Append new image files
+    newImages.forEach(file => fd.append('images[]', file));
+
+    // Include remaining existing images
+    existingImages.forEach(img => {
+      if (!removedImages.includes(img)) fd.append('existing_images[]', img);
+    });
 
     // -------------------------
     // Handle Documents
     // -------------------------
     const existingDocs = window.existingDocs || [];
-    const docItems = Array.from(document.querySelectorAll('#documentPreview .doc-item'));
-    const currentDocs = docItems.map(item => item.dataset.path || item.file?.name);
-    const removedDocs = isUpdate
-      ? existingDocs.filter(doc => !currentDocs.includes(doc.split('/').pop()))
-      : [];
-    removedDocs.forEach(doc => fd.append('remove_docs[]', doc));
+    const newDocs = window.selectedDocuments.filter(f => f instanceof File);
+    const removedDocs = existingDocs.filter(doc => !window.selectedDocuments.includes(doc));
 
-    // Append new docs
-    docItems.forEach(item => {
-      if (item.file) fd.append('property_document[]', item.file);
+    removedDocs.forEach(doc => fd.append('remove_docs[]', doc));
+    newDocs.forEach(file => fd.append('property_document[]', file));
+    existingDocs.forEach(doc => {
+      if (!removedDocs.includes(doc)) fd.append('existing_property_documents[]', doc);
     });
 
+    // -------------------------
+    // Debug FormData
+    // -------------------------
     console.group("FormData Before Upload");
     for (let [key, val] of fd.entries()) console.log(key, val);
     console.groupEnd();
@@ -303,16 +301,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (data.success) {
         notify(isUpdate ? 'Draft updated successfully!' : 'Draft saved successfully!');
+        
+        // Reset form and uploads
         form.reset();
         window.resetImageUpload?.();
         window.resetDocumentUpload?.();
         window.currentDraftId = null;
         window.existingImages = [];
         window.existingDocs = [];
+        window.selectedFiles = [];
+        window.selectedDocuments = [];
+
         loadDrafts?.();
       } else {
         notify('error', data.error || 'Failed to save draft.');
       }
+
     } catch (err) {
       console.error('Draft save/update error:', err);
       notify('error', err.message || 'Network error while saving draft.');
@@ -861,35 +865,38 @@ function loadDraftIntoForm(draftId) {
     .then(data => {
       if (data.error) return notify('error', data.error);
 
+      const form = document.getElementById('addListingForm');
+      if (!form) return;
+
       // -------------------------
       // Fill form fields
       // -------------------------
-      document.getElementById('title').value         = data.title || '';
-      document.getElementById('location').value      = data.location || '';
-      document.getElementById('price').value         = data.price || '';
-      document.getElementById('lot_size').value      = data.lot_size || '';
-      document.getElementById('property_type').value = data.property_type || '';
-      document.getElementById('bedrooms').value      = data.bedrooms || '';
-      document.getElementById('bathrooms').value     = data.bathrooms || '';
-      document.getElementById('description').value   = data.description || '';
+      ['title','location','price','lot_size','property_type','bedrooms','bathrooms','description']
+        .forEach(id => form[id].value = data[id] || '');
 
       // -------------------------
       // Reset previous images/docs
       // -------------------------
       window.resetImageUpload?.();
-      const docPreview = document.getElementById('documentPreview');
-      docPreview.innerHTML = '';
+      window.resetDocumentUpload?.();
       window.selectedFiles = [];
       window.selectedDocuments = [];
+      window.existingImages = [];
+      window.existingDocs = [];
+
+      const imgPreview = document.getElementById('imagePreview');
+      const docPreview = document.getElementById('documentPreview');
+      imgPreview.innerHTML = '';
+      docPreview.innerHTML = '';
 
       // -------------------------
       // Render Images
       // -------------------------
       if (Array.isArray(data.images)) {
-        const preview = document.getElementById('imagePreview');
         data.images.forEach(src => {
           const wrap = document.createElement('div');
           wrap.className = 'img-wrap';
+          wrap.style.position = 'relative';
 
           const img = document.createElement('img');
           img.className = 'thumb';
@@ -899,20 +906,20 @@ function loadDraftIntoForm(draftId) {
           const removeBtn = document.createElement('button');
           removeBtn.type = 'button';
           removeBtn.innerHTML = '&times;';
+          Object.assign(removeBtn.style, { position:'absolute', top:'4px', right:'4px', cursor:'pointer' });
           removeBtn.addEventListener('click', () => {
             wrap.remove();
             window.selectedFiles = window.selectedFiles.filter(f => f !== src);
+            window.existingImages = window.existingImages.filter(f => f !== src);
           });
           wrap.appendChild(removeBtn);
 
-          preview.appendChild(wrap);
+          imgPreview.appendChild(wrap);
 
-          // Add to both "selected" and "existing" for update logic
+          // Add to both selectedFiles and existingImages
           window.selectedFiles.push(src);
+          window.existingImages.push(src);
         });
-
-        // Keep track of existing images for update comparison
-        window.existingImages = [...window.selectedFiles];
       }
 
       // -------------------------
@@ -930,38 +937,28 @@ function loadDraftIntoForm(draftId) {
           item.style.position = 'relative';
 
           const link = document.createElement('a');
-          link.textContent = fileName;
           link.href = fullPath;
           link.target = '_blank';
+          link.textContent = fileName;
           item.appendChild(link);
 
           const removeBtn = document.createElement('button');
           removeBtn.type = 'button';
           removeBtn.innerHTML = '&times;';
-          removeBtn.style.position = 'absolute';
-          removeBtn.style.top = '4px';
-          removeBtn.style.right = '4px';
+          Object.assign(removeBtn.style, { position:'absolute', top:'4px', right:'4px', cursor:'pointer' });
           removeBtn.addEventListener('click', () => {
             item.remove();
-            // mark for removal in FormData
-            const hidden = document.createElement('input');
-            hidden.type = 'hidden';
-            hidden.name = 'remove_existing_docs[]';
-            hidden.value = path;
-            docPreview.closest('form').appendChild(hidden);
-
-            // Remove from selectedDocuments
             window.selectedDocuments = window.selectedDocuments.filter(f => f !== fullPath);
+            window.existingDocs = window.existingDocs.filter(f => f !== fullPath);
           });
-
           item.appendChild(removeBtn);
+
           docPreview.appendChild(item);
 
+          // Add to both selectedDocuments and existingDocs
           window.selectedDocuments.push(fullPath);
+          window.existingDocs.push(fullPath);
         });
-
-        // Keep track of existing docs for update comparison
-        window.existingDocs = [...window.selectedDocuments];
       }
 
       // -------------------------
@@ -971,6 +968,7 @@ function loadDraftIntoForm(draftId) {
     })
     .catch(err => notify('error', 'Failed to load draft'));
 }
+
 
 // Delete draft
 function deleteDraft(draftId, cardEl) {

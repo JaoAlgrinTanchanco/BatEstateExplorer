@@ -48,17 +48,26 @@ try {
     if (!$draft) throw new Exception("Draft not found.");
 
     // =========================
-    // Images removal
+    // Existing files from DB
     // =========================
     $existing_images = $draft['image_path'] ? explode(',', $draft['image_path']) : [];
-    $remove_images = isset($_POST['remove_images']) ? (array)$_POST['remove_images'] : [];
-    // normalize paths
-    $remove_images = array_map(fn($i) => ltrim($i, '/'), $remove_images);
-    $existing_images = array_diff($existing_images, $remove_images);
+    $existing_docs   = $draft['property_document_path'] ? explode(',', $draft['property_document_path']) : [];
 
-    // delete removed images
+    // =========================
+    // Removed files from form
+    // =========================
+    $remove_images = isset($_POST['remove_images']) ? (array)$_POST['remove_images'] : [];
+    $remove_docs   = isset($_POST['remove_docs']) ? (array)$_POST['remove_docs'] : [];
+    $remove_images = array_map(fn($i) => ltrim($i, '/'), $remove_images);
+    $remove_docs   = array_map(fn($d) => ltrim($d, '/'), $remove_docs);
+
     foreach ($remove_images as $img) {
         $fullPath = __DIR__ . '/../../' . str_replace('/', DIRECTORY_SEPARATOR, $img);
+        if (file_exists($fullPath)) @unlink($fullPath);
+    }
+
+    foreach ($remove_docs as $doc) {
+        $fullPath = __DIR__ . '/../../' . str_replace('/', DIRECTORY_SEPARATOR, $doc);
         if (file_exists($fullPath)) @unlink($fullPath);
     }
 
@@ -84,22 +93,6 @@ try {
         }
     }
 
-    $finalImages = array_merge($existing_images, $uploadedImagePaths);
-    $image_path = !empty($finalImages) ? implode(',', $finalImages) : null;
-
-    // =========================
-    // Documents removal
-    // =========================
-    $existing_docs = $draft['property_document_path'] ? explode(',', $draft['property_document_path']) : [];
-    $remove_docs = isset($_POST['remove_docs']) ? (array)$_POST['remove_docs'] : [];
-    $remove_docs = array_map(fn($d) => ltrim($d, '/'), $remove_docs); // normalize
-    $existing_docs = array_diff($existing_docs, $remove_docs);
-
-    foreach ($remove_docs as $doc) {
-        $fullPath = __DIR__ . '/../../' . str_replace('/', DIRECTORY_SEPARATOR, $doc);
-        if (file_exists($fullPath)) @unlink($fullPath);
-    }
-
     // =========================
     // New document uploads
     // =========================
@@ -122,7 +115,16 @@ try {
         }
     }
 
-    $finalDocs = array_merge($existing_docs, $uploadedDocPaths);
+    // =========================
+    // Preserve existing files if not removed
+    // =========================
+    $existing_images_from_form = isset($_POST['existing_images']) ? (array)$_POST['existing_images'] : [];
+    $existing_docs_from_form   = isset($_POST['existing_property_documents']) ? (array)$_POST['existing_property_documents'] : [];
+
+    $finalImages = array_merge($existing_images_from_form, $uploadedImagePaths);
+    $finalDocs   = array_merge($existing_docs_from_form, $uploadedDocPaths);
+
+    $image_path = !empty($finalImages) ? implode(',', $finalImages) : null;
     $property_document_path = !empty($finalDocs) ? implode(',', $finalDocs) : null;
 
     // =========================
@@ -150,7 +152,9 @@ try {
             'uploaded_images' => $uploadedImagePaths,
             'uploaded_docs' => $uploadedDocPaths,
             'removed_images' => $remove_images,
-            'removed_docs' => $remove_docs
+            'removed_docs' => $remove_docs,
+            'existing_images_from_form' => $existing_images_from_form,
+            'existing_docs_from_form' => $existing_docs_from_form
         ]
     ]);
 
