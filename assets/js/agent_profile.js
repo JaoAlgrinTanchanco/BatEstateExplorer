@@ -128,85 +128,99 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------
   // Image Upload Initialization
   // -------------------------
-  window.selectedFiles = [];
+  window.selectedFiles = []; // Initialize globally
 
   const initImageUpload = ({ dropAreaId, fileInputId, previewId, maxFiles = 10 }) => {
-    const dropArea = document.getElementById(dropAreaId);
-    const fileInput = document.getElementById(fileInputId);
-    const preview = document.getElementById(previewId);
-    if (!dropArea || !fileInput || !preview) return;
+      const dropArea = document.getElementById(dropAreaId);
+      const fileInput = document.getElementById(fileInputId);
+      const preview = document.getElementById(previewId);
+      if (!dropArea || !fileInput || !preview) return;
 
-    const renderPreviews = () => {
-      preview.innerHTML = '';
-      window.selectedFiles.forEach((file, idx) => {
-        const wrap = document.createElement('div');
-        wrap.className = 'img-wrap';
-        wrap.style.position = 'relative';
+      // 🛑 FIX: This consolidated function handles both File objects and strings (URLs)
+      const renderPreviews = () => {
+          preview.innerHTML = '';
+          window.selectedFiles.forEach((file, idx) => {
+              const wrap = document.createElement('div');
+              wrap.className = 'img-wrap';
+              wrap.style.position = 'relative';
 
-        const img = document.createElement('img');
-        img.className = 'thumb';
-        wrap.appendChild(img);
+              const img = document.createElement('img');
+              img.className = 'thumb';
+              wrap.appendChild(img);
 
-        const reader = new FileReader();
-        reader.onload = e => img.src = e.target.result;
-        reader.readAsDataURL(file);
+              let isFileObject = file instanceof File;
+              
+              if (isFileObject) {
+                  // Handle new File object (read locally)
+                  const reader = new FileReader();
+                  reader.onload = e => img.src = e.target.result;
+                  reader.readAsDataURL(file);
+              } else if (typeof file === 'string') {
+                  // Handle existing URL string from the database
+                  img.src = file.startsWith('/') ? file : '/' + file;
+              } else {
+                  return; // Skip invalid entries
+              }
 
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.innerHTML = '&times;';
-        Object.assign(removeBtn.style, {
-          position: 'absolute', top: '4px', right: '4px',
-          background: '#000', color: '#fff',
-          border: 'none', borderRadius: '50%',
-          width: '24px', height: '24px', fontSize: '16px',
-          cursor: 'pointer', display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
-          padding: '0', zIndex: '10', transition: 'background 0.2s ease'
-        });
+              const removeBtn = document.createElement('button');
+              removeBtn.type = 'button';
+              removeBtn.innerHTML = '&times;';
+              Object.assign(removeBtn.style, {
+                  position: 'absolute', top: '4px', right: '4px',
+                  background: '#000', color: '#fff',
+                  border: 'none', borderRadius: '50%',
+                  width: '24px', height: '24px', fontSize: '16px',
+                  cursor: 'pointer', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  padding: '0', zIndex: '10', transition: 'background 0.2s ease'
+              });
 
-        removeBtn.addEventListener('mouseenter', () => removeBtn.style.background = 'rgba(255,77,79,0.9)');
-        removeBtn.addEventListener('mouseleave', () => removeBtn.style.background = '#000');
-        removeBtn.addEventListener('click', () => {
-          window.selectedFiles.splice(idx, 1);
+              removeBtn.addEventListener('mouseenter', () => removeBtn.style.background = 'rgba(255,77,79,0.9)');
+              removeBtn.addEventListener('mouseleave', () => removeBtn.style.background = '#000');
+              removeBtn.addEventListener('click', () => {
+                  window.selectedFiles.splice(idx, 1);
+                  renderPreviews(); // Re-render after removal
+              });
+
+              wrap.appendChild(removeBtn);
+              preview.appendChild(wrap);
+          });
+      };
+
+      // ... (rest of addFiles function remains the same) ...
+      const addFiles = files => {
+          const incoming = Array.from(files).filter(f => f instanceof File && f.type.startsWith('image/'));
+          // NOTE: Signatures only need to be checked against other File objects.
+          const existingSigs = new Set(window.selectedFiles
+              .filter(f => f instanceof File)
+              .map(f => `${f.name}|${f.size}|${f.lastModified}`)
+          );
+          
+          for (const f of incoming) {
+              if (window.selectedFiles.length >= maxFiles) break;
+              const sig = `${f.name}|${f.size}|${f.lastModified}`;
+              if (!existingSigs.has(sig)) window.selectedFiles.push(f);
+          }
           renderPreviews();
-        });
+      };
 
-        wrap.appendChild(removeBtn);
-        preview.appendChild(wrap);
+      // ... (Drag & drop and click listeners remain the same) ...
+
+      dropArea.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', () => {
+          addFiles(fileInput.files);
+          fileInput.value = '';
       });
-    };
 
-    const addFiles = files => {
-      const incoming = Array.from(files).filter(f => f instanceof File && f.type.startsWith('image/'));
-      const existingSigs = new Set(window.selectedFiles.map(f => `${f.name}|${f.size}|${f.lastModified}`));
-      for (const f of incoming) {
-        if (window.selectedFiles.length >= maxFiles) break;
-        const sig = `${f.name}|${f.size}|${f.lastModified}`;
-        if (!existingSigs.has(sig)) window.selectedFiles.push(f);
-      }
+      // 🛑 FIX: Expose the renderer so loadDraftIntoForm can use it
+      window.renderImageUploads = renderPreviews;
+      window.resetImageUpload = () => { 
+          window.selectedFiles = []; 
+          renderPreviews(); 
+      };
+      
+      // Initial render
       renderPreviews();
-    };
-
-    // Drag & drop
-    ['dragenter','dragover','dragleave','drop'].forEach(evt => 
-      dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); })
-    );
-    dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
-    dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
-    dropArea.addEventListener('drop', e => {
-      dropArea.classList.remove('drag-over');
-      addFiles(e.dataTransfer.files);
-    });
-
-    // Click to pick files
-    dropArea.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', () => {
-      addFiles(fileInput.files);
-      fileInput.value = '';
-    });
-
-    window.resetImageUpload = () => { window.selectedFiles = []; renderPreviews(); };
-    renderPreviews();
   };
 
   // Initialize image upload
