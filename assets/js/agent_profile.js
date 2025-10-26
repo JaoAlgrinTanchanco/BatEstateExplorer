@@ -128,13 +128,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------
   // Image Upload Initialization
   // -------------------------
-  window.selectedFiles = window.selectedFiles || [];
+  window.selectedFiles = [];
 
   const initImageUpload = ({ dropAreaId, fileInputId, previewId, maxFiles = 10 }) => {
     const dropArea = document.getElementById(dropAreaId);
     const fileInput = document.getElementById(fileInputId);
     const preview = document.getElementById(previewId);
-
     if (!dropArea || !fileInput || !preview) return;
 
     const renderPreviews = () => {
@@ -142,67 +141,54 @@ document.addEventListener('DOMContentLoaded', () => {
       window.selectedFiles.forEach((file, idx) => {
         const wrap = document.createElement('div');
         wrap.className = 'img-wrap';
+        wrap.style.position = 'relative';
 
         const img = document.createElement('img');
         img.className = 'thumb';
         wrap.appendChild(img);
 
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.innerHTML = '&times;'; // × symbol
-        removeBtn.style.position = 'absolute';
-        removeBtn.style.top = '4px';
-        removeBtn.style.right = '4px';
-        removeBtn.style.background = '#000';
-        removeBtn.style.color = '#fff';
-        removeBtn.style.border = 'none';
-        removeBtn.style.borderRadius = '50%';
-        removeBtn.style.width = '24px';
-        removeBtn.style.height = '24px';
-        removeBtn.style.fontSize = '16px';
-        removeBtn.style.cursor = 'pointer';
-        removeBtn.style.display = 'flex';
-        removeBtn.style.alignItems = 'center';
-        removeBtn.style.justifyContent = 'center';
-        removeBtn.style.padding = '0';
-        removeBtn.style.zIndex = '10';
-        removeBtn.style.transition = 'background 0.2s ease';
-
-        removeBtn.addEventListener('mouseenter', () => removeBtn.style.background = 'rgba(255, 120, 117, 0.9)');
-        removeBtn.addEventListener('mouseleave', () => removeBtn.style.background = 'rgba(255, 77, 79, 0.9)');
-
-        removeBtn.addEventListener('click', () => {
-            window.selectedFiles.splice(idx, 1);
-            renderPreviews();
-        });
-
-        wrap.style.position = 'relative'; // Ensure parent is relative for absolute positioning
-        wrap.appendChild(removeBtn);
-
         const reader = new FileReader();
         reader.onload = e => img.src = e.target.result;
         reader.readAsDataURL(file);
 
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.innerHTML = '&times;';
+        Object.assign(removeBtn.style, {
+          position: 'absolute', top: '4px', right: '4px',
+          background: '#000', color: '#fff',
+          border: 'none', borderRadius: '50%',
+          width: '24px', height: '24px', fontSize: '16px',
+          cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          padding: '0', zIndex: '10', transition: 'background 0.2s ease'
+        });
+
+        removeBtn.addEventListener('mouseenter', () => removeBtn.style.background = 'rgba(255,77,79,0.9)');
+        removeBtn.addEventListener('mouseleave', () => removeBtn.style.background = '#000');
+        removeBtn.addEventListener('click', () => {
+          window.selectedFiles.splice(idx, 1);
+          renderPreviews();
+        });
+
+        wrap.appendChild(removeBtn);
         preview.appendChild(wrap);
       });
     };
 
     const addFiles = files => {
-      const incoming = Array.from(files).filter(f => f.type.startsWith('image/'));
+      const incoming = Array.from(files).filter(f => f instanceof File && f.type.startsWith('image/'));
       const existingSigs = new Set(window.selectedFiles.map(f => `${f.name}|${f.size}|${f.lastModified}`));
       for (const f of incoming) {
         if (window.selectedFiles.length >= maxFiles) break;
         const sig = `${f.name}|${f.size}|${f.lastModified}`;
-        if (!existingSigs.has(sig)) {
-          window.selectedFiles.push(f);
-          existingSigs.add(sig);
-        }
+        if (!existingSigs.has(sig)) window.selectedFiles.push(f);
       }
       renderPreviews();
     };
 
-    // Drag & Drop
-    ['dragenter','dragover','dragleave','drop'].forEach(evt =>
+    // Drag & drop
+    ['dragenter','dragover','dragleave','drop'].forEach(evt => 
       dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); })
     );
     dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
@@ -211,27 +197,21 @@ document.addEventListener('DOMContentLoaded', () => {
       dropArea.classList.remove('drag-over');
       addFiles(e.dataTransfer.files);
     });
+
+    // Click to pick files
     dropArea.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', () => {
       addFiles(fileInput.files);
       fileInput.value = '';
     });
 
-    // Reset helper
-    window.resetImageUpload = () => {
-      window.selectedFiles.length = 0;
-      renderPreviews();
-    };
+    window.resetImageUpload = () => { window.selectedFiles = []; renderPreviews(); };
+    renderPreviews();
   };
 
-  // Initialize main image upload
-  initImageUpload({
-    dropAreaId: 'imageUploadArea',
-    fileInputId: 'images',
-    previewId: 'imagePreview',
-    maxFiles: 10
-  });
-
+  // Initialize image upload
+  initImageUpload({ dropAreaId: 'imageUploadArea', fileInputId: 'images', previewId: 'imagePreview', maxFiles: 10 });
+  
   // -------------------------
   // Save Draft Handler
   // -------------------------
@@ -258,89 +238,40 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------
-  // Save Draft Handler
+  // Save Draft Handler (Create Only)
   // -------------------------
-  document.getElementById('saveDraftBtn')?.addEventListener('click', async (e) => {
+  document.getElementById('saveDraftBtn')?.addEventListener('click', async e => {
     e.preventDefault();
-
     const form = document.getElementById('addListingForm');
     if (!form) return;
 
-    // ===============================
-    // 🏗️ Build FormData
-    // ===============================
     const fd = new FormData(form);
 
-    // ===============================
-    // 🖼️ Property Images
-    // ===============================
-    // Support both manually selected and custom preview
-    const imgInput = document.getElementById('images');
-    if (imgInput?.files?.length > 0) {
-      Array.from(imgInput.files).forEach(file => fd.append('images[]', file));
-    } else if (window.selectedFiles?.length) {
-      window.selectedFiles.forEach(f => fd.append('images[]', f));
-    }
+    // Append new images only
+    window.selectedFiles.forEach(f => fd.append('images[]', f));
 
-    // ===============================
-    // 📄 Property Documents
-    // ===============================
-    // Handle reloaded previewed docs and new ones
+    // Append documents (unchanged)
     const docItems = Array.from(document.querySelectorAll('#documentPreview .doc-item'));
-    const newDocs = [];
-    const existingDocs = [];
-
     docItems.forEach(item => {
-      if (item.file) newDocs.push(item.file);
-      else if (item.dataset.path) existingDocs.push(item.dataset.path);
+      if (item.file) fd.append('property_document[]', item.file);
     });
 
-    // Existing docs (for reference if backend supports it later)
-    existingDocs.forEach(p => fd.append('existing_docs[]', p));
-
-    // New uploaded files
-    if (newDocs.length > 0) {
-      newDocs.forEach(f => fd.append('property_document[]', f));
-    } else {
-      // Fallback: if using the file input directly
-      const docInput = document.getElementById('property_document');
-      if (docInput?.files?.length > 0) {
-        Array.from(docInput.files).forEach(file => fd.append('property_document[]', file));
-      }
-    }
-
-    // ===============================
-    // 🆔 Add Draft ID for Updates
-    // ===============================
-    if (window.currentDraftId) fd.append('id', window.currentDraftId);
-
-    // ===============================
-    // 🧩 Debug Preview
-    // ===============================
     console.group("FormData Before Upload");
     for (let [key, val] of fd.entries()) console.log(key, val);
     console.groupEnd();
 
-    // ===============================
-    // 🚀 Submit
-    // ===============================
     try {
-      const res = await fetch('/BatEstateExplorer/public/api/save_draft.php', {
-        method: 'POST',
-        body: fd,
-      });
-
+      const res = await fetch('/BatEstateExplorer/public/api/save_draft.php', { method: 'POST', body: fd });
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json();
       console.log('Draft Save Response:', data);
 
       if (data.success) {
-        notify('success', window.currentDraftId ? 'Draft updated successfully!' : 'Draft saved successfully!');
+        notify('success', 'Draft saved successfully!');
         form.reset();
         window.resetImageUpload?.();
         window.resetDocumentUpload?.();
         loadDrafts?.();
-        window.currentDraftId = null;
       } else {
         notify('error', data.error || 'Failed to save draft.');
       }
@@ -349,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
       notify('error', err.message || 'Network error while saving draft.');
     }
   });
-
+  
   // -------------------------
   // Save Listing Handler
   // -------------------------

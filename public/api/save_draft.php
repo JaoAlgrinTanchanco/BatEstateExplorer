@@ -11,9 +11,7 @@ try {
     // Check logged-in user
     // =========================
     $user_data = get_logged_in_user($pdo);
-    if (!$user_data) {
-        throw new Exception("No logged in user detected.");
-    }
+    if (!$user_data) throw new Exception("No logged in user detected.");
     $user_id = $user_data['id'];
 
     // =========================
@@ -33,22 +31,18 @@ try {
     // =========================
     $upload_dir     = 'C:/xampp/htdocs/BatEstateExplorer/storage/uploads/draft/';
     $db_path_prefix = 'storage/uploads/draft/';
-
     if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
 
     // =========================
     // Handle image uploads
     // =========================
     $uploadedImagePaths = [];
-    if (!empty($_FILES['images']['name'][0])) {
-        $count = count($_FILES['images']['name']);
-        for ($i = 0; $i < $count; $i++) {
+    if (!empty($_FILES['images']['name'])) {
+        foreach ($_FILES['images']['name'] as $i => $name) {
             if ($_FILES['images']['error'][$i] !== UPLOAD_ERR_OK) continue;
 
             $tmp = $_FILES['images']['tmp_name'][$i];
-            $name = basename($_FILES['images']['name'][$i]);
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-
             if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) continue;
 
             $newName = uniqid('draft_img_', true) . '.' . $ext;
@@ -66,16 +60,13 @@ try {
     // Handle document uploads
     // =========================
     $uploadedDocPaths = [];
-    if (!empty($_FILES['property_document']['name'][0])) {
-        $count = count($_FILES['property_document']['name']);
-        for ($i = 0; $i < $count; $i++) {
+    if (!empty($_FILES['property_document']['name'])) {
+        foreach ($_FILES['property_document']['name'] as $i => $name) {
             if ($_FILES['property_document']['error'][$i] !== UPLOAD_ERR_OK) continue;
 
             $tmp = $_FILES['property_document']['tmp_name'][$i];
-            $name = basename($_FILES['property_document']['name'][$i]);
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-
-            if (!in_array($ext, ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'])) continue;
+            if (!in_array($ext, ['pdf','doc','docx','jpg','jpeg','png'])) continue;
 
             $newName = uniqid('draft_doc_', true) . '.' . $ext;
             $dest = $upload_dir . $newName;
