@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------
-  // Save Draft Handler (Create Only)
+  // Unified Save / Update Draft
   // -------------------------
   document.getElementById('saveDraftBtn')?.addEventListener('click', async e => {
     e.preventDefault();
@@ -247,11 +247,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fd = new FormData(form);
 
-    // Append new images only
+    // -------------------------
+    // Determine mode (create or update)
+    // -------------------------
+    const isUpdate = !!window.currentDraftId;
+    if (isUpdate) fd.append('id', window.currentDraftId);
+
+    // -------------------------
+    // Handle Images
+    // -------------------------
+    // window.selectedFiles = current files in form
+    // window.existingImages = loaded from DB (for update)
+    const existingImages = window.existingImages || [];
+    const currentImages = window.selectedFiles.map(f => f.name || f); // keep names as signature
+
+    // Compute removed images (in DB but not in current form)
+    const removedImages = isUpdate
+      ? existingImages.filter(img => !currentImages.includes(img.split('/').pop()))
+      : [];
+
+    removedImages.forEach(img => fd.append('remove_images[]', img));
+
+    // Append new images (not in DB)
     window.selectedFiles.forEach(f => fd.append('images[]', f));
 
-    // Append documents (unchanged)
+    // -------------------------
+    // Handle Documents
+    // -------------------------
+    const existingDocs = window.existingDocs || [];
     const docItems = Array.from(document.querySelectorAll('#documentPreview .doc-item'));
+    const currentDocs = docItems.map(item => item.dataset.path || item.file?.name);
+    const removedDocs = isUpdate
+      ? existingDocs.filter(doc => !currentDocs.includes(doc.split('/').pop()))
+      : [];
+    removedDocs.forEach(doc => fd.append('remove_docs[]', doc));
+
+    // Append new docs
     docItems.forEach(item => {
       if (item.file) fd.append('property_document[]', item.file);
     });
@@ -261,26 +292,33 @@ document.addEventListener('DOMContentLoaded', () => {
     console.groupEnd();
 
     try {
-      const res = await fetch('/BatEstateExplorer/public/api/save_draft.php', { method: 'POST', body: fd });
+      const url = isUpdate
+        ? '/BatEstateExplorer/public/api/update_draft.php'
+        : '/BatEstateExplorer/public/api/save_draft.php';
+
+      const res = await fetch(url, { method: 'POST', body: fd });
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json();
-      console.log('Draft Save Response:', data);
+      console.log('Draft Save/Update Response:', data);
 
       if (data.success) {
-        notify('success', 'Draft saved successfully!');
+        notify(isUpdate ? 'Draft updated successfully!' : 'Draft saved successfully!');
         form.reset();
         window.resetImageUpload?.();
         window.resetDocumentUpload?.();
+        window.currentDraftId = null;
+        window.existingImages = [];
+        window.existingDocs = [];
         loadDrafts?.();
       } else {
         notify('error', data.error || 'Failed to save draft.');
       }
     } catch (err) {
-      console.error('Draft save error:', err);
+      console.error('Draft save/update error:', err);
       notify('error', err.message || 'Network error while saving draft.');
     }
   });
-  
+
   // -------------------------
   // Save Listing Handler
   // -------------------------
@@ -812,7 +850,9 @@ function initDraftCards() {
   });
 }
 
-// Load draft into form
+// -------------------------
+// Load Draft into Form (Update Mode)
+// -------------------------
 function loadDraftIntoForm(draftId) {
   if (!draftId) return notify('error', 'Invalid draft ID');
 
@@ -834,12 +874,16 @@ function loadDraftIntoForm(draftId) {
       document.getElementById('description').value   = data.description || '';
 
       // -------------------------
-      // Reset previous images
+      // Reset previous images/docs
       // -------------------------
       window.resetImageUpload?.();
+      const docPreview = document.getElementById('documentPreview');
+      docPreview.innerHTML = '';
+      window.selectedFiles = [];
+      window.selectedDocuments = [];
 
       // -------------------------
-      // Render draft images
+      // Render Images
       // -------------------------
       if (Array.isArray(data.images)) {
         const preview = document.getElementById('imagePreview');
@@ -853,9 +897,7 @@ function loadDraftIntoForm(draftId) {
           wrap.appendChild(img);
 
           const removeBtn = document.createElement('button');
-          removeBtn.className = 'remove-doc';
           removeBtn.type = 'button';
-          removeBtn.className = 'remove-img';
           removeBtn.innerHTML = '&times;';
           removeBtn.addEventListener('click', () => {
             wrap.remove();
@@ -865,21 +907,17 @@ function loadDraftIntoForm(draftId) {
 
           preview.appendChild(wrap);
 
-          // Push draft image URL into selectedFiles
+          // Add to both "selected" and "existing" for update logic
           window.selectedFiles.push(src);
         });
+
+        // Keep track of existing images for update comparison
+        window.existingImages = [...window.selectedFiles];
       }
 
       // -------------------------
-      // Render property documents (draft reload)
+      // Render Documents
       // -------------------------
-      const docPreview = document.getElementById('documentPreview');
-      const docInput = document.getElementById('property_document');
-
-      // Clear previous previews and reset state
-      window.selectedDocuments = [];
-      docPreview.innerHTML = '';
-
       if (data.property_document_path) {
         const docs = data.property_document_path.split(',').filter(Boolean);
 
@@ -887,32 +925,15 @@ function loadDraftIntoForm(draftId) {
           const fileName = path.split('/').pop();
           const fullPath = '/' + path.replace(/^\/?/, '');
 
-          // Same .doc-item design from updateDocumentPreview()
           const item = document.createElement('div');
           item.className = 'doc-item';
           item.style.position = 'relative';
-          item.style.padding = '12px 16px';
-          item.style.border = '1px solid #ddd';
-          item.style.borderRadius = '8px';
-          item.style.background = '#f8f8f8';
-          item.style.display = 'flex';
-          item.style.alignItems = 'center';
-          item.style.justifyContent = 'center';
-          item.style.minWidth = '180px';
-          item.style.wordBreak = 'break-word';
 
           const link = document.createElement('a');
           link.textContent = fileName;
           link.href = fullPath;
           link.target = '_blank';
-          link.style.color = '#007bff';
-          link.style.textDecoration = 'none';
-          link.style.textAlign = 'center';
-          link.style.fontSize = '14px';
-          link.style.maxWidth = '160px';
-          link.style.overflow = 'hidden';
-          link.style.textOverflow = 'ellipsis';
-          link.style.whiteSpace = 'nowrap';
+          item.appendChild(link);
 
           const removeBtn = document.createElement('button');
           removeBtn.type = 'button';
@@ -920,44 +941,31 @@ function loadDraftIntoForm(draftId) {
           removeBtn.style.position = 'absolute';
           removeBtn.style.top = '4px';
           removeBtn.style.right = '4px';
-          removeBtn.style.background = '#000';
-          removeBtn.style.color = '#fff';
-          removeBtn.style.border = 'none';
-          removeBtn.style.borderRadius = '50%';
-          removeBtn.style.width = '22px';
-          removeBtn.style.height = '22px';
-          removeBtn.style.fontSize = '16px';
-          removeBtn.style.cursor = 'pointer';
-          removeBtn.style.display = 'flex';
-          removeBtn.style.alignItems = 'center';
-          removeBtn.style.justifyContent = 'center';
-          removeBtn.style.padding = '0';
-          removeBtn.style.transition = 'background 0.2s ease';
-
-          removeBtn.addEventListener('mouseenter', () => removeBtn.style.background = 'rgba(255, 77, 79, 0.9)');
-          removeBtn.addEventListener('mouseleave', () => removeBtn.style.background = '#000');
-
           removeBtn.addEventListener('click', () => {
             item.remove();
-            // mark for removal
+            // mark for removal in FormData
             const hidden = document.createElement('input');
             hidden.type = 'hidden';
             hidden.name = 'remove_existing_docs[]';
             hidden.value = path;
-            docInput.closest('form').appendChild(hidden);
+            docPreview.closest('form').appendChild(hidden);
+
+            // Remove from selectedDocuments
+            window.selectedDocuments = window.selectedDocuments.filter(f => f !== fullPath);
           });
 
-          item.appendChild(link);
           item.appendChild(removeBtn);
           docPreview.appendChild(item);
 
-          // Push into selectedDocuments so saving works again
           window.selectedDocuments.push(fullPath);
         });
+
+        // Keep track of existing docs for update comparison
+        window.existingDocs = [...window.selectedDocuments];
       }
 
       // -------------------------
-      // Set current draft ID
+      // Set draft ID
       // -------------------------
       window.currentDraftId = draftId;
     })

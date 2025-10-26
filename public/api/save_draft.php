@@ -37,10 +37,9 @@ try {
     // Handle image uploads
     // =========================
     $uploadedImagePaths = [];
-    if (!empty($_FILES['images']['name'])) {
+    if (isset($_FILES['images']) && !empty(array_filter($_FILES['images']['name']))) {
         foreach ($_FILES['images']['name'] as $i => $name) {
             if ($_FILES['images']['error'][$i] !== UPLOAD_ERR_OK) continue;
-
             $tmp = $_FILES['images']['tmp_name'][$i];
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
             if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) continue;
