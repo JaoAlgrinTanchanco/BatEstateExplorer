@@ -208,149 +208,169 @@
             <section><span class="label">Lot Size:</span> <span class="value lot_size"></span></section>
             <section><span class="label">Status:</span> <span class="value status"></span></section>
             <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>
-
             <section>
                 <span class="label">Description:</span>
                 <div class="property-description"></div>
             </section>
+            <section>
+                <span class="label">Documents:</span>
+                <ul class="property-documents"></ul>
+            </section>
+        </div>
     </div>
-  </div>
 </div>
 
 <script>
-    // ===== Tabs =====
-    document.querySelectorAll('.tab-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            // Remove active from all buttons and hide all panels
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-panel').forEach(panel => panel.style.display = 'none');
+    document.addEventListener('DOMContentLoaded', () => {
 
-            // Activate clicked tab and show its panel
-            button.classList.add('active');
-            const tabPanel = document.getElementById('tab-' + button.dataset.tab);
-            if (tabPanel) tabPanel.style.display = 'block';
+        // ===== Tabs =====
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(panel => panel.style.display = 'none');
+                button.classList.add('active');
+                const tabPanel = document.getElementById('tab-' + button.dataset.tab);
+                if (tabPanel) tabPanel.style.display = 'block';
             });
         });
 
-    // ===== Modal =====
-    const modal = document.getElementById('propertyModal');
-        const modalBody = document.getElementById('modalBody');
-    const closeBtn = modal.querySelector('.close');
+        // ===== Modal =====
+        const modal = document.getElementById('propertyModal');
+        const closeBtn = modal.querySelector('.close');
 
-    // Close modal
-    closeBtn.addEventListener('click', () => modal.style.display = 'none');
-    window.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+        // Close modal
+        closeBtn.addEventListener('click', () => modal.style.display = 'none');
+        window.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
 
-    // ===== View Property Post =====
-    document.addEventListener('click', async e => {
-        if (!e.target.classList.contains('btn-view')) return;
+        // ===== View Property Post =====
+        document.addEventListener('click', async e => {
+            if (!e.target.classList.contains('btn-view')) return;
 
-        const propertyId = e.target.dataset.id;
-        if (!propertyId) return;
+            const propertyId = e.target.dataset.id;
+            if (!propertyId) return;
+            const propertyTypeFromBtn = e.target.dataset.type || '-';
 
-        // Get property_type from button data attribute
-        const propertyTypeFromBtn = e.target.dataset.type || '-';
+            modal.style.display = 'block';
 
-        modal.style.display = 'block';
+            // Clear previous content
+            modal.querySelector('.property-name').textContent = '';
+            modal.querySelector('.property-type').textContent = '';
+            modal.querySelectorAll('.modal-right .value').forEach(v => v.textContent = '');
+            modal.querySelector('.property-images').innerHTML = '';
+            modal.querySelector('.property-description').textContent = '';
+            modal.querySelector('.property-documents').innerHTML = '';
+            const mainImage = modal.querySelector('.property-main-image');
 
-        // Clear existing content
-        const mainImage = modal.querySelector('.property-main-image');
-        modal.querySelector('.property-name').textContent = '';
-        modal.querySelector('.property-type').textContent = '';
-        modal.querySelectorAll('.modal-right .value').forEach(v => v.textContent = '');
-        modal.querySelector('.property-images').innerHTML = '';
-        modal.querySelector('.property-description').textContent = '';
+            try {
+                const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${propertyId}`);
+                const data = await res.json();
 
-        try {
-            const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${propertyId}`);
-            const data = await res.json();
+                if (!data.success || !data.property) {
+                    alert(data.error || 'Failed to load property details.');
+                    modal.style.display = 'none';
+                    return;
+                }
 
-            if (!data.success || !data.property) {
-                alert(data.error || 'Failed to load property details.');
-                modal.style.display = 'none';
-                return;
-            }
+                const prop = data.property;
 
-            const prop = data.property;
+                // Populate left column (main image)
+                mainImage.style.backgroundImage = `url('${prop.images?.[0] || '/BatEstateExplorer/assets/images/bg4.jpg'}')`;
+                modal.querySelector('.property-name').textContent = prop.title || '-';
 
-            // Populate left column
-            mainImage.style.backgroundImage = `url('${prop.images?.[0] || '/BatEstateExplorer/assets/images/bg4.jpg'}')`;
-            modal.querySelector('.property-name').textContent = prop.title || '-';
+                // Populate right column
+                modal.querySelector('.location').textContent = prop.location || '-';
+                modal.querySelector('.price').textContent = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
+                modal.querySelector('.property-type').textContent = prop.property_type || propertyTypeFromBtn || '-';
+                modal.querySelector('.bedrooms').textContent = prop.bedrooms || 0;
+                modal.querySelector('.bathrooms').textContent = prop.bathrooms || 0;
+                modal.querySelector('.sqm').textContent = `${prop.sqm || 0} sqm`;
+                modal.querySelector('.lot_size').textContent = `${prop.lot_size || 0} sqm`;
+                modal.querySelector('.status').textContent = prop.status || '-';
+                modal.querySelector('.date_uploaded').textContent = prop.date_uploaded || '-';
 
-            // Populate right column
-            modal.querySelector('.location').textContent = prop.location || '-';
-            modal.querySelector('.price').textContent = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
-            modal.querySelector('.property-type').textContent = prop.property_type || propertyTypeFromBtn || '-'; // fallback
-            modal.querySelector('.bedrooms').textContent = prop.bedrooms || 0;
-            modal.querySelector('.bathrooms').textContent = prop.bathrooms || 0;
-            modal.querySelector('.sqm').textContent = `${prop.sqm || 0} sqm`;
-            modal.querySelector('.lot_size').textContent = `${prop.lot_size || 0} sqm`;
-            modal.querySelector('.status').textContent = prop.status || '-';
-            modal.querySelector('.date_uploaded').textContent = prop.date_uploaded || '-';
+                // Description
+                modal.querySelector('.property-description').textContent = prop.description || '';
 
-            // Description
-            modal.querySelector('.property-description').textContent = prop.description || '';
-
-            // Populate images gallery with selection functionality
-            const gallery = modal.querySelector('.property-images');
-            (prop.images || []).forEach((img, idx) => {
-                const imgEl = document.createElement('img');
-                imgEl.src = img;
-
-                if(idx === 0) imgEl.classList.add('active'); // first image selected by default
-
-                imgEl.addEventListener('click', () => {
-                    mainImage.style.backgroundImage = `url('${img}')`;
-                    gallery.querySelectorAll('img').forEach(i => i.classList.remove('active'));
-                    imgEl.classList.add('active');
+                // Images gallery
+                const gallery = modal.querySelector('.property-images');
+                (prop.images || []).forEach((img, idx) => {
+                    const imgEl = document.createElement('img');
+                    imgEl.src = img;
+                    if (idx === 0) imgEl.classList.add('active');
+                    imgEl.addEventListener('click', () => {
+                        mainImage.style.backgroundImage = `url('${img}')`;
+                        gallery.querySelectorAll('img').forEach(i => i.classList.remove('active'));
+                        imgEl.classList.add('active');
+                    });
+                    gallery.appendChild(imgEl);
                 });
 
-                gallery.appendChild(imgEl);
-            });
+                // Populate documents under description
+                const docList = modal.querySelector('.property-documents');
+                docList.innerHTML = ''; // clear previous docs
 
-        } catch (err) {
-            console.error(err);
-            alert('An unexpected error occurred.');
-            modal.style.display = 'none';
-        }
-    });
+                (prop.documents || []).forEach(doc => {
+                    const li = document.createElement('li');
+                    li.classList.add('doc-card'); // styling class
 
-    // ===== Admin Actions: Approve / Reject / Remove =====
-    document.addEventListener('click', async e => {
-        if (!e.target.classList.contains('btn-approve') &&
-            !e.target.classList.contains('btn-reject') &&
-            !e.target.classList.contains('btn-remove')) return;
+                    const a = document.createElement('a');
+                    a.href = `/${doc.url}`; // relative path from web root
+                    a.target = '_blank';
+                    a.classList.add('doc-link');
 
-        const propertyId = e.target.dataset.id;
-        if (!propertyId) return;
+                    // icon + name
+                    a.innerHTML = `
+                        <span class="doc-icon">📄</span>
+                        <span class="doc-name">${doc.name}</span>
+                    `;
 
-        let action = '';
-        if (e.target.classList.contains('btn-approve')) action = 'approve';
-        if (e.target.classList.contains('btn-reject')) action = 'reject';
-        if (e.target.classList.contains('btn-remove')) action = 'remove';
+                    li.appendChild(a);
+                    docList.appendChild(li);
+                });
 
-        if (!action) return;
+            } catch (err) {
+                console.error(err);
+                alert('An unexpected error occurred.');
+                modal.style.display = 'none';
+            }
+        });
 
-        if (!confirm(`Are you sure you want to ${action} this property?`)) return;
+        // ===== Admin Actions: Approve / Reject / Remove =====
+        document.addEventListener('click', async e => {
+            if (!e.target.classList.contains('btn-approve') &&
+                !e.target.classList.contains('btn-reject') &&
+                !e.target.classList.contains('btn-remove')) return;
 
-        try {
-            const formData = new FormData();
-            formData.append('property_id', propertyId);
-            formData.append('action', action);
+            const propertyId = e.target.dataset.id;
+            if (!propertyId) return;
 
-            const res = await fetch('/BatEstateExplorer/public/api/admin_property_action.php', {
-                method: 'POST',
-                body: formData
-            });
+            let action = '';
+            if (e.target.classList.contains('btn-approve')) action = 'approve';
+            if (e.target.classList.contains('btn-reject')) action = 'reject';
+            if (e.target.classList.contains('btn-remove')) action = 'remove';
 
-            const data = await res.json();
-            alert(data.message || data.error || 'Unexpected response');
+            if (!action) return;
+            if (!confirm(`Are you sure you want to ${action} this property?`)) return;
 
-            if (data.success) location.reload();
-        } catch (err) {
-            console.error(err);
-            alert('An error occurred while performing the action.');
-        }
+            try {
+                const formData = new FormData();
+                formData.append('property_id', propertyId);
+                formData.append('action', action);
+
+                const res = await fetch('/BatEstateExplorer/public/api/admin_property_action.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+                alert(data.message || data.error || 'Unexpected response');
+
+                if (data.success) location.reload();
+            } catch (err) {
+                console.error(err);
+                alert('An error occurred while performing the action.');
+            }
+        });
+
     });
 </script>
-

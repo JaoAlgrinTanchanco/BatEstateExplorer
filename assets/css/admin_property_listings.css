@@ -24,6 +24,50 @@
     font-style: normal;
 }
 
+.property-documents {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.property-documents .doc-card {
+    background: #f9f9f9;
+    border-radius: 15px;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    min-width: 180px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.property-documents .doc-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.property-documents .doc-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: #111827;
+    font-family: 'Satoshi-Medium', sans-serif;
+    font-size: 0.9rem;
+    width: 100%;
+}
+
+.property-documents .doc-link .doc-icon {
+    font-size: 1.2rem;
+}
+
+.property-documents .doc-link .doc-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .content-header {
     display: flex;
     justify-content: space-between;
@@ -302,7 +346,7 @@
 
 /* Left Column: Main Image */
 .modal-left {
-  flex: 1 1 300px;
+  flex: 2 1 300px;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -313,6 +357,7 @@
   aspect-ratio: 4 / 3;
   background-size: cover;
   background-position: center;
+  border: 2px solid #aaaaaa;
   border-radius: 15px;
   position: relative;
 }

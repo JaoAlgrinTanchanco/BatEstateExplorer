@@ -44,6 +44,25 @@ if (empty($images)) {
     $images[] = '/BatEstateExplorer/assets/images/default.jpg';
 }
 
+// Fetch property documents
+$sqlDocs = "SELECT document_name, document_path FROM property_documents WHERE property_id = ?";
+$stmtDocs = $conn->prepare($sqlDocs);
+$stmtDocs->bind_param("i", $property_id);
+$stmtDocs->execute();
+$resultDocs = $stmtDocs->get_result();
+
+$documents = [];
+while ($row = $resultDocs->fetch_assoc()) {
+    $documents[] = [
+        'name' => $row['document_name'] ?: basename($row['document_path']),
+        // Only include relative path from web root
+        'url'  => 'storage/uploads/property_documents/' . basename($row['document_path'])
+    ];
+}
+$stmtDocs->close();
+
+$property_data['documents'] = $documents;
+
 // Check privilege from users.privileges JSON column
 $has_privilege = false;
 $debug_info = [];
@@ -85,8 +104,9 @@ $property_data = [
     'sqm'          => isset($property['sqm']) ? (float)$property['sqm'] : 0,
     'lot_size'     => isset($property['lot_size']) ? (float)$property['lot_size'] : 0,
     'status'       => $property['status'] ?? 'pending',
-    'created_at' => $property['created_at'] ?? null,
+    'created_at'   => $property['created_at'] ?? null,
     'images'       => $images,
+    'documents'    => $documents,
     'agent_id'     => $property['agent_id'] ?? null
 ];
 
