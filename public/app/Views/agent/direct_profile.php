@@ -490,7 +490,7 @@
                     <label for="images"><strong>Upload Images</strong></label>
                     <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
                         <p>Drag & drop images here or click to browse</p>
-                        <input type="file" id="images" accept="image/*" multiple style="display:none;"> 
+                        <input type="file" id="images" name="images[]" accept="image/*" multiple style="display:none;"> 
                     </div>
                     <div id="imagePreview" class="image-preview" aria-live="polite"></div>
                     </div>
@@ -530,7 +530,7 @@
                         <label for="property_document"><strong>Upload Property Documents</strong></label>
                         <div id="documentUploadArea" class="drag-drop-area" tabindex="0">
                             <p>Drag & drop documents here or click to browse</p>
-                            <input type="file" id="property_document" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple style="display:none;">
+                            <input type="file" id="property_document" name="property_document[]" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple style="display:none;">
                         </div>
                         <div id="documentPreview" class="doc-preview" aria-live="polite"></div>
 

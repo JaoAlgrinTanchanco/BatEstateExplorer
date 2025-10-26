@@ -229,26 +229,26 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------
   // Save Draft Handler
   // -------------------------
-  function loadDrafts() {
-    const container = document.getElementById('draftContainer');
-    if (!container) return;
+  window.loadDrafts = function() {
+      const container = document.getElementById('draftContainer');
+      if (!container) return;
 
-    fetch('/BatEstateExplorer/public/api/get_drafts.php') // make sure this returns drafts JSON
-      .then(res => res.json())
-      .then(data => {
-        container.innerHTML = ''; // clear existing drafts
-        data.forEach(draft => {
-          const div = document.createElement('div');
-          div.className = 'draft-card';
-          div.dataset.id = draft.id;
-          div.innerHTML = `
-            <span class="delete-draft">&times;</span>
-            ${draft.title}
-          `;
-          container.appendChild(div);
-        });
-      })
-      .catch(err => console.error('Failed to load drafts:', err));
+      fetch('/BatEstateExplorer/public/api/get_drafts.php') // make sure this returns drafts JSON
+        .then(res => res.json())
+        .then(data => {
+          container.innerHTML = ''; // clear existing drafts
+          data.forEach(draft => {
+            const div = document.createElement('div');
+            div.className = 'draft-card';
+            div.dataset.id = draft.id;
+            div.innerHTML = `
+              <span class="delete-draft">&times;</span>
+              ${draft.title}
+            `;
+            container.appendChild(div);
+          });
+        })
+        .catch(err => console.error('Failed to load drafts:', err));
   }
 
   // -------------------------
@@ -375,7 +375,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('addListingForm');
     const walletBalanceEl = document.getElementById('agentWalletBalance');
     const listingFee = 20;
-
+    if (!validateForm(form, false)) { // false for final listing
+        return; // Stop if validation fails
+    }
     if (!form.checkValidity()) return form.reportValidity();
 
     // Accept both new files and draft images
@@ -394,14 +396,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   window.closeListingFeeModal = closeListingFeeModal;
 
-  // -------------------------
-  // Pay Listing Fee & Submit
-  // -------------------------
+  // ------------------------------------------
+  // Pay Listing Fee & Submit (Integrity First)
+  // ------------------------------------------
   document.getElementById('payListingFeeBtn')?.addEventListener('click', async () => {
       const form = document.getElementById('addListingForm');
       const walletBalanceEl = document.getElementById('agentWalletBalance');
       const fd = new FormData(form);
 
+      // Run deduplication and append all files/state (this part is fine)
       deduplicateSelectedDocuments();
 
       // Append images
@@ -413,9 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
       });
 
-      // -------------------------
       // Append property documents
-      // -------------------------
       window.selectedDocuments?.forEach(f => {
           if (f instanceof File) {
               fd.append('property_documents[]', f);
@@ -428,37 +429,75 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.currentDraftId) {
           fd.append('draft_id', window.currentDraftId);
       }
-
+      
       try {
-          const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
-          const feeData = await feeRes.json();
-          if (!feeData.success) throw new Error(feeData.error || 'Failed to process fee');
-          walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
-
+          // Step 1: Attempt to SAVE THE LISTING and files first. 
+          // This is the most likely step to fail (due to large files, slow server, validation, etc.).
           const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
           const saveData = await saveRes.json();
-
-          if (saveData.success) {
-              notify('success', 'Listing submitted! Awaiting admin approval.');
-              window.closeListingFeeModal?.();
-              form.reset();
-              window.resetImageUpload?.();
-
-              // Remove draft card if it exists
-              if (window.currentDraftId) {
-                  const draftCard = document.querySelector(`.draft-card[data-id="${window.currentDraftId}"]`);
-                  draftCard?.remove();
-                  window.currentDraftId = null;
-              }
-
-              // Optionally reload drafts to refresh UI completely
-              loadDrafts?.();
-          } else {
-              notify('error', 'Listing fee paid but failed to save listing: ' + (saveData.error || 'Unknown error'));
+          
+          if (!saveData.success) {
+              // If the save fails, no fee was deducted, so we just notify the error and stop.
+              notify('error', 'Failed to save listing data or files: ' + (saveData.error || 'Unknown server error.'));
+              return;
           }
 
+          fd.append('listing_id', saveData.listing_id); // Assuming saveData contains the new listing_id
+          
+          // Step 2: Listing is saved (in a 'Pending Payment' state). Now, process the fee.
+          const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
+          const feeData = await feeRes.json();
+          
+          if (!feeData.success) {
+              
+              // For now, we only notify. The backend must handle the integrity of the pending listing.
+              notify('error', 'Listing saved but fee payment failed: ' + (feeData.error || 'Payment failed. Listing must be deleted by the system.'));
+              
+              // Update balance display with the latest known balance (which hasn't changed if payment failed)
+              walletBalanceEl.innerText = feeData.current_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+              return;
+          }
+
+          // ---------------------------------------------------------------------------------
+          // Final Success: Listing saved AND fee paid (Step 1 & 2 succeeded)
+          // ---------------------------------------------------------------------------------
+          notify('success', 'Listing submitted! Awaiting admin approval.');
+          window.closeListingFeeModal?.();
+
+          // 1. Update the balance display inside the modal (agentWalletBalance)
+          walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+          // 2. 🚀 Update the balance displayed on the main "Save Listing" button for immediate feedback
+          const mainSubmitBtn = document.getElementById('openListingModalBtn');
+          if (mainSubmitBtn && feeData.new_balance !== undefined) {
+              const formattedBalance = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+              mainSubmitBtn.innerHTML = `Save Listing (Balance: ₱${formattedBalance})`;
+          }
+
+          // 3. Full cleanup: Clear the form, previews, and global state
+          form.reset();
+          window.resetImageUpload?.();
+          window.resetDocumentUpload?.(); 
+
+          window.currentDraftId = null;
+          window.existingImages = [];
+          window.existingDocs = [];
+          window.selectedFiles = [];
+          window.selectedDocuments = []; 
+
+          // 4. Remove the draft card and refresh the drafts list
+          if (window.currentDraftId) {
+              const draftCard = document.querySelector(`.draft-card[data-id="${window.currentDraftId}"]`);
+              // Remove the published draft card from the UI
+              draftCard?.remove(); 
+              window.currentDraftId = null;
+          }
+          // Dynamically reload the list of drafts without a full page refresh
+          window.loadDrafts?.();
+
       } catch (err) {
-          notify('error', err.message || 'An error occurred.');
+          // Catches network errors or errors thrown intentionally (e.g., from validation)
+          notify('error', err.message || 'A critical network error occurred.');
       }
   });
 
@@ -940,72 +979,133 @@ function loadDraftIntoForm(draftId) {
       // Render Images
       // -------------------------
       if (Array.isArray(data.images)) {
-        data.images.forEach(src => {
-          const wrap = document.createElement('div');
-          wrap.className = 'img-wrap';
-          wrap.style.position = 'relative';
+          data.images.forEach(src => {
+              const wrap = document.createElement('div');
+              wrap.className = 'img-wrap';
+              wrap.style.position = 'relative';
 
-          const img = document.createElement('img');
-          img.className = 'thumb';
-          img.src = src;
-          wrap.appendChild(img);
+              const img = document.createElement('img');
+              img.className = 'thumb';
+              img.src = src;
+              wrap.appendChild(img);
 
-          const removeBtn = document.createElement('button');
-          removeBtn.type = 'button';
-          removeBtn.innerHTML = '&times;';
-          Object.assign(removeBtn.style, { position:'absolute', top:'4px', right:'4px', cursor:'pointer' });
-          removeBtn.addEventListener('click', () => {
-            wrap.remove();
-            window.selectedFiles = window.selectedFiles.filter(f => f !== src);
-            window.existingImages = window.existingImages.filter(f => f !== src);
+              const removeBtn = document.createElement('button');
+              removeBtn.type = 'button';
+              removeBtn.innerHTML = '&times;';
+              
+              // 🚀 FIX: Apply IDENTICAL styling from initImageUpload
+              Object.assign(removeBtn.style, {
+                  position: 'absolute', top: '4px', right: '4px',
+                  background: '#000', color: '#fff',
+                  border: 'none', borderRadius: '50%',
+                  width: '24px', height: '24px', fontSize: '16px',
+                  cursor: 'pointer', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  padding: '0', zIndex: '10', transition: 'background 0.2s ease'
+              });
+              
+              // 🚀 FIX: Apply IDENTICAL hover effects from initImageUpload
+              removeBtn.addEventListener('mouseenter', () => removeBtn.style.background = 'rgba(255,77,79,0.9)');
+              removeBtn.addEventListener('mouseleave', () => removeBtn.style.background = '#000');
+
+
+              removeBtn.addEventListener('click', () => {
+                  wrap.remove();
+                  // Remove the image path from state arrays
+                  window.selectedFiles = window.selectedFiles.filter(f => f !== src);
+                  window.existingImages = window.existingImages.filter(f => f !== src);
+              });
+              wrap.appendChild(removeBtn);
+
+              imgPreview.appendChild(wrap);
+
+              // Add to both selectedFiles and existingImages
+              window.selectedFiles.push(src);
+              window.existingImages.push(src);
           });
-          wrap.appendChild(removeBtn);
-
-          imgPreview.appendChild(wrap);
-
-          // Add to both selectedFiles and existingImages
-          window.selectedFiles.push(src);
-          window.existingImages.push(src);
-        });
       }
 
       // -------------------------
       // Render Documents
       // -------------------------
       if (data.property_document_path) {
-        const docs = data.property_document_path.split(',').filter(Boolean);
+          const docs = data.property_document_path.split(',').filter(Boolean);
 
-        docs.forEach(path => {
-          const fileName = path.split('/').pop();
-          const fullPath = '/' + path.replace(/^\/?/, '');
+          docs.forEach(path => {
+              const fileName = path.split('/').pop();
+              const fullPath = '/' + path.replace(/^\/?/, '');
 
-          const item = document.createElement('div');
-          item.className = 'doc-item';
-          item.style.position = 'relative';
+              const item = document.createElement('div');
+              item.className = 'doc-item';
+              item.style.position = 'relative';
+              
+              // 🚀 FIX: Apply IDENTICAL container styling from updateDocumentPreview
+              Object.assign(item.style, {
+                  padding: '12px 16px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  background: '#f8f8f8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '180px',
+                  wordBreak: 'break-word'
+              });
 
-          const link = document.createElement('a');
-          link.href = fullPath;
-          link.target = '_blank';
-          link.textContent = fileName;
-          item.appendChild(link);
+              const link = document.createElement('a');
+              link.href = fullPath;
+              link.target = '_blank';
+              link.textContent = fileName;
+              // Apply link styling
+              Object.assign(link.style, {
+                  color: '#007bff',
+                  textDecoration: 'none',
+                  textAlign: 'center',
+                  fontSize: '14px',
+                  maxWidth: '160px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+              });
+              item.appendChild(link);
 
-          const removeBtn = document.createElement('button');
-          removeBtn.type = 'button';
-          removeBtn.innerHTML = '&times;';
-          Object.assign(removeBtn.style, { position:'absolute', top:'4px', right:'4px', cursor:'pointer' });
-          removeBtn.addEventListener('click', () => {
-            item.remove();
-            window.selectedDocuments = window.selectedDocuments.filter(f => f !== fullPath);
-            window.existingDocs = window.existingDocs.filter(f => f !== fullPath);
+              const removeBtn = document.createElement('button');
+              removeBtn.type = 'button';
+              removeBtn.innerHTML = '&times;';
+              
+              // 🚀 FIX: Apply IDENTICAL removal button styling from updateDocumentPreview
+              Object.assign(removeBtn.style, { 
+                  position: 'absolute', top: '4px', right: '4px', 
+                  background: '#000', color: '#fff', 
+                  border: 'none', borderRadius: '50%', 
+                  width: '22px', height: '22px', fontSize: '16px', 
+                  cursor: 'pointer', display: 'flex', 
+                  alignItems: 'center', justifyContent: 'center', 
+                  padding: '0', transition: 'background 0.2s ease' 
+              });
+              
+              // 🚀 FIX: Apply IDENTICAL hover effects from updateDocumentPreview
+              removeBtn.addEventListener('mouseenter', () => removeBtn.style.background = 'rgba(255, 77, 79, 0.9)');
+              removeBtn.addEventListener('mouseleave', () => removeBtn.style.background = '#000');
+
+
+              removeBtn.addEventListener('click', () => {
+                  item.remove();
+                  // Remove the document path from state arrays
+                  window.selectedDocuments = window.selectedDocuments.filter(f => f !== fullPath);
+                  window.existingDocs = window.existingDocs.filter(f => f !== fullPath);
+                  
+                  // Re-render the overall document preview if the function exists
+                  window.updateDocumentPreview?.(); 
+              });
+              item.appendChild(removeBtn);
+
+              docPreview.appendChild(item);
+
+              // Add to both selectedDocuments and existingDocs
+              window.selectedDocuments.push(fullPath);
+              window.existingDocs.push(fullPath);
           });
-          item.appendChild(removeBtn);
-
-          docPreview.appendChild(item);
-
-          // Add to both selectedDocuments and existingDocs
-          window.selectedDocuments.push(fullPath);
-          window.existingDocs.push(fullPath);
-        });
       }
 
       // -------------------------
@@ -1015,7 +1115,6 @@ function loadDraftIntoForm(draftId) {
     })
     .catch(err => notify('error', 'Failed to load draft'));
 }
-
 
 // Delete draft
 function deleteDraft(draftId, cardEl) {
@@ -1079,4 +1178,71 @@ function deduplicateSelectedDocuments() {
     console.log('Array AFTER deduplication:', window.selectedDocuments);
     console.log('Total items AFTER:', window.selectedDocuments.length);
     console.groupEnd();
+}
+
+/**
+ * Validates the form data based on whether it is a final listing submission or a draft save.
+ * @param {HTMLFormElement} form - The listing form element.
+ * @param {boolean} isDraft - True if saving as draft, false if submitting for listing.
+ * @returns {boolean} True if validation passes, false otherwise.
+ */
+function validateForm(form, isDraft = false) {
+    const propertyType = form.property_type.value;
+
+    // --- RULE 1: Title is ALWAYS required (for drafts or final listing) ---
+    if (!form.title.value.trim()) {
+        notify('error', 'The Property Name (Title) is required.');
+        form.title.focus();
+        return false;
+    }
+
+    // --- Rules for FINAL LISTING SUBMISSION ONLY ---
+    if (!isDraft) {
+        // --- RULE 2: Location, Price, Lot Size, Description are MANDATORY ---
+        const requiredFields = ['location', 'price', 'lot_size', 'description'];
+        for (const fieldId of requiredFields) {
+            if (!form[fieldId].value.trim()) {
+                notify('error', `${form[fieldId].previousElementSibling.textContent.trim().replace(':', '')} is required.`);
+                form[fieldId].focus();
+                return false;
+            }
+        }
+        
+        // --- RULE 3: Prices can't be 0 or 0.00 ---
+        const price = parseFloat(form.price.value);
+        if (isNaN(price) || price <= 0) {
+            notify('error', 'Price must be greater than zero.');
+            form.price.focus();
+            return false;
+        }
+
+        // --- RULE 4: At least ONE document is required ---
+        // Checks combined list of new File objects and existing path strings
+        const totalDocuments = (window.selectedDocuments?.length || 0);
+        if (totalDocuments === 0) {
+            notify('error', 'At least one Property Document is required for submission.');
+            // Focus on the document upload area
+            document.getElementById('documentUploadArea').focus();
+            return false;
+        }
+
+        // --- RULE 5: Bedrooms and Bathrooms required only if type is 'Property' ---
+        if (propertyType === 'Property') {
+            const bedrooms = form.bedrooms.value.trim();
+            const bathrooms = form.bathrooms.value.trim();
+
+            if (!bedrooms || parseInt(bedrooms) <= 0) {
+                notify('error', 'Bedrooms are required and must be greater than zero for Property listings.');
+                form.bedrooms.focus();
+                return false;
+            }
+            if (!bathrooms || parseInt(bathrooms) <= 0) {
+                notify('error', 'Bathrooms are required and must be greater than zero for Property listings.');
+                form.bathrooms.focus();
+                return false;
+            }
+        }
+    }
+
+    return true; // Validation passed!
 }
