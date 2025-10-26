@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------
-  // Unified Save / Update Draft (Deduplication Fix Applied)
+  // Unified Save / Update Draft (With Title Validation)
   // -------------------------
   document.getElementById('saveDraftBtn')?.addEventListener('click', async e => {
       e.preventDefault();
@@ -260,46 +260,54 @@ document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('addListingForm');
       if (!form) return;
 
-      // 🛑 CRITICAL FIX: Initialize FormData empty. We will append fields manually.
+      // 🛑 VALIDATION: Drafts must have a title
+      const titleInput = form.title; // Assumes the input element has name="title"
+      const titleValue = titleInput?.value.trim();
+
+      if (!titleValue) {
+          notify('error', 'The draft must have a title to be saved as draft.');
+          titleInput?.focus();
+          return; // Stop the process
+      }
+
+      // Initialize FormData empty. We append fields manually to prevent file duplication.
       const fd = new FormData();
       const isUpdate = !!window.currentDraftId;
 
       if (isUpdate) fd.append('id', window.currentDraftId);
       
-      // Manually append non-file form fields from the form
+      // Manually append all non-file form fields
       for (const [key, value] of new FormData(form).entries()) {
-          // Exclude file input fields as they are handled manually below.
+          // Exclude file input fields as they are handled manually via selectedFiles/Documents.
           if (key !== 'images[]' && key !== 'property_document[]') {
               fd.append(key, value);
           }
       }
 
-      // --- IMPORTANT: Ensure Image Deduplication is also performed if needed ---
-      // If your image logic also suffers from listener duplication, implement and call:
-      // deduplicateSelectedImages(); 
-      
       // -------------------------
       // Handle Images
       // -------------------------
-      const existingImages = window.existingImages || [];
-      const newImages = window.selectedFiles.filter(f => f instanceof File); // new uploads
+      const existingImages = window.existingImages || []; // Existing URLs from DB
+      const newImages = window.selectedFiles.filter(f => f instanceof File); // New File objects
+      // URLs currently in selectedFiles (must be preserved)
       const remainingImages = existingImages.filter(url => window.selectedFiles.includes(url));
+      // URLs that were present but are now missing (must be removed)
       const removedImages = existingImages.filter(url => !window.selectedFiles.includes(url));
       
-      // 1. Mark images for removal (existing files no longer in window.selectedFiles)
+      // 1. Mark images for removal
       removedImages.forEach(img => fd.append('remove_images[]', img));
 
-      // 2. Append new image files (Files from new upload)
+      // 2. Append new image files
       newImages.forEach(file => fd.append('images[]', file));
 
-      // 3. Include remaining existing images (Paths that should be preserved)
+      // 3. Include remaining existing images
       remainingImages.forEach(img => fd.append('existing_images[]', img));
 
 
       // -------------------------
-      // Handle Documents (Deduplication applied here)
+      // Handle Documents
       // -------------------------
-      deduplicateSelectedDocuments(); // Frontend array cleanup
+      window.deduplicateSelectedDocuments?.(); // Ensure this is available and runs
       
       const existingDocs = window.existingDocs || [];
       const newDocs = window.selectedDocuments.filter(f => f instanceof File);
@@ -309,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // 1. Mark documents for removal
       removedDocs.forEach(doc => fd.append('remove_docs[]', doc));
       
-      // 2. Append new document files (This is the clean, deduplicated list of files)
+      // 2. Append new document files
       newDocs.forEach(file => fd.append('property_document[]', file));
       
       // 3. Include remaining existing documents
@@ -317,9 +325,9 @@ document.addEventListener('DOMContentLoaded', () => {
       
       
       // -------------------------
-      // Debug FormData (Now should show exactly what you expect)
+      // Debug FormData
       // -------------------------
-      console.group("FormData Before Upload (Post-Deduplication)");
+      console.group("FormData Before Upload (Post-Validation)");
       for (let [key, val] of fd.entries()) console.log(key, val);
       console.groupEnd();
 
@@ -329,14 +337,16 @@ document.addEventListener('DOMContentLoaded', () => {
               : '/BatEstateExplorer/public/api/save_draft.php';
 
           const res = await fetch(url, { method: 'POST', body: fd });
+          
           if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+          
           const data = await res.json();
           console.log('Draft Save/Update Response:', data);
 
           if (data.success) {
               notify('success', isUpdate ? 'Draft updated successfully!' : 'Draft saved successfully!');
               
-              // Reset form and global state variables
+              // Reset form and global state variables on success
               form.reset();
               window.resetImageUpload?.();
               window.resetDocumentUpload?.();
@@ -347,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
               window.selectedDocuments = [];
 
               // Reload the list of drafts
-              loadDrafts?.();
+              window.loadDrafts?.();
           } else {
               notify('error', data.error || 'Failed to save draft.');
           }
