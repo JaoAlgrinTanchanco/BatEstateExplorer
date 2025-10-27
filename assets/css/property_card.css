@@ -183,25 +183,24 @@
 
 #propertyModal .custom-modal-content {
   display: grid;
-  grid-template-columns: 585px 359px 359px;
+  grid-template-columns: 1fr 380px; /* Left spans most space */
   gap: 16px;
 
   width: 95%;
-  max-width: 1388px;
+  max-width: 1230px;
 
-  /* dynamic height based on viewport */
+  /* Dynamic height */
   max-height: 90vh;
   height: auto;
-  overflow-y: auto; /* vertical scroll inside modal if content overflows */
+
+  overflow-y: auto; /* scrolls inside modal if tall */
   overflow-x: hidden;
 
   border-radius: 20px;
   position: relative;
   align-items: start;
-  padding: 1.5rem;
   box-sizing: border-box;
 
-  /* Smooth scrolling */
   scroll-behavior: smooth;
 }
 
@@ -289,8 +288,6 @@
 /* Modal Left Column (Image Gallery) */
 /* ---------------------------------- */
 .modal-left {
-  width: 585px; /* UPDATED Locked width */
-  height: 595px; /* Locked height */
   overflow-y: hidden; 
   
   display: flex;
@@ -427,10 +424,7 @@
 /* Modal Right Column (Details) */
 /* ---------------------------------- */
 .modal-right {
-  width: 359px; /* UPDATED Locked width */
-  height: 595px; /* Locked height */
-  overflow-y: hidden; /* Prevents scrollbar on the column itself */
-
+  height: 789px;
   display: flex;
   flex-direction: column;
   color: #000;
@@ -439,6 +433,9 @@
   padding: 1.5rem;
   position: relative;
   box-sizing: border-box;
+
+  overflow-y: auto; /* scrolls details + reviews together */
+  scroll-behavior: smooth;
 }
 
 .modal-right section {
@@ -458,14 +455,13 @@
 }
 
 .modal-right .details {
-  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  overflow-y: auto; /* Scrollable area for content */
+  gap: 0.75rem;
 }
 
+/* Description block */
 .modal-right .details section.desc {
-  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
 }
@@ -529,25 +525,18 @@
 /* Modal Reviews Section */
 /* ---------------------------------- */
 .modal-review {
-  width: 359px; /* Locked width */
-  height: 595px; /* Locked height */
-  overflow-y: auto; /* Scrollable area for reviews */
-  
-  background: #fff;
-  border-radius: 15px;
-  padding: 1rem 1.5rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  box-sizing: border-box;
+  margin-top: 1.25rem;
+  background: #f9f9f9;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  flex-shrink: 0;
 }
 
 .modal-review h3 {
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 1rem 0;
   border-bottom: 1px solid #ddd;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #2c3e50;
 }
@@ -563,7 +552,7 @@
   background: #fff;
   border-radius: 10px;
   padding: 8px 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
 .review-item .review-author {
@@ -622,6 +611,20 @@
 .rating-stars span:hover,
 .rating-stars span:hover ~ span {
   color: #f5b301;
+}
+
+/* Scrollbar styling */
+.modal-right::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-right::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+
+.modal-right::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* ===========================
