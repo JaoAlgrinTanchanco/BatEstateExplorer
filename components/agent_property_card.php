@@ -27,12 +27,12 @@
 
             // --- Fetch agent info ---
             $agent = null;
-            $listedByAgentId = $property['listed_by_agent_id'] ?? null;
-            if ($listedByAgentId) {
+            $listedAgentId = $property['listed_by_agent_id'] ?? null;
+            if ($listedAgentId) {
                 // Get corresponding user_id from agents table
                 $stmtAgent = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
                 if ($stmtAgent) {
-                    $stmtAgent->bind_param("i", $listedByAgentId);
+                    $stmtAgent->bind_param("i", $listedAgentId);
                     $stmtAgent->execute();
                     $resAgent = $stmtAgent->get_result();
                     if ($rowAgent = $resAgent->fetch_assoc()) {
@@ -115,6 +115,11 @@
 <div id="propertyModal" class="custom-modal" style="display:none;">
   <div class="custom-modal-content">
     <button class="close">&times;</button>
+    <button id="propertyOptionsBtn" class="modal-options-btn"><i class="fas fa-ellipsis-v"></i></button>
+    <div id="propertyOptionsDropdown" class="modal-options-dropdown" style="display:none;">
+      <button class="status-option" data-status="available">Available</button>
+      <button class="status-option" data-status="sold">Sold</button>
+    </div>
 
     <!-- Left side: images -->
     <div class="modal-left">
@@ -145,7 +150,6 @@
         <section><span class="label">Bedrooms:</span> <span class="value bedrooms"></span></section>
         <section><span class="label">Bathrooms:</span> <span class="value bathrooms"></span></section>
         <section><span class="label">Lot Size:</span> <span class="value lot_size"></span></section>
-        <section><span class="label">Status:</span> <span class="value status"></span></section>
         <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"></span></section>
 
         <section class="desc">
@@ -161,6 +165,46 @@
           <div id="modalPastReviews">
             <p>Reviews will load here when modal opens.</p>
           </div>
+        </div>
+      </div>
+
+      <!-- More Properties by this Agent -->
+      <div class="agent-other-properties">
+        <h3>More from this Agent</h3>
+        <div class="agent-properties-list">
+          <?php
+            if ($listedAgentId) {
+              $stmtOther = $conn->prepare("
+                SELECT p.id, p.title, COALESCE(pi.image_path, '') AS image_path
+                FROM properties p
+                LEFT JOIN property_images pi ON p.id = pi.property_id
+                WHERE p.listed_by_agent_id = ?
+                GROUP BY p.id
+                ORDER BY p.created_at DESC
+                LIMIT 6
+              ");
+              $stmtOther->bind_param("i", $listedAgentId);
+              $stmtOther->execute();
+              $resOther = $stmtOther->get_result();
+
+              if ($resOther->num_rows > 0):
+                while ($p = $resOther->fetch_assoc()):
+                  $img = !empty($p['image_path'])
+                    ? '/' . ltrim($p['image_path'], '/')
+                    : '/BatEstateExplorer/assets/default-property.jpg';
+          ?>
+                  <div class="agent-property-card" data-property-id="<?= (int)$p['id'] ?>">
+                    <img src="<?= htmlspecialchars($img) ?>" alt="Property Image">
+                    <span class="property-title"><?= htmlspecialchars($p['title']) ?></span>
+                  </div>
+          <?php
+                endwhile;
+              else:
+                echo "<p style='font-size:0.9rem;color:#666;'>No listings yet.</p>";
+              endif;
+              $stmtOther->close();
+            }
+          ?>
         </div>
       </div>
     </div>

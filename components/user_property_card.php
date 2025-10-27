@@ -191,7 +191,6 @@
         <section><span class="label">Bedrooms:</span> <span class="value bedrooms"><?= $bedrooms ?></span></section>
         <section><span class="label">Bathrooms:</span> <span class="value bathrooms"><?= $bathrooms ?></span></section>
         <section><span class="label">Lot Size:</span> <span class="value lot_size"><?= htmlspecialchars($property['lot_size'] ?? '') ?></span></section>
-        <section><span class="label">Status:</span> <span class="value status"><?= htmlspecialchars($property['status'] ?? '') ?></span></section>
         <section><span class="label">Date Uploaded:</span> <span class="value date_uploaded"><?= date('M d, Y', $createdAt) ?></span></section>
 
         <section class="desc">
@@ -226,6 +225,47 @@
           </div>
         </div>
       </div>
+
+      <!-- More Properties by this Agent -->
+      <div class="agent-other-properties">
+        <h3>More from this Agent</h3>
+        <div class="agent-properties-list">
+          <?php
+            if ($listedAgentId) {
+              $stmtOther = $conn->prepare("
+                SELECT p.id, p.title, COALESCE(pi.image_path, '') AS image_path
+                FROM properties p
+                LEFT JOIN property_images pi ON p.id = pi.property_id
+                WHERE p.listed_by_agent_id = ?
+                GROUP BY p.id
+                ORDER BY p.created_at DESC
+                LIMIT 6
+              ");
+              $stmtOther->bind_param("i", $listedAgentId);
+              $stmtOther->execute();
+              $resOther = $stmtOther->get_result();
+
+              if ($resOther->num_rows > 0):
+                while ($p = $resOther->fetch_assoc()):
+                  $img = !empty($p['image_path'])
+                    ? '/' . ltrim($p['image_path'], '/')
+                    : '/BatEstateExplorer/assets/default-property.jpg';
+          ?>
+                  <div class="agent-property-card" data-property-id="<?= (int)$p['id'] ?>">
+                    <img src="<?= htmlspecialchars($img) ?>" alt="Property Image">
+                    <span class="property-title"><?= htmlspecialchars($p['title']) ?></span>
+                  </div>
+          <?php
+                endwhile;
+              else:
+                echo "<p style='font-size:0.9rem;color:#666;'>No listings yet.</p>";
+              endif;
+              $stmtOther->close();
+            }
+          ?>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -262,7 +302,6 @@
     </form>
   </div>
 </div>
-
 
 <script>
 <?php echo file_get_contents($_SERVER['DOCUMENT_ROOT'].'/BatEstateExplorer/assets/js/agent_card_logic.js'); ?>

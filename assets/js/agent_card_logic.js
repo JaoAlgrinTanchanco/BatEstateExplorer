@@ -80,7 +80,6 @@ function renderStars(rating) {
       modal.querySelector(".bedrooms").textContent = prop.bedrooms ?? "-";
       modal.querySelector(".bathrooms").textContent = prop.bathrooms ?? "-";
       modal.querySelector(".lot_size").textContent = prop.lot_size ?? "-";
-      modal.querySelector(".status").textContent = prop.status || "-";
       modal.querySelector(".date_uploaded").textContent = prop.created_at ? new Date(prop.created_at).toLocaleDateString() : "-";
       modal.querySelector(".property-description").textContent = prop.description || "No description available.";
 
@@ -258,6 +257,153 @@ function renderStars(rating) {
   // Expose functions globally for external calls
   window.openPropertyModal = openPropertyModal;
   window.openReviewModal = openReviewModal;
+
+  // =============================
+  // Agent Property Card Switcher
+  // =============================
+  document.addEventListener('click', async (e) => {
+    const card = e.target.closest('.agent-property-card');
+    if (!card) return;
+
+    const propertyId = card.dataset.propertyId;
+    if (!propertyId) return;
+
+    try {
+      const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${propertyId}`);
+      const data = await res.json();
+
+      if (data.success) {
+        updatePropertyModal(data.property);
+      } else {
+        console.error('Failed to load property details');
+      }
+    } catch (err) {
+      console.error('Error fetching property details:', err);
+    }
+  });
+
+  function updatePropertyModal(property) {
+    const modal = document.getElementById('propertyModal');
+    if (!modal) return;
+
+    modal.dataset.id = property.id;
+    modal.querySelector('.property-name').textContent = property.title;
+    modal.querySelector('.price').textContent = '₱' + parseFloat(property.price).toLocaleString();
+    modal.querySelector('.location').textContent = property.location;
+    modal.querySelector('.property-type').textContent = property.property_type;
+    modal.querySelector('.bedrooms').textContent = property.bedrooms;
+    modal.querySelector('.bathrooms').textContent = property.bathrooms;
+    modal.querySelector('.lot_size').textContent = property.lot_size;
+    modal.querySelector('.status').textContent = property.status;
+    modal.querySelector('.date_uploaded').textContent = new Date(property.created_at).toLocaleDateString();
+    modal.querySelector('.property-description').textContent = property.description;
+
+    // --- Update Images ---
+    const imagesContainer = modal.querySelector('.property-images');
+    const mainImage = modal.querySelector('.property-main-image');
+    if (property.images && property.images.length > 0) {
+      const imgPaths = property.images.map(img => `/BatEstateExplorer/${img}`);
+      mainImage.style.backgroundImage = `url('${imgPaths[0]}')`;
+      imagesContainer.innerHTML = imgPaths.map(img => `<img src="${img}" alt="">`).join('');
+    } else {
+      mainImage.style.backgroundImage = '';
+      imagesContainer.innerHTML = '<p>No images available.</p>';
+    }
+
+    // --- Update Reviews ---
+    const reviewContainer = modal.querySelector("#modalPastReviews");
+    if (reviewContainer) {
+      // 🔹 Immediately clear and show loading
+      reviewContainer.innerHTML = `<p style="opacity:0.6;">Loading reviews...</p>`;
+
+      fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${property.id}`)
+        .then(res => res.json())
+        .then(reviewData => {
+          if (reviewData.success && Array.isArray(reviewData.reviews) && reviewData.reviews.length > 0) {
+            reviewContainer.innerHTML = reviewData.reviews.map(r => `
+              <div class="review-card" style="margin-bottom:10px;">
+                <strong>${r.user_name}</strong>
+                <div style="float:right;">${renderStars(r.rating)}</div>
+                <p>${r.review_text}</p>
+                <small>${new Date(r.created_at).toLocaleDateString()}</small>
+              </div>
+            `).join("");
+          } else {
+            reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
+          }
+        })
+        .catch(err => {
+          console.error('Error loading reviews:', err);
+          reviewContainer.innerHTML = `<p style="color:red;">Failed to load reviews.</p>`;
+        });
+    }
+  }
+
+  //status
+  const optionsBtn = document.getElementById('propertyOptionsBtn');
+  const dropdown = document.getElementById('propertyOptionsDropdown');
+  const mainImageWrapper = document.querySelector('.property-main-image-wrapper'); // wrap main image
+  let overlay = null;
+
+  // 1️Click toggle for dropdown
+  optionsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+  });
+
+  // 2️Click outside closes dropdown
+  document.addEventListener('click', () => {
+    dropdown.style.display = 'none';
+  });
+
+  // 3️Handle status change and highlight selected option
+  dropdown.querySelectorAll('.status-option').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const newStatus = btn.dataset.status;
+      const propertyId = document.getElementById('propertyModal').dataset.id;
+
+      // Update selection highlight
+      dropdown.querySelectorAll('.status-option').forEach(b => b.style.background = '');
+      btn.style.background = newStatus === 'available' ? '#d0f0c0' : '#f8d0d0'; // pastel green/red
+
+      try {
+        const res = await fetch(`/BatEstateExplorer/public/api/update_property_status.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ property_id: propertyId, status: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+          updateSoldOverlay(newStatus);
+          dropdown.style.display = 'none';
+        } else {
+          alert('Failed to update status');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  });
+
+  // 4️Show/hide SOLD overlay
+  function updateSoldOverlay(status) {
+    if (!mainImageWrapper) return;
+
+    if (status === 'sold') {
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'sold-overlay';
+        overlay.textContent = 'SOLD';
+        mainImageWrapper.appendChild(overlay);
+      }
+    } else {
+      if (overlay) {
+        overlay.remove();
+        overlay = null;
+      }
+    }
+  }
 
 })();
 
