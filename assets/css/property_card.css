@@ -1,27 +1,32 @@
 /* ===========================
-   Property Card (Square + Overlay)
+   Property Card (Square + Lifted Overlay)
 =========================== */
 .property-card {
   position: relative;
   flex: 0 1 320px;
   aspect-ratio: 1 / 1;
-  border-radius: 20px;
+  border-radius: 30px;
   overflow: hidden;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+              box-shadow 0.4s ease;
+  font-family: 'Satoshi', sans-serif;
 }
 
 .property-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
 }
 
-/* Image Section */
+/* ===========================
+   Image Section
+=========================== */
 .property-image {
+  position: relative;
   width: 100%;
   height: 100%;
-  position: relative;
 }
 
 .property-image img {
@@ -29,73 +34,117 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.35s ease, filter 0.35s ease;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1),
+              filter 0.5s ease;
+  border-radius: 30px;
 }
 
+/* Zoom and dim image on hover */
 .property-card:hover .property-image img {
   transform: scale(1.08);
-  filter: brightness(0.7);
+  filter: brightness(0.8);
 }
 
-/* Overlay */
+/* ===========================
+   Overlay (Dark → Light Fade)
+=========================== */
 .property-overlay {
   position: absolute;
-  bottom: -100%;
+  bottom: 0;
   left: 0;
-  width: 100%;
-  background: rgba(255,255,255,0.95);
-  border-top-left-radius: 30px;
-  border-top-right-radius: 30px;
-  padding: 16px 18px;
+  right: 0;
+
+  /* Ultra-dark overlay, high fade */
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 1) 10%,     /* deep black */
+    rgba(0, 0, 0, 0.97) 35%,  /* almost solid */
+    rgba(0, 0, 0, 0.9) 60%,   /* rich dark */
+    rgba(0, 0, 0, 0.5) 85%,   /* fade transition */
+    rgba(0, 0, 0, 0) 100%     /* transparent top */
+  );
+
+  padding: 0 16px 28px;
+  transform: translateY(calc(100% - 70px)); /* name visible at rest */
+  opacity: 1;
+
+  transition:
+    background 0.6s ease,
+    transform 0.5s cubic-bezier(0.25, 1, 0.5, 1),
+    color 0.4s ease;
+  
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  transition: bottom 0.4s ease;
-  box-sizing: border-box;
+  gap: 10px;
+  color: #fff;
 }
 
+/* On hover: overlay slides fully up and brightens */
 .property-card:hover .property-overlay {
-  bottom: 0;
+  background: #fff;
+  transform: translateY(0);
+  color: #000;
 }
 
-/* Overlay Content */
-.property-overlay h3 {
-  font-size: 20px;
+/* ===========================
+   Overlay Content
+=========================== */
+.property-overlay h3,
+.property-overlay .property-name {
+  font-size: 1.1rem;
   font-weight: 600;
-  color: #2c3e50;
-  margin: 0;
+  color: #fff;
+  transition: color 0.3s ease;
+}
+
+.property-card:hover .property-overlay .property-name,
+.property-card:hover .property-overlay h3 {
+  color: #000;
+  .property-name{
+    margin-top: 1rem;
+  }
 }
 
 .property-location {
   font-size: 0.85rem;
-  color: #777;
+  color: #ccc;
   display: flex;
   align-items: center;
   gap: 6px;
   margin: 0 !important;
+  transition: color 0.3s ease;
+}
+
+.property-card:hover .property-location {
+  color: #666;
 }
 
 .property-location i {
   font-size: 0.9rem;
-  color: #e74c3c;
+  color: #ff6b6b;
 }
 
 .property-price {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #27ae60;
   margin: 0 !important;
+  transition: color 0.3s ease;
 }
 
+/* ===========================
+   Property Features
+=========================== */
 .property-features {
   display: flex;
   flex-wrap: wrap;
+  gap: 6px;
 }
 
 .property-features span {
-  font-size: 0.8rem;
-  color: #555;
-  background: #f5f7fa;
+  font-size: 0.78rem;
+  color: #eee;
+  background: rgba(255, 255, 255, 0.1);
   padding: 4px 10px;
   border-radius: 14px;
   display: flex;
@@ -105,36 +154,33 @@
   transition: all 0.3s ease;
 }
 
-.property-features span:hover {
-  background: #3498db;
-  color: #fff;
+.property-card:hover .property-features span {
+  color: #333;
+  background: #f5f6f8;
 }
 
-/* ================================
-   PROPERTY MODAL OVERLAY
-================================ */
-#propertyModal.custom-modal {
-  position: fixed;
-  inset: 0; /* shorthand for top:0; right:0; bottom:0; left:0 */
-  width: 100%;
-  height: 100%;
-  z-index: 9999 !important;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem 1rem;
-
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(4px);
-
-  overflow-y: auto; /* allows scroll when modal is taller than viewport */
-  box-sizing: border-box;
+.property-features span:hover {
+  background: #111;
+  color: #fff;
 }
 
 /* ================================
    MODAL CONTENT
 ================================ */
+#propertyModal {
+  display: none; /* hidden by default */
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  justify-content: center;
+  align-items: center;
+  font-family: 'Satoshi', sans-serif;
+}
+
 #propertyModal .custom-modal-content {
   display: grid;
   grid-template-columns: 585px 359px 359px;
@@ -268,11 +314,16 @@
 }
 
 .property-name {
+  text-align: center;
   font-weight: 700;
   font-size: 1.3rem;
   color: #000;
-  margin: 0;
-  text-align: center;
+  margin-top: 0.5rem;
+
+  /* === Truncate long names === */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .property-images {
