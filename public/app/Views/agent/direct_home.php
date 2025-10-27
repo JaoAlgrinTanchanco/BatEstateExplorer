@@ -115,7 +115,7 @@
     // ================================
     // Count Query
     // ================================
-    $countSql = "SELECT COUNT(*) AS total FROM properties p WHERE p.status IN ('available', 'sold')";
+    $countSql = "SELECT COUNT(*) AS total FROM properties p WHERE p.status IN ('available', 'ongoing_inquiry', 'sold')";
     $params   = [];
     $types    = "";
     applyFilters($countSql, $params, $types, $location, $property_type, $bedrooms, $bathrooms, $price_range, $size);
@@ -151,7 +151,7 @@
                 LIMIT 1
             ) AS image_path
         FROM properties p
-        WHERE p.status IN ('available', 'sold')
+        WHERE p.status IN ('available', 'ongoing_inquiry', 'sold')
     ";
 
     $params = [];

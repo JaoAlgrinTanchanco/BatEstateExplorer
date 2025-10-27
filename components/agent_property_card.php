@@ -121,6 +121,7 @@
     <button id="propertyOptionsBtn" class="modal-options-btn"><i class="fas fa-ellipsis-v"></i></button>
     <div id="propertyOptionsDropdown" class="modal-options-dropdown" style="display:none;">
       <button class="status-option" data-status="available">Available</button>
+      <button class="status-option" data-status="ongoing_inquiry">Ongoing Inquiry</button>
       <button class="status-option" data-status="sold">Sold</button>
     </div>
 

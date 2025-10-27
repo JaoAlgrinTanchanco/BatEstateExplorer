@@ -22,7 +22,9 @@ $input = json_decode(file_get_contents('php://input'), true);
 $propertyId = isset($input['property_id']) ? (int)$input['property_id'] : 0;
 $status = $input['status'] ?? '';
 
-$allowedStatuses = ['pending','available','rejected','sold'];
+// Include new status
+$allowedStatuses = ['pending', 'available', 'ongoing_inquiry', 'rejected', 'sold'];
+
 if ($propertyId <= 0 || !in_array($status, $allowedStatuses)) {
     echo json_encode(['success' => false, 'error' => 'Invalid property ID or status']);
     exit;
@@ -53,7 +55,11 @@ try {
         ':id' => $propertyId
     ]);
 
-    echo json_encode(['success' => true, 'status' => $status, 'message' => "Property status updated to $status"]);
+    echo json_encode([
+        'success' => true,
+        'status' => $status,
+        'message' => "Property status updated to $status"
+    ]);
 
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
