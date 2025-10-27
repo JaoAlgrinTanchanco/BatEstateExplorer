@@ -41,17 +41,26 @@ function renderStars(rating) {
     const mainImage = modal.querySelector('.property-main-image');
     if (!mainImage) return;
 
-    // Remove existing overlay
-    let overlay = mainImage.querySelector('.sold-overlay');
-    if (overlay) overlay.remove();
+    // Remove any existing overlays
+    const existingOverlay = mainImage.querySelector('.sold-overlay, .ongoing-overlay');
+    if (existingOverlay) existingOverlay.remove();
 
-    // Add SOLD overlay if status is 'sold'
+    // Create overlay based on status
+    let overlay = null;
+
     if (status === 'sold') {
       overlay = document.createElement('div');
       overlay.className = 'sold-overlay';
       overlay.textContent = 'SOLD';
-      mainImage.appendChild(overlay);
+    } else if (status === 'ongoing_inquiry') {
+      overlay = document.createElement('div');
+      overlay.className = 'ongoing-overlay';
+      overlay.textContent = 'ONGOING INQUIRY';
+      overlay.style.background = 'rgba(255, 255, 150, 0.55)'; // pastel yellow overlay
+      overlay.style.color = '#555'; // darker text
     }
+
+    if (overlay) mainImage.appendChild(overlay);
   };
 
   // Open Property Modal
@@ -139,9 +148,14 @@ function renderStars(rating) {
       // Highlight current status in dropdown
       if (dropdown) {
         dropdown.querySelectorAll('.status-option').forEach(btn => {
-          btn.style.background = (btn.dataset.status === prop.status)
-            ? (prop.status === 'available' ? '#d0f0c0' : '#f8d0d0')
-            : '';
+          if (btn.dataset.status === prop.status) {
+            // Use correct highlight based on exact status
+            btn.style.background = prop.status === 'available' ? '#d0f0c0' :
+                                  prop.status === 'sold' ? '#f8d0d0' :
+                                  prop.status === 'ongoing_inquiry' ? '#fff9a5' : '';
+          } else {
+            btn.style.background = '';
+          }
         });
       }
 
@@ -392,9 +406,13 @@ function updatePropertyModal(property) {
   // --- Status dropdown ---
   if (dropdown) {
     dropdown.querySelectorAll('.status-option').forEach(btn => {
-      btn.style.background = btn.dataset.status === property.status
-        ? (property.status === 'available' ? '#d0f0c0' : '#f8d0d0')
-        : '';
+      if (btn.dataset.status === prop.status) {
+        btn.style.background = prop.status === 'available' ? '#d0f0c0' :
+                              prop.status === 'sold' ? '#f8d0d0' :
+                              prop.status === 'ongoing_inquiry' ? '#fff9a5' : '';
+      } else {
+        btn.style.background = '';
+      }
     });
   }
 
@@ -460,7 +478,9 @@ function updatePropertyModal(property) {
     // Highlight current status automatically
     dropdown.querySelectorAll('.status-option').forEach(btn => {
       if (btn.dataset.status === currentStatus) {
-        btn.style.background = currentStatus === 'available' ? '#d0f0c0' : '#f8d0d0';
+        btn.style.background = currentStatus === 'available' ? '#d0f0c0' :
+                              currentStatus === 'sold' ? '#f8d0d0' :
+                              currentStatus === 'ongoing_inquiry' ? '#fff9a5' : '';
       } else {
         btn.style.background = '';
       }
@@ -487,7 +507,9 @@ function updatePropertyModal(property) {
 
       // Highlight selected option
       dropdown.querySelectorAll('.status-option').forEach(b => b.style.background = '');
-      btn.style.background = newStatus === 'available' ? '#d0f0c0' : '#f8d0d0';
+      btn.style.background = newStatus === 'available' ? '#d0f0c0' :
+                              newStatus === 'sold' ? '#f8d0d0' :
+                              newStatus === 'ongoing_inquiry' ? '#fff9a5' : ''; // pastel yellow
 
       try {
         const res = await fetch(`/BatEstateExplorer/public/api/update_property_status.php`, {

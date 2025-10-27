@@ -60,7 +60,7 @@
   border-radius: 12px; /* optional, matches modal card style */
 }
 
-.sold-overlay {
+.sold-overlay, .ongoing-overlay {
   position: absolute;
   top: 0; left: 0;
   width: 100%;
