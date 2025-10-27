@@ -311,22 +311,52 @@
 
                 (prop.documents || []).forEach(doc => {
                     const li = document.createElement('li');
-                    li.classList.add('doc-card'); // styling class
+                    li.classList.add('doc-card');
+
+                    const ext = doc.name.split('.').pop().toLowerCase();
+
+                    // determine badge color + label + icon
+                    let badgeColor = '#6b7280';
+                    let badgeLabel = ext.toUpperCase();
+                    let icon = 'file'; // default icon
+
+                    if (['pdf'].includes(ext)) {
+                        badgeColor = '#ef4444';
+                        icon = 'file-text';
+                    } else if (['doc', 'docx'].includes(ext)) {
+                        badgeColor = '#3b82f6';
+                        icon = 'file-type';
+                    } else if (['xls', 'xlsx'].includes(ext)) {
+                        badgeColor = '#10b981';
+                        icon = 'file-spreadsheet';
+                    } else if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+                        badgeColor = '#f59e0b';
+                        icon = 'image';
+                    }
 
                     const a = document.createElement('a');
-                    a.href = `/${doc.url}`; // relative path from web root
+
+                    // ✅ use doc.url if provided, else build fallback path
+                    const filePath = doc.url
+                        ? (doc.url.startsWith('/') ? doc.url : `/${doc.url}`)
+                        : `/BatEstateExplorer/storage/uploads/property_documents/${doc.name}`;
+
+                    a.href = filePath;
                     a.target = '_blank';
                     a.classList.add('doc-link');
 
-                    // icon + name
                     a.innerHTML = `
-                        <span class="doc-icon">📄</span>
+                        <i data-lucide="${icon}" class="doc-icon"></i>
                         <span class="doc-name">${doc.name}</span>
+                        <span class="doc-badge" style="background:${badgeColor}">${badgeLabel}</span>
                     `;
 
                     li.appendChild(a);
                     docList.appendChild(li);
                 });
+
+                // Re-render Lucide icons after dynamic insertion
+                if (window.lucide) lucide.createIcons();
 
             } catch (err) {
                 console.error(err);

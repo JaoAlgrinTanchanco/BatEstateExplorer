@@ -28,44 +28,61 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
-    margin-top: 1rem;
+    margin-top: 2rem;
+    padding: 0;
+    list-style: none;
 }
 
 .property-documents .doc-card {
-    background: #f9f9f9;
-    border-radius: 15px;
-    padding: 0.5rem 0.75rem;
+    background: #e6e6e6;
+    border-radius: 12px;
+    padding: 0.6rem 0.75rem;
     display: flex;
     align-items: center;
-    min-width: 180px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    max-width: 250px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .property-documents .doc-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .property-documents .doc-link {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
+    width: 100%;
     text-decoration: none;
     color: #111827;
     font-family: 'Satoshi-Medium', sans-serif;
     font-size: 0.9rem;
-    width: 100%;
 }
 
-.property-documents .doc-link .doc-icon {
-    font-size: 1.2rem;
+.property-documents .doc-icon {
+    width: 20px;
+    height: 20px;
+    color: #374151;
+    flex-shrink: 0;
 }
 
-.property-documents .doc-link .doc-name {
-    white-space: nowrap;
+.property-documents .doc-name {
+    flex-grow: 1;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.property-documents .doc-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 8px;
+    text-transform: uppercase;
+    flex-shrink: 0;
 }
 
 .content-header {
@@ -88,11 +105,14 @@
 }
 
 /* ===== GRID ===== */
+/* Grid container */
 .grid-container {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr); /* 6 columns */
-  gap: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;  /* center all cards */
+  gap: 1.5rem;              /* spacing between cards */
   margin-top: 1.5rem;
+  padding: 0 1rem;
 }
 
 @media (max-width: 1400px) {
@@ -115,22 +135,26 @@
 
 /* ===== PROPERTY CARD ===== */
 .property-card {
-  background: #fff;
-  border-radius: 40px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  border-radius: 32px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
-  font-family: 'satoshi';
+  font-family: 'Satoshi', sans-serif;
+  transition: 
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    filter 0.25s ease;
 }
 
-/* Hover lift and shadow */
+/* Hover lift and deeper shadow */
 .property-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-6px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  filter: brightness(1.03);
 }
 
 /* Dim overlay for entire card */
@@ -166,22 +190,59 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: #fff;
-  padding: 25px 15px;
-  transform: translateY(100%);
-  opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+
+    /* Ultra-dark overlay, same fade height */
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 1) 10%,     /* pure black at the bottom */
+    rgba(0, 0, 0, 0.97) 35%,  /* near-black, still strong */
+    rgba(0, 0, 0, 0.9) 60%,   /* solid dark mid-fade */
+    rgba(0, 0, 0, 0.5) 85%,   /* subtle fade */
+    rgba(0, 0, 0, 0) 100%     /* transparent top */
+  );
+
+  padding: 0 15px 25px;
+  transform: translateY(calc(100% - 60px)); /* so name peeks out */
+  opacity: 1;
+
+  /* Smooth transition */
+  transition:
+    background 0.6s ease,
+    transform 0.3s ease,
+    opacity 0.3s ease,
+    color 0.4s ease;
+
   border-radius: 0 0 10px 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  color: #fff; /* white text on dark overlay */
 }
 
-/* On hover, slide up and fade in */
+/* On hover: lighten overlay + darken text */
 .property-card:hover .property-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 1) 20%,     /* solid white at the bottom */
+    rgba(255, 255, 255, 0.9) 60%,   /* slightly more transparent mid-fade */
+    rgba(255, 255, 255, 0.6) 85%,   /* clearly see image through here */
+    rgba(255, 255, 255, 0.3) 100%   /* soft transparent top */
+  );
   transform: translateY(0);
   opacity: 1;
+  color: #000; /* dark text on white overlay */
 }
+
+/* Property name color behavior */
+.property-overlay .property-name {
+  color: #fff; /* white by default inside overlay */
+  transition: color 0.3s ease;
+}
+
+.property-card:hover .property-overlay .property-name {
+  color: #000; /* black when hovered */
+}
+
 
 /* Overlay content styling */
 .overlay-content {
@@ -313,10 +374,10 @@
   height: 100%;
   background: rgba(0,0,0,0.55); /* darker overlay for focus */
   z-index: 9999;
-  overflow-y: auto;
   padding: 2rem;
   backdrop-filter: blur(4px);
   font-family: 'Satoshi-Regular', sans-serif;
+  overflow: hidden; /* prevent page scroll behind modal */
 }
 
 #propertyModal .modal-content {
@@ -330,6 +391,7 @@
   flex-wrap: wrap;
   gap: 1.5rem;
   box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+  overflow: hidden;
 }
 
 /* Close Button */
@@ -374,10 +436,16 @@
 }
 
 .property-name {
+  text-align: center;
   font-weight: 700;
   font-size: 1.3rem;
   color: #000;
   margin-top: 0.5rem;
+
+  /* === NEW === */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .property-type {
@@ -387,15 +455,41 @@
   margin-bottom: 0.5rem;
 }
 
-/* Right Column: Details */
+/* Right Column: Vertically Scrollable */
 .modal-right {
   flex: 1 1 100px;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   color: #000;
+  max-height: 80vh;             /* keep within viewport */
+  overflow-y: auto;             /* vertical scroll only */
+  overflow-x: hidden;           /* disable horizontal scroll */
+  padding-right: 0.5rem;        /* space for scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #b5b5b5 #f2f2f2;
 }
 
+/* WebKit Scrollbar Styling */
+.modal-right::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-right::-webkit-scrollbar-track {
+  background: #f2f2f2;
+  border-radius: 10px;
+}
+
+.modal-right::-webkit-scrollbar-thumb {
+  background: #b5b5b5;
+  border-radius: 10px;
+}
+
+.modal-right::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}
+
+/* Info Sections */
 .modal-right section {
   display: flex;
   justify-content: space-between;
@@ -411,11 +505,11 @@
   font-weight: 600;
 }
 
+/* Property Images */
 .property-images {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
-  margin-top: 1rem;
 }
 
 .property-images img {
@@ -433,6 +527,7 @@
   border-color: #000; /* selected highlight */
 }
 
+/* Description */
 .property-description {
   margin-top: 1rem;
   font-size: 0.95rem;
@@ -488,9 +583,9 @@
 }
 
 .property-card {
-  flex: 1 1 270px;   /* base card size for large screens */
-  max-width: 270px;
-  max-height: 270px;
+  flex: 1 1 245px;   /* base card size for large screens */
+  max-width: 245px;
+  max-height: 245px;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -503,102 +598,108 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* ---------------------------
-   Media queries (largest -> small)
-   --------------------------- */
+/* ==============================
+   RESPONSIVE PROPERTY GRID
+   ============================== */
 
-/* Medium screens */
+/* --- Large tablets / small desktops --- */
 @media (max-width: 1400px) {
   .property-card {
-    flex: 1 1 245px;
-    max-width: 245px;
-    max-height: 245px;
+    flex: 1 1 230px;
+    max-width: 230px;
+    max-height: 230px;
   }
 }
 
-/* Tablets - center and enlarge cards */
+/* --- Tablets --- */
 @media (max-width: 992px) {
   .content-header h1 {
     font-size: 2rem;
-    padding: 0.5rem 1.5rem;
+    padding: 0.5rem 1.25rem;
   }
 
   .grid-container {
-    justify-content: center; /* center row on tablets */
+    justify-content: center; /* center cards */
+  }
+
+  .property-card {
+    flex: 1 1 220px;
+    max-width: 220px;
+    max-height: 220px;
   }
 
   .property-actions button {
-    flex: 1 1 calc(33% - 0.5rem); /* 3 in a row */
-    min-width: 0;
+    flex: 1 1 calc(33% - 0.5rem);
     font-size: 0.8rem;
   }
 }
 
-/* Narrow tablets / landscape phones */
+/* --- Small tablets / large phones --- */
 @media (max-width: 768px) {
   .content-header h1 {
     font-size: 1.75rem;
-    padding: 0.5rem 1rem;
+    padding: 0.4rem 1rem;
   }
-}
 
-/* Small screens: center, stack cards full width */
-@media (max-width: 643px) {
   .grid-container {
     justify-content: center;
+    gap: 1.25rem;
+  }
+
+  .property-card {
+    flex: 1 1 200px;
+    max-width: 200px;
+    max-height: 200px;
   }
 }
 
-/* Mobile: single column, full width cards */
+/* --- Phones --- */
 @media (max-width: 600px) {
-  .grid-container {
-    justify-content: center;
-  }
-
-  
-}
-
-/* Tiny phones */
-@media (max-width: 480px) {
-  .content-header h1 {
-    font-size: 1.5rem;
-    padding: 0.4rem 0.8rem;
-  }
-}
-
-/* Center + resize cards on small screens */
-@media (max-width: 643px) {
   .grid-container {
     justify-content: center;
     gap: 1rem;
   }
 
   .property-card {
-    flex: 1 1 190px;
-    max-width: 190px;
-    max-height: 190px;
+    flex: 1 1 180px;
+    max-width: 180px;
+    max-height: 180px;
+  }
+
+  .property-name {
+    font-size: 1.1rem;
+  }
+
+  .property-meta {
+    font-size: 0.7rem;
+    gap: 2px;
   }
 
   .property-actions button {
     flex: 1 1 100%;
-    font-size: 0.6rem;
-  }
-
-  .property-name {
-    font-size: 0.85rem; /* smaller */
-  }
-
-  .property-meta {
-    font-size: 0.7rem; /* smaller */
-    gap: 1px;
+    font-size: 0.65rem;
   }
 
   .property-badge {
-    top: 12px;               /* closer to corner */
+    top: 12px;
     left: 12px;
-    padding: 0.2rem 0.5rem;   /* smaller padding */
-    font-size: 0.6rem;        /* smaller text */
-    border: 2px solid #fff;   /* thinner border */
-    border-radius: 15px;      /* slightly smaller curve */
+    padding: 0.25rem 0.55rem;
+    font-size: 0.65rem;
+    border: 2px solid #fff;
+    border-radius: 14px;
+  }
+}
+
+/* --- Tiny phones --- */
+@media (max-width: 420px) {
+  .content-header h1 {
+    font-size: 1.5rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .property-card {
+    flex: 1 1 160px;
+    max-width: 160px;
+    max-height: 160px;
   }
 }
