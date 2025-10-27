@@ -304,7 +304,7 @@
 </div>
 
 <script>
-<?php echo file_get_contents($_SERVER['DOCUMENT_ROOT'].'/BatEstateExplorer/assets/js/agent_card_logic.js'); ?>
+<?php echo file_get_contents($_SERVER['DOCUMENT_ROOT'].'/BatEstateExplorer/assets/js/user_card_logic.js'); ?>
 </script>
 <?php
         endif;
