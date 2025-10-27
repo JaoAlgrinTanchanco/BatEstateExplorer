@@ -70,7 +70,7 @@ body::before {
 .agent-profile-page {
   width: 95%; /* takes 95% of viewport width */
   max-width: 1290px; /* optional max-width */
-  height: 100vh;
+  height: 115vh;
   margin: 0 auto;
   padding: 6.5rem 1rem;
   display: flex;
