@@ -112,7 +112,10 @@
 </div>
 
 <!-- Combined Modal -->
-<div id="propertyModal" class="custom-modal" style="display:none;">
+<div id="propertyModal" class="custom-modal" style="display:none;"
+  data-logged-in-agent-id="<?= (int)($_SESSION['user_id'] ?? 0) ?>"
+  data-listed-agent-id="<?= (int)$listedAgentId ?>
+  ">
   <div class="custom-modal-content">
     <button class="close">&times;</button>
     <button id="propertyOptionsBtn" class="modal-options-btn"><i class="fas fa-ellipsis-v"></i></button>

@@ -33,6 +33,27 @@ function renderStars(rating) {
   let currentPropertyId = null;
   let selectedRating = 0;
 
+  // Global function to show/hide SOLD overlay
+  window.updateSoldOverlay = function(status) {
+    const modal = document.getElementById('propertyModal');
+    if (!modal) return;
+
+    const mainImage = modal.querySelector('.property-main-image');
+    if (!mainImage) return;
+
+    // Remove existing overlay
+    let overlay = mainImage.querySelector('.sold-overlay');
+    if (overlay) overlay.remove();
+
+    // Add SOLD overlay if status is 'sold'
+    if (status === 'sold') {
+      overlay = document.createElement('div');
+      overlay.className = 'sold-overlay';
+      overlay.textContent = 'SOLD';
+      mainImage.appendChild(overlay);
+    }
+  };
+
   // Open Property Modal
   async function openPropertyModal(propertyId) {
     currentPropertyId = propertyId;
@@ -41,22 +62,44 @@ function renderStars(rating) {
 
     const reviewContainer = modal.querySelector("#modalPastReviews");
     const reviewBtn = modal.querySelector("#leaveReviewBtn");
+    const optionsBtn = document.getElementById('propertyOptionsBtn');
+    const dropdown = document.getElementById('propertyOptionsDropdown');
 
     try {
       // Fetch property details
       const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
       const data = await res.json();
-      if (!data.success) {
-        // Remove debugging line
-        return;
-      }
+      if (!data.success) return;
 
       const prop = data.property;
       const images = prop.images.length ? prop.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
       modal.dataset.id = prop.id;
 
-      // Set Left Column content
-      modal.querySelector(".property-main-image").style.backgroundImage = `url('${images[0]}')`;
+      // Map property.agent_id to user_id
+      let listedAgentUserId = null;
+      try {
+        const agentRes = await fetch(`/BatEstateExplorer/public/api/get_agent_user_id.php?agent_id=${prop.agent_id}`);
+        const agentData = await agentRes.json();
+        if (agentData.success) {
+          listedAgentUserId = agentData.user_id;
+          modal.dataset.listedAgentId = listedAgentUserId;
+        }
+      } catch (err) {
+        console.error("Failed to map agent_id to user_id:", err);
+      }
+
+      const loggedInUserId = parseInt(modal.dataset.loggedInAgentId);
+
+      // Show or hide options button
+      if (loggedInUserId && listedAgentUserId && loggedInUserId === listedAgentUserId) {
+        optionsBtn.style.display = 'flex';
+      } else {
+        optionsBtn.style.display = 'none';
+      }
+
+      // Set main image and thumbnails
+      const mainImage = modal.querySelector(".property-main-image");
+      mainImage.style.backgroundImage = `url('${images[0]}')`;
       modal.querySelector(".property-name").textContent = prop.title || "No title";
 
       const thumbs = modal.querySelector(".property-images");
@@ -64,16 +107,15 @@ function renderStars(rating) {
         `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`
       ).join("");
 
-      // Image gallery click handler
       thumbs.querySelectorAll("img").forEach(imgEl => {
         imgEl.addEventListener("click", () => {
-          modal.querySelector(".property-main-image").style.backgroundImage = `url('${imgEl.src}')`;
+          mainImage.style.backgroundImage = `url('${imgEl.src}')`;
           thumbs.querySelectorAll("img").forEach(i => i.classList.remove("active"));
           imgEl.classList.add("active");
         });
       });
 
-      // Set Right Column content
+      // Set property details
       modal.querySelector(".location").textContent = prop.location || "-";
       modal.querySelector(".price").textContent = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
       modal.querySelector(".property-type").textContent = prop.property_type || "-";
@@ -83,7 +125,7 @@ function renderStars(rating) {
       modal.querySelector(".date_uploaded").textContent = prop.created_at ? new Date(prop.created_at).toLocaleDateString() : "-";
       modal.querySelector(".property-description").textContent = prop.description || "No description available.";
 
-      // Review Button visibility
+      // Review button visibility
       if (reviewBtn) {
         if (data.has_privilege) {
           reviewBtn.style.display = "inline-flex";
@@ -94,11 +136,23 @@ function renderStars(rating) {
         }
       }
 
+      // Highlight current status in dropdown
+      if (dropdown) {
+        dropdown.querySelectorAll('.status-option').forEach(btn => {
+          btn.style.background = (btn.dataset.status === prop.status)
+            ? (prop.status === 'available' ? '#d0f0c0' : '#f8d0d0')
+            : '';
+        });
+      }
+
       // Show modal
       modal.hidden = false;
-      modal.style.display = "flex";
+      modal.style.display = 'flex';
 
-      // Fetch Past Reviews
+      // Update SOLD overlay based on current status
+      window.updateSoldOverlay(prop.status);
+
+      // Fetch past reviews
       if (reviewContainer) {
         const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${prop.id}`);
         const reviewData = await reviewRes.json();
@@ -118,7 +172,7 @@ function renderStars(rating) {
       }
 
     } catch (err) {
-      // Remove debugging line
+      console.error("Failed to open property modal:", err);
     }
   }
 
@@ -338,73 +392,6 @@ function renderStars(rating) {
         });
     }
   }
-
-  //status
-  const optionsBtn = document.getElementById('propertyOptionsBtn');
-  const dropdown = document.getElementById('propertyOptionsDropdown');
-  const mainImageWrapper = document.querySelector('.property-main-image-wrapper'); // wrap main image
-  let overlay = null;
-
-  // 1️Click toggle for dropdown
-  optionsBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
-  });
-
-  // 2️Click outside closes dropdown
-  document.addEventListener('click', () => {
-    dropdown.style.display = 'none';
-  });
-
-  // 3️Handle status change and highlight selected option
-  dropdown.querySelectorAll('.status-option').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const newStatus = btn.dataset.status;
-      const propertyId = document.getElementById('propertyModal').dataset.id;
-
-      // Update selection highlight
-      dropdown.querySelectorAll('.status-option').forEach(b => b.style.background = '');
-      btn.style.background = newStatus === 'available' ? '#d0f0c0' : '#f8d0d0'; // pastel green/red
-
-      try {
-        const res = await fetch(`/BatEstateExplorer/public/api/update_property_status.php`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ property_id: propertyId, status: newStatus })
-        });
-        const data = await res.json();
-        if (data.success) {
-          updateSoldOverlay(newStatus);
-          dropdown.style.display = 'none';
-        } else {
-          alert('Failed to update status');
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    });
-  });
-
-  // 4️Show/hide SOLD overlay
-  function updateSoldOverlay(status) {
-    if (!mainImageWrapper) return;
-
-    if (status === 'sold') {
-      if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.className = 'sold-overlay';
-        overlay.textContent = 'SOLD';
-        mainImageWrapper.appendChild(overlay);
-      }
-    } else {
-      if (overlay) {
-        overlay.remove();
-        overlay = null;
-      }
-    }
-  }
-
 })();
 
 // Favorite Property Logic
@@ -540,4 +527,91 @@ function renderStars(rating) {
     }
   });
 
+})();
+
+// Property Status Dropdown Logic
+(() => {
+  const modal = document.getElementById('propertyModal');
+  if (!modal) return;
+
+  const optionsBtn = document.getElementById('propertyOptionsBtn');
+  const dropdown = document.getElementById('propertyOptionsDropdown');
+  const mainImageWrapper = document.querySelector('.property-main-image-wrapper');
+  let overlay = null;
+
+  // Call this whenever modal opens
+  function initStatusDropdown(currentStatus) {
+    const loggedInAgentId = parseInt(modal.dataset.loggedInAgentId);
+    const listedAgentId = parseInt(modal.dataset.listedAgentId);
+
+    console.log("DEBUG: loggedInAgentId =", loggedInAgentId);
+    console.log("DEBUG: listedAgentId =", listedAgentId);
+    console.log("DEBUG: comparison =", loggedInAgentId === listedAgentId);
+
+    // Show options button only if logged-in agent is the listing agent
+    if (loggedInAgentId && listedAgentId && loggedInAgentId === listedAgentId) {
+      console.log("DEBUG: Showing options button");
+      optionsBtn.style.display = 'flex';
+    } else {
+      console.log("DEBUG: Hiding options button");
+      optionsBtn.style.display = 'none';
+    }
+
+    // Reset dropdown display
+    dropdown.style.display = 'none';
+
+    // Highlight current status automatically
+    dropdown.querySelectorAll('.status-option').forEach(btn => {
+      if (btn.dataset.status === currentStatus) {
+        btn.style.background = currentStatus === 'available' ? '#d0f0c0' : '#f8d0d0';
+      } else {
+        btn.style.background = '';
+      }
+    });
+  }
+
+  // Toggle dropdown on click
+  optionsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', () => {
+    dropdown.style.display = 'none';
+  });
+
+  // Handle status change and pastel highlighting
+  dropdown.querySelectorAll('.status-option').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const newStatus = btn.dataset.status;
+      const propertyId = modal.dataset.id;
+
+      // Highlight selected option
+      dropdown.querySelectorAll('.status-option').forEach(b => b.style.background = '');
+      btn.style.background = newStatus === 'available' ? '#d0f0c0' : '#f8d0d0';
+
+      try {
+        const res = await fetch(`/BatEstateExplorer/public/api/update_property_status.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ property_id: propertyId, status: newStatus })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          updateSoldOverlay(newStatus);
+          dropdown.style.display = 'none';
+        } else {
+          alert(data.error || 'Failed to update status');
+        }
+      } catch (err) {
+        console.error("Status update failed:", err);
+      }
+    });
+  });
+
+  // Expose function to call on modal open
+  window.initStatusDropdown = initStatusDropdown;
 })();

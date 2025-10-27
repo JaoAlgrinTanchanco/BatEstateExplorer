@@ -54,6 +54,29 @@
   text-overflow: ellipsis;
 }
 
+.property-main-image {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px; /* optional, matches modal card style */
+}
+
+.sold-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.55); /* slightly darker for contrast */
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.25rem; /* slightly bigger */
+  font-weight: 700;
+  pointer-events: none;
+  z-index: 10;
+  text-transform: uppercase;
+  letter-spacing: 2px; /* a bit of spacing for clarity */
+}
 
 /* ===========================
    Property Card (Square + Lifted Overlay)
@@ -330,7 +353,7 @@
 .modal-options-dropdown {
   position: absolute;
   top: 3.75rem;
-  right: 32;
+  right: 32px;
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
