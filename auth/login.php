@@ -77,16 +77,41 @@
             $blockResult = mysqli_stmt_get_result($blockQuery);
             $blockInfo = mysqli_fetch_assoc($blockResult);
 
+            // --- Determine block reason and duration properly ---
             $reasonText = $blockInfo['reason'] === 'other'
                 ? $blockInfo['other_reason']
                 : ucfirst($blockInfo['reason'] ?? 'Violation');
 
-            $duration = $blockInfo['duration'] ?? '7 days';
-            $reason   = $reasonText ?: 'Violation of platform policies';
+            $durationRaw = $blockInfo['duration'] ?? null;
 
-            // Redirect user to login page with block notice
-            header("Location: login.php?blocked=1&reason=" . urlencode($reason) . "&duration=" . urlencode($duration));
+            $isPermanent = false;
+            $displayDuration = '7 days';
+
+            if ($durationRaw) {
+                $durationLower = strtolower(trim($durationRaw));
+                if ($durationLower === 'lifetime' || $durationLower === 'permanent') {
+                    $isPermanent = true;
+                    $displayDuration = 'Permanent';
+                } else {
+                    // Map common shorthand to readable duration
+                    $map = [
+                        '48hrs' => '48 hours',
+                        '48 hours' => '48 hours',
+                        '7days' => '7 days',
+                        '7 days' => '7 days',
+                        '30days' => '30 days',
+                        '30 days' => '30 days',
+                    ];
+                    $displayDuration = $map[$durationLower] ?? $durationRaw;
+                }
+            }
+
+            // Redirect with permanent flag
+            header("Location: login.php?blocked=1&reason=" . urlencode($reasonText) 
+                . "&duration=" . urlencode($displayDuration) 
+                . "&permanent=" . ($isPermanent ? 1 : 0));
             exit;
+
         }
 
         // Check account status
@@ -208,9 +233,9 @@
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('blocked') === '1') {
             const reason = urlParams.get('reason') || 'Violation of platform policies';
-            const duration = (urlParams.get('duration') || '7 days').toLowerCase();
+            const duration = urlParams.get('duration') || '7 days';
+            const isPermanent = urlParams.get('permanent') === '1';
 
-            const isPermanent = ['lifetime', 'permanent', 'permanently', 'forever'].includes(duration);
             const modal = document.createElement('div');
             modal.className = 'blocked-modal';
 
@@ -219,7 +244,6 @@
             const message = isPermanent
                 ? 'Your account has been permanently banned by the administrator.'
                 : 'Your account has been temporarily disabled by the administrator.';
-
             const title = isPermanent ? 'Account Banned' : 'Account Blocked';
 
             modal.innerHTML = `

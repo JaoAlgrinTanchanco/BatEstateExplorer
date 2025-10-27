@@ -13,22 +13,21 @@ if (!isset($_POST['property_id'])) {
     redirectWithAgentType('my_listings');
 }
 
-$property_id       = intval($_POST['property_id']);
-$title             = $_POST['title'] ?? '';
-$description       = $_POST['description'] ?? '';
-$property_type     = $_POST['property_type'] ?? '';
-$location          = $_POST['location'] ?? '';
-$price             = floatval($_POST['price'] ?? 0);
-$bedrooms          = intval($_POST['bedrooms'] ?? 0);
-$bathrooms         = intval($_POST['bathrooms'] ?? 0);
-$sqm               = floatval($_POST['sqm'] ?? 0);
-$lot_size          = floatval($_POST['lot_size'] ?? 0);
-$existing_images   = $_POST['existing_images'] ?? [];
-$remove_images     = $_POST['remove_images'] ?? [];
-$primary_image     = $_POST['primary_image'] ?? null;
-$listing_type      = $_POST['listing_type'] ?? 'owned';
-$sold_by_email     = $_POST['sold_by_email'] ?? null;
-$sold_by_agent_id  = null;
+$property_id     = intval($_POST['property_id']);
+$title           = $_POST['title'] ?? '';
+$description     = $_POST['description'] ?? '';
+$property_type   = $_POST['property_type'] ?? '';
+$location        = $_POST['location'] ?? '';
+$price           = floatval($_POST['price'] ?? 0);
+$bedrooms        = intval($_POST['bedrooms'] ?? 0);
+$bathrooms       = intval($_POST['bathrooms'] ?? 0);
+$sqm             = floatval($_POST['sqm'] ?? 0);
+$lot_size        = floatval($_POST['lot_size'] ?? 0);
+$existing_images = $_POST['existing_images'] ?? [];
+$remove_images   = $_POST['remove_images'] ?? [];
+$primary_image   = $_POST['primary_image'] ?? null;
+$listing_type    = $_POST['listing_type'] ?? 'owned';
+$sold_by_email   = $_POST['sold_by_email'] ?? null;
 
 try {
     $pdo->beginTransaction();
@@ -41,10 +40,11 @@ try {
         throw new Exception("Property not found.");
     }
 
-    // Preserve current status unless overridden by backend
+    // Do not change current status
     $status = $property['status'];
+    $agent_id = $property['agent_id']; // default: current owner
 
-    // If listing marked as sold by another agent
+    // If sold_by is selected, update agent_id only
     if ($listing_type === 'sold_by' && !empty($sold_by_email)) {
         $stmtAgent = $pdo->prepare("
             SELECT a.id 
@@ -58,14 +58,13 @@ try {
         $agent = $stmtAgent->fetch(PDO::FETCH_ASSOC);
 
         if ($agent) {
-            $sold_by_agent_id = $agent['id'];
-            $status = 'sold'; // Force to sold
+            $agent_id = $agent['id']; // Overwrite creator
         } else {
             throw new Exception("Selling agent not found.");
         }
     }
 
-    // Update property details (status not touched unless sold_by)
+    // Update property details (status not changed)
     $stmtUpdate = $pdo->prepare("
         UPDATE properties SET
             title = ?, 
@@ -77,28 +76,25 @@ try {
             bathrooms = ?, 
             sqm = ?, 
             lot_size = ?, 
-            status = ?, 
-            sold_by_agent_id = ?, 
+            agent_id = ?, 
             updated_at = NOW()
         WHERE id = ?
     ");
-
     $stmtUpdate->execute([
-        $title, 
-        $description, 
-        $property_type, 
-        $location, 
+        $title,
+        $description,
+        $property_type,
+        $location,
         $price,
-        $bedrooms, 
-        $bathrooms, 
-        $sqm, 
-        $lot_size, 
-        $status,
-        $sold_by_agent_id,
+        $bedrooms,
+        $bathrooms,
+        $sqm,
+        $lot_size,
+        $agent_id,
         $property_id
     ]);
 
-    // Handle removals
+    // Handle image removals
     if (!empty($remove_images)) {
         foreach ($remove_images as $img_path) {
             $full_path = __DIR__ . '/../../' . $img_path;
@@ -146,7 +142,6 @@ try {
 
     $pdo->commit();
 
-    // Success notification
     $_SESSION['notification'] = [
         'type' => 'success',
         'message' => 'Property updated successfully.'
@@ -155,8 +150,6 @@ try {
 
 } catch (Exception $e) {
     $pdo->rollBack();
-
-    // Error notification
     $_SESSION['notification'] = [
         'type' => 'error',
         'message' => 'Failed to update property: ' . $e->getMessage()
@@ -171,27 +164,19 @@ function redirectWithAgentType($tab = 'my_listings') {
     global $pdo;
 
     $userId = $_SESSION['user_id'] ?? null;
-    $userType = 'direct_agent'; // default
+    $userType = 'direct_agent';
 
     if ($userId) {
         $stmt = $pdo->prepare("SELECT user_type FROM users WHERE id = ? LIMIT 1");
         $stmt->execute([$userId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($row && !empty($row['user_type'])) {
-            $userType = $row['user_type'];
-        }
+        if ($row && !empty($row['user_type'])) $userType = $row['user_type'];
     }
 
-    // Map user_type → correct dashboard view
     switch ($userType) {
-        case 'associate_agent':
-            $view = 'associate_profile';
-            break;
+        case 'associate_agent': $view = 'associate_profile'; break;
         case 'direct_agent':
-        default:
-            $view = 'direct_profile';
-            break;
+        default: $view = 'direct_profile'; break;
     }
 
     header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab={$tab}");

@@ -19,13 +19,66 @@ if (!$conn) {
 // Helper: Convert duration strings to seconds
 // ===========================
 function getDurationSeconds($duration) {
-    switch (strtolower(trim($duration))) {
-        case '2mins': case '2 mins': return 2 * 60;
-        case '10mins': case '10 mins': return 10 * 60;
-        case '48hrs': case '48 hours': return 48 * 3600;
-        case '7days': case '7 days': return 7 * 24 * 3600;
-        case 'lifetime': return PHP_INT_MAX;
-        default: return 0;
+    $d = strtolower(trim($duration));
+    return match($d) {
+        '2mins', '2 mins' => 2 * 60,
+        '10mins', '10 mins' => 10 * 60,
+        '48hrs', '48 hours' => 48 * 3600,
+        '7days', '7 days' => 7 * 24 * 3600,
+        '30days', '30 days' => 30 * 24 * 3600,
+        'lifetime' => PHP_INT_MAX,
+        default => 0
+    };
+}
+
+// ===========================
+// Helper: check and unblock if expired
+// ===========================
+function processBlocks($rows, $type, $conn, &$unblocked, &$debug) {
+    foreach ($rows as $row) {
+        $durationSeconds = getDurationSeconds($row['duration']);
+        $isLifetime = $durationSeconds === PHP_INT_MAX;
+        $elapsed = time() - strtotime($row['blockage_date'] ?? '0');
+
+        $shouldUnblock = !$isLifetime && $elapsed >= $durationSeconds;
+
+        $debug[] = [
+            'type' => $type,
+            'id' => $type === 'agent' ? $row['agent_id'] : $row['reported_user_id'],
+            'name' => "{$row['first_name']} {$row['last_name']}",
+            'duration' => $row['duration'],
+            'elapsed_seconds' => $elapsed,
+            'is_lifetime' => $isLifetime,
+            'should_unblock' => $shouldUnblock ? 'YES' : 'NO'
+        ];
+
+        if ($shouldUnblock) {
+            $conn->begin_transaction();
+            try {
+                $userId = $type === 'agent' ? $row['agent_id'] : $row['reported_user_id'];
+                $stmt1 = $conn->prepare("UPDATE users SET is_blocked = 0 WHERE id = ?");
+                $stmt1->bind_param("i", $userId);
+                $stmt1->execute();
+
+                $reportId = $row['report_id'];
+                $table = $type === 'agent' ? 'agent_reports' : 'user_reports';
+                $stmt2 = $conn->prepare("DELETE FROM {$table} WHERE id = ?");
+                $stmt2->bind_param("i", $reportId);
+                $stmt2->execute();
+
+                $conn->commit();
+
+                $unblocked[] = [
+                    $type . '_id' => $userId,
+                    'name' => "{$row['first_name']} {$row['last_name']}",
+                    'duration' => $row['duration'],
+                    'elapsed_seconds' => $elapsed
+                ];
+            } catch (Exception $ex) {
+                $conn->rollback();
+                throw $ex;
+            }
+        }
     }
 }
 
@@ -35,134 +88,32 @@ try {
     $unblockedUsers = [];
 
     // ======================
-    // AGENT BLOCK CHECK (existing)
+    // AGENT BLOCKS
     // ======================
-    $sql = "
+    $res = $conn->query("
         SELECT 
-            ar.id AS report_id,
-            ar.agent_id,
-            ar.duration,
-            ar.blockage_date,
-            u.is_blocked,
-            u.first_name,
-            u.last_name
+            ar.id AS report_id, ar.agent_id, ar.duration, ar.blockage_date,
+            u.is_blocked, u.first_name, u.last_name
         FROM agent_reports ar
         INNER JOIN users u ON u.id = ar.agent_id
-        WHERE u.is_blocked = 1
-          AND ar.status = 'blocked'
-          AND ar.blockage_date IS NOT NULL
-    ";
-
-    $result = $conn->query($sql);
-
-    if ($result && $result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $durationSeconds = getDurationSeconds($row['duration']);
-            if ($durationSeconds === PHP_INT_MAX) continue;
-
-            $elapsed = time() - strtotime($row['blockage_date']);
-            $shouldUnblock = $elapsed >= $durationSeconds;
-
-            $debugInfo[] = [
-                'type' => 'agent',
-                'id' => $row['agent_id'],
-                'name' => "{$row['first_name']} {$row['last_name']}",
-                'duration' => $row['duration'],
-                'elapsed_seconds' => $elapsed,
-                'should_unblock' => $shouldUnblock ? 'YES' : 'NO'
-            ];
-
-            if ($shouldUnblock) {
-                $conn->begin_transaction();
-                try {
-                    $stmt1 = $conn->prepare("UPDATE users SET is_blocked = 0 WHERE id = ?");
-                    $stmt1->bind_param("i", $row['agent_id']);
-                    $stmt1->execute();
-
-                    $stmt2 = $conn->prepare("DELETE FROM agent_reports WHERE id = ?");
-                    $stmt2->bind_param("i", $row['report_id']);
-                    $stmt2->execute();
-
-                    $conn->commit();
-
-                    $unblockedAgents[] = [
-                        'agent_id' => $row['agent_id'],
-                        'name' => "{$row['first_name']} {$row['last_name']}",
-                        'duration' => $row['duration'],
-                        'elapsed_seconds' => $elapsed
-                    ];
-                } catch (Exception $ex) {
-                    $conn->rollback();
-                    throw $ex;
-                }
-            }
-        }
-    }
+        WHERE u.is_blocked = 1 AND ar.status = 'blocked' AND ar.blockage_date IS NOT NULL
+    ");
+    $agentRows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+    processBlocks($agentRows, 'agent', $conn, $unblockedAgents, $debugInfo);
 
     // ======================
-    // USER BLOCK CHECK (NEW)
+    // USER BLOCKS
     // ======================
-    $sqlUser = "
+    $res = $conn->query("
         SELECT 
-            ur.id AS report_id,
-            ur.reported_user_id,
-            ur.duration,
-            ur.blockage_date,
-            u.is_blocked,
-            u.first_name,
-            u.last_name
+            ur.id AS report_id, ur.reported_user_id, ur.duration, ur.blockage_date,
+            u.is_blocked, u.first_name, u.last_name
         FROM user_reports ur
         INNER JOIN users u ON u.id = ur.reported_user_id
-        WHERE u.is_blocked = 1
-          AND ur.status = 'blocked'
-          AND ur.blockage_date IS NOT NULL
-    ";
-
-    $resultUser = $conn->query($sqlUser);
-
-    if ($resultUser && $resultUser->num_rows > 0) {
-        while ($row = $resultUser->fetch_assoc()) {
-            $durationSeconds = getDurationSeconds($row['duration']);
-            if ($durationSeconds === PHP_INT_MAX) continue;
-
-            $elapsed = time() - strtotime($row['blockage_date']);
-            $shouldUnblock = $elapsed >= $durationSeconds;
-
-            $debugInfo[] = [
-                'type' => 'user',
-                'id' => $row['reported_user_id'],
-                'name' => "{$row['first_name']} {$row['last_name']}",
-                'duration' => $row['duration'],
-                'elapsed_seconds' => $elapsed,
-                'should_unblock' => $shouldUnblock ? 'YES' : 'NO'
-            ];
-
-            if ($shouldUnblock) {
-                $conn->begin_transaction();
-                try {
-                    $stmt1 = $conn->prepare("UPDATE users SET is_blocked = 0 WHERE id = ?");
-                    $stmt1->bind_param("i", $row['reported_user_id']);
-                    $stmt1->execute();
-
-                    $stmt2 = $conn->prepare("DELETE FROM user_reports WHERE id = ?");
-                    $stmt2->bind_param("i", $row['report_id']);
-                    $stmt2->execute();
-
-                    $conn->commit();
-
-                    $unblockedUsers[] = [
-                        'user_id' => $row['reported_user_id'],
-                        'name' => "{$row['first_name']} {$row['last_name']}",
-                        'duration' => $row['duration'],
-                        'elapsed_seconds' => $elapsed
-                    ];
-                } catch (Exception $ex) {
-                    $conn->rollback();
-                    throw $ex;
-                }
-            }
-        }
-    }
+        WHERE u.is_blocked = 1 AND ur.status = 'blocked' AND ur.blockage_date IS NOT NULL
+    ");
+    $userRows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+    processBlocks($userRows, 'user', $conn, $unblockedUsers, $debugInfo);
 
     echo json_encode([
         'success' => true,

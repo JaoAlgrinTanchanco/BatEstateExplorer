@@ -287,7 +287,7 @@
             if (!currentReportedId || !currentType) return;
 
             const duration = document.getElementById('banDurationSelect')?.value || null;
-            const action = blockUnblockBtn.textContent.includes('Unblock') ? 'unblock' : 'block';
+            const action = blockUnblockBtn.textContent.toLowerCase().includes('unblock') ? 'unblock' : 'block';
             const displayType = currentType.charAt(0).toUpperCase() + currentType.slice(1);
 
             if (!confirm(`Are you sure you want to ${action} this ${displayType}?`)) return;
@@ -297,15 +297,19 @@
                     ? '/BatEstateExplorer/public/api/admin_block_agent.php'
                     : '/BatEstateExplorer/public/api/admin_block_user.php';
 
+            // --- Send correct ID key based on type ---
+            const payload = {
+                action,
+                category: currentCategory,
+                duration: action === 'block' ? duration : null
+            };
+            if (currentType === 'agent') payload.agent_id = currentReportedId;
+            else payload.user_id = currentReportedId;
+
             fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    reported_id: currentReportedId,
-                    duration,
-                    action,
-                    category: currentCategory,
-                }),
+                body: JSON.stringify(payload),
             })
                 .then(res => res.json())
                 .then(data => {
@@ -313,7 +317,7 @@
                         alert(data.message);
                         const row = reportsBody.querySelector(`tr[data-report-id="${currentReportId}"]`);
                         if (row) {
-                            row.dataset.status = action === 'block' ? 'blocked' : 'unblocked';
+                            row.dataset.status = data.status; // use backend response
                             updateStatusCell(row, row.dataset.status);
                         }
                         reportModal.style.display = 'none';
