@@ -336,62 +336,94 @@ function renderStars(rating) {
     }
   });
 
-  function updatePropertyModal(property) {
-    const modal = document.getElementById('propertyModal');
-    if (!modal) return;
+function updatePropertyModal(property) {
+  const modal = document.getElementById('propertyModal');
+  if (!modal) return;
 
-    modal.dataset.id = property.id;
-    modal.querySelector('.property-name').textContent = property.title;
-    modal.querySelector('.price').textContent = '₱' + parseFloat(property.price).toLocaleString();
-    modal.querySelector('.location').textContent = property.location;
-    modal.querySelector('.property-type').textContent = property.property_type;
-    modal.querySelector('.bedrooms').textContent = property.bedrooms;
-    modal.querySelector('.bathrooms').textContent = property.bathrooms;
-    modal.querySelector('.lot_size').textContent = property.lot_size;
-    modal.querySelector('.status').textContent = property.status;
-    modal.querySelector('.date_uploaded').textContent = new Date(property.created_at).toLocaleDateString();
-    modal.querySelector('.property-description').textContent = property.description;
+  const mainImage = modal.querySelector('.property-main-image');
+  const imagesContainer = modal.querySelector('.property-images');
+  const reviewContainer = modal.querySelector("#modalPastReviews");
+  const optionsBtn = document.getElementById('propertyOptionsBtn');
+  const dropdown = document.getElementById('propertyOptionsDropdown');
 
-    // --- Update Images ---
-    const imagesContainer = modal.querySelector('.property-images');
-    const mainImage = modal.querySelector('.property-main-image');
-    if (property.images && property.images.length > 0) {
-      const imgPaths = property.images.map(img => `/BatEstateExplorer/${img}`);
-      mainImage.style.backgroundImage = `url('${imgPaths[0]}')`;
-      imagesContainer.innerHTML = imgPaths.map(img => `<img src="${img}" alt="">`).join('');
-    } else {
-      mainImage.style.backgroundImage = '';
-      imagesContainer.innerHTML = '<p>No images available.</p>';
-    }
-
-    // --- Update Reviews ---
-    const reviewContainer = modal.querySelector("#modalPastReviews");
-    if (reviewContainer) {
-      // 🔹 Immediately clear and show loading
-      reviewContainer.innerHTML = `<p style="opacity:0.6;">Loading reviews...</p>`;
-
-      fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${property.id}`)
-        .then(res => res.json())
-        .then(reviewData => {
-          if (reviewData.success && Array.isArray(reviewData.reviews) && reviewData.reviews.length > 0) {
-            reviewContainer.innerHTML = reviewData.reviews.map(r => `
-              <div class="review-card" style="margin-bottom:10px;">
-                <strong>${r.user_name}</strong>
-                <div style="float:right;">${renderStars(r.rating)}</div>
-                <p>${r.review_text}</p>
-                <small>${new Date(r.created_at).toLocaleDateString()}</small>
-              </div>
-            `).join("");
-          } else {
-            reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
-          }
-        })
-        .catch(err => {
-          console.error('Error loading reviews:', err);
-          reviewContainer.innerHTML = `<p style="color:red;">Failed to load reviews.</p>`;
-        });
-    }
+  // Safe helper
+  const setText = (selector, value) => {
+    const el = modal.querySelector(selector);
+    if (el) el.textContent = value ?? '-';
   }
+
+  modal.dataset.id = property.id;
+  setText('.property-name', property.title);
+  setText('.price', `₱${parseFloat(property.price || 0).toLocaleString()}`);
+  setText('.location', property.location);
+  setText('.property-type', property.property_type);
+  setText('.bedrooms', property.bedrooms);
+  setText('.bathrooms', property.bathrooms);
+  setText('.lot_size', property.lot_size);
+  setText('.date_uploaded', property.created_at ? new Date(property.created_at).toLocaleDateString() : '-');
+  setText('.property-description', property.description);
+  setText('.status', property.status);
+
+  // --- Images ---
+  if (mainImage && imagesContainer) {
+    const imgs = property.images && property.images.length ? property.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
+    mainImage.style.backgroundImage = `url('${imgs[0]}')`;
+    imagesContainer.innerHTML = imgs.map((img, i) => `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`).join("");
+
+    imagesContainer.querySelectorAll("img").forEach(imgEl => {
+      imgEl.addEventListener("click", () => {
+        mainImage.style.backgroundImage = `url('${imgEl.src}')`;
+        imagesContainer.querySelectorAll("img").forEach(i => i.classList.remove("active"));
+        imgEl.classList.add("active");
+      });
+    });
+  }
+
+  // --- SOLD overlay ---
+  if (window.updateSoldOverlay) window.updateSoldOverlay(property.status);
+
+  // --- Options button ---
+  if (optionsBtn) {
+    const loggedInAgentId = parseInt(modal.dataset.loggedInAgentId);
+    const listedAgentId = parseInt(modal.dataset.listedAgentId);
+    optionsBtn.style.display = (loggedInAgentId && listedAgentId && loggedInAgentId === listedAgentId) ? 'flex' : 'none';
+  }
+
+  // --- Status dropdown ---
+  if (dropdown) {
+    dropdown.querySelectorAll('.status-option').forEach(btn => {
+      btn.style.background = btn.dataset.status === property.status
+        ? (property.status === 'available' ? '#d0f0c0' : '#f8d0d0')
+        : '';
+    });
+  }
+
+  // --- Reviews ---
+  if (reviewContainer) {
+    reviewContainer.innerHTML = `<p style="opacity:0.6;">Loading reviews...</p>`;
+    fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${property.id}`)
+      .then(res => res.json())
+      .then(reviewData => {
+        if (reviewData.success && reviewData.reviews.length > 0) {
+          reviewContainer.innerHTML = reviewData.reviews.map(r => `
+            <div class="review-card" style="margin-bottom:10px;">
+              <strong>${r.user_name}</strong>
+              <div style="float:right;">${renderStars(r.rating)}</div>
+              <p>${r.review_text}</p>
+              <small>${new Date(r.created_at).toLocaleDateString()}</small>
+            </div>
+          `).join("");
+        } else {
+          reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
+        }
+      })
+      .catch(err => {
+        console.error('Error loading reviews:', err);
+        reviewContainer.innerHTML = `<p style="color:red;">Failed to load reviews.</p>`;
+      });
+  }
+}
+
 })();
 
 // Favorite Property Logic
