@@ -137,17 +137,33 @@
     <!-- Right side: details + reviews + actions -->
     <div class="modal-right">
       <div class="details">
-        <?php if ($agent): 
-          $profileImage = !empty($agent['profile_image_path'])
-              ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($agent['profile_image_path'])
-              : '/BatEstateExplorer/assets/default-avatar.png';
+        <?php if ($agent):
+            $userId = (int)$listedAgentId; // fallback
+
+            if ($listedAgentId) {
+                // Map internal agent id to user_id
+                $stmtMap = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
+                if ($stmtMap) {
+                    $stmtMap->bind_param("i", $listedAgentId);
+                    $stmtMap->execute();
+                    $resMap = $stmtMap->get_result();
+                    if ($rowMap = $resMap->fetch_assoc()) {
+                        $userId = (int)$rowMap['user_id'];
+                    }
+                    $stmtMap->close();
+                }
+            }
+
+            $profileImage = !empty($agent['profile_image_path'])
+                ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($agent['profile_image_path'])
+                : '/BatEstateExplorer/assets/default-avatar.png';
         ?>
-          <section class="agent-info">
-            <a id="agentProfileLink" href="#" target="_blank" style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit;">
-              <img id="agentAvatar" class="agent-avatar" src="/BatEstateExplorer/assets/images/default-avatar.png" alt="Agent Avatar">
-              <span id="agentName" class="agent-name">Loading...</span>
+        <section class="agent-info">
+            <a id="agentProfileLink" href="/BatEstateExplorer/public/agent_page.php?agent_id=<?= $userId ?>" target="_blank" style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit;">
+                <img id="agentAvatar" class="agent-avatar" src="<?= htmlspecialchars($profileImage) ?>" alt="Agent Avatar">
+                <span id="agentName" class="agent-name"><?= htmlspecialchars($agent['first_name'] . ' ' . $agent['last_name']) ?></span>
             </a>
-          </section>
+        </section>
         <?php endif; ?>
 
         <section><span class="label">Price:</span> <span class="value price"></span></section>
