@@ -573,16 +573,21 @@
                                 </span>
                             </button>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Hidden Confirmation Overlay -->
-                        <div id="feeConfirmOverlay">
-                            <p style="font-size: 1.2rem; margin-bottom: 1rem;">
-                                Confirm payment of PHP <span id="confirmTotal">0.00</span>?
-                            </p>
-                            <div>
-                                <button id="confirmPayBtn" class="btn btn-success" style="margin-right: 10px;">Confirm</button>
-                                <button id="cancelPayBtn" class="btn btn-danger">Cancel</button>
-                            </div>
+                <!-- Confirmation Modal -->
+                <div id="confirmFeeModal" class="deposit-modal" onclick="closeConfirmFeeModal(event)">
+                    <div class="modal-content3" onclick="event.stopPropagation()">
+                        <h2 class="modal-title">Confirm Payment</h2>
+
+                        <div class="modal-body" style="text-align:center;">
+                            <p style="font-size:1.2rem;">Confirm payment of PHP <span id="confirmTotalAmount">0.00</span>?</p>
+                        </div>
+
+                        <div class="modal-footer" style="justify-content:center;">
+                            <button id="confirmPayBtn" class="btn btn-success" style="margin-right:10px;">Confirm</button>
+                            <button id="cancelPayBtn" class="btn btn-danger">Cancel</button>
                         </div>
                     </div>
                 </div>

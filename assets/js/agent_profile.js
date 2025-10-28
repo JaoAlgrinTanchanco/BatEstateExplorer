@@ -415,116 +415,100 @@ document.addEventListener('DOMContentLoaded', () => {
   window.closeListingFeeModal = closeListingFeeModal;
 
   // ------------------------------------------
-  // Pay Listing Fee & Submit with Inline Confirmation
+  // Pay Listing Fee & Submit with Separate Confirmation Modal
   // ------------------------------------------
   document.getElementById('payListingFeeBtn')?.addEventListener('click', () => {
-      // Show confirmation overlay instead of immediately paying
-      const modal = document.getElementById('listingFeeModal');
-      let overlay = modal.querySelector('.confirmation-overlay');
+      // Get total fee from the listing modal
+      const total = document.getElementById('listingTotal').innerText;
+      document.getElementById('confirmTotalAmount').innerText = total;
 
-      // Create overlay if it doesn't exist
-      if (!overlay) {
-          overlay = document.createElement('div');
-          overlay.className = 'confirmation-overlay';
-          overlay.innerHTML = `
-              <div class="overlay-content">
-                  <p>Are you sure you want to pay the listing fee?</p>
-                  <button id="confirmPayBtn" class="btn btn-success">Confirm</button>
-                  <button id="cancelPayBtn" class="btn btn-secondary">Cancel</button>
-              </div>
-          `;
-          modal.appendChild(overlay);
-      }
-
-      // Show overlay
-      overlay.style.display = 'flex';
-      overlay.style.opacity = 1;
-
-      // Cancel button hides overlay
-      overlay.querySelector('#cancelPayBtn').onclick = () => {
-          overlay.style.opacity = 0;
-          setTimeout(() => overlay.style.display = 'none', 200);
-      };
-
-      // Confirm button executes original pay logic
-      overlay.querySelector('#confirmPayBtn').onclick = async () => {
-          overlay.style.opacity = 0;
-          setTimeout(() => overlay.style.display = 'none', 200);
-
-          const form = document.getElementById('addListingForm');
-          const walletBalanceEl = document.getElementById('agentWalletBalance');
-          const fd = new FormData(form);
-
-          // Deduplicate and append files
-          deduplicateSelectedDocuments();
-
-          window.selectedFiles.forEach(f => {
-              if (f instanceof File) fd.append('images[]', f);
-              else if (typeof f === 'string') fd.append('existing_images[]', f);
-          });
-
-          window.selectedDocuments?.forEach(f => {
-              if (f instanceof File) fd.append('property_documents[]', f);
-              else if (typeof f === 'string') fd.append('existing_property_documents[]', f);
-          });
-
-          if (window.currentDraftId) fd.append('draft_id', window.currentDraftId);
-
-          try {
-              // Step 1: Save listing first
-              const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
-              const saveData = await saveRes.json();
-              if (!saveData.success) {
-                  notify('error', 'Failed to save listing data or files: ' + (saveData.error || 'Unknown server error.'));
-                  return;
-              }
-
-              fd.append('listing_id', saveData.listing_id);
-
-              // Step 2: Pay listing fee
-              const propertyType = document.getElementById('property_type')?.value || 'Lot';
-              fd.append('property_type', propertyType);
-
-              const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
-              const feeData = await feeRes.json();
-
-              if (!feeData.success) {
-                  notify('error', 'Listing saved but fee payment failed: ' + (feeData.error || 'Payment failed.'));
-                  if (feeData.current_balance !== undefined) {
-                      walletBalanceEl.innerText = feeData.current_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
-                  }
-                  return;
-              }
-
-              // Success
-              notify('success', `Listing submitted! Fee: PHP ${feeData.total_deduction.toLocaleString('en-PH', { minimumFractionDigits:2 })}. Awaiting admin approval.`);
-              window.closeListingFeeModal?.();
-              walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
-
-              const mainSubmitBtn = document.getElementById('openListingModalBtn');
-              if (mainSubmitBtn && feeData.new_balance !== undefined) {
-                  mainSubmitBtn.innerHTML = `Save Listing (Balance: ₱${feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 })})`;
-              }
-
-              // Clear form and reset state
-              form.reset();
-              window.resetImageUpload?.();
-              window.resetDocumentUpload?.();
-              window.currentDraftId = null;
-              window.existingImages = [];
-              window.existingDocs = [];
-              window.selectedFiles = [];
-              window.selectedDocuments = [];
-
-              const draftCard = document.querySelector(`.draft-card[data-id="${window.currentDraftId}"]`);
-              draftCard?.remove();
-              window.loadDrafts?.();
-
-          } catch (err) {
-              notify('error', err.message || 'A critical network error occurred.');
-          }
-      };
+      // Open the confirmation modal
+      document.getElementById('confirmFeeModal').style.display = 'flex';
   });
+
+// Cancel button closes confirmation modal
+document.getElementById('cancelPayBtn')?.addEventListener('click', () => {
+    document.getElementById('confirmFeeModal').style.display = 'none';
+});
+
+// Confirm button executes the original payListingFee logic
+document.getElementById('confirmPayBtn')?.addEventListener('click', async () => {
+    document.getElementById('confirmFeeModal').style.display = 'none';
+
+    const form = document.getElementById('addListingForm');
+    const walletBalanceEl = document.getElementById('agentWalletBalance');
+    const fd = new FormData(form);
+
+    // Deduplicate and append files
+    deduplicateSelectedDocuments();
+
+    window.selectedFiles.forEach(f => {
+        if (f instanceof File) fd.append('images[]', f);
+        else if (typeof f === 'string') fd.append('existing_images[]', f);
+    });
+
+    window.selectedDocuments?.forEach(f => {
+        if (f instanceof File) fd.append('property_documents[]', f);
+        else if (typeof f === 'string') fd.append('existing_property_documents[]', f);
+    });
+
+    if (window.currentDraftId) fd.append('draft_id', window.currentDraftId);
+
+    try {
+        // Step 1: Save listing first
+        const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
+        const saveData = await saveRes.json();
+        if (!saveData.success) {
+            notify('error', 'Failed to save listing data or files: ' + (saveData.error || 'Unknown server error.'));
+            return;
+        }
+
+        fd.append('listing_id', saveData.listing_id);
+
+        // Step 2: Pay listing fee
+        const propertyType = document.getElementById('property_type')?.value || 'Lot';
+        fd.append('property_type', propertyType);
+
+        const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
+        const feeData = await feeRes.json();
+
+        if (!feeData.success) {
+            notify('error', 'Listing saved but fee payment failed: ' + (feeData.error || 'Payment failed.'));
+            if (feeData.current_balance !== undefined) {
+                walletBalanceEl.innerText = feeData.current_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            }
+            return;
+        }
+
+        // Success
+        notify('success', `Listing submitted! Fee: PHP ${feeData.total_deduction.toLocaleString('en-PH', { minimumFractionDigits:2 })}. Awaiting admin approval.`);
+        window.closeListingFeeModal?.();
+        walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+        const mainSubmitBtn = document.getElementById('openListingModalBtn');
+        if (mainSubmitBtn && feeData.new_balance !== undefined) {
+            mainSubmitBtn.innerHTML = `Save Listing (Balance: ₱${feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 })})`;
+        }
+
+        // Clear form and reset state
+        form.reset();
+        window.resetImageUpload?.();
+        window.resetDocumentUpload?.();
+        window.currentDraftId = null;
+        window.existingImages = [];
+        window.existingDocs = [];
+        window.selectedFiles = [];
+        window.selectedDocuments = [];
+
+        const draftCard = document.querySelector(`.draft-card[data-id="${window.currentDraftId}"]`);
+        draftCard?.remove();
+        window.loadDrafts?.();
+
+    } catch (err) {
+        notify('error', err.message || 'A critical network error occurred.');
+    }
+});
+
 
   initDraftCards();
 
