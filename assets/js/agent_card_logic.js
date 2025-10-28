@@ -189,26 +189,53 @@ function renderStars(rating) {
 
       // Fetch past reviews
       if (reviewContainer) {
-        const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${prop.id}`);
-        const reviewData = await reviewRes.json();
+          try {
+              const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${prop.id}`);
+              const reviewData = await reviewRes.json();
 
-        if (reviewData.success && reviewData.reviews.length > 0) {
-          reviewContainer.innerHTML = reviewData.reviews.map(r => `
-            <div class="review-card" style="margin-bottom:10px;">
-              <strong>${r.user_name}</strong>
-              <div style="float:right;">${renderStars(r.rating)}</div>
-              <p>${r.review_text}</p>
-              <small>${new Date(r.created_at).toLocaleDateString()}</small>
-            </div>
-          `).join("");
-        } else {
-          reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
-        }
+              if (reviewData.success) {
+                  // Use renderReviews to properly show avatar + clickable name
+                  renderReviews(reviewData.reviews, reviewContainer);
+              } else {
+                  reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
+              }
+          } catch (e) {
+              console.error("Failed to fetch reviews:", e);
+              reviewContainer.innerHTML = `<p style="color:red;">Failed to load reviews.</p>`;
+          }
       }
-
     } catch (err) {
       console.error("Failed to open property modal:", err);
     }
+  }
+
+  // Render reviews in modal
+  function renderReviews(reviews, container) {
+      if (!container) return;
+      
+      if (reviews.length > 0) {
+          container.innerHTML = reviews.map(r => {
+              const avatar = r.profile_image || "/BatEstateExplorer/assets/images/default-avatar.png";
+              const userProfileUrl = `/BatEstateExplorer/public/user_page.php?user_id=${r.user_id}`;
+              return `
+                  <div class="review-card" style="margin-bottom:10px; display:flex; gap:10px; align-items:flex-start;">
+                      <a href="${userProfileUrl}" target="_blank">
+                          <img src="${avatar}" alt="${r.user_name}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+                      </a>
+                      <div style="flex:1;">
+                          <a href="${userProfileUrl}" target="_blank" style="font-weight:bold;text-decoration:none;color:inherit;">
+                              ${r.user_name}
+                          </a>
+                          <div style="float:right;">${renderStars(r.rating)}</div>
+                          <p style="margin:4px 0;">${r.review_text}</p>
+                          <small style="opacity:0.6;">${new Date(r.created_at).toLocaleDateString()}</small>
+                      </div>
+                  </div>
+              `;
+          }).join("");
+      } else {
+          container.innerHTML = `<p>No reviews yet.</p>`;
+      }
   }
 
   // Open Review Modal
@@ -439,27 +466,21 @@ function updatePropertyModal(property) {
 
   // --- Reviews ---
   if (reviewContainer) {
-    reviewContainer.innerHTML = `<p style="opacity:0.6;">Loading reviews...</p>`;
-    fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${property.id}`)
-      .then(res => res.json())
-      .then(reviewData => {
-        if (reviewData.success && reviewData.reviews.length > 0) {
-          reviewContainer.innerHTML = reviewData.reviews.map(r => `
-            <div class="review-card" style="margin-bottom:10px;">
-              <strong>${r.user_name}</strong>
-              <div style="float:right;">${renderStars(r.rating)}</div>
-              <p>${r.review_text}</p>
-              <small>${new Date(r.created_at).toLocaleDateString()}</small>
-            </div>
-          `).join("");
-        } else {
-          reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
-        }
-      })
-      .catch(err => {
-        console.error('Error loading reviews:', err);
-        reviewContainer.innerHTML = `<p style="color:red;">Failed to load reviews.</p>`;
-      });
+      reviewContainer.innerHTML = `<p style="opacity:0.6;">Loading reviews...</p>`;
+      fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${property.id}`)
+        .then(res => res.json())
+        .then(reviewData => {
+          if (reviewData.success) {
+              // Use renderReviews to properly display avatars and clickable names
+              renderReviews(reviewData.reviews, reviewContainer);
+          } else {
+              reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
+          }
+        })
+        .catch(err => {
+          console.error('Error loading reviews:', err);
+          reviewContainer.innerHTML = `<p style="color:red;">Failed to load reviews.</p>`;
+        });
   }
 }
 

@@ -11,15 +11,15 @@ if (!$conn) {
 }
 
 // --- Get JSON input ---
-$data       = json_decode(file_get_contents('php://input'), true);
-$userId     = $data['reported_id'] ?? null; // from JS (reported user)
-$duration   = $data['duration'] ?? null;    // admin-selected for 'other'
-$action     = $data['action'] ?? 'block';   // 'block' or 'unblock'
-$category   = $data['category'] ?? null;    // violation type
+$data     = json_decode(file_get_contents('php://input'), true);
+$userId   = $data['reported_id'] ?? $data['user_id'] ?? null; // fallback if frontend sends 'user_id'
+$duration = $data['duration'] ?? null;    // admin-selected for 'other'
+$action   = $data['action'] ?? 'block';   // 'block' or 'unblock'
+$category = $data['category'] ?? null;    // violation type
 
-if (!$userId) {
+if (!$userId || !is_numeric($userId)) {
     http_response_code(400);
-    echo json_encode(['error' => 'User ID is required.']);
+    echo json_encode(['error' => 'User ID is required and must be numeric.']);
     exit;
 }
 
@@ -36,28 +36,14 @@ try {
         // --- 2. Determine penalty duration based on category ---
         if ($category && $category !== 'other') {
             switch ($category) {
-                case 'harassment':
-                    $duration = '7days';
-                    break;
-                case 'spam':
-                    $duration = '48hrs';
-                    break;
-                case 'fake_review':
-                    $duration = '30days';
-                    break;
-                case 'misinformation':
-                    $duration = '7days';
-                    break;
-                case 'false_report':
-                    $duration = '7days';
-                    break;
+                case 'harassment':        $duration = '7days'; break;
+                case 'spam':              $duration = '48hrs'; break;
+                case 'fake_review':       $duration = '30days'; break;
+                case 'misinformation':    $duration = '7days'; break;
+                case 'false_report':      $duration = '7days'; break;
                 case 'fraudulent_activity':
-                case 'impersonation':
-                    $duration = 'lifetime';
-                    break;
-                default:
-                    $duration = '7days';
-                    break;
+                case 'impersonation':     $duration = 'lifetime'; break;
+                default:                  $duration = '7days'; break;
             }
         } elseif (!$duration) {
             $duration = '7days'; // default fallback
