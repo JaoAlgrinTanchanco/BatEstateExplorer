@@ -369,26 +369,44 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------
-  // Save Listing Handler
+  // Show Listing Fee & Open Modal
   // -------------------------
-  document.getElementById('openListingModalBtn')?.addEventListener('click', () => {
-    const form = document.getElementById('addListingForm');
-    const walletBalanceEl = document.getElementById('agentWalletBalance');
-    const listingFee = 20;
-    if (!validateForm(form, false)) { // false for final listing
-        return; // Stop if validation fails
-    }
-    if (!form.checkValidity()) return form.reportValidity();
+  document.getElementById('openListingModalBtn')?.addEventListener('click', async () => {
+      const form = document.getElementById('addListingForm');
 
-    // Accept both new files and draft images
-    const totalImages = (window.selectedFiles?.length || 0) + (window.draftImages?.length || 0);
-    if (totalImages === 0) return notify('error', 'Please upload at least one image.');
+      // Validate form first
+      if (!validateForm(form, false)) return;
+      if (!form.checkValidity()) return form.reportValidity();
 
-    const walletBalance = parseFloat(walletBalanceEl.innerText.replace(/,/g, ''));
-    if (walletBalance < listingFee) return notify('error', 'Insufficient wallet balance.');
+      // Check for at least one image
+      const totalImages = (window.selectedFiles?.length || 0) + (window.draftImages?.length || 0);
+      if (totalImages === 0) return notify('error', 'Please upload at least one image.');
 
-    // Open listing fee modal
-    document.getElementById('listingFeeModal').style.display = 'flex';
+      // Get property type
+      const propertyType = document.getElementById('property_type')?.value || 'Lot';
+
+      try {
+          // Fetch listing fee info without deducting
+          const res = await fetch('/BatEstateExplorer/public/api/show_fee.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `property_type=${encodeURIComponent(propertyType)}`
+          });
+          const data = await res.json();
+
+          if (!data.success) throw new Error(data.error || 'Failed to fetch listing fee.');
+
+          // Update modal with fee details
+          document.getElementById('listingBaseFee').innerText = data.base_fee.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+          document.getElementById('listingVAT').innerText = data.vat.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+          document.getElementById('listingTotal').innerText = data.total_deduction.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+          // Open modal
+          document.getElementById('listingFeeModal').style.display = 'flex';
+
+      } catch (err) {
+          notify('error', err.message || 'Failed to load listing fee.');
+      }
   });
 
   function closeListingFeeModal() {
@@ -397,108 +415,115 @@ document.addEventListener('DOMContentLoaded', () => {
   window.closeListingFeeModal = closeListingFeeModal;
 
   // ------------------------------------------
-  // Pay Listing Fee & Submit (Integrity First)
+  // Pay Listing Fee & Submit with Inline Confirmation
   // ------------------------------------------
-  document.getElementById('payListingFeeBtn')?.addEventListener('click', async () => {
-      const form = document.getElementById('addListingForm');
-      const walletBalanceEl = document.getElementById('agentWalletBalance');
-      const fd = new FormData(form);
+  document.getElementById('payListingFeeBtn')?.addEventListener('click', () => {
+      // Show confirmation overlay instead of immediately paying
+      const modal = document.getElementById('listingFeeModal');
+      let overlay = modal.querySelector('.confirmation-overlay');
 
-      // Run deduplication and append all files/state (this part is fine)
-      deduplicateSelectedDocuments();
-
-      // Append images
-      window.selectedFiles.forEach(f => {
-          if (f instanceof File) {
-              fd.append('images[]', f);
-          } else if (typeof f === 'string') {
-              fd.append('existing_images[]', f);
-          }
-      });
-
-      // Append property documents
-      window.selectedDocuments?.forEach(f => {
-          if (f instanceof File) {
-              fd.append('property_documents[]', f);
-          } else if (typeof f === 'string') {
-              fd.append('existing_property_documents[]', f);
-          }
-      });
-
-      // If editing a draft, send the draft ID
-      if (window.currentDraftId) {
-          fd.append('draft_id', window.currentDraftId);
+      // Create overlay if it doesn't exist
+      if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.className = 'confirmation-overlay';
+          overlay.innerHTML = `
+              <div class="overlay-content">
+                  <p>Are you sure you want to pay the listing fee?</p>
+                  <button id="confirmPayBtn" class="btn btn-success">Confirm</button>
+                  <button id="cancelPayBtn" class="btn btn-secondary">Cancel</button>
+              </div>
+          `;
+          modal.appendChild(overlay);
       }
-      
-      try {
-          // Step 1: Attempt to SAVE THE LISTING and files first. 
-          // This is the most likely step to fail (due to large files, slow server, validation, etc.).
-          const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
-          const saveData = await saveRes.json();
-          
-          if (!saveData.success) {
-              // If the save fails, no fee was deducted, so we just notify the error and stop.
-              notify('error', 'Failed to save listing data or files: ' + (saveData.error || 'Unknown server error.'));
-              return;
-          }
 
-          fd.append('listing_id', saveData.listing_id); // Assuming saveData contains the new listing_id
-          
-          // Step 2: Listing is saved (in a 'Pending Payment' state). Now, process the fee.
-          const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
-          const feeData = await feeRes.json();
-          
-          if (!feeData.success) {
-              
-              // For now, we only notify. The backend must handle the integrity of the pending listing.
-              notify('error', 'Listing saved but fee payment failed: ' + (feeData.error || 'Payment failed. Listing must be deleted by the system.'));
-              
-              // Update balance display with the latest known balance (which hasn't changed if payment failed)
-              walletBalanceEl.innerText = feeData.current_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
-              return;
-          }
+      // Show overlay
+      overlay.style.display = 'flex';
+      overlay.style.opacity = 1;
 
-          // ---------------------------------------------------------------------------------
-          // Final Success: Listing saved AND fee paid (Step 1 & 2 succeeded)
-          // ---------------------------------------------------------------------------------
-          notify('success', 'Listing submitted! Awaiting admin approval.');
-          window.closeListingFeeModal?.();
+      // Cancel button hides overlay
+      overlay.querySelector('#cancelPayBtn').onclick = () => {
+          overlay.style.opacity = 0;
+          setTimeout(() => overlay.style.display = 'none', 200);
+      };
 
-          // 1. Update the balance display inside the modal (agentWalletBalance)
-          walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+      // Confirm button executes original pay logic
+      overlay.querySelector('#confirmPayBtn').onclick = async () => {
+          overlay.style.opacity = 0;
+          setTimeout(() => overlay.style.display = 'none', 200);
 
-          // 2. 🚀 Update the balance displayed on the main "Save Listing" button for immediate feedback
-          const mainSubmitBtn = document.getElementById('openListingModalBtn');
-          if (mainSubmitBtn && feeData.new_balance !== undefined) {
-              const formattedBalance = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
-              mainSubmitBtn.innerHTML = `Save Listing (Balance: ₱${formattedBalance})`;
-          }
+          const form = document.getElementById('addListingForm');
+          const walletBalanceEl = document.getElementById('agentWalletBalance');
+          const fd = new FormData(form);
 
-          // 3. Full cleanup: Clear the form, previews, and global state
-          form.reset();
-          window.resetImageUpload?.();
-          window.resetDocumentUpload?.(); 
+          // Deduplicate and append files
+          deduplicateSelectedDocuments();
 
-          window.currentDraftId = null;
-          window.existingImages = [];
-          window.existingDocs = [];
-          window.selectedFiles = [];
-          window.selectedDocuments = []; 
+          window.selectedFiles.forEach(f => {
+              if (f instanceof File) fd.append('images[]', f);
+              else if (typeof f === 'string') fd.append('existing_images[]', f);
+          });
 
-          // 4. Remove the draft card and refresh the drafts list
-          if (window.currentDraftId) {
-              const draftCard = document.querySelector(`.draft-card[data-id="${window.currentDraftId}"]`);
-              // Remove the published draft card from the UI
-              draftCard?.remove(); 
+          window.selectedDocuments?.forEach(f => {
+              if (f instanceof File) fd.append('property_documents[]', f);
+              else if (typeof f === 'string') fd.append('existing_property_documents[]', f);
+          });
+
+          if (window.currentDraftId) fd.append('draft_id', window.currentDraftId);
+
+          try {
+              // Step 1: Save listing first
+              const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
+              const saveData = await saveRes.json();
+              if (!saveData.success) {
+                  notify('error', 'Failed to save listing data or files: ' + (saveData.error || 'Unknown server error.'));
+                  return;
+              }
+
+              fd.append('listing_id', saveData.listing_id);
+
+              // Step 2: Pay listing fee
+              const propertyType = document.getElementById('property_type')?.value || 'Lot';
+              fd.append('property_type', propertyType);
+
+              const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
+              const feeData = await feeRes.json();
+
+              if (!feeData.success) {
+                  notify('error', 'Listing saved but fee payment failed: ' + (feeData.error || 'Payment failed.'));
+                  if (feeData.current_balance !== undefined) {
+                      walletBalanceEl.innerText = feeData.current_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+                  }
+                  return;
+              }
+
+              // Success
+              notify('success', `Listing submitted! Fee: PHP ${feeData.total_deduction.toLocaleString('en-PH', { minimumFractionDigits:2 })}. Awaiting admin approval.`);
+              window.closeListingFeeModal?.();
+              walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+              const mainSubmitBtn = document.getElementById('openListingModalBtn');
+              if (mainSubmitBtn && feeData.new_balance !== undefined) {
+                  mainSubmitBtn.innerHTML = `Save Listing (Balance: ₱${feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 })})`;
+              }
+
+              // Clear form and reset state
+              form.reset();
+              window.resetImageUpload?.();
+              window.resetDocumentUpload?.();
               window.currentDraftId = null;
-          }
-          // Dynamically reload the list of drafts without a full page refresh
-          window.loadDrafts?.();
+              window.existingImages = [];
+              window.existingDocs = [];
+              window.selectedFiles = [];
+              window.selectedDocuments = [];
 
-      } catch (err) {
-          // Catches network errors or errors thrown intentionally (e.g., from validation)
-          notify('error', err.message || 'A critical network error occurred.');
-      }
+              const draftCard = document.querySelector(`.draft-card[data-id="${window.currentDraftId}"]`);
+              draftCard?.remove();
+              window.loadDrafts?.();
+
+          } catch (err) {
+              notify('error', err.message || 'A critical network error occurred.');
+          }
+      };
   });
 
   initDraftCards();

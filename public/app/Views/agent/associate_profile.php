@@ -483,91 +483,91 @@
                 </div>
 
                 <form id="addListingForm" enctype="multipart/form-data">
-                <div class="addListing-container">
+                    <div class="addListing-container">
 
-                    <!-- Card: Basic Info (with property images) -->
-                    <div class="form-card">
-                    <h3 class="form-card-title">Basic Information</h3>
-                    
-                    <label for="title"><strong>Property Name</strong></label>
-                    <input type="text" id="title" name="title" required>
+                        <!-- Card: Basic Info (with property images) -->
+                        <div class="form-card">
+                        <h3 class="form-card-title">Basic Information</h3>
+                        
+                        <label for="title"><strong>Property Name</strong></label>
+                        <input type="text" id="title" name="title" required>
 
-                    <label for="location"><strong>Location</strong></label>
-                    <select id="location" name="location" required>
-                        <option value="">Select Location</option>
-                        <?php
-                        $locations = [
-                            "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
-                            "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
-                            "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
-                            "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
-                        ];
+                        <label for="location"><strong>Location</strong></label>
+                        <select id="location" name="location" required>
+                            <option value="">Select Location</option>
+                            <?php
+                            $locations = [
+                                "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
+                                "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
+                                "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
+                                "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
+                            ];
 
-                        foreach ($locations as $loc): ?>
-                            <option value="<?= $loc ?>"><?= $loc ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                            foreach ($locations as $loc): ?>
+                                <option value="<?= $loc ?>"><?= $loc ?></option>
+                            <?php endforeach; ?>
+                        </select>
 
-                    <!-- Property Images inside Basic Info -->
-                    <label for="images"><strong>Upload Images</strong></label>
-                    <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
-                        <p>Drag & drop images here or click to browse</p>
-                        <input type="file" id="images" name="images[]" accept="image/*" multiple style="display:none;"> 
-                    </div>
-                    <div id="imagePreview" class="image-preview" aria-live="polite"></div>
-                    </div>
-
-                    <!-- Card: Property Details -->
-                    <div class="form-card">
-                    <h3 class="form-card-title">Property Details</h3>
-
-                    <label for="price"><strong>Price (₱)</strong></label>
-                    <input type="number" id="price" name="price" min="0" step="0.01" required>
-
-                    <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
-                    <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
-
-                    <label for="property_type"><strong>Property Type</strong></label>
-                    <select id="property_type" name="property_type" required>
-                        <option value="">-- Select Type --</option>
-                        <option value="Property">Property</option>
-                        <option value="Lot">Lot</option>
-                    </select>
-
-                    <label for="bedrooms"><strong>Bedrooms</strong></label>
-                    <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
-
-                    <label for="bathrooms"><strong>Bathrooms</strong></label>
-                    <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
-                    </div>
-
-                    <!-- Card: Description (with submit button) -->
-                    <div class="form-card">
-                        <h3 class="form-card-title">Description</h3>
-
-                        <label for="description"><strong>Description</strong></label>
-                        <textarea id="description" name="description" rows="4" required></textarea>
-
-                        <!-- Property Document Upload -->
-                        <label for="property_document"><strong>Upload Property Documents</strong></label>
-                        <div id="documentUploadArea" class="drag-drop-area" tabindex="0">
-                            <p>Drag & drop documents here or click to browse</p>
-                            <input type="file" id="property_document" name="property_document[]" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple style="display:none;">
+                        <!-- Property Images inside Basic Info -->
+                        <label for="images"><strong>Upload Images</strong></label>
+                        <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
+                            <p>Drag & drop images here or click to browse</p>
+                            <input type="file" id="images" name="images[]" accept="image/*" multiple style="display:none;"> 
                         </div>
-                        <div id="documentPreview" class="doc-preview" aria-live="polite"></div>
-
-                        <!-- Submit Button -->
-                        <div class="add_listing_actions">
-                            <button type="button" id="saveDraftBtn" class="btn-draft" data-url="/BatEstateExplorer/public/api/save_draft.php">
-                                Save Draft
-                            </button>
-                            <button type="button" id="openListingModalBtn" class="btn-submit">
-                                Save Listing (Balance: ₱<?= $walletBalanceFormatted ?? '0.00' ?>)
-                            </button>
+                        <div id="imagePreview" class="image-preview" aria-live="polite"></div>
                         </div>
-                    </div>
 
-                </div>
+                        <!-- Card: Property Details -->
+                        <div class="form-card">
+                        <h3 class="form-card-title">Property Details</h3>
+
+                        <label for="price"><strong>Price (₱)</strong></label>
+                        <input type="number" id="price" name="price" min="0" step="0.01" required>
+
+                        <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
+                        <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
+
+                        <label for="property_type"><strong>Property Type</strong></label>
+                        <select id="property_type" name="property_type" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="Property">Property</option>
+                            <option value="Lot">Lot</option>
+                        </select>
+
+                        <label for="bedrooms"><strong>Bedrooms</strong></label>
+                        <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
+
+                        <label for="bathrooms"><strong>Bathrooms</strong></label>
+                        <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
+                        </div>
+
+                        <!-- Card: Description (with submit button) -->
+                        <div class="form-card">
+                            <h3 class="form-card-title">Description</h3>
+
+                            <label for="description"><strong>Description</strong></label>
+                            <textarea id="description" name="description" rows="4" required></textarea>
+
+                            <!-- Property Document Upload -->
+                            <label for="property_document"><strong>Upload Property Documents</strong></label>
+                            <div id="documentUploadArea" class="drag-drop-area" tabindex="0">
+                                <p>Drag & drop documents here or click to browse</p>
+                                <input type="file" id="property_document" name="property_document[]" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple style="display:none;">
+                            </div>
+                            <div id="documentPreview" class="doc-preview" aria-live="polite"></div>
+
+                            <!-- Submit Button -->
+                            <div class="add_listing_actions">
+                                <button type="button" id="saveDraftBtn" class="btn-draft" data-url="/BatEstateExplorer/public/api/save_draft.php">
+                                    Save Draft
+                                </button>
+                                <button type="button" id="openListingModalBtn" class="btn-submit">
+                                    Save Listing (Balance: ₱<?= $walletBalanceFormatted ?? '0.00' ?>)
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
                 </form>
 
                 <!-- Listing Fee Modal -->
@@ -579,12 +579,14 @@
                         <div class="modal-body">
                             <div class="wallet-info">
                                 <p><strong>Wallet Balance:</strong> PHP <span id="agentWalletBalance"><?= $walletBalance ?></span></p>
-                                <p><strong>Listing Fee:</strong> PHP 20</p>
+                                <p><strong>Base Fee:</strong> PHP <span id="listingBaseFee">0.00</span></p>
+                                <p><strong>VAT (12%):</strong> PHP <span id="listingVAT">0.00</span></p>
+                                <p><strong>Total Deduction:</strong> PHP <span id="listingTotal">0.00</span></p>
                             </div>
 
                             <div class="note">
                                 <small>
-                                    Please note: If the property is rejected by the admin, the listing fee of PHP 20 will be refunded to your wallet, minus a 2% processing fee.
+                                    Please note: In the event that the property is rejected by the administrator, the listing fee will be refunded to your wallet, less a 2% processing fee.
                                 </small>
                             </div>
                         </div>
@@ -601,9 +603,19 @@
                                 </span>
                             </button>
                         </div>
+
+                        <!-- Hidden Confirmation Overlay -->
+                        <div id="feeConfirmOverlay">
+                            <p style="font-size: 1.2rem; margin-bottom: 1rem;">
+                                Confirm payment of PHP <span id="confirmTotal">0.00</span>?
+                            </p>
+                            <div>
+                                <button id="confirmPayBtn" class="btn btn-success" style="margin-right: 10px;">Confirm</button>
+                                <button id="cancelPayBtn" class="btn btn-danger">Cancel</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
             <?php break; ?>
 
             <?php case 'analytics': ?>
@@ -800,101 +812,106 @@
                 <div id="depositModal" class="deposit-modal" style="display:none;" onclick="this.style.display='none'">
                     <div class="modal-content" onclick="event.stopPropagation()">
                         <span class="close" onclick="this.closest('#depositModal').style.display='none'">&times;</span>
-                        <h2>Deposit Funds</h2>
-                        <input type="text" id="selectedAmount" class="form-control mb-3" placeholder="Selected amount" disabled>
+                        <h2>Subscribe / Add Balance</h2>
+
+                        <input type="text" id="selectedAmount" class="form-control mb-3" placeholder="Selected subscription" disabled>
+
+                        <!-- Subscription Options -->
                         <div class="deposit-amounts mb-3">
-                            <?php foreach ([50, 100, 200, 400, 600, 1000] as $amt): ?>
-                                <button type="button" class="deposit-amount-btn" data-amount="<?= $amt ?>">PHP <?= $amt ?></button>
+                            <?php foreach ([1999, 2999, 3999] as $amt): ?>
+                                <button type="button" class="deposit-amount-btn" data-amount="<?= $amt ?>">PHP <?= number_format($amt,2) ?></button>
                             <?php endforeach; ?>
                         </div>
+
                         <div id="paypal-button-container"></div>
                     </div>
                 </div>
 
                 <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const modal = document.getElementById('depositModal');
-                    const balanceEl = document.getElementById('walletBalance');
-                    const selectedInput = document.getElementById('selectedAmount');
-                    const walletLimit = 10000;
-                    const tableBody = document.querySelector('.transaction-cards-container');
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const modal = document.getElementById('depositModal');
+                        const balanceEl = document.getElementById('walletBalance');
+                        const selectedInput = document.getElementById('selectedAmount');
+                        const tableBody = document.querySelector('.transaction-cards-container');
+                        const walletLimit = 10000;
 
-                    window.openDepositModal = () => modal.style.display='flex';
-                    window.closeDepositModal = (e) => { if(!e || e.target === modal) modal.style.display='none'; }
+                        window.openDepositModal = () => modal.style.display='flex';
+                        window.closeDepositModal = () => modal.style.display='none';
 
-                    document.querySelectorAll('.deposit-amount-btn').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const amount = parseFloat(btn.dataset.amount);
-                            const current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
-                            if(current + amount > walletLimit){
-                                alert(`Deposit exceeds wallet limit of PHP ${walletLimit}.`);
-                                selectedInput.value = '';
-                                return;
-                            }
-                            selectedInput.value = amount;
-                        });
-                    });
-
-                    paypal.Buttons({
-                        style: { layout:'vertical', color:'blue', shape:'pill', label:'pay' },
-
-                        createOrder: function(data, actions) {
-                            const amount = parseFloat(selectedInput.value);
-                            if(!amount){ alert('Select an amount first'); return; }
-                            const current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
-                            if(current + amount > walletLimit){ alert('Deposit exceeds wallet limit'); return; }
-                            return actions.order.create({ purchase_units:[{ amount:{ value: amount.toFixed(2) } }] });
-                        },
-
-                        onApprove: function(data, actions){
-                            return actions.order.capture().then(details => {
-                                const amount = parseFloat(selectedInput.value);
-                                let current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
-                                let newBalance = current + amount;
-                                if(newBalance > walletLimit){ alert('Deposit exceeds wallet limit'); return; }
-
-                                balanceEl.innerText = newBalance.toLocaleString('en-PH',{minimumFractionDigits:2});
-
-                                fetch('/BatEstateExplorer/public/api/deposit.php',{
-                                    method:'POST',
-                                    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-                                    body:`amount=${encodeURIComponent(amount)}`
-                                }).then(res=>res.json())
-                                .then(data=>{
-                                    if(data.success){
-                                        alert('Deposit successful! Paid by: '+details.payer.name.given_name);
-                                        selectedInput.value=''; closeDepositModal();
-
-                                        // Add transaction card
-                                        const now = new Date();
-                                        const formatted = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+
-                                            String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':' +
-                                            String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-
-                                        const div = document.createElement('div');
-                                        div.className = 'transaction-card';
-                                        div.innerHTML = `
-                                            <p class="transaction-property">Deposit</p>
-                                            <p><strong>Date:</strong> ${formatted}</p>
-                                            <p><strong>Status:</strong> Completed</p>
-                                            <p><strong>Payment Method:</strong> PayPal</p>
-                                            <p class="transaction-amount positive">₱${amount.toLocaleString('en-PH',{minimumFractionDigits:2})}</p>
-                                        `;
-                                        const placeholder = tableBody.querySelector('.no-transactions');
-                                        if(placeholder) tableBody.innerHTML='';
-                                        tableBody.prepend(div);
-
-                                        // Keep last 10
-                                        while(tableBody.children.length>10) tableBody.removeChild(tableBody.lastChild);
-                                    } else alert('Deposit saved to PayPal but failed to update wallet: '+(data.error||'Unknown'));
-                                }).catch(err=>{ console.error(err); alert('Deposit saved to PayPal but failed to update wallet.'); });
+                        // Subscription buttons
+                        document.querySelectorAll('.deposit-amount-btn').forEach(btn => {
+                            btn.addEventListener('click', () => {
+                                const amount = parseFloat(btn.dataset.amount);
+                                const current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
+                                if(current + amount > walletLimit){
+                                    alert(`Deposit exceeds wallet limit of PHP ${walletLimit}.`);
+                                    selectedInput.value = '';
+                                    return;
+                                }
+                                selectedInput.value = amount;
                             });
-                        },
+                        });
 
-                        onError: function(err){ console.error(err); alert('PayPal transaction error.'); }
+                        paypal.Buttons({
+                            style: { layout:'vertical', color:'blue', shape:'pill', label:'pay' },
 
-                    }).render('#paypal-button-container');
-                });
+                            createOrder: function(data, actions) {
+                                const amount = parseFloat(selectedInput.value);
+                                if(!amount){ alert('Select a subscription amount first'); return; }
+                                const current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
+                                if(current + amount > walletLimit){ alert('Deposit exceeds wallet limit'); return; }
+                                return actions.order.create({ purchase_units:[{ amount:{ value: amount.toFixed(2) } }] });
+                            },
+
+                            onApprove: function(data, actions){
+                                return actions.order.capture().then(details => {
+                                    const amount = parseFloat(selectedInput.value);
+                                    const current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
+                                    const newBalance = current + amount;
+
+                                    balanceEl.innerText = newBalance.toLocaleString('en-PH',{minimumFractionDigits:2});
+
+                                    // Call existing deposit API
+                                    fetch('/BatEstateExplorer/public/api/deposit.php',{
+                                        method:'POST',
+                                        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+                                        body:`amount=${encodeURIComponent(amount)}`
+                                    }).then(res=>res.json())
+                                    .then(data=>{
+                                        if(data.success){
+                                            alert('Subscription successful! Paid by: '+details.payer.name.given_name);
+                                            selectedInput.value=''; closeDepositModal();
+
+                                            // Add transaction card
+                                            const now = new Date();
+                                            const formatted = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+
+                                                String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':' +
+                                                String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+
+                                            const div = document.createElement('div');
+                                            div.className = 'transaction-card';
+                                            div.innerHTML = `
+                                                <p class="transaction-property">Subscription</p>
+                                                <p><strong>Date:</strong> ${formatted}</p>
+                                                <p><strong>Status:</strong> Completed</p>
+                                                <p><strong>Payment Method:</strong> PayPal</p>
+                                                <p class="transaction-amount positive">₱${amount.toLocaleString('en-PH',{minimumFractionDigits:2})}</p>
+                                            `;
+                                            const placeholder = tableBody.querySelector('.no-transactions');
+                                            if(placeholder) tableBody.innerHTML='';
+                                            tableBody.prepend(div);
+
+                                            // Keep last 10
+                                            while(tableBody.children.length>10) tableBody.removeChild(tableBody.lastChild);
+                                        } else alert('Paid via PayPal but failed to update wallet: '+(data.error||'Unknown'));
+                                    }).catch(err=>{ console.error(err); alert('Deposit saved via PayPal but failed to update wallet.'); });
+                                });
+                            },
+
+                            onError: function(err){ console.error(err); alert('PayPal transaction error.'); }
+
+                        }).render('#paypal-button-container');
+                    });
                 </script>
             <?php break; ?>
 
@@ -1059,7 +1076,6 @@
             <?php endswitch; ?>
         </section>
     </div>
-        
 </div>
 
 <script src="/BatEstateExplorer/assets/js/agent_profile.js"></script>

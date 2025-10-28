@@ -26,6 +26,42 @@
   background: #ff7875;
 }
 
+/* ==========================
+   Listing Fee Modal - Confirmation Overlay
+========================== */
+#feeConfirmOverlay {
+    position: absolute;
+    top: 0; 
+    left: 0;
+    width: 100%; 
+    height: 100%;
+    background: rgba(0,0,0,0.75);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 5; /* ensures overlay is above modal content */
+}
+
+#feeConfirmOverlay p {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+#feeConfirmOverlay div {
+    display: flex;
+    gap: 10px;
+}
+
+#feeConfirmOverlay button {
+    min-width: 100px;
+}
+
 /* =========================
    Property Document Preview
 ========================= */
