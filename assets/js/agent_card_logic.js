@@ -103,13 +103,11 @@ function renderStars(rating) {
               const user = userData.user;
               const avatar = modal.querySelector("#agentAvatar");
               const name = modal.querySelector("#agentName");
-              const email = modal.querySelector("#agentEmail");
+              const link = modal.querySelector("#agentProfileLink");
 
               if (avatar) avatar.src = user.profile_image || "/BatEstateExplorer/assets/images/default-avatar.png";
-              if (name) name.textContent = user.first_name && user.last_name
-                ? `${user.first_name} ${user.last_name}`
-                : (user.display_name || "Unnamed Agent");
-              if (email) email.textContent = user.email || "";
+              if (name) name.textContent = `${user.first_name} ${user.last_name}`;
+              if (link) link.href = `/BatEstateExplorer/public/agent_page.php?agent_id=${lookupId}`;
             }
           } catch (e) {
             console.error("Failed to fetch listed agent info:", e);
