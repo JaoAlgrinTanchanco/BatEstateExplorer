@@ -71,7 +71,7 @@ if (!empty($agent['profile_image_path'])) {
 // --- Fetch Agent's Properties (available or ongoing_inquiry) ---
 $properties = [];
 $stmt = $conn->prepare("
-    SELECT *
+    SELECT *, listed_by_agent_id
     FROM properties
     WHERE agent_id = ? AND status IN ('available', 'ongoing_inquiry')
     ORDER BY created_at DESC

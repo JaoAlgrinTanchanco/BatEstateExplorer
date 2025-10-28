@@ -54,94 +54,94 @@ function renderStars(rating) {
     }
   };
 
-    // Open Property Modal (User Version)
-    async function openPropertyModal(propertyId) {
-    currentPropertyId = propertyId;
-    const modal = document.getElementById("propertyModal");
-    if (!modal) return;
+  // Open Property Modal (User Version)
+  async function openPropertyModal(propertyId) {
+  currentPropertyId = propertyId;
+  const modal = document.getElementById("propertyModal");
+  if (!modal) return;
 
-    const reviewContainer = modal.querySelector("#modalPastReviews");
-    const reviewBtn = modal.querySelector("#leaveReviewBtn");
+  const reviewContainer = modal.querySelector("#modalPastReviews");
+  const reviewBtn = modal.querySelector("#leaveReviewBtn");
 
-    try {
-        // Fetch property details
-        const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
-        const data = await res.json();
-        if (!data.success) return;
+  try {
+      // Fetch property details
+      const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
+      const data = await res.json();
+      if (!data.success) return;
 
-        const prop = data.property;
-        const images = prop.images.length ? prop.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
-        modal.dataset.id = prop.id;
+      const prop = data.property;
+      const images = prop.images.length ? prop.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
+      modal.dataset.id = prop.id;
 
-        // Set main image and thumbnails
-        const mainImage = modal.querySelector(".property-main-image");
-        mainImage.style.backgroundImage = `url('${images[0]}')`;
-        modal.querySelector(".property-name").textContent = prop.title || "No title";
+      // Set main image and thumbnails
+      const mainImage = modal.querySelector(".property-main-image");
+      mainImage.style.backgroundImage = `url('${images[0]}')`;
+      modal.querySelector(".property-name").textContent = prop.title || "No title";
 
-        const thumbs = modal.querySelector(".property-images");
-        thumbs.innerHTML = images.map((img, i) =>
-        `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`
-        ).join("");
+      const thumbs = modal.querySelector(".property-images");
+      thumbs.innerHTML = images.map((img, i) =>
+      `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`
+      ).join("");
 
-        thumbs.querySelectorAll("img").forEach(imgEl => {
-        imgEl.addEventListener("click", () => {
-            mainImage.style.backgroundImage = `url('${imgEl.src}')`;
-            thumbs.querySelectorAll("img").forEach(i => i.classList.remove("active"));
-            imgEl.classList.add("active");
-        });
-        });
+      thumbs.querySelectorAll("img").forEach(imgEl => {
+      imgEl.addEventListener("click", () => {
+          mainImage.style.backgroundImage = `url('${imgEl.src}')`;
+          thumbs.querySelectorAll("img").forEach(i => i.classList.remove("active"));
+          imgEl.classList.add("active");
+      });
+      });
 
-        // Set property details
-        modal.querySelector(".location").textContent = prop.location || "-";
-        modal.querySelector(".price").textContent = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
-        modal.querySelector(".property-type").textContent = prop.property_type || "-";
-        modal.querySelector(".bedrooms").textContent = prop.bedrooms ?? "-";
-        modal.querySelector(".bathrooms").textContent = prop.bathrooms ?? "-";
-        modal.querySelector(".lot_size").textContent = prop.lot_size ?? "-";
-        modal.querySelector(".date_uploaded").textContent = prop.created_at ? new Date(prop.created_at).toLocaleDateString() : "-";
-        modal.querySelector(".property-description").textContent = prop.description || "No description available.";
+      // Set property details
+      modal.querySelector(".location").textContent = prop.location || "-";
+      modal.querySelector(".price").textContent = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
+      modal.querySelector(".property-type").textContent = prop.property_type || "-";
+      modal.querySelector(".bedrooms").textContent = prop.bedrooms ?? "-";
+      modal.querySelector(".bathrooms").textContent = prop.bathrooms ?? "-";
+      modal.querySelector(".lot_size").textContent = prop.lot_size ?? "-";
+      modal.querySelector(".date_uploaded").textContent = prop.created_at ? new Date(prop.created_at).toLocaleDateString() : "-";
+      modal.querySelector(".property-description").textContent = prop.description || "No description available.";
 
-        // Review button visibility
-        if (reviewBtn) {
-        if (data.has_privilege) {
-            reviewBtn.style.display = "inline-flex";
-            reviewBtn.dataset.propertyId = prop.id;
-        } else {
-            reviewBtn.style.display = "none";
-            reviewBtn.dataset.propertyId = "";
-        }
-        }
+      // Review button visibility
+      if (reviewBtn) {
+      if (data.has_privilege) {
+          reviewBtn.style.display = "inline-flex";
+          reviewBtn.dataset.propertyId = prop.id;
+      } else {
+          reviewBtn.style.display = "none";
+          reviewBtn.dataset.propertyId = "";
+      }
+      }
 
-        // Show modal
-        modal.hidden = false;
-        modal.style.display = 'flex';
+      // Show modal
+      modal.hidden = false;
+      modal.style.display = 'flex';
 
-        // Update SOLD overlay based on current status
-        window.updateSoldOverlay(prop.status);
+      // Update SOLD overlay based on current status
+      window.updateSoldOverlay(prop.status);
 
-        // Fetch past reviews
-        if (reviewContainer) {
-        const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${prop.id}`);
-        const reviewData = await reviewRes.json();
+      // Fetch past reviews
+      if (reviewContainer) {
+      const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${prop.id}`);
+      const reviewData = await reviewRes.json();
 
-        if (reviewData.success && reviewData.reviews.length > 0) {
-            reviewContainer.innerHTML = reviewData.reviews.map(r => `
-            <div class="review-card" style="margin-bottom:10px;">
-                <strong>${r.user_name}</strong>
-                <div style="float:right;">${renderStars(r.rating)}</div>
-                <p>${r.review_text}</p>
-                <small>${new Date(r.created_at).toLocaleDateString()}</small>
-            </div>
-            `).join("");
-        } else {
-            reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
-        }
-        }
+      if (reviewData.success && reviewData.reviews.length > 0) {
+          reviewContainer.innerHTML = reviewData.reviews.map(r => `
+          <div class="review-card" style="margin-bottom:10px;">
+              <strong>${r.user_name}</strong>
+              <div style="float:right;">${renderStars(r.rating)}</div>
+              <p>${r.review_text}</p>
+              <small>${new Date(r.created_at).toLocaleDateString()}</small>
+          </div>
+          `).join("");
+      } else {
+          reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
+      }
+      }
 
-    } catch (err) {
-        console.error("Failed to open property modal:", err);
-    }
-    }
+  } catch (err) {
+      console.error("Failed to open property modal:", err);
+  }
+  }
 
   // Open Review Modal
   function openReviewModal(propertyId) {

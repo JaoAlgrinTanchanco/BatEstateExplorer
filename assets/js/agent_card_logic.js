@@ -84,17 +84,40 @@ function renderStars(rating) {
       const images = prop.images.length ? prop.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
       modal.dataset.id = prop.id;
 
-      // Map property.agent_id to user_id
+      // Map listed_by_agent_id to user_id (fallback to agent_id if missing)
       let listedAgentUserId = null;
+      const lookupId = prop.listed_by_agent_id ?? prop.agent_id;
       try {
-        const agentRes = await fetch(`/BatEstateExplorer/public/api/get_agent_user_id.php?agent_id=${prop.agent_id}`);
+        const agentRes = await fetch(`/BatEstateExplorer/public/api/get_agent_user_id.php?agent_id=${lookupId}`);
         const agentData = await agentRes.json();
         if (agentData.success) {
           listedAgentUserId = agentData.user_id;
           modal.dataset.listedAgentId = listedAgentUserId;
         }
+        // ✅ Fetch the correct listed agent's user info (name, avatar, etc.)
+        if (listedAgentUserId) {
+          try {
+            const userRes = await fetch(`/BatEstateExplorer/public/api/get_user_details.php?id=${listedAgentUserId}`);
+            const userData = await userRes.json();
+            if (userData.success && userData.user) {
+              const user = userData.user;
+              const avatar = modal.querySelector("#agentAvatar");
+              const name = modal.querySelector("#agentName");
+              const email = modal.querySelector("#agentEmail");
+
+              if (avatar) avatar.src = user.profile_image || "/BatEstateExplorer/assets/images/default-avatar.png";
+              if (name) name.textContent = user.first_name && user.last_name
+                ? `${user.first_name} ${user.last_name}`
+                : (user.display_name || "Unnamed Agent");
+              if (email) email.textContent = user.email || "";
+            }
+          } catch (e) {
+            console.error("Failed to fetch listed agent info:", e);
+          }
+        }
+
       } catch (err) {
-        console.error("Failed to map agent_id to user_id:", err);
+        console.error("Failed to map listed_by_agent_id to user_id:", err);
       }
 
       const loggedInUserId = parseInt(modal.dataset.loggedInAgentId);

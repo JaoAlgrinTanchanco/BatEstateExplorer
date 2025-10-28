@@ -12,9 +12,28 @@ if ($property_id <= 0) {
 }
 
 // Fetch property details including agent_id
-$sql = "SELECT id, title, property_type, description, location, price, bedrooms, bathrooms, sqm, lot_size, status, created_at, agent_id
-        FROM properties
-        WHERE id = ? LIMIT 1";
+$sql = "
+  SELECT 
+    p.id,
+    p.title,
+    p.description,
+    p.property_type,
+    p.location,
+    p.price,
+    p.bedrooms,
+    p.bathrooms,
+    p.sqm,
+    p.lot_size,
+    p.status,
+    p.created_at,
+    p.updated_at,
+    p.agent_id,
+    p.listed_by_agent_id,
+    p.sold_by_agent_id
+  FROM properties p
+  WHERE p.id = ?
+  LIMIT 1
+";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $property_id);
@@ -107,7 +126,8 @@ $property_data = [
     'created_at'   => $property['created_at'] ?? null,
     'images'       => $images,
     'documents'    => $documents,
-    'agent_id'     => $property['agent_id'] ?? null
+    'agent_id'     => $property['agent_id'] ?? null,
+    'listed_by_agent_id' => $property['listed_by_agent_id'] ?? null
 ];
 
 echo json_encode([

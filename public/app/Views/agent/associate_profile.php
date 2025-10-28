@@ -61,32 +61,14 @@
             $company_name = $company['name'] ?? $company_name;
         }
 
-        // Fetch all properties for this agent with conditional logic
+        // Fetch all properties listed by this agent
         $stmt = $conn->prepare("
-            SELECT DISTINCT p.*, 
-                sa.id AS sold_by_agent_id, 
-                su.email AS sold_by_email
+            SELECT DISTINCT p.*
             FROM properties p
-            LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
-            LEFT JOIN users su ON sa.user_id = su.id
-            WHERE 
-                (
-                    -- Case 1: Property created by this agent and not sold by anyone
-                    (p.agent_id = ? AND (p.sold_by_agent_id IS NULL))
-                    
-                    OR
-                    
-                    -- Case 2: Property created and sold by the same agent
-                    (p.agent_id = ? AND p.sold_by_agent_id = ?)
-                    
-                    OR
-                    
-                    -- Case 3: Property sold by this agent, even if created by another
-                    (p.sold_by_agent_id = ?)
-                )
+            WHERE p.listed_by_agent_id = ?
             ORDER BY p.created_at DESC
         ");
-        $stmt->bind_param("iiii", $agent_id, $agent_id, $agent_id, $agent_id);
+        $stmt->bind_param("i", $agent_id);
         $stmt->execute();
         $listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
@@ -296,15 +278,9 @@
                     ?>
                     <?php foreach ($listings as $property): 
                     
-                        // Determine ownership type
-                        $isOwnedByAgent = ($property['agent_id'] == $agent_id);
-                        $ownership = $isOwnedByAgent ? 'Owned' : 'Shared';
-
-                        // Determine listing type (Owned or Sold by another agent)
-                        $listingTypeSelected = !empty($property['sold_by_agent_id']) ? 'sold_by' : 'owned';
-                        $ownershipLabel = ($listingTypeSelected === 'sold_by' && !empty($property['sold_by_email'])) 
-                            ? "Sold by: " . htmlspecialchars($property['sold_by_email']) 
-                            : "Owned";
+                    // Determine ownership based on listed_by_agent_id
+                    $isOwnedByAgent = ($property['listed_by_agent_id'] == $agent_id);
+                    $ownershipLabel = 'Owned';
 
                         // Grab first uploaded image if available
                         $first_img_src = '';

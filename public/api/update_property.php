@@ -26,8 +26,6 @@ $lot_size        = floatval($_POST['lot_size'] ?? 0);
 $existing_images = $_POST['existing_images'] ?? [];
 $remove_images   = $_POST['remove_images'] ?? [];
 $primary_image   = $_POST['primary_image'] ?? null;
-$listing_type    = $_POST['listing_type'] ?? 'owned';
-$sold_by_email   = $_POST['sold_by_email'] ?? null;
 
 try {
     $pdo->beginTransaction();
@@ -36,35 +34,16 @@ try {
     $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
     $stmt->execute([$property_id]);
     $property = $stmt->fetch(PDO::FETCH_ASSOC);
+
     if (!$property) {
         throw new Exception("Property not found.");
     }
 
-    // Do not change current status
+    // Preserve current status and agent relationship
     $status = $property['status'];
-    $agent_id = $property['agent_id']; // default: current owner
+    $listed_by_agent_id = $property['listed_by_agent_id'];
 
-    // If sold_by is selected, update agent_id only
-    if ($listing_type === 'sold_by' && !empty($sold_by_email)) {
-        $stmtAgent = $pdo->prepare("
-            SELECT a.id 
-            FROM agents a
-            JOIN users u ON u.id = a.user_id
-            WHERE u.email = ? 
-              AND u.user_type = 'associate_agent'
-            LIMIT 1
-        ");
-        $stmtAgent->execute([$sold_by_email]);
-        $agent = $stmtAgent->fetch(PDO::FETCH_ASSOC);
-
-        if ($agent) {
-            $agent_id = $agent['id']; // Overwrite creator
-        } else {
-            throw new Exception("Selling agent not found.");
-        }
-    }
-
-    // Update property details (status not changed)
+    // --- Update property details (status not changed) ---
     $stmtUpdate = $pdo->prepare("
         UPDATE properties SET
             title = ?, 
@@ -76,7 +55,7 @@ try {
             bathrooms = ?, 
             sqm = ?, 
             lot_size = ?, 
-            agent_id = ?, 
+            listed_by_agent_id = ?, 
             updated_at = NOW()
         WHERE id = ?
     ");
@@ -90,22 +69,24 @@ try {
         $bathrooms,
         $sqm,
         $lot_size,
-        $agent_id,
+        $listed_by_agent_id,
         $property_id
     ]);
 
-    // Handle image removals
+    // --- Handle image removals ---
     if (!empty($remove_images)) {
         foreach ($remove_images as $img_path) {
             $full_path = __DIR__ . '/../../' . $img_path;
-            if (file_exists($full_path)) unlink($full_path);
+            if (file_exists($full_path)) {
+                unlink($full_path);
+            }
 
             $stmtDel = $pdo->prepare("DELETE FROM property_images WHERE property_id = ? AND image_path = ?");
             $stmtDel->execute([$property_id, $img_path]);
         }
     }
 
-    // Upload new images
+    // --- Upload new images ---
     if (isset($_FILES['new_images']) && is_array($_FILES['new_images']['tmp_name'])) {
         $upload_dir = 'C:\\xampp\\htdocs\\BatEstateExplorer\\storage\\uploads\\property_images\\';
         $file_count = min(count($_FILES['new_images']['tmp_name']), 10);
@@ -118,7 +99,7 @@ try {
             if ($error !== UPLOAD_ERR_OK || $tmp === '') continue;
 
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['jpg','jpeg','png','gif'])) continue;
+            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) continue;
 
             $newFileName = uniqid() . '.' . $ext;
             $destination = $upload_dir . $newFileName;
@@ -131,7 +112,7 @@ try {
         }
     }
 
-    // Update primary image
+    // --- Update primary image ---
     if ($primary_image) {
         $stmtReset = $pdo->prepare("UPDATE property_images SET is_primary = 0 WHERE property_id = ?");
         $stmtReset->execute([$property_id]);
@@ -170,13 +151,19 @@ function redirectWithAgentType($tab = 'my_listings') {
         $stmt = $pdo->prepare("SELECT user_type FROM users WHERE id = ? LIMIT 1");
         $stmt->execute([$userId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row && !empty($row['user_type'])) $userType = $row['user_type'];
+        if ($row && !empty($row['user_type'])) {
+            $userType = $row['user_type'];
+        }
     }
 
     switch ($userType) {
-        case 'associate_agent': $view = 'associate_profile'; break;
+        case 'associate_agent':
+            $view = 'associate_profile';
+            break;
         case 'direct_agent':
-        default: $view = 'direct_profile'; break;
+        default:
+            $view = 'direct_profile';
+            break;
     }
 
     header("Location: /BatEstateExplorer/public/controllers/agent_dashboard.php?view={$view}&tab={$tab}");

@@ -142,7 +142,9 @@
     // Main Query
     // ================================
     $sql = "
-        SELECT p.*, 
+        SELECT 
+            p.*, 
+            p.listed_by_agent_id,
             (
                 SELECT image_path 
                 FROM property_images 

@@ -49,16 +49,14 @@
     $stmt->close();
     $agent_id = $agentRow ? (int)$agentRow['id'] : 0;
 
-    // Fetch all properties for this agent (all statuses)
+    // Fetch all properties listed by this agent (all statuses)
     $stmt = $conn->prepare("
-        SELECT p.*, sa.id AS sold_by_agent_id, su.email AS sold_by_email
+        SELECT p.*
         FROM properties p
-        LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
-        LEFT JOIN users su ON sa.user_id = su.id
-        WHERE p.listed_by_agent_id = ? OR p.sold_by_agent_id = ? OR p.agent_id = ?
+        WHERE p.listed_by_agent_id = ?
         ORDER BY p.created_at DESC
     ");
-    $stmt->bind_param("iii", $agent_id, $agent_id, $agent_id);
+    $stmt->bind_param("i", $agent_id);
     $stmt->execute();
     $listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
@@ -250,15 +248,9 @@
                     ?>
                     <?php foreach ($listings as $property): 
                     
-                        // Determine ownership type
+                        // Determine ownership based on listed_by_agent_id
                         $isOwnedByAgent = ($property['listed_by_agent_id'] == $agent_id);
-                        $ownership = $isOwnedByAgent ? 'Owned' : 'Shared';
-
-                        // Determine listing type (Owned or Sold by another agent)
-                        $listingTypeSelected = !empty($property['sold_by_agent_id']) ? 'sold_by' : 'owned';
-                        $ownershipLabel = ($listingTypeSelected === 'sold_by' && !empty($property['sold_by_email'])) 
-                            ? "Sold by: " . htmlspecialchars($property['sold_by_email']) 
-                            : "Owned";
+                        $ownershipLabel = 'Owned';
 
                         // Grab first uploaded image if available
                         $first_img_src = '';
