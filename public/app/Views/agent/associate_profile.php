@@ -489,58 +489,65 @@
 
                         <!-- Card: Basic Info (with property images) -->
                         <div class="form-card">
-                        <h3 class="form-card-title">Basic Information</h3>
-                        
-                        <label for="title"><strong>Property Name</strong></label>
-                        <input type="text" id="title" name="title" required>
+                            <h3 class="form-card-title">Basic Information</h3>
+                            
+                            <label for="title"><strong>Property Name</strong></label>
+                            <input type="text" id="title" name="title" required>
 
-                        <label for="location"><strong>Location</strong></label>
-                        <select id="location" name="location" required>
-                            <option value="">Select Location</option>
-                            <?php
-                            $locations = [
-                                "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
-                                "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
-                                "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
-                                "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
-                            ];
+                            <label for="location"><strong>Location</strong></label>
+                            <select id="location" name="location" required>
+                                <option value="">Select Location</option>
+                                <?php
+                                $locations = [
+                                    "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
+                                    "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
+                                    "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
+                                    "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
+                                ];
 
-                            foreach ($locations as $loc): ?>
-                                <option value="<?= $loc ?>"><?= $loc ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                                foreach ($locations as $loc): ?>
+                                    <option value="<?= $loc ?>"><?= $loc ?></option>
+                                <?php endforeach; ?>
+                            </select>
 
-                        <!-- Property Images inside Basic Info -->
-                        <label for="images"><strong>Upload Images</strong></label>
-                        <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
-                            <p>Drag & drop images here or click to browse</p>
-                            <input type="file" id="images" name="images[]" accept="image/*" multiple style="display:none;"> 
-                        </div>
-                        <div id="imagePreview" class="image-preview" aria-live="polite"></div>
+                            <!-- Property Images inside Basic Info -->
+                            <label for="images"><strong>Upload Images</strong></label>
+                            <div id="imageUploadArea" class="drag-drop-area" tabindex="0">
+                                <p>Drag & drop images here or click to browse</p>
+                                <input type="file" id="images" name="images[]" accept="image/*" multiple style="display:none;"> 
+                            </div>
+                            <div id="imagePreview" class="image-preview" aria-live="polite"></div>
                         </div>
 
                         <!-- Card: Property Details -->
                         <div class="form-card">
-                        <h3 class="form-card-title">Property Details</h3>
+                            <h3 class="form-card-title">Property Details</h3>
 
-                        <label for="price"><strong>Price (₱)</strong></label>
-                        <input type="number" id="price" name="price" min="0" step="0.01" required>
+                            <label for="price"><strong>Price (₱)</strong></label>
+                            <input type="number" id="price" name="price" min="0" step="0.01" required>
 
-                        <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
-                        <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
+                            <label for="lot_size"><strong>Lot Size (sqm)</strong></label>
+                            <input type="number" id="lot_size" name="lot_size" min="0" step="0.01" required>
 
-                        <label for="property_type"><strong>Property Type</strong></label>
-                        <select id="property_type" name="property_type" required>
-                            <option value="">-- Select Type --</option>
-                            <option value="Property">Property</option>
-                            <option value="Lot">Lot</option>
-                        </select>
+                            <label for="property_type"><strong>Property Type</strong></label>
+                            <select id="property_type" name="property_type" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="Property">Property</option>
+                                <option value="Lot">Lot</option>
+                            </select>
 
-                        <label for="bedrooms"><strong>Bedrooms</strong></label>
-                        <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
+                            <label for="bedrooms"><strong>Bedrooms</strong></label>
+                            <input type="number" id="bedrooms" name="bedrooms" min="0" step="1">
 
-                        <label for="bathrooms"><strong>Bathrooms</strong></label>
-                        <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
+                            <label for="bathrooms"><strong>Bathrooms</strong></label>
+                            <input type="number" id="bathrooms" name="bathrooms" min="0" step="1">
+
+                            <!-- Checkbox for Company Listing -->
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" id="company_listing" name="company_listing">
+                                <label for="company_listing">Check if submitting a company listing</label>
+                            </div>
+                            <input type="text" id="company_listing_id" name="company_listing_id" placeholder="Enter Company Listing ID" disabled>
                         </div>
 
                         <!-- Card: Description (with submit button) -->

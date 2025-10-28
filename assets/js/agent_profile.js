@@ -723,6 +723,23 @@ document.getElementById('confirmPayBtn')?.addEventListener('click', async () => 
   // Always visible preview (no hide/show)
   updateDocumentPreview();
 
+  // -------------------------
+  // Company Listing Checkbox Toggle
+  // -------------------------
+  const companyCheckbox = document.getElementById('company_listing');
+  const companyInput = document.getElementById('company_listing_id');
+
+  if (companyCheckbox && companyInput) {
+      // Ensure it's disabled by default
+      companyInput.disabled = true;
+
+      // Toggle enable/disable on checkbox change
+      companyCheckbox.addEventListener('change', () => {
+          companyInput.disabled = !companyCheckbox.checked;
+          if (!companyCheckbox.checked) companyInput.value = ''; // optional: clear input when unchecked
+      });
+  }
+
 }); //END OF DOM
 
 // =========================

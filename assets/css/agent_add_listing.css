@@ -26,6 +26,56 @@
   background: #ff7875;
 }
 
+/* =========================
+   Company Listing Checkbox & ID Input
+========================= */
+
+.form-group.checkbox-group {
+    display: grid;
+    grid-template-columns: auto 1fr; /* checkbox takes natural width, label fills remaining space */
+    align-items: center;             /* vertically center items */
+    gap: 0.5rem;                     /* space between checkbox and label */
+}
+
+/* Checkbox styling */
+.form-group.checkbox-group input[type="checkbox"] {
+    width: auto;           /* natural checkbox size */
+    cursor: pointer;
+}
+
+/* Checkbox label styling */
+.form-group.checkbox-group label {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #333;
+    cursor: pointer;
+}
+
+/* Generic form-group for stacked inputs */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+/* Company Listing ID input */
+#company_listing_id {
+    width: 100%;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#company_listing_id:focus {
+    border-color: #008dff;
+    box-shadow: 0 0 0 2px rgba(0,141,255,0.15);
+}
+
 /* ==========================
    Confirmation Fee Modal
 ========================== */
