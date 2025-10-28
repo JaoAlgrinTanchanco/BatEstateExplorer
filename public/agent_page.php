@@ -63,17 +63,18 @@
   // --- Fetch Agent's Properties (available or ongoing_inquiry) ---
   $properties = [];
   $stmt = $conn->prepare("
-      SELECT * 
-      FROM properties 
-      WHERE agent_id = ? AND status IN ('available','ongoing_inquiry')
+      SELECT * FROM properties 
+      WHERE listed_by_agent_id = ? AND status IN ('available','ongoing_inquiry','sold')
       ORDER BY created_at DESC
   ");
-  $stmt->bind_param("i", $agent_id); // <-- use agent_id (from agents table) instead of user_id
+  // FIX: Using listed_by_agent_id to correctly show only properties originally 
+  // posted by the agent, based on the $agent_id (agents.id) from the URL.
+  $stmt->bind_param("i", $agent_id); 
   $stmt->execute();
   $result = $stmt->get_result();
   while ($row = $result->fetch_assoc()) {
       $row['images'] = !empty($row['images']) ? json_decode($row['images'], true) : [];
-      $properties[]  = $row;
+      $properties[] = $row;
   }
   $stmt->close();
 
@@ -153,7 +154,7 @@
 
 ?>
 
-<script>
+<!-- <script>
   console.group("Agent Page Debug");
 
   console.log("Agent Info:", <?php echo json_encode($agent ?? null, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
@@ -163,7 +164,7 @@
   console.log("Agent Property Reviews:", <?php echo json_encode($reviews ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
 
   console.groupEnd();
-</script>
+</script> -->
 
 <!DOCTYPE html>
 <html lang="en">

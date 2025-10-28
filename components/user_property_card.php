@@ -26,12 +26,12 @@
             if (empty($images)) $images[] = '/BatEstateExplorer/assets/images/bg4.jpg';
             $property['images'] = $images;
 
-            // --- Fetch agent info ---
+            // --- Fetch agent info correctly ---
             $agent = null;
             $listedAgentId = $property['listed_by_agent_id'] ?? null;
 
             if ($listedAgentId) {
-                // Step 1: Get the user_id from agents table
+                // Get the mapped user_id from agents table
                 $stmtAgentTable = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
                 if ($stmtAgentTable) {
                     $stmtAgentTable->bind_param("i", $listedAgentId);
@@ -43,8 +43,13 @@
                     $agentUserId = $agentRow['user_id'] ?? null;
 
                     if ($agentUserId) {
-                        // Step 2: Get agent info from users table
-                        $stmtUser = $conn->prepare("SELECT id, first_name, last_name, profile_image_path FROM users WHERE id = ? AND user_type IN ('direct_agent','associate_agent')");
+                        // Get agent info from users table
+                        $stmtUser = $conn->prepare("
+                            SELECT id, first_name, last_name, profile_image_path 
+                            FROM users 
+                            WHERE id = ? AND user_type IN ('direct_agent','associate_agent')
+                            LIMIT 1
+                        ");
                         if ($stmtUser) {
                             $stmtUser->bind_param("i", $agentUserId);
                             $stmtUser->execute();
@@ -172,16 +177,19 @@
     <!-- Right side: details + actions + reviews -->
     <div class="modal-right">
       <div class="details">
-        <?php if ($agent): 
-          $profileImage = !empty($agent['profile_image_path'])
-              ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($agent['profile_image_path'])
-              : '/BatEstateExplorer/assets/default-avatar.png';
+        <?php if ($agent):
+            $profileImage = !empty($agent['profile_image_path'])
+                ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($agent['profile_image_path'])
+                : '/BatEstateExplorer/assets/default-avatar.png';
         ?>
         <section class="agent-info">
-          <a id="agentProfileLink" href="#" target="_blank" style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit;">
-            <img id="agentAvatar" class="agent-avatar" src="/BatEstateExplorer/assets/images/default-avatar.png" alt="Agent Avatar">
-            <span id="agentName" class="agent-name">Loading...</span>
-          </a>
+            <a id="agentProfileLink"
+              href="/BatEstateExplorer/public/agent_page.php?agent_id=<?= (int)$listedAgentId ?>"
+              target="_blank"
+              style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit;">
+                <img id="agentAvatar" class="agent-avatar" src="<?= htmlspecialchars($profileImage) ?>" alt="Agent Avatar">
+                <span id="agentName" class="agent-name"><?= htmlspecialchars($agent['first_name'] . ' ' . $agent['last_name']) ?></span>
+            </a>
         </section>
         <?php endif; ?>
 
