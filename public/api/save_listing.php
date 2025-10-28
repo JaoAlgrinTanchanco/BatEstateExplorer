@@ -210,13 +210,21 @@ try {
     // INSERT INTO properties 
     $stmt = $pdo->prepare("
         INSERT INTO properties
-        (title, description, property_type, location, price, bedrooms, bathrooms, lot_size, agent_id, status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())
+        (title, description, property_type, location, price, bedrooms, bathrooms, lot_size, agent_id, listed_by_agent_id, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())
     ");
-    
+
     $stmt->execute([
-        $title, $description, $property_type, $location, $price,
-        $bedrooms, $bathrooms, $lot_size, $agent_id
+        $title,
+        $description,
+        $property_type,
+        $location,
+        $price,
+        $bedrooms,
+        $bathrooms,
+        $lot_size,
+        $agent_id,      // the agent handling this property
+        $agent_id       // listed_by_agent_id (same as logged-in agent)
     ]);
     $property_id = $pdo->lastInsertId();
 
