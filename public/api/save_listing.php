@@ -117,6 +117,8 @@ try {
         $price = floatval(get_post_data('price', 0)); $location = get_post_data('location');
         $bedrooms = intval(get_post_data('bedrooms', 0)); $bathrooms = intval(get_post_data('bathrooms', 0));
         $lot_size = floatval(get_post_data('lot_size', 0)); $property_type = get_post_data('property_type');
+        $company_prop_id = get_post_data('company_listing_id') ?: null; // store NULL if empty
+
         
         // 1. Existing/Preview Images (Handles images already uploaded by JS preview)
         $existingImages = get_post_array('existing_images'); 
@@ -210,8 +212,8 @@ try {
     // INSERT INTO properties 
     $stmt = $pdo->prepare("
         INSERT INTO properties
-        (title, description, property_type, location, price, bedrooms, bathrooms, lot_size, agent_id, listed_by_agent_id, status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())
+        (title, description, property_type, location, price, bedrooms, bathrooms, lot_size, agent_id, listed_by_agent_id, company_prop_id, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())
     ");
 
     $stmt->execute([
@@ -223,9 +225,11 @@ try {
         $bedrooms,
         $bathrooms,
         $lot_size,
-        $agent_id,      // the agent handling this property
-        $agent_id       // listed_by_agent_id (same as logged-in agent)
+        $agent_id,
+        $agent_id,
+        $company_prop_id
     ]);
+
     $property_id = $pdo->lastInsertId();
 
     // Insert images into property_images
