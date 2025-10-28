@@ -22,20 +22,20 @@
   }
 
   // --- Validate Profile User ID ---
-  $profile_user_id = $_GET['user_id'] ?? null;
-  if (!$profile_user_id) {
+  $profile_user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
+  if ($profile_user_id <= 0) {
       die("User not found or invalid.");
   }
 
-  // --- Fetch Profile User ---
-  $stmt = $conn->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
+  // --- Fetch Profile User and ensure active status ---
+  $stmt = $conn->prepare("SELECT * FROM users WHERE id = ? AND status = 'active' LIMIT 1");
   $stmt->bind_param("i", $profile_user_id);
   $stmt->execute();
   $profile_user = $stmt->get_result()->fetch_assoc();
   $stmt->close();
 
   if (!$profile_user) {
-      die("User not found.");
+      die("User not found or inactive.");
   }
 
   // --- Profile Display Info ---

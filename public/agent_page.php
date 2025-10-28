@@ -1,167 +1,169 @@
 <?php
-session_start();
+  session_start();
 
-// --- Bootstrap & Notification Component ---
-require_once __DIR__ . '/app/bootstrap.php';
-include __DIR__ . '/../components/notification.php';
+  // --- Bootstrap & Notification Component ---
+  require_once __DIR__ . '/app/bootstrap.php';
+  include __DIR__ . '/../components/notification.php';
 
-// --- Get Current Logged-in User ---
-$current_user_id   = $_SESSION['user_id'] ?? null;
-$current_user_role = 'guest';
+  // --- Get Current Logged-in User ---
+  $current_user_id   = $_SESSION['user_id'] ?? null;
+  $current_user_role = 'guest';
 
-if ($current_user_id) {
-    $stmt = $conn->prepare("SELECT user_type FROM users WHERE id = ? LIMIT 1");
-    $stmt->bind_param("i", $current_user_id);
-    $stmt->execute();
-    $user_row = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
+  if ($current_user_id) {
+      $stmt = $conn->prepare("SELECT user_type FROM users WHERE id = ? LIMIT 1");
+      $stmt->bind_param("i", $current_user_id);
+      $stmt->execute();
+      $user_row = $stmt->get_result()->fetch_assoc();
+      $stmt->close();
+      if (!empty($user_row['user_type'])) $current_user_role = $user_row['user_type'];
+  }
 
-    if (!empty($user_row['user_type'])) {
-        $current_user_role = $user_row['user_type'];
-    }
-}
+  // --- Validate Agent ID and Map to User ID ---
+  $agent_id = isset($_GET['agent_id']) ? (int)$_GET['agent_id'] : 0;
+  if ($agent_id <= 0) die("No agent specified.");
 
-// --- Validate Agent ID ---
-$agent_user_id = $_GET['agent_id'] ?? null;
-if (!$agent_user_id) {
-    die("No agent specified.");
-}
+  // --- Fetch user_id from agents table ---
+  $stmt = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
+  $stmt->bind_param("i", $agent_id);
+  $stmt->execute();
+  $res = $stmt->get_result();
+  $agent_row = $res->fetch_assoc();
+  $stmt->close();
 
-// --- Fetch Agent Basic Info ---
-$stmt = $conn->prepare("
-    SELECT * 
-    FROM users 
-    WHERE id = ? AND user_type IN ('direct_agent', 'associate_agent')
-    LIMIT 1
-");
-$stmt->bind_param("i", $agent_user_id);
-$stmt->execute();
-$agent = $stmt->get_result()->fetch_assoc();
-$stmt->close();
+  if (!$agent_row) die("Agent not found.");
 
-if (!$agent) {
-    die("Agent not found or invalid.");
-}
+  // Use the mapped user_id for all subsequent queries
+  $agent_user_id = (int)$agent_row['user_id'];
+  
 
-// --- Get Internal Agent ID ---
-$stmt = $conn->prepare("SELECT id FROM agents WHERE user_id = ? LIMIT 1");
-$stmt->bind_param("i", $agent_user_id);
-$stmt->execute();
-$agent_row = $stmt->get_result()->fetch_assoc();
-$stmt->close();
+  // --- Fetch Agent Basic Info ---
+  $stmt = $conn->prepare("
+      SELECT * 
+      FROM users 
+      WHERE id = ? AND user_type IN ('direct_agent', 'associate_agent')
+      LIMIT 1
+  ");
+  $stmt->bind_param("i", $agent_user_id);
+  $stmt->execute();
+  $agent = $stmt->get_result()->fetch_assoc();
+  $stmt->close();
 
-$real_agent_id = $agent_row['id'] ?? 0;
-if (!$real_agent_id) {
-    die("Agent not found.");
-}
+  if (!$agent) die("Agent not found or invalid.");
 
-// --- Agent Display Info with Default Avatar ---
-$agent_name = trim($agent['first_name'] . ' ' . $agent['last_name']);
-$default_avatar = '/BatEstateExplorer/assets/img/default-user.png';
+  // --- Agent Display Info ---
+  $agent_name     = trim($agent['first_name'] . ' ' . $agent['last_name']);
+  $default_avatar = '/BatEstateExplorer/assets/img/default-user.png';
+  $agent_image    = $default_avatar;
 
-if (!empty($agent['profile_image_path'])) {
-    $image_path = __DIR__ . '/../storage/uploads/profile_images/' . basename($agent['profile_image_path']);
-    $agent_image = file_exists($image_path) 
-        ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($agent['profile_image_path'])
-        : $default_avatar;
-} else {
-    $agent_image = $default_avatar;
-}
+  if (!empty($agent['profile_image_path'])) {
+      $image_path = __DIR__ . '/../storage/uploads/profile_images/' . basename($agent['profile_image_path']);
+      if (file_exists($image_path)) $agent_image = '/BatEstateExplorer/storage/uploads/profile_images/' . basename($agent['profile_image_path']);
+  }
 
-// --- Fetch Agent's Properties (available or ongoing_inquiry) ---
-$properties = [];
-$stmt = $conn->prepare("
-    SELECT *, listed_by_agent_id
-    FROM properties
-    WHERE agent_id = ? AND status IN ('available', 'ongoing_inquiry')
-    ORDER BY created_at DESC
-");
-$stmt->bind_param("i", $real_agent_id);
-$stmt->execute();
-$result = $stmt->get_result();
+  // --- Fetch Agent's Properties (available or ongoing_inquiry) ---
+  $properties = [];
+  $stmt = $conn->prepare("
+      SELECT * 
+      FROM properties 
+      WHERE agent_id = ? AND status IN ('available','ongoing_inquiry')
+      ORDER BY created_at DESC
+  ");
+  $stmt->bind_param("i", $agent_id); // <-- use agent_id (from agents table) instead of user_id
+  $stmt->execute();
+  $result = $stmt->get_result();
+  while ($row = $result->fetch_assoc()) {
+      $row['images'] = !empty($row['images']) ? json_decode($row['images'], true) : [];
+      $properties[]  = $row;
+  }
+  $stmt->close();
 
-while ($row = $result->fetch_assoc()) {
-    $row['images'] = !empty($row['images']) ? json_decode($row['images'], true) : [];
-    $properties[] = $row;
-}
-$stmt->close();
+  // --- Calculate Years Hosting ---
+  $created_date  = strtotime($agent['created_at']);
+  $years_hosting = floor((time() - $created_date) / (365.25 * 24 * 60 * 60));
 
-// --- Console Debug ---
-echo "<script>console.log('Agent Properties Debug:', " . json_encode($properties, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) . ");</script>";
+  // --- Fetch Property IDs for Reviews / Stats ---
+  $property_ids = [];
+  $stmt = $conn->prepare("SELECT id FROM properties WHERE agent_id = ?");
+  $stmt->bind_param("i", $agent_id); // <-- agent_id here too
+  $stmt->execute();
+  $res = $stmt->get_result();
+  while ($r = $res->fetch_assoc()) $property_ids[] = $r['id'];
+  $stmt->close();
 
-// --- Calculate Years Hosting ---
-$created_date  = strtotime($agent['created_at']);
-$years_hosting = floor((time() - $created_date) / (365.25 * 24 * 60 * 60));
+  // --- Average Rating and Review Count ---
+  $avg_rating   = 0;
+  $review_count = 0;
 
-// --- Agent Reviews Summary ---
-$property_ids = [];
-$stmt = $conn->prepare("SELECT id FROM properties WHERE agent_id = ?");
-$stmt->bind_param("i", $real_agent_id);
-$stmt->execute();
-$res = $stmt->get_result();
-while ($r = $res->fetch_assoc()) $property_ids[] = $r['id'];
-$stmt->close();
+  if (!empty($property_ids)) {
+      $placeholders = implode(',', array_fill(0, count($property_ids), '?'));
+      $types        = str_repeat('i', count($property_ids));
 
-$avg_rating   = 0;
-$review_count = 0;
+      $sql  = "SELECT ROUND(AVG(rating),1) AS avg_rating, COUNT(*) AS total_reviews 
+              FROM property_reviews 
+              WHERE property_id IN ($placeholders)";
+      $stmt = $conn->prepare($sql);
+      $stmt->bind_param($types, ...$property_ids);
+      $stmt->execute();
+      $res = $stmt->get_result()->fetch_assoc();
+      $stmt->close();
 
-if (!empty($property_ids)) {
-    $placeholders = implode(',', array_fill(0, count($property_ids), '?'));
-    $types        = str_repeat('i', count($property_ids));
+      $avg_rating   = $res['avg_rating'] ?? 0;
+      $review_count = $res['total_reviews'] ?? 0;
+  }
 
-    $sql  = "SELECT ROUND(AVG(rating),1) AS avg_rating, COUNT(*) AS total_reviews 
-             FROM property_reviews 
-             WHERE property_id IN ($placeholders)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param($types, ...$property_ids);
-    $stmt->execute();
-    $res = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
+  // --- About Section Info ---
+  $address_text        = $agent['address'] ?? '';
+  $specialization_text = $agent['specialization'] ?? '';
 
-    $avg_rating   = $res['avg_rating'] ?? 0;
-    $review_count = $res['total_reviews'] ?? 0;
-}
+  // --- Education Summary ---
+  $education_parts = array_filter([
+      $agent['education'] ?? '',
+      $agent['course'] ?? '',
+      $agent['school'] ?? '',
+      $agent['graduation_year'] ?? ''
+  ]);
+  $education_text = implode(', ', $education_parts);
 
-// --- About Section Info ---
-$address_text        = $agent['address'] ?? '';
-$specialization_text = $agent['specialization'] ?? '';
+  // --- Fetch Property Reviews ---
+  $reviews = [];
+  if (!empty($property_ids)) {
+      $placeholders = implode(',', array_fill(0, count($property_ids), '?'));
+      $types        = str_repeat('i', count($property_ids));
 
-// --- Education Summary ---
-$education_parts = array_filter([
-    $agent['education'] ?? '',
-    $agent['course'] ?? '',
-    $agent['school'] ?? '',
-    $agent['graduation_year'] ?? ''
-]);
-$education_text = implode(', ', $education_parts);
+      $sql  = "
+          SELECT pr.rating, pr.review_text, pr.created_at, u.first_name, u.profile_image_path
+          FROM property_reviews pr
+          JOIN users u ON pr.user_id = u.id
+          WHERE pr.property_id IN ($placeholders)
+          ORDER BY pr.created_at DESC
+      ";
+      $stmt = $conn->prepare($sql);
+      $stmt->bind_param($types, ...$property_ids);
+      $stmt->execute();
+      $res = $stmt->get_result();
 
-// --- Fetch Property Reviews ---
-$reviews = [];
-if (!empty($property_ids)) {
-    $placeholders = implode(',', array_fill(0, count($property_ids), '?'));
-    $types        = str_repeat('i', count($property_ids));
+      while ($row = $res->fetch_assoc()) {
+          $row['profile_image'] = !empty($row['profile_image_path'])
+              ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($row['profile_image_path'])
+              : '/BatEstateExplorer/assets/img/default-avatar.png';
+          $reviews[] = $row;
+      }
+      $stmt->close();
+  }
 
-    $sql  = "
-        SELECT pr.rating, pr.review_text, pr.created_at, u.first_name, u.profile_image_path
-        FROM property_reviews pr
-        JOIN users u ON pr.user_id = u.id
-        WHERE pr.property_id IN ($placeholders)
-        ORDER BY pr.created_at DESC
-    ";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param($types, ...$property_ids);
-    $stmt->execute();
-    $res = $stmt->get_result();
-
-    while ($row = $res->fetch_assoc()) {
-        $row['profile_image'] = !empty($row['profile_image_path'])
-            ? '/BatEstateExplorer/storage/uploads/profile_images/' . basename($row['profile_image_path'])
-            : '/BatEstateExplorer/assets/img/default-avatar.png';
-        $reviews[] = $row;
-    }
-    $stmt->close();
-}
 ?>
+
+<script>
+  console.group("Agent Page Debug");
+
+  console.log("Agent Info:", <?php echo json_encode($agent ?? null, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
+  console.log("Agent Properties:", <?php echo json_encode($properties ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
+  console.log("Agent Property IDs:", <?php echo json_encode($property_ids ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
+  console.log("Agent Ratings:", { avg_rating: <?php echo $avg_rating ?? 0; ?>, review_count: <?php echo $review_count ?? 0; ?> });
+  console.log("Agent Property Reviews:", <?php echo json_encode($reviews ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
+
+  console.groupEnd();
+</script>
 
 <!DOCTYPE html>
 <html lang="en">
