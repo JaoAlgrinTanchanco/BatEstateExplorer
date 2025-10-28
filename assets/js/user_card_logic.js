@@ -56,14 +56,14 @@ function renderStars(rating) {
 
   // Open Property Modal (User Version)
   async function openPropertyModal(propertyId) {
-  currentPropertyId = propertyId;
-  const modal = document.getElementById("propertyModal");
-  if (!modal) return;
+    currentPropertyId = propertyId;
+    const modal = document.getElementById("propertyModal");
+    if (!modal) return;
 
-  const reviewContainer = modal.querySelector("#modalPastReviews");
-  const reviewBtn = modal.querySelector("#leaveReviewBtn");
+    const reviewContainer = modal.querySelector("#modalPastReviews");
+    const reviewBtn = modal.querySelector("#leaveReviewBtn");
 
-  try {
+    try {
       // Fetch property details
       const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
       const data = await res.json();
@@ -73,6 +73,34 @@ function renderStars(rating) {
       const images = prop.images.length ? prop.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
       modal.dataset.id = prop.id;
 
+      // 🟢 Fetch the correct listed agent details
+      const lookupId = prop.listed_by_agent_id ?? prop.agent_id;
+      let listedAgentUserId = null;
+
+      try {
+        const mapRes = await fetch(`/BatEstateExplorer/public/api/get_agent_user_id.php?agent_id=${lookupId}`);
+        const mapData = await mapRes.json();
+        if (mapData.success) listedAgentUserId = mapData.user_id;
+
+        if (listedAgentUserId) {
+          const userRes = await fetch(`/BatEstateExplorer/public/api/get_user_details.php?id=${listedAgentUserId}`);
+          const userData = await userRes.json();
+
+          if (userData.success && userData.user) {
+            const user = userData.user;
+            const avatar = modal.querySelector("#agentAvatar");
+            const name = modal.querySelector("#agentName");
+            const email = modal.querySelector("#agentEmail");
+
+            if (avatar) avatar.src = user.profile_image || "/BatEstateExplorer/assets/images/default-avatar.png";
+            if (name) name.textContent = `${user.first_name} ${user.last_name}`.trim() || "Unnamed Agent";
+            if (email) email.textContent = user.email || "";
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load listed agent info:", e);
+      }
+
       // Set main image and thumbnails
       const mainImage = modal.querySelector(".property-main-image");
       mainImage.style.backgroundImage = `url('${images[0]}')`;
@@ -80,18 +108,18 @@ function renderStars(rating) {
 
       const thumbs = modal.querySelector(".property-images");
       thumbs.innerHTML = images.map((img, i) =>
-      `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`
+        `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`
       ).join("");
 
       thumbs.querySelectorAll("img").forEach(imgEl => {
-      imgEl.addEventListener("click", () => {
+        imgEl.addEventListener("click", () => {
           mainImage.style.backgroundImage = `url('${imgEl.src}')`;
           thumbs.querySelectorAll("img").forEach(i => i.classList.remove("active"));
           imgEl.classList.add("active");
-      });
+        });
       });
 
-      // Set property details
+      // Property details
       modal.querySelector(".location").textContent = prop.location || "-";
       modal.querySelector(".price").textContent = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
       modal.querySelector(".property-type").textContent = prop.property_type || "-";
@@ -103,13 +131,13 @@ function renderStars(rating) {
 
       // Review button visibility
       if (reviewBtn) {
-      if (data.has_privilege) {
+        if (data.has_privilege) {
           reviewBtn.style.display = "inline-flex";
           reviewBtn.dataset.propertyId = prop.id;
-      } else {
+        } else {
           reviewBtn.style.display = "none";
           reviewBtn.dataset.propertyId = "";
-      }
+        }
       }
 
       // Show modal
@@ -121,26 +149,26 @@ function renderStars(rating) {
 
       // Fetch past reviews
       if (reviewContainer) {
-      const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${prop.id}`);
-      const reviewData = await reviewRes.json();
+        const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${prop.id}`);
+        const reviewData = await reviewRes.json();
 
-      if (reviewData.success && reviewData.reviews.length > 0) {
+        if (reviewData.success && reviewData.reviews.length > 0) {
           reviewContainer.innerHTML = reviewData.reviews.map(r => `
-          <div class="review-card" style="margin-bottom:10px;">
+            <div class="review-card" style="margin-bottom:10px;">
               <strong>${r.user_name}</strong>
               <div style="float:right;">${renderStars(r.rating)}</div>
               <p>${r.review_text}</p>
               <small>${new Date(r.created_at).toLocaleDateString()}</small>
-          </div>
+            </div>
           `).join("");
-      } else {
+        } else {
           reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
-      }
+        }
       }
 
-  } catch (err) {
+    } catch (err) {
       console.error("Failed to open property modal:", err);
-  }
+    }
   }
 
   // Open Review Modal

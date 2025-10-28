@@ -178,9 +178,9 @@
               : '/BatEstateExplorer/assets/default-avatar.png';
         ?>
         <section class="agent-info">
-          <a href="/BatEstateExplorer/public/agent_page.php?agent_id=<?= (int)$agent['id'] ?>" target="_blank" style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit;">
-            <img class="agent-avatar" src="<?= htmlspecialchars($profileImage) ?>" alt="Agent Avatar">
-            <span class="agent-name"><?= htmlspecialchars($agent['first_name'] . ' ' . $agent['last_name']) ?></span>
+          <a id="agentProfileLink" href="#" target="_blank" style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit;">
+            <img id="agentAvatar" class="agent-avatar" src="/BatEstateExplorer/assets/images/default-avatar.png" alt="Agent Avatar">
+            <span id="agentName" class="agent-name">Loading...</span>
           </a>
         </section>
         <?php endif; ?>
