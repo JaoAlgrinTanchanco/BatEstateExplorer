@@ -278,9 +278,11 @@
                     ?>
                     <?php foreach ($listings as $property): 
                     
-                    // Determine ownership based on listed_by_agent_id
-                    $isOwnedByAgent = ($property['listed_by_agent_id'] == $agent_id);
-                    $ownershipLabel = 'Owned';
+                        // Determine listing type (Owned or Sold by another agent)
+                        $listingTypeSelected = !empty($property['sold_by_agent_id']) ? 'sold_by' : 'owned';
+                        $ownershipLabel = ($listingTypeSelected === 'sold_by' && !empty($property['sold_by_email'])) 
+                            ? "Sold by: " . htmlspecialchars($property['sold_by_email']) 
+                            : "Owned";
 
                         // Grab first uploaded image if available
                         $first_img_src = '';
