@@ -330,6 +330,15 @@
     <?php render_agent_property_card([], true); ?>
 </div>
 
+<!-- Notice Modal -->
+<div id="noticeModal" class="notice-modal hidden">
+  <div class="notice-content">
+    <h3>Important Notice</h3>
+    <p id="noticeMessage"></p>
+    <button id="noticeOkBtn" class="btn btn-primary">Okay</button>
+  </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const filters = ['location', 'property_type', 'price_range', 'bedrooms', 'bathrooms', 'size'];
@@ -409,5 +418,36 @@
 
         // Initial pagination binding
         bindPagination();
+
+        // === Notices Modal Logic ===
+        document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            // Fetch unseen notices
+            const res = await fetch("/BatEstateExplorer/public/api/get_unseen_notices.php");
+            const data = await res.json();
+
+            if (data.success && data.notices.length > 0) {
+            const notice = data.notices[0]; // Show first unseen notice
+            const modal = document.getElementById("noticeModal");
+            const msgEl = document.getElementById("noticeMessage");
+            const okBtn = document.getElementById("noticeOkBtn");
+
+            msgEl.textContent = notice.message;
+            modal.classList.remove("hidden");
+
+            okBtn.onclick = async () => {
+                modal.classList.add("hidden");
+                // Mark as seen
+                await fetch("/BatEstateExplorer/public/api/mark_notice_seen.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: notice.id })
+                });
+            };
+            }
+        } catch (err) {
+            console.error("Failed to load notices:", err);
+        }
+        });
     });
 </script>
