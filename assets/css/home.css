@@ -19,7 +19,7 @@ body {
 }
 
 /* =========================
-   Notice Modal (Associate Style)
+   Notice Modal (Revised & Optimized)
 ========================= */
 
 .notice-modal {
@@ -30,12 +30,17 @@ body {
   justify-content: center;
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(4px);
-  z-index: 2000;
-  transition: opacity 0.3s ease;
+  z-index: 9999;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
 }
 
+/* Fade-out when hidden */
 .notice-modal.hidden {
-  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .notice-content {
@@ -46,10 +51,11 @@ body {
   max-width: 420px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   text-align: center;
-  animation: fadeSlideIn 0.35s ease forwards;
+  animation: fadeSlideIn 0.4s ease forwards;
   font-family: 'Satoshi', 'Inter', sans-serif;
 }
 
+/* --- Heading --- */
 .notice-content h3 {
   font-size: 1.4rem;
   font-weight: 600;
@@ -57,6 +63,7 @@ body {
   margin-bottom: 0.75rem;
 }
 
+/* --- Message --- */
 .notice-content p {
   font-size: 1rem;
   color: #333;
@@ -64,7 +71,7 @@ body {
   margin-bottom: 1.5rem;
 }
 
-/* Button Styling */
+/* --- Button --- */
 .notice-content .btn {
   background: #111;
   color: #fff;
@@ -87,7 +94,7 @@ body {
   transform: scale(0.97);
 }
 
-/* --- Animation --- */
+/* --- Animations --- */
 @keyframes fadeSlideIn {
   from {
     transform: translateY(25px);

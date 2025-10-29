@@ -1,18 +1,15 @@
 <?php
 require_once __DIR__ . '/../app/bootstrap.php';
 header('Content-Type: application/json');
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+session_start();
 
 try {
-    // --- Migration safety for claim_prop column ---
+    // --- Ensure claim_prop column exists and correct ---
     $check = $conn->query("
         SELECT COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT
         FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE() 
-          AND TABLE_NAME = 'properties' 
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'properties'
           AND COLUMN_NAME = 'claim_prop'
     ");
 
@@ -26,15 +23,14 @@ try {
         }
     }
 
-    // --- Get logged-in user ---
+    // --- Validate user session ---
     $user_id = $_SESSION['user_id'] ?? null;
     if (!$user_id) {
         throw new Exception('User not logged in.');
     }
 
-    // --- Parse JSON body ---
-    $json = file_get_contents('php://input');
-    $data = json_decode($json, true);
+    // --- Parse JSON input ---
+    $data = json_decode(file_get_contents('php://input'), true);
     if (json_last_error() !== JSON_ERROR_NONE) {
         throw new Exception('Invalid JSON input.');
     }
@@ -44,8 +40,8 @@ try {
         throw new Exception('Property ID is required.');
     }
 
-    // --- Retrieve company_prop_id from the property ---
-    $stmt = $conn->prepare("SELECT company_prop_id FROM properties WHERE id = ?");
+    // --- Get company_prop_id and agent_id of claiming property ---
+    $stmt = $conn->prepare("SELECT company_prop_id, agent_id FROM properties WHERE id = ?");
     $stmt->bind_param("i", $property_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -53,21 +49,39 @@ try {
     $stmt->close();
 
     if (empty($property['company_prop_id'])) {
-        echo json_encode(['success' => false, 'message' => 'No company_prop_id found for this property.']);
-        exit;
+        throw new Exception('No company_prop_id found for this property.');
     }
 
     $company_prop_id = $property['company_prop_id'];
+    $claiming_agent_id = $property['agent_id'] ?? null;
+
+    if (!$claiming_agent_id) {
+        throw new Exception('Claiming agent not found.');
+    }
+
+    // --- Retrieve claiming agent's user_id (to be used in notices) ---
+    $stmt = $conn->prepare("SELECT user_id FROM agents WHERE id = ?");
+    $stmt->bind_param("i", $claiming_agent_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $claiming_agent = $res->fetch_assoc();
+    $stmt->close();
+
+    if (empty($claiming_agent['user_id'])) {
+        throw new Exception('Claiming agent has no linked user account.');
+    }
+
+    $claiming_user_id = (int)$claiming_agent['user_id'];
 
     $conn->begin_transaction();
 
-    // --- Step 1: Collect agents with same company_prop_id except this one ---
+    // --- Step 1: Collect all other agents with same company_prop_id ---
     $agents = [];
     $stmt = $conn->prepare("
         SELECT DISTINCT agent_id
         FROM properties
-        WHERE company_prop_id = ? 
-          AND id != ? 
+        WHERE company_prop_id = ?
+          AND id != ?
           AND claim_prop = 0
     ");
     $stmt->bind_param("si", $company_prop_id, $property_id);
@@ -81,16 +95,16 @@ try {
     $stmt->close();
 
     // --- Step 2: Mark this property as claimed ---
-    $stmt = $conn->prepare("UPDATE properties SET claim_prop = 1 WHERE company_prop_id = ? AND id = ?");
-    $stmt->bind_param("si", $company_prop_id, $property_id);
+    $stmt = $conn->prepare("UPDATE properties SET claim_prop = 1 WHERE id = ?");
+    $stmt->bind_param("i", $property_id);
     $stmt->execute();
     $stmt->close();
 
-    // --- Step 3: Delete other unclaimed properties ---
+    // --- Step 3: Delete unclaimed duplicates ---
     $stmt = $conn->prepare("
-        DELETE FROM properties 
-        WHERE company_prop_id = ? 
-          AND id != ? 
+        DELETE FROM properties
+        WHERE company_prop_id = ?
+          AND id != ?
           AND claim_prop = 0
     ");
     $stmt->bind_param("si", $company_prop_id, $property_id);
@@ -101,38 +115,27 @@ try {
     // --- Step 4: Insert notices ---
     $notifiedCount = 0;
 
-    // 4a. Notice for the agent who claimed it
+    // (a) For the claiming agent
     $successMessage = "You have successfully closed the sale for company listing ID: {$company_prop_id}.";
     $stmt = $conn->prepare("
         INSERT INTO notices (user_id, notice_except, company_prop_id, message, isseen)
         VALUES (?, NULL, ?, ?, 0)
     ");
-    $stmt->bind_param("iss", $user_id, $company_prop_id, $successMessage);
+    $stmt->bind_param("iss", $claiming_user_id, $company_prop_id, $successMessage);
     $stmt->execute();
     $stmt->close();
 
-    // 4b. Notice for other agents (user_id = NULL, notice_except = claiming agent)
+    // (b) For all other agents — user_id NULL, notice_except = claiming user_id
     if (!empty($agents)) {
         $message = "Another agent has successfully closed a sale for company listing ID: {$company_prop_id}. Your related listings have been removed.";
         $insert = $conn->prepare("
             INSERT INTO notices (user_id, notice_except, company_prop_id, message, isseen)
             VALUES (NULL, ?, ?, ?, 0)
         ");
-
         foreach ($agents as $agent_id) {
-            // Get the user_id linked to this agent
-            $sub = $conn->prepare("SELECT user_id FROM agents WHERE id = ?");
-            $sub->bind_param("i", $agent_id);
-            $sub->execute();
-            $resSub = $sub->get_result();
-            $agent = $resSub->fetch_assoc();
-            $sub->close();
-
-            if (!empty($agent['user_id'])) {
-                $insert->bind_param("iss", $user_id, $company_prop_id, $message);
-                $insert->execute();
-                $notifiedCount++;
-            }
+            $insert->bind_param("iss", $claiming_user_id, $company_prop_id, $message);
+            $insert->execute();
+            $notifiedCount++;
         }
         $insert->close();
     }
@@ -154,4 +157,3 @@ try {
 }
 
 $conn->close();
-?>

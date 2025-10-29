@@ -21,13 +21,11 @@ if (!$notice_id) {
 }
 
 try {
-    // --- Mark as seen for this user's relevant notice ---
-    // Can be:
-    // 1. A direct user notice (user_id = this user)
-    // 2. A global notice (user_id IS NULL) but not excluded for this user
+    // --- Delete the notice record ---
+    // It should only delete the record if it belongs to this user.
+    // (Or matches global logic, if applicable)
     $stmt = $conn->prepare("
-        UPDATE notices
-        SET isseen = 1
+        DELETE FROM notices
         WHERE id = ?
           AND (
               user_id = ?
@@ -36,11 +34,11 @@ try {
     ");
     $stmt->bind_param("iii", $notice_id, $user_id, $user_id);
     $stmt->execute();
-    $affected = $stmt->affected_rows;
+    $deleted = $stmt->affected_rows > 0;
     $stmt->close();
 
     echo json_encode([
-        'success' => $affected > 0
+        'success' => $deleted
     ]);
 } catch (Exception $e) {
     echo json_encode([

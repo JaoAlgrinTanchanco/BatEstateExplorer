@@ -330,15 +330,6 @@
     <?php render_agent_property_card([], true); ?>
 </div>
 
-<!-- Notice Modal -->
-<div id="noticeModal" class="notice-modal hidden">
-  <div class="notice-content">
-    <h3>Important Notice</h3>
-    <p id="noticeMessage"></p>
-    <button id="noticeOkBtn" class="btn btn-primary">Okay</button>
-  </div>
-</div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const filters = ['location', 'property_type', 'price_range', 'bedrooms', 'bathrooms', 'size'];
@@ -418,53 +409,89 @@
 
         // Initial pagination binding
         bindPagination();
-    });
-    // === Notices Modal Logic ===
-    document.addEventListener("DOMContentLoaded", async () => {
-    try {
-        // Fetch unseen notices
-        const res = await fetch("/BatEstateExplorer/public/api/get_unseen_notices.php");
-        const data = await res.json();
 
-        if (data.success && data.notices.length > 0) {
-        const modal = document.getElementById("noticeModal");
-        const msgEl = document.getElementById("noticeMessage");
-        const okBtn = document.getElementById("noticeOkBtn");
+        // === Dynamic Notices Modal with Conditional Icons ===
+        (async () => {
+            try {
+                const res = await fetch("/BatEstateExplorer/public/api/get_unseen_notices.php");
+                const data = await res.json();
 
-        let currentIndex = 0;
+                if (!data.success || !data.notices.length) return;
 
-        const showNextNotice = async () => {
-            // If no more notices, hide modal
-            if (currentIndex >= data.notices.length) {
-            modal.classList.add("hidden");
-            return;
+                let currentIndex = 0;
+
+                const showNextNotice = async () => {
+                if (currentIndex >= data.notices.length) {
+                    document.querySelector(".notice-modal")?.remove();
+                    return;
+                }
+
+                const notice = data.notices[currentIndex];
+                document.querySelector(".notice-modal")?.remove();
+
+                // --- Determine icon and color ---
+                let iconSvg = "";
+                let accentColor = "#22c55e"; // success green
+                let iconBg = "#f0fff4";
+                let titleText = "Success";
+                let contentClass = "success"; // default
+
+                if (notice.message.includes("Another agent")) {
+                    accentColor = "#eab308"; // amber
+                    iconBg = "#fffbeb";
+                    titleText = "Notice";
+                    contentClass = "warning";
+
+                    iconSvg = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="${accentColor}" stroke-width="2.5">
+                        <circle cx="32" cy="32" r="28" fill="${iconBg}" stroke="${accentColor}"/>
+                        <line x1="32" y1="18" x2="32" y2="38" stroke="${accentColor}" stroke-width="5" stroke-linecap="round"/>
+                        <circle cx="32" cy="46" r="3.5" fill="${accentColor}"/>
+                    </svg>
+                    `;
+                } else {
+                    iconSvg = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="${accentColor}" stroke-width="2.5">
+                        <circle cx="32" cy="32" r="28" fill="${iconBg}" stroke="${accentColor}"/>
+                        <path d="M20 33l7 7 17-17" stroke="${accentColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    `;
+                }
+
+                // --- Build Modal ---
+                const modal = document.createElement("div");
+                modal.className = "notice-modal";
+                modal.innerHTML = `
+                <div class="notice-content ${contentClass} animate-in">
+                    <div class="notice-icon">${iconSvg}</div>
+                    <h3>${titleText}</h3>
+                    <p>${notice.message}</p>
+                    <button class="btn btn-primary">Okay</button>
+                </div>
+                `;
+
+                document.body.appendChild(modal);
+
+                // --- Button click handler ---
+                modal.querySelector(".btn").addEventListener("click", async () => {
+                    modal.classList.add("hidden");
+
+                    await fetch("/BatEstateExplorer/public/api/mark_notice_seen.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: notice.id }),
+                    });
+
+                    currentIndex++;
+                    setTimeout(showNextNotice, 400);
+                });
+                };
+
+                showNextNotice();
+            } catch (err) {
+                console.error("Failed to load notices:", err);
             }
+        })();
 
-            const notice = data.notices[currentIndex];
-            msgEl.textContent = notice.message;
-            modal.classList.remove("hidden");
-
-            okBtn.onclick = async () => {
-            modal.classList.add("hidden");
-
-            // Mark this notice as seen
-            await fetch("/BatEstateExplorer/public/api/mark_notice_seen.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: notice.id }),
-            });
-
-            currentIndex++;
-            // Small delay before showing the next one (for smoother UX)
-            setTimeout(showNextNotice, 300);
-            };
-        };
-
-        // Start showing notices
-        showNextNotice();
-        }
-    } catch (err) {
-        console.error("Failed to load notices:", err);
-    }
     });
 </script>
