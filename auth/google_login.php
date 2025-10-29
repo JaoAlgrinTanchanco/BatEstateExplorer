@@ -5,8 +5,15 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Dotenv\Dotenv;
 
 // Load environment variables
-$dotenv = Dotenv::createImmutable(__DIR__ . '/..');
-$dotenv->load();
+$dotenvPath = __DIR__ . '/..';
+if (class_exists('Dotenv\Dotenv')) {
+    if (method_exists('Dotenv\Dotenv', 'createImmutable')) {
+        $dotenv = Dotenv::createImmutable($dotenvPath);
+    } else {
+        $dotenv = new Dotenv($dotenvPath);
+    }
+    $dotenv->load();
+}
 
 // Initialize Google Client
 $client = new Google_Client();
