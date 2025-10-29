@@ -257,6 +257,7 @@
                     </nav>
                     <!-- Boost Section -->
                     <div class="boost-container">
+                        <p style="font-weight: 500; margin-bottom: 10px;">Get your property featured and stand out from the rest!</p>
                         <button class="boost-btn" onclick="openBoostModal()">Boost Now</button>
                     </div>
                 </div>
