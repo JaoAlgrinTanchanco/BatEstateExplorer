@@ -418,36 +418,53 @@
 
         // Initial pagination binding
         bindPagination();
+    });
+    // === Notices Modal Logic ===
+    document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        // Fetch unseen notices
+        const res = await fetch("/BatEstateExplorer/public/api/get_unseen_notices.php");
+        const data = await res.json();
 
-        // === Notices Modal Logic ===
-        document.addEventListener("DOMContentLoaded", async () => {
-        try {
-            // Fetch unseen notices
-            const res = await fetch("/BatEstateExplorer/public/api/get_unseen_notices.php");
-            const data = await res.json();
+        if (data.success && data.notices.length > 0) {
+        const modal = document.getElementById("noticeModal");
+        const msgEl = document.getElementById("noticeMessage");
+        const okBtn = document.getElementById("noticeOkBtn");
 
-            if (data.success && data.notices.length > 0) {
-            const notice = data.notices[0]; // Show first unseen notice
-            const modal = document.getElementById("noticeModal");
-            const msgEl = document.getElementById("noticeMessage");
-            const okBtn = document.getElementById("noticeOkBtn");
+        let currentIndex = 0;
 
+        const showNextNotice = async () => {
+            // If no more notices, hide modal
+            if (currentIndex >= data.notices.length) {
+            modal.classList.add("hidden");
+            return;
+            }
+
+            const notice = data.notices[currentIndex];
             msgEl.textContent = notice.message;
             modal.classList.remove("hidden");
 
             okBtn.onclick = async () => {
-                modal.classList.add("hidden");
-                // Mark as seen
-                await fetch("/BatEstateExplorer/public/api/mark_notice_seen.php", {
+            modal.classList.add("hidden");
+
+            // Mark this notice as seen
+            await fetch("/BatEstateExplorer/public/api/mark_notice_seen.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: notice.id })
-                });
+                body: JSON.stringify({ id: notice.id }),
+            });
+
+            currentIndex++;
+            // Small delay before showing the next one (for smoother UX)
+            setTimeout(showNextNotice, 300);
             };
-            }
-        } catch (err) {
-            console.error("Failed to load notices:", err);
+        };
+
+        // Start showing notices
+        showNextNotice();
         }
-        });
+    } catch (err) {
+        console.error("Failed to load notices:", err);
+    }
     });
 </script>

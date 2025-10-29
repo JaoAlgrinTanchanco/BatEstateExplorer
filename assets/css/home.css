@@ -18,6 +18,102 @@ body {
   line-height: 1.5;
 }
 
+/* =========================
+   Notice Modal (Associate Style)
+========================= */
+
+.notice-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  transition: opacity 0.3s ease;
+}
+
+.notice-modal.hidden {
+  display: none;
+}
+
+.notice-content {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem 2.2rem;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  animation: fadeSlideIn 0.35s ease forwards;
+  font-family: 'Satoshi', 'Inter', sans-serif;
+}
+
+.notice-content h3 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 0.75rem;
+}
+
+.notice-content p {
+  font-size: 1rem;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+/* Button Styling */
+.notice-content .btn {
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.7rem 1.8rem;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: 'Satoshi', sans-serif;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.2s ease;
+}
+
+.notice-content .btn:hover {
+  background: #333;
+  transform: translateY(-2px);
+}
+
+.notice-content .btn:active {
+  transform: scale(0.97);
+}
+
+/* --- Animation --- */
+@keyframes fadeSlideIn {
+  from {
+    transform: translateY(25px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* --- Responsive --- */
+@media (max-width: 600px) {
+  .notice-content {
+    padding: 1.5rem;
+  }
+
+  .notice-content h3 {
+    font-size: 1.2rem;
+  }
+
+  .notice-content p {
+    font-size: 0.95rem;
+  }
+}
+
 /* ---------------- Welcome Card ---------------- */
 .welcome-card {
   width: 100%;

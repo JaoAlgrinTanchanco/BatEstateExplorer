@@ -35,7 +35,6 @@ try {
     // --- Parse JSON body ---
     $json = file_get_contents('php://input');
     $data = json_decode($json, true);
-
     if (json_last_error() !== JSON_ERROR_NONE) {
         throw new Exception('Invalid JSON input.');
     }
@@ -62,7 +61,7 @@ try {
 
     $conn->begin_transaction();
 
-    // --- Step 1: Collect agents first ---
+    // --- Step 1: Collect agents with same company_prop_id except this one ---
     $agents = [];
     $stmt = $conn->prepare("
         SELECT DISTINCT agent_id
@@ -87,7 +86,7 @@ try {
     $stmt->execute();
     $stmt->close();
 
-    // --- Step 3: Delete other unclaimed properties with same company_prop_id ---
+    // --- Step 3: Delete other unclaimed properties ---
     $stmt = $conn->prepare("
         DELETE FROM properties 
         WHERE company_prop_id = ? 
@@ -99,14 +98,29 @@ try {
     $deletedCount = $stmt->affected_rows;
     $stmt->close();
 
-    // --- Step 4: Insert notices for affected agents ---
+    // --- Step 4: Insert notices ---
     $notifiedCount = 0;
+
+    // 4a. Notice for the agent who claimed it
+    $successMessage = "You have successfully closed the sale for company listing ID: {$company_prop_id}.";
+    $stmt = $conn->prepare("
+        INSERT INTO notices (user_id, notice_except, company_prop_id, message, isseen)
+        VALUES (?, NULL, ?, ?, 0)
+    ");
+    $stmt->bind_param("iss", $user_id, $company_prop_id, $successMessage);
+    $stmt->execute();
+    $stmt->close();
+
+    // 4b. Notice for other agents (user_id = NULL, notice_except = claiming agent)
     if (!empty($agents)) {
         $message = "Another agent has successfully closed a sale for company listing ID: {$company_prop_id}. Your related listings have been removed.";
-
-        $insert = $conn->prepare("INSERT INTO notices (user_id, company_prop_id, message, isseen) VALUES (?, ?, ?, 0)");
+        $insert = $conn->prepare("
+            INSERT INTO notices (user_id, notice_except, company_prop_id, message, isseen)
+            VALUES (NULL, ?, ?, ?, 0)
+        ");
 
         foreach ($agents as $agent_id) {
+            // Get the user_id linked to this agent
             $sub = $conn->prepare("SELECT user_id FROM agents WHERE id = ?");
             $sub->bind_param("i", $agent_id);
             $sub->execute();
@@ -115,7 +129,7 @@ try {
             $sub->close();
 
             if (!empty($agent['user_id'])) {
-                $insert->bind_param("iss", $agent['user_id'], $company_prop_id, $message);
+                $insert->bind_param("iss", $user_id, $company_prop_id, $message);
                 $insert->execute();
                 $notifiedCount++;
             }
@@ -140,3 +154,4 @@ try {
 }
 
 $conn->close();
+?>
