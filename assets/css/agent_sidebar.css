@@ -104,6 +104,120 @@
     }
 }
 
+/* Modal Background */
+.boost-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+}
+
+/* Landscape Modal Box */
+.boost-modal-content {
+  background: #fff;
+  width: 80%;
+  max-width: 900px;
+  border-radius: 16px;
+  padding: 2rem;
+  position: relative;
+  text-align: center;
+}
+
+/* Close Button */
+.boost-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* Title and Subtext */
+.boost-title {
+  margin-bottom: 0.25rem;
+}
+.boost-subtext {
+  margin-bottom: 2rem;
+  color: #666;
+}
+
+/* Tiers Layout (Landscape) */
+.boost-tiers {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Card Styles */
+.boost-card {
+  flex: 1;
+  min-width: 200px;
+  min-height: 250px;
+  background: radial-gradient(circle at 20% 30%, #777, #555, #222);
+  border-top-left-radius: 40px;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 40px;
+  border-bottom-left-radius: 5px;
+  padding: 1.5rem;
+  color: #fff;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 0 10px rgba(255,255,255,0.05),
+              0 0 10px rgba(255,255,255,0.05);
+}
+
+/* Grainy overlay */
+.boost-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWMgCgYBAgABBgABTw8rXgAAAABJRU5ErkJggg==');
+  opacity: 0.1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Old price (slashed) */
+.old-price {
+  text-decoration: line-through;
+  color: #bbb;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Current price */
+.price {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+  margin: 0.25rem 0;
+}
+
+/* Duration */
+.duration {
+  color: #ddd;
+  font-size: 0.9rem;
+}
+
+/* Hover / Active states */
+.boost-card:hover {
+  transform: translateY(-5px);
+  border-color: #fff;
+  box-shadow: 0 0 20px rgba(255,255,255,0.3);
+}
+.boost-card.selected {
+  border-color: #00ffcc;
+  box-shadow: 0 0 25px rgba(0,255,204,0.5);
+}
+
 /* ===========================
    Dashboard Layout
 =========================== */

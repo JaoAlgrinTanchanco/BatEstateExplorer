@@ -225,6 +225,11 @@
                             <li><a href="?view=direct_profile&tab=wallet" class="<?= ($tab === 'wallet') ? 'active' : '' ?>"><i class="fa-solid fa-wallet"></i> Wallet</a></li>
                         </ul>
                     </nav>
+                    <!-- Boost Section -->
+                    <div class="boost-container">
+                        <p style="font-weight: 500; margin-bottom: 10px;">Get your property featured and stand out from the rest!</p>
+                        <button class="boost-btn" onclick="openBoostModal()">Boost Now</button>
+                    </div>
                 </div>
             </div>
         </div>

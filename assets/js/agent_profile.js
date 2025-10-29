@@ -783,6 +783,28 @@ function closeModal(propertyId) {
     modal.style.display = 'none';
 }
 
+function openBoostModal() {
+  const modal = document.getElementById('boostModal');
+  if (!modal) {
+    console.warn('Boost modal not found in DOM.');
+    return;
+  }
+  modal.style.display = 'flex';
+}
+
+function closeBoostModal() {
+  const modal = document.getElementById('boostModal');
+  if (!modal) return;
+  modal.style.display = 'none';
+}
+
+window.addEventListener('click', function(e) {
+  const modal = document.getElementById('boostModal');
+  if (modal && e.target === modal) {
+    modal.style.display = 'none';
+  }
+});
+
 // Global functions
 function toggleSoldBy(select, propertyId) {
   const container = document.getElementById('soldByContainer-' + propertyId);

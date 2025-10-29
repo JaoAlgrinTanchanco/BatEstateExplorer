@@ -260,6 +260,42 @@
                         <p style="font-weight: 500; margin-bottom: 10px;">Get your property featured and stand out from the rest!</p>
                         <button class="boost-btn" onclick="openBoostModal()">Boost Now</button>
                     </div>
+
+                    <!-- Boost Modal -->
+                    <div id="boostModal" class="boost-modal">
+                    <div class="boost-modal-content">
+                        <span class="boost-close" onclick="closeBoostModal()">&times;</span>
+                        <h2 class="boost-title">Choose Your Featured Plan</h2>
+                        <p class="boost-subtext">Get your property featured and attract more buyers!</p>
+
+                        <div class="boost-tiers">
+                        <!-- Basic Plan -->
+                        <div class="boost-card" data-plan="basic" onclick="selectBoostPlan('basic')">
+                            <h3>Basic</h3>
+                            <p class="old-price">₱560</p>
+                            <p class="price">₱499</p>
+                            <p class="duration">7 Days</p>
+                        </div>
+
+                        <!-- Standard Plan -->
+                        <div class="boost-card" data-plan="standard" onclick="selectBoostPlan('standard')">
+                            <h3>Standard</h3>
+                            <p class="old-price">₱999</p>
+                            <p class="price">₱899</p>
+                            <p class="duration">15 Days</p>
+                        </div>
+
+                        <!-- Premium Plan -->
+                        <div class="boost-card" data-plan="premium" onclick="selectBoostPlan('premium')">
+                            <h3>Premium</h3>
+                            <p class="old-price">₱1699</p>
+                            <p class="price">₱1499</p>
+                            <p class="duration">30 Days</p>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+
                 </div>
             </div>
         </div>
