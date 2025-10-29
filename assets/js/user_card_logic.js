@@ -281,10 +281,11 @@ function renderStars(rating) {
       const propertyId = parseInt(document.getElementById("reviewPropertyId").value);
       const reviewText = reviewForm.review_text.value.trim();
 
-      if (!selectedRating) return alert("Please select a rating.");
-      if (!reviewText) return alert("Please write a review.");
+      if (!selectedRating) return notify("error", "Please select a rating.");
+      if (!reviewText) return notify("error", "Please write a review.");
 
       try {
+        // --- Submit the review ---
         const res = await fetch("/BatEstateExplorer/public/api/submit_review.php", {
           method: "POST",
           headers: { 'Content-Type': 'application/json' },
@@ -296,9 +297,25 @@ function renderStars(rating) {
         });
         const data = await res.json();
 
-        if (data.error) return alert(data.error);
+        if (data.error) return notify("error", data.error);
 
-        // Fetch all reviews again to update property modal
+        // --- Trigger close_sale.php ---
+        try {
+          const closeRes = await fetch("/BatEstateExplorer/public/api/close_sale.php", {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ property_id: propertyId })
+          });
+          const closeData = await closeRes.json();
+          if (closeData.success) {
+          } else if (closeData.notice) {
+            notify("info", closeData.notice);
+          }
+        } catch (err) {
+          console.error("close_sale.php error:", err);
+        }
+
+        // --- Refresh reviews ---
         const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${propertyId}`);
         const reviewData = await reviewRes.json();
 
@@ -318,14 +335,14 @@ function renderStars(rating) {
           }
         }
 
-        alert("Review submitted successfully!");
+        notify("success", "Review submitted successfully!");
         closeModal(document.getElementById("reviewModal"));
         selectedRating = 0;
         reviewForm.review_text.value = "";
 
       } catch (err) {
-        // Remove debugging line
-        alert("Failed to submit review.");
+        console.error("submit_review error:", err);
+        notify("error", "Failed to submit review.");
       }
     });
   }

@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 try {
-    // --- Migration-safety check for claim_prop column ---
+    // --- Migration safety for claim_prop column ---
     $check = $conn->query("
         SELECT COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT
         FROM INFORMATION_SCHEMA.COLUMNS
@@ -18,11 +18,9 @@ try {
 
     if ($check && $row = $check->fetch_assoc()) {
         $needsAlter = false;
-
         if (strtolower($row['COLUMN_TYPE']) !== 'tinyint(1)') $needsAlter = true;
         if ($row['IS_NULLABLE'] !== 'NO') $needsAlter = true;
         if ($row['COLUMN_DEFAULT'] != 0) $needsAlter = true;
-
         if ($needsAlter) {
             $conn->query("ALTER TABLE properties MODIFY COLUMN claim_prop TINYINT(1) NOT NULL DEFAULT 0;");
         }
@@ -62,16 +60,34 @@ try {
 
     $company_prop_id = $property['company_prop_id'];
 
-    // Begin transaction
     $conn->begin_transaction();
 
-    // --- Step 1: Mark current property as claimed ---
+    // --- Step 1: Collect agents first ---
+    $agents = [];
+    $stmt = $conn->prepare("
+        SELECT DISTINCT agent_id
+        FROM properties
+        WHERE company_prop_id = ? 
+          AND id != ? 
+          AND claim_prop = 0
+    ");
+    $stmt->bind_param("si", $company_prop_id, $property_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        if (!empty($row['agent_id'])) {
+            $agents[] = $row['agent_id'];
+        }
+    }
+    $stmt->close();
+
+    // --- Step 2: Mark this property as claimed ---
     $stmt = $conn->prepare("UPDATE properties SET claim_prop = 1 WHERE company_prop_id = ? AND id = ?");
     $stmt->bind_param("si", $company_prop_id, $property_id);
     $stmt->execute();
     $stmt->close();
 
-    // --- Step 2: Delete unclaimed properties with the same company_prop_id ---
+    // --- Step 3: Delete other unclaimed properties with same company_prop_id ---
     $stmt = $conn->prepare("
         DELETE FROM properties 
         WHERE company_prop_id = ? 
@@ -83,43 +99,28 @@ try {
     $deletedCount = $stmt->affected_rows;
     $stmt->close();
 
-    // --- Step 3: Notify affected agents ---
-    $agents = [];
-    if ($deletedCount > 0) {
-        $stmt = $conn->prepare("
-            SELECT DISTINCT agent_id 
-            FROM properties 
-            WHERE company_prop_id = ? AND id != ?
-        ");
-        $stmt->bind_param("si", $company_prop_id, $property_id);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        while ($row = $res->fetch_assoc()) {
-            if (!empty($row['agent_id'])) {
-                $agents[] = $row['agent_id'];
-            }
-        }
-        $stmt->close();
-
+    // --- Step 4: Insert notices for affected agents ---
+    $notifiedCount = 0;
+    if (!empty($agents)) {
         $message = "Another agent has successfully closed a sale for company listing ID: {$company_prop_id}. Your related listings have been removed.";
 
-        if (!empty($agents)) {
-            $stmt = $conn->prepare("INSERT INTO notices (user_id, company_prop_id, message, isseen) VALUES (?, ?, ?, 0)");
-            foreach ($agents as $agent_id) {
-                $sub = $conn->prepare("SELECT user_id FROM agents WHERE id = ?");
-                $sub->bind_param("i", $agent_id);
-                $sub->execute();
-                $resSub = $sub->get_result();
-                $agent = $resSub->fetch_assoc();
-                $sub->close();
+        $insert = $conn->prepare("INSERT INTO notices (user_id, company_prop_id, message, isseen) VALUES (?, ?, ?, 0)");
 
-                if (!empty($agent['user_id'])) {
-                    $stmt->bind_param("iss", $agent['user_id'], $company_prop_id, $message);
-                    $stmt->execute();
-                }
+        foreach ($agents as $agent_id) {
+            $sub = $conn->prepare("SELECT user_id FROM agents WHERE id = ?");
+            $sub->bind_param("i", $agent_id);
+            $sub->execute();
+            $resSub = $sub->get_result();
+            $agent = $resSub->fetch_assoc();
+            $sub->close();
+
+            if (!empty($agent['user_id'])) {
+                $insert->bind_param("iss", $agent['user_id'], $company_prop_id, $message);
+                $insert->execute();
+                $notifiedCount++;
             }
-            $stmt->close();
         }
+        $insert->close();
     }
 
     $conn->commit();
@@ -128,7 +129,7 @@ try {
         'success' => true,
         'message' => 'Property marked as sold and related listings removed.',
         'deleted' => $deletedCount,
-        'notified_agents' => count($agents ?? [])
+        'notified_agents' => $notifiedCount
     ]);
 
 } catch (Exception $e) {
