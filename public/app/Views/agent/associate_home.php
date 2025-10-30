@@ -181,6 +181,77 @@
     $stmt->execute();
     $result     = $stmt->get_result();
     $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+
+    // ================================
+    // Fetch Top 3 Rated Properties (Always 3 Results)
+    // Supports: available, sold, ongoing_inquiry
+    // ================================
+    $featuredProperties = [];
+
+    $allowedStatuses = ["available", "sold", "ongoing_inquiry"];
+    $statusList = "'" . implode("','", $allowedStatuses) . "'";
+
+    $featuredSql = "
+        SELECT 
+            p.*,
+            COALESCE(AVG(r.rating), 0) AS avg_rating,
+            COUNT(r.id) AS total_reviews
+        FROM properties p
+        LEFT JOIN property_reviews r 
+            ON p.id = r.property_id
+        WHERE p.status IN ($statusList)
+        GROUP BY p.id
+        ORDER BY 
+            avg_rating DESC,
+            total_reviews DESC,
+            p.created_at DESC
+        LIMIT 3
+    ";
+
+    if ($featuredStmt = $conn->prepare($featuredSql)) {
+        $featuredStmt->execute();
+        $result = $featuredStmt->get_result();
+
+        if ($result && $result->num_rows > 0) {
+            $featuredProperties = $result->fetch_all(MYSQLI_ASSOC);
+        }
+
+        $featuredStmt->close();
+    } else {
+        error_log("Failed to prepare featured properties query: " . $conn->error);
+    }
+
+    // 🔁 Fallback: If fewer than 3, fill remaining with latest available/sold/ongoing_inquiry
+    if (count($featuredProperties) < 3) {
+        $remaining = 3 - count($featuredProperties);
+        $excludeIds = array_column($featuredProperties, 'id');
+        $excludeStr = !empty($excludeIds)
+            ? "AND p.id NOT IN (" . implode(',', array_map('intval', $excludeIds)) . ")"
+            : "";
+
+        $fallbackSql = "
+            SELECT 
+                p.*, 
+                0 AS avg_rating, 
+                0 AS total_reviews
+            FROM properties p
+            WHERE p.status IN ($statusList) $excludeStr
+            ORDER BY p.created_at DESC
+            LIMIT $remaining
+        ";
+
+        if ($fallbackStmt = $conn->prepare($fallbackSql)) {
+            $fallbackStmt->execute();
+            $fallbackResult = $fallbackStmt->get_result();
+            if ($fallbackResult) {
+                $featuredProperties = array_merge(
+                    $featuredProperties,
+                    $fallbackResult->fetch_all(MYSQLI_ASSOC)
+                );
+            }
+            $fallbackStmt->close();
+        }
+    }
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/search.css">
@@ -281,6 +352,19 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
             </button>
         </div>
+    </div>
+
+    <!-- Featured -->
+    <div class="property-grid-x" id="propertyGridX">
+        <?php if (!empty($featuredProperties)): ?>
+            <?php foreach ($featuredProperties as $property):
+                $property['data_type'] = $property['property_type'];
+                $property['data_size'] = $property['sqm'];
+                render_agent_property_card($property);
+            endforeach; ?>
+        <?php else: ?>
+            <p>No top-rated properties available.</p>
+        <?php endif; ?>
     </div>
 
     <div class="properties-grid" id="propertiesGrid">
