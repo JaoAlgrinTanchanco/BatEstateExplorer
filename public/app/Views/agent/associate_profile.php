@@ -204,7 +204,7 @@
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/company_listing.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_review.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_wallet.css">
-<scipt src="https://www.paypal.com/sdk/js?client-id=<?= $paypalClientId ?>&currency=PHP"></scipt>
+<script src="https://www.paypal.com/sdk/js?client-id=<?= $paypalClientId ?>&currency=PHP"></script>
 
 <div class="dashboard-container">
     <!-- Arrow Button for Mobile -->
@@ -270,9 +270,9 @@
 
                         <!-- Tier Cards -->
                         <div class="boost-tiers">
-                        <div class="boost-card" data-plan="basic"></div>
-                        <div class="boost-card" data-plan="standard"></div>
-                        <div class="boost-card" data-plan="premium"></div>
+                            <div class="boost-card" data-plan="basic"></div>
+                            <div class="boost-card" data-plan="standard"></div>
+                            <div class="boost-card" data-plan="premium"></div>
                         </div>
 
                         <!-- Property Grid (disabled until tier selected) -->
@@ -906,7 +906,7 @@
                     </div>
                 </div>
 
-                <scipt>
+                <script>
                     document.addEventListener('DOMContentLoaded', () => {
                         const modal = document.getElementById('depositModal');
                         const balanceEl = document.getElementById('walletBalance');
@@ -991,7 +991,7 @@
 
                         }).render('#paypal-button-container');
                     });
-                </scipt>
+                </script>
             <?php break; ?>
 
             <?php default:

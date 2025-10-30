@@ -183,15 +183,21 @@
     $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 
     // ================================
-    // Fetch Top 3 Rated Properties (Always 3 Results)
+    // Fetch Featured Properties
+    //  - Top 3 Rated (always included)
+    //  - Then all active Paid Featured (ranked by plan duration)
     // Supports: available, sold, ongoing_inquiry
     // ================================
+
     $featuredProperties = [];
 
     $allowedStatuses = ["available", "sold", "ongoing_inquiry"];
     $statusList = "'" . implode("','", $allowedStatuses) . "'";
 
-    $featuredSql = "
+    // -------------------------------
+    // 1️⃣ Fetch Top 3 Rated Properties
+    // -------------------------------
+    $topRatedSql = "
         SELECT 
             p.*,
             COALESCE(AVG(r.rating), 0) AS avg_rating,
@@ -208,20 +214,20 @@
         LIMIT 3
     ";
 
-    if ($featuredStmt = $conn->prepare($featuredSql)) {
-        $featuredStmt->execute();
-        $result = $featuredStmt->get_result();
-
+    if ($stmt = $conn->prepare($topRatedSql)) {
+        $stmt->execute();
+        $result = $stmt->get_result();
         if ($result && $result->num_rows > 0) {
             $featuredProperties = $result->fetch_all(MYSQLI_ASSOC);
         }
-
-        $featuredStmt->close();
+        $stmt->close();
     } else {
-        error_log("Failed to prepare featured properties query: " . $conn->error);
+        error_log("❌ Failed to prepare top rated properties query: " . $conn->error);
     }
 
-    // 🔁 Fallback: If fewer than 3, fill remaining with latest available/sold/ongoing_inquiry
+    // -------------------------------
+    // 2️⃣ Fallback: Fill missing Top 3 if not enough rated ones
+    // -------------------------------
     if (count($featuredProperties) < 3) {
         $remaining = 3 - count($featuredProperties);
         $excludeIds = array_column($featuredProperties, 'id');
@@ -252,6 +258,47 @@
             $fallbackStmt->close();
         }
     }
+
+    // -------------------------------
+    // 3️⃣ Fetch All Active Paid Featured Properties
+    // -------------------------------
+    $excludeIds = array_column($featuredProperties, 'id');
+    $excludeStr = !empty($excludeIds)
+        ? "AND p.id NOT IN (" . implode(',', array_map('intval', $excludeIds)) . ")"
+        : "";
+
+    $paidFeaturedSql = "
+        SELECT 
+            p.*,
+            TIMESTAMPDIFF(DAY, p.created_at, p.featured_until) AS feature_duration
+        FROM properties p
+        WHERE 
+            p.is_featured = 1
+            AND p.featured_until > NOW()
+            AND p.status IN ($statusList)
+            $excludeStr
+        ORDER BY 
+            feature_duration DESC,       -- Higher duration = higher plan
+            p.featured_until DESC,       -- Recently renewed first
+            p.created_at DESC
+    ";
+
+    $paidFeatured = [];
+    if ($paidStmt = $conn->prepare($paidFeaturedSql)) {
+        $paidStmt->execute();
+        $paidResult = $paidStmt->get_result();
+        if ($paidResult && $paidResult->num_rows > 0) {
+            $paidFeatured = $paidResult->fetch_all(MYSQLI_ASSOC);
+        }
+        $paidStmt->close();
+    } else {
+        error_log("❌ Failed to prepare paid featured properties query: " . $conn->error);
+    }
+
+    // -------------------------------
+    // 4️⃣ Combine Results
+    // -------------------------------
+    $featuredProperties = array_merge($featuredProperties, $paidFeatured);
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/search.css">
@@ -354,7 +401,7 @@
         </div>
     </div>
 
-    <h4>Top Featured</h4>
+    <h4>🏆Top Featured</h4>
     <!-- Featured -->
     <div class="property-grid-x" id="propertyGridX">
         <?php if (!empty($featuredProperties)): ?>
@@ -581,7 +628,7 @@
         const cards = Array.from(document.querySelectorAll("#propertyGridX > .property-card"));
 
         const labels = [
-        "🏆 TOP 1 Performing",
+        "🥇TOP 1 Performing",
         "🥈 TOP 2 Performing",
         "🥉 TOP 3 Performing"
         ];
@@ -601,5 +648,25 @@
         badge.style.background = colors[index];
         card.appendChild(badge);
         });
+
+
+    });
+    // Trigger feature check on page reload
+    window.addEventListener('load', () => {
+        fetch('/BatEstateExplorer/public/api/feature_check.php')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log(data.message);
+                    if (data.expired && data.expired.length > 0) {
+                        console.log('Expired properties:', data.expired);
+                    }
+                } else if (data.error) {
+                    console.error('Feature check error:', data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Failed to trigger feature check:', err);
+            });
     });
 </script>
