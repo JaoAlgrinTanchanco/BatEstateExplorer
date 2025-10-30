@@ -1,17 +1,24 @@
 <?php
 header('Content-Type: application/json');
 require_once __DIR__ . '/../app/bootstrap.php';
-session_start();
+
+// Start session only if not active
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // --- Auth check ---
-if (!isset($_SESSION['user_id'])) {
+if (empty($_SESSION['user_id'])) {
     echo json_encode(['error' => 'Unauthorized. Please log in.']);
     exit;
 }
 
-$agent_id    = $_SESSION['user_id'];
-$property_id = $_POST['property_id'] ?? null;
-$plan        = $_POST['plan'] ?? null;
+$agent_id = $_SESSION['user_id'];
+
+// --- Parse JSON body ---
+$input = json_decode(file_get_contents('php://input'), true);
+$property_id = $input['property_id'] ?? null;
+$plan = $input['plan'] ?? null;
 
 if (!$property_id || !$plan) {
     echo json_encode(['error' => 'Missing required parameters.']);
@@ -35,8 +42,11 @@ $cost     = $PLAN_PACKAGES[$plan]['cost'];
 
 // --- Get agent wallet ---
 $agent_stmt = $conn->prepare("SELECT id, wallet_balance FROM users WHERE id = ?");
-$agent_stmt->execute([$agent_id]);
-$agent = $agent_stmt->fetch(PDO::FETCH_ASSOC);
+$agent_stmt->bind_param("i", $agent_id);
+$agent_stmt->execute();
+$agent_result = $agent_stmt->get_result();
+$agent = $agent_result->fetch_assoc();
+$agent_stmt->close();
 
 if (!$agent) {
     echo json_encode(['error' => 'Agent not found.']);
@@ -46,7 +56,9 @@ if (!$agent) {
 // --- Get admin ---
 $admin_stmt = $conn->prepare("SELECT id FROM users WHERE user_type = 'admin' LIMIT 1");
 $admin_stmt->execute();
-$admin = $admin_stmt->fetch(PDO::FETCH_ASSOC);
+$admin_result = $admin_stmt->get_result();
+$admin = $admin_result->fetch_assoc();
+$admin_stmt->close();
 
 if (!$admin) {
     echo json_encode(['error' => 'Admin account not found.']);
@@ -61,8 +73,11 @@ if ($agent['wallet_balance'] < $cost) {
 
 // --- Check if property is already featured ---
 $check_stmt = $conn->prepare("SELECT is_featured, featured_until FROM properties WHERE id = ?");
-$check_stmt->execute([$property_id]);
-$property = $check_stmt->fetch(PDO::FETCH_ASSOC);
+$check_stmt->bind_param("i", $property_id);
+$check_stmt->execute();
+$check_result = $check_stmt->get_result();
+$property = $check_result->fetch_assoc();
+$check_stmt->close();
 
 if (!$property) {
     echo json_encode(['error' => 'Property not found.']);
@@ -75,26 +90,38 @@ if ($property['is_featured'] && $property['featured_until'] && strtotime($proper
 }
 
 // --- Transaction start ---
-$conn->beginTransaction();
+$conn->begin_transaction();
 
 try {
     // Deduct from agent
     $stmt = $conn->prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?");
-    $stmt->execute([$cost, $agent_id]);
+    $stmt->bind_param("di", $cost, $agent_id);
+    $stmt->execute();
+    $stmt->close();
 
     // Credit admin
     $stmt = $conn->prepare("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?");
-    $stmt->execute([$cost, $admin['id']]);
+    $stmt->bind_param("di", $cost, $admin['id']);
+    $stmt->execute();
+    $stmt->close();
 
     // Log transactions
     $trans_stmt = $conn->prepare("
         INSERT INTO transactions (user_id, property, amount, status, method)
         VALUES (?, ?, ?, 'completed', 'wallet')
     ");
+
+    $desc = "Property #$property_id Featured ($plan plan)";
+
     // Agent debit
-    $trans_stmt->execute([$agent_id, "Property #$property_id Featured ($plan plan)", -$cost]);
+    $neg_cost = -$cost;
+    $trans_stmt->bind_param("isd", $agent_id, $desc, $neg_cost);
+    $trans_stmt->execute();
+
     // Admin credit
-    $trans_stmt->execute([$admin['id'], "Property #$property_id Featured ($plan plan)", $cost]);
+    $trans_stmt->bind_param("isd", $admin['id'], $desc, $cost);
+    $trans_stmt->execute();
+    $trans_stmt->close();
 
     // --- Update property as featured ---
     $update_stmt = $conn->prepare("
@@ -104,9 +131,12 @@ try {
             updated_at = NOW()
         WHERE id = ?
     ");
-    $update_stmt->execute([$duration, $property_id]);
+    $update_stmt->bind_param("ii", $duration, $property_id);
+    $update_stmt->execute();
+    $update_stmt->close();
 
     $conn->commit();
+
     echo json_encode([
         'success' => true,
         'message' => 'Property successfully featured!',
@@ -114,8 +144,7 @@ try {
         'duration_days' => $duration,
         'cost' => $cost
     ]);
-
 } catch (Exception $e) {
-    $conn->rollBack();
+    $conn->rollback();
     echo json_encode(['error' => 'Transaction failed: ' . $e->getMessage()]);
 }
