@@ -120,12 +120,31 @@
 
 /* Modal Box */
 .boost-modal-content {
+  position: relative;
   background: #fff;
   width: auto;
   border-radius: 30px;
   padding: 2rem;
-  position: relative;
   text-align: center;
+  overflow: hidden; /* ensures background overlay stays inside rounded corners */
+}
+
+/* Modal background logo effect */
+.boost-modal-content::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("../images/Vector 1.png") repeat center;
+  background-size: 30% auto;
+  background-repeat: repeat;
+  opacity: 0.03;
+  z-index: 0;
+}
+
+/* Make inner content appear above the overlay */
+.boost-modal-content > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Close Button */
@@ -157,9 +176,9 @@
 /* Card Styles */
 .boost-card {
   flex: 1;
-  min-width: 350px;
-  min-height: 325px;
-  background: #e3b3ff;
+  min-width: 250px;
+  min-height: 250px;
+  background: #fff;
   border-radius: 30px; 
   border: 3px solid transparent;
   padding: 1.5rem;
@@ -167,8 +186,8 @@
   cursor: pointer;
   position: relative; /* needed for overlay */
   transition: all 0.3s ease;
-  box-shadow: inset 0 0 10px rgba(255,255,255,0.05),
-              0 0 10px rgba(255,255,255,0.05);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05),
+              0 0 10px rgba(41, 41, 41, 0.05);
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
@@ -180,10 +199,44 @@
 
 /* Selected state */
 .boost-card.selected {
-  border-color: #af59ff;
-  box-shadow: 0 0 25px rgba(132, 0, 255, 1); /* violet glow */
+  border-color: #111;
+  box-shadow: 0 0 25px rgba(31, 31, 31, 1); /* violet glow */
   z-index: 2; /* make sure border is above overlay */
 }
+
+.boost-action {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+#boostNowBtn {
+  background: #111;
+  color: #fff;
+  border: 2px solid #111;
+  border-radius: 50px;
+  padding: 0.75rem 12.5rem;
+  font-size: 1rem;
+  font-family: 'Satoshi-Bold', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#boostNowBtn:hover:not(:disabled) {
+  background: #fff;
+  color: #111;
+  border: 2px solid #111;
+}
+
+#boostNowBtn:disabled {
+  border: 2px solid #ccc;
+  background: #ccc;
+  color: #fff;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 
 /* =========================
    Boost Modal Property Grid
@@ -200,7 +253,7 @@
 .property-grid-section h3 {
   font-family: 'Satoshi-Bold', sans-serif;
   font-size: 1.3rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
   color: #111827;
 }
 
@@ -221,7 +274,7 @@
 }
 
 .property-grid-boost::-webkit-scrollbar-thumb {
-  background-color: rgba(138, 43, 226, 0.6);
+  background-color: rgba(0, 0, 0, 0.6);
   border-radius: 4px;
 }
 
@@ -253,7 +306,7 @@
 /* Hover effects */
 .property-card-boost:hover {
   transform: translateY(-5px);
-  box-shadow: 0 0 30px rgba(138, 43, 226, 0.6); /* violet glow */
+  box-shadow: 0 0 30px rgba(39, 39, 39, 0.6); /* violet glow */
   z-index: 1;
 }
 
@@ -301,7 +354,7 @@
    Selected Property Effect
 =========================== */
 .property-card-boost.selected {
-  border: 3px dashed #8a2be2;
+  border: 3px dashed #111;
   transform: translateY(-3px);
 }
 

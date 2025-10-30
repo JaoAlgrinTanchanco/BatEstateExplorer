@@ -263,125 +263,53 @@
                     </div>
 
                     <div id="boostModal" class="boost-modal">
-                        <div class="boost-modal-content">
-                            <span class="boost-close">&times;</span>
-                            <h2 class="boost-title">Choose Your Featured Plan</h2>
-                            <p class="boost-subtext">Get your property featured and attract more buyers!</p>
+                    <div class="boost-modal-content">
+                        <span class="boost-close">&times;</span>
+                        <h2 class="boost-title">Choose Your Featured Plan</h2>
+                        <p class="boost-subtext">Get your property featured and attract more buyers!</p>
 
-                            <!-- Tier Cards -->
-                            <div class="boost-tiers">
-                            <div class="boost-card" data-plan="basic"></div>
-                            <div class="boost-card" data-plan="standard"></div>
-                            <div class="boost-card" data-plan="premium"></div>
-                            </div>
+                        <!-- Tier Cards -->
+                        <div class="boost-tiers">
+                        <div class="boost-card" data-plan="basic"></div>
+                        <div class="boost-card" data-plan="standard"></div>
+                        <div class="boost-card" data-plan="premium"></div>
+                        </div>
 
-                            <!-- Property Grid (disabled until tier selected) -->
-                            <div id="propertyGridSection" class="property-grid-section" style="opacity:0.5; pointer-events:none; margin-top: 2rem;">
-                            <h3>Select a Property</h3>
-                                <div id="propertyGrid" class="property-grid-boost">
-                                    <!-- Sample PHP-generated cards -->
-                                    <?php if (!empty($listings)): ?>
-                                        <?php foreach ($listings as $property): 
-                                            $first_img_src = !empty($property['images'][0]['image_path'])
-                                            ? "/BatEstateExplorer/" . $property['images'][0]['image_path']
-                                            : "/BatEstateExplorer/assets/images/no-image.png";
-                                        ?>
-                                            <div class="property-card-boost" data-property-id="<?= $property['id'] ?>">
-                                                <img src="<?= $first_img_src ?>" alt="Property Image">
-                                                <div class="overlay">
-                                                    <h4><?= htmlspecialchars($property['title']) ?></h4>
-                                                    <p><?= htmlspecialchars($property['location']) ?></p>
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <p>No properties found.</p>
-                                    <?php endif; ?>
+                        <!-- Property Grid (disabled until tier selected) -->
+                        <div
+                        id="propertyGridSection"
+                        class="property-grid-section"
+                        style="opacity: 0.5; pointer-events: none; margin-top: 2rem;"
+                        >
+                        <h3>Select a Property</h3>
+                        <div id="propertyGrid" class="property-grid-boost">
+                            <!-- Sample PHP-generated cards -->
+                            <?php if (!empty($listings)): ?>
+                            <?php foreach ($listings as $property):
+                                $first_img_src = !empty($property['images'][0]['image_path'])
+                                ? "/BatEstateExplorer/" . $property['images'][0]['image_path']
+                                : "/BatEstateExplorer/assets/images/no-image.png";
+                            ?>
+                                <div class="property-card-boost" data-property-id="<?= $property['id'] ?>">
+                                <img src="<?= $first_img_src ?>" alt="Property Image">
+                                <div class="overlay">
+                                    <h4><?= htmlspecialchars($property['title']) ?></h4>
+                                    <p><?= htmlspecialchars($property['location']) ?></p>
                                 </div>
-                            </div>
+                                </div>
+                            <?php endforeach; ?>
+                            <?php else: ?>
+                            <p>No properties found.</p>
+                            <?php endif; ?>
+                        </div>
+                        </div>
 
+                        <!-- Boost Now Button -->
+                        <div class="boost-action">
+                        <button id="boostNowBtn" disabled>Boost Now</button>
                         </div>
                     </div>
-
-                    <script>
-                        document.addEventListener('DOMContentLoaded', () => {
-                            const modal = document.getElementById('boostModal');
-                            const closeBtn = modal.querySelector('.boost-close');
-                            const tierCards = modal.querySelectorAll('.boost-card');
-                            const propertyGridSection = document.getElementById('propertyGridSection');
-                            const propertyCards = modal.querySelectorAll('.property-card-boost');
-                            let selectedPlan = null;
-                            let selectedPropertyId = null;
-
-                            // --- Open modal ---
-                            window.openBoostModal = function() {
-                                modal.style.display = 'flex';
-                            };
-
-                            // --- Close modal ---
-                            function closeModal() {
-                                modal.style.display = 'none';
-                            }
-                            closeBtn.addEventListener('click', closeModal);
-                            window.addEventListener('click', e => {
-                                if (e.target === modal) closeModal();
-                            });
-
-                            // --- Tier card selection / deselection ---
-                            tierCards.forEach(card => {
-                                card.addEventListener('click', () => {
-                                    const plan = card.dataset.plan;
-
-                                    // Unselect if same one clicked again
-                                    if (selectedPlan === plan) {
-                                        card.classList.remove('selected');
-                                        selectedPlan = null;
-                                        propertyGridSection.style.opacity = '0.5';
-                                        propertyGridSection.style.pointerEvents = 'none';
-                                        console.log('Tier unselected');
-                                        return;
-                                    }
-
-                                    // Select new one
-                                    tierCards.forEach(c => c.classList.remove('selected'));
-                                    card.classList.add('selected');
-                                    selectedPlan = plan;
-                                    console.log('Selected tier:', selectedPlan);
-
-                                    // Enable property grid
-                                    propertyGridSection.style.opacity = '1';
-                                    propertyGridSection.style.pointerEvents = 'auto';
-                                });
-                            });
-
-                            // --- Property card selection / deselection ---
-                            propertyCards.forEach(card => {
-                                card.addEventListener('click', () => {
-                                    const propertyId = card.dataset.propertyId;
-
-                                    // Only allow selection if a tier is active
-                                    if (!selectedPlan) {
-                                        console.log('Select a tier first.');
-                                        return;
-                                    }
-
-                                    // If same property is clicked again, unselect it
-                                    if (selectedPropertyId === propertyId) {
-                                        card.classList.remove('selected');
-                                        selectedPropertyId = null;
-                                        console.log('Property unselected');
-                                        return;
-                                    }
-
-                                    // Select new property
-                                    propertyCards.forEach(c => c.classList.remove('selected'));
-                                    card.classList.add('selected');
-                                    selectedPropertyId = propertyId;
-                                    console.log('Selected property ID:', selectedPropertyId);
-                                });
-                            });
-                        });
-                    </script>
+                    </div>
 
                 </div>
             </div>
@@ -1223,16 +1151,178 @@
 <script src="/BatEstateExplorer/assets/js/agent_profile.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-    // Close buttons for modals
-    const closeButtons = document.querySelectorAll(
-        "#cancelEditBtn, #cancelDeleteBtn"
-    );
+        // Close buttons for modals
+        const closeButtons = document.querySelectorAll(
+            "#cancelEditBtn, #cancelDeleteBtn"
+        );
 
-    // Add reload on close
-    closeButtons.forEach((btn) => {
-        btn.addEventListener("click", function () {
-        location.reload();
+        // Add reload on close
+        closeButtons.forEach((btn) => {
+            btn.addEventListener("click", function () {
+            location.reload();
+            });
         });
     });
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Remove duplicate property cards ---
+        (function removeDuplicatePropertyCards() {
+            const seen = new Set();
+            document.querySelectorAll('.property-card-boost').forEach(card => {
+                const id = card.dataset.propertyId?.toString();
+                if (!id) return;
+                if (seen.has(id)) {
+                    card.remove();
+                    console.warn('Removed duplicate property card with id:', id);
+                } else {
+                    seen.add(id);
+                }
+            });
+        })();
+
+        const modal = document.getElementById('boostModal');
+        const closeBtn = modal.querySelector('.boost-close');
+        const tierCards = modal.querySelectorAll('.boost-card');
+        const propertyGridSection = document.getElementById('propertyGridSection');
+        const propertyCards = modal.querySelectorAll('.property-card-boost');
+        const boostBtn = document.getElementById('boostNowBtn');
+
+        let selectedPlan = null;
+        let selectedPropertyId = null;
+
+        // --- Update Boost Button State ---
+        function updateBoostButton() {
+            boostBtn.disabled = !(selectedPlan && selectedPropertyId);
+        }
+
+        // --- Open modal ---
+        window.openBoostModal = function () {
+            modal.style.display = 'flex';
+        };
+
+        // --- Close modal ---
+        function closeModal() {
+            modal.style.display = 'none';
+
+            // Deselect all tier cards
+            tierCards.forEach(c => c.classList.remove('selected'));
+            selectedPlan = null;
+
+            // Deselect all property cards
+            propertyCards.forEach(c => c.classList.remove('selected'));
+            selectedPropertyId = null;
+
+            // Disable property grid again
+            propertyGridSection.style.opacity = '0.5';
+            propertyGridSection.style.pointerEvents = 'none';
+
+            // Disable Boost button if present
+            if (boostBtn) boostBtn.disabled = true;
+
+            console.log('Modal closed — all selections cleared.');
+        }
+
+        closeBtn.addEventListener('click', closeModal);
+        window.addEventListener('click', e => {
+            if (e.target === modal) closeModal();
+        });
+
+        // --- Tier card select / deselect ---
+        tierCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const plan = card.dataset.plan;
+
+                // Unselect if same one clicked again
+                if (selectedPlan === plan) {
+                    card.classList.remove('selected');
+                    selectedPlan = null;
+
+                    propertyGridSection.style.opacity = '0.5';
+                    propertyGridSection.style.pointerEvents = 'none';
+
+                    propertyCards.forEach(c => c.classList.remove('selected'));
+                    selectedPropertyId = null;
+                    updateBoostButton();
+                    return;
+                }
+
+                // Select new one
+                tierCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedPlan = plan;
+
+                // Enable property grid
+                propertyGridSection.style.opacity = '1';
+                propertyGridSection.style.pointerEvents = 'auto';
+
+                updateBoostButton();
+            });
+        });
+
+        // --- Property card select / deselect ---
+        propertyCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const propertyId = card.dataset.propertyId;
+
+                // Only allow selection if a tier is active
+                if (!selectedPlan) {
+                    console.log('Select a tier first.');
+                    return;
+                }
+
+                // Unselect if same property clicked again
+                if (selectedPropertyId === propertyId) {
+                    card.classList.remove('selected');
+                    selectedPropertyId = null;
+                    updateBoostButton();
+                    return;
+                }
+
+                // Select new one
+                propertyCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedPropertyId = propertyId;
+                updateBoostButton();
+            });
+        });
+
+        // --- Boost Now button click ---
+        boostBtn.addEventListener('click', async () => {
+            // If no selection, do nothing
+            if (!selectedPlan || !selectedPropertyId) {
+                console.warn('Boost skipped — missing tier or property.');
+                return;
+            }
+
+            boostBtn.disabled = true;
+            boostBtn.textContent = 'Processing...';
+
+            try {
+                const response = await fetch('/BatEstateExplorer/public/api/paid_featured.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        plan: selectedPlan,
+                        property_id: selectedPropertyId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    alert('Property successfully boosted!');
+                    closeModal();
+                } else {
+                    alert(data.error || 'Failed to boost property.');
+                }
+            } catch (error) {
+                console.error('Error calling paid_featured API:', error);
+                alert('Something went wrong. Please try again.');
+            } finally {
+                boostBtn.disabled = false;
+                boostBtn.textContent = 'Boost Now';
+            }
+        });
     });
 </script>
