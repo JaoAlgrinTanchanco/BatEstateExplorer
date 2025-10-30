@@ -426,88 +426,88 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('confirmFeeModal').style.display = 'flex';
   });
 
-// Cancel button closes confirmation modal
-document.getElementById('cancelPayBtn')?.addEventListener('click', () => {
-    document.getElementById('confirmFeeModal').style.display = 'none';
-});
+  // Cancel button closes confirmation modal
+  document.getElementById('cancelPayBtn')?.addEventListener('click', () => {
+      document.getElementById('confirmFeeModal').style.display = 'none';
+  });
 
-// Confirm button executes the original payListingFee logic
-document.getElementById('confirmPayBtn')?.addEventListener('click', async () => {
-    document.getElementById('confirmFeeModal').style.display = 'none';
+  // Confirm button executes the original payListingFee logic
+  document.getElementById('confirmPayBtn')?.addEventListener('click', async () => {
+      document.getElementById('confirmFeeModal').style.display = 'none';
 
-    const form = document.getElementById('addListingForm');
-    const walletBalanceEl = document.getElementById('agentWalletBalance');
-    const fd = new FormData(form);
+      const form = document.getElementById('addListingForm');
+      const walletBalanceEl = document.getElementById('agentWalletBalance');
+      const fd = new FormData(form);
 
-    // Deduplicate and append files
-    deduplicateSelectedDocuments();
+      // Deduplicate and append files
+      deduplicateSelectedDocuments();
 
-    window.selectedFiles.forEach(f => {
-        if (f instanceof File) fd.append('images[]', f);
-        else if (typeof f === 'string') fd.append('existing_images[]', f);
-    });
+      window.selectedFiles.forEach(f => {
+          if (f instanceof File) fd.append('images[]', f);
+          else if (typeof f === 'string') fd.append('existing_images[]', f);
+      });
 
-    window.selectedDocuments?.forEach(f => {
-        if (f instanceof File) fd.append('property_documents[]', f);
-        else if (typeof f === 'string') fd.append('existing_property_documents[]', f);
-    });
+      window.selectedDocuments?.forEach(f => {
+          if (f instanceof File) fd.append('property_documents[]', f);
+          else if (typeof f === 'string') fd.append('existing_property_documents[]', f);
+      });
 
-    if (window.currentDraftId) fd.append('draft_id', window.currentDraftId);
+      if (window.currentDraftId) fd.append('draft_id', window.currentDraftId);
 
-    try {
-        // Step 1: Save listing first
-        const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
-        const saveData = await saveRes.json();
-        if (!saveData.success) {
-            notify('error', 'Failed to save listing data or files: ' + (saveData.error || 'Unknown server error.'));
-            return;
-        }
+      try {
+          // Step 1: Save listing first
+          const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
+          const saveData = await saveRes.json();
+          if (!saveData.success) {
+              notify('error', 'Failed to save listing data or files: ' + (saveData.error || 'Unknown server error.'));
+              return;
+          }
 
-        fd.append('listing_id', saveData.listing_id);
+          fd.append('listing_id', saveData.listing_id);
 
-        // Step 2: Pay listing fee
-        const propertyType = document.getElementById('property_type')?.value || 'Lot';
-        fd.append('property_type', propertyType);
+          // Step 2: Pay listing fee
+          const propertyType = document.getElementById('property_type')?.value || 'Lot';
+          fd.append('property_type', propertyType);
 
-        const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
-        const feeData = await feeRes.json();
+          const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
+          const feeData = await feeRes.json();
 
-        if (!feeData.success) {
-            notify('error', 'Listing saved but fee payment failed: ' + (feeData.error || 'Payment failed.'));
-            if (feeData.current_balance !== undefined) {
-                walletBalanceEl.innerText = feeData.current_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
-            }
-            return;
-        }
+          if (!feeData.success) {
+              notify('error', 'Listing saved but fee payment failed: ' + (feeData.error || 'Payment failed.'));
+              if (feeData.current_balance !== undefined) {
+                  walletBalanceEl.innerText = feeData.current_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+              }
+              return;
+          }
 
-        // Success
-        notify('success', `Listing submitted! Fee: PHP ${feeData.total_deduction.toLocaleString('en-PH', { minimumFractionDigits:2 })}. Awaiting admin approval.`);
-        window.closeListingFeeModal?.();
-        walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+          // Success
+          notify('success', `Listing submitted! Fee: PHP ${feeData.total_deduction.toLocaleString('en-PH', { minimumFractionDigits:2 })}. Awaiting admin approval.`);
+          window.closeListingFeeModal?.();
+          walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
-        const mainSubmitBtn = document.getElementById('openListingModalBtn');
-        if (mainSubmitBtn && feeData.new_balance !== undefined) {
-            mainSubmitBtn.innerHTML = `Save Listing (Balance: ₱${feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 })})`;
-        }
+          const mainSubmitBtn = document.getElementById('openListingModalBtn');
+          if (mainSubmitBtn && feeData.new_balance !== undefined) {
+              mainSubmitBtn.innerHTML = `Save Listing (Balance: ₱${feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 })})`;
+          }
 
-        // Clear form and reset state
-        form.reset();
-        window.resetImageUpload?.();
-        window.resetDocumentUpload?.();
-        window.currentDraftId = null;
-        window.existingImages = [];
-        window.existingDocs = [];
-        window.selectedFiles = [];
-        window.selectedDocuments = [];
+          // Clear form and reset state
+          form.reset();
+          window.resetImageUpload?.();
+          window.resetDocumentUpload?.();
+          window.currentDraftId = null;
+          window.existingImages = [];
+          window.existingDocs = [];
+          window.selectedFiles = [];
+          window.selectedDocuments = [];
 
-        const draftCard = document.querySelector(`.draft-card[data-id="${window.currentDraftId}"]`);
-        draftCard?.remove();
-        window.loadDrafts?.();
+          const draftCard = document.querySelector(`.draft-card[data-id="${window.currentDraftId}"]`);
+          draftCard?.remove();
+          window.loadDrafts?.();
 
-    } catch (err) {
-        notify('error', err.message || 'A critical network error occurred.');
-    }
-});
+      } catch (err) {
+          notify('error', err.message || 'A critical network error occurred.');
+      }
+  });
 
 
   initDraftCards();
@@ -739,7 +739,6 @@ document.getElementById('confirmPayBtn')?.addEventListener('click', async () => 
           if (!companyCheckbox.checked) companyInput.value = ''; // optional: clear input when unchecked
       });
   }
-
 }); //END OF DOM
 
 // =========================
@@ -782,28 +781,6 @@ function closeModal(propertyId) {
     if (!modal) return;
     modal.style.display = 'none';
 }
-
-function openBoostModal() {
-  const modal = document.getElementById('boostModal');
-  if (!modal) {
-    console.warn('Boost modal not found in DOM.');
-    return;
-  }
-  modal.style.display = 'flex';
-}
-
-function closeBoostModal() {
-  const modal = document.getElementById('boostModal');
-  if (!modal) return;
-  modal.style.display = 'none';
-}
-
-window.addEventListener('click', function(e) {
-  const modal = document.getElementById('boostModal');
-  if (modal && e.target === modal) {
-    modal.style.display = 'none';
-  }
-});
 
 // Global functions
 function toggleSoldBy(select, propertyId) {

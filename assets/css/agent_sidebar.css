@@ -118,12 +118,11 @@
   align-items: center;
 }
 
-/* Landscape Modal Box */
+/* Modal Box */
 .boost-modal-content {
   background: #fff;
-  width: 80%;
-  max-width: 900px;
-  border-radius: 16px;
+  width: auto;
+  border-radius: 30px;
   padding: 2rem;
   position: relative;
   text-align: center;
@@ -147,75 +146,163 @@
   color: #666;
 }
 
-/* Tiers Layout (Landscape) */
+/* Tiers Layout */
 .boost-tiers {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 2rem;
   flex-wrap: wrap;
 }
 
 /* Card Styles */
 .boost-card {
   flex: 1;
-  min-width: 200px;
-  min-height: 250px;
-  background: radial-gradient(circle at 20% 30%, #777, #555, #222);
-  border-top-left-radius: 40px;
-  border-top-right-radius: 5px;
-  border-bottom-right-radius: 40px;
-  border-bottom-left-radius: 5px;
+  min-width: 350px;
+  min-height: 325px;
+  background: #e3b3ff;
+  border-radius: 30px; 
+  border: 3px solid transparent;
   padding: 1.5rem;
-  color: #fff;
   text-align: center;
   cursor: pointer;
+  position: relative; /* needed for overlay */
   transition: all 0.3s ease;
   box-shadow: inset 0 0 10px rgba(255,255,255,0.05),
               0 0 10px rgba(255,255,255,0.05);
-}
-
-/* Grainy overlay */
-.boost-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWMgCgYBAgABBgABTw8rXgAAAABJRU5ErkJggg==');
-  opacity: 0.1;
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-/* Old price (slashed) */
-.old-price {
-  text-decoration: line-through;
-  color: #bbb;
-  font-size: 0.9rem;
-  margin: 0;
-}
-
-/* Current price */
-.price {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #fff;
-  margin: 0.25rem 0;
-}
-
-/* Duration */
-.duration {
-  color: #ddd;
-  font-size: 0.9rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 /* Hover / Active states */
 .boost-card:hover {
   transform: translateY(-5px);
-  border-color: #fff;
-  box-shadow: 0 0 20px rgba(255,255,255,0.3);
+  z-index: 1; /* hover above overlay */
 }
+
+/* Selected state */
 .boost-card.selected {
-  border-color: #00ffcc;
-  box-shadow: 0 0 25px rgba(0,255,204,0.5);
+  border-color: #af59ff;
+  box-shadow: 0 0 25px rgba(132, 0, 255, 1); /* violet glow */
+  z-index: 2; /* make sure border is above overlay */
+}
+
+/* =========================
+   Boost Modal Property Grid
+=========================== */
+.property-grid-section {
+  background: #fff;
+  border-radius: 15px;
+  padding: 1.5rem 2rem;
+  margin-top: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transition: opacity 0.3s ease, pointer-events 0.3s ease;
+}
+
+.property-grid-section h3 {
+  font-family: 'Satoshi-Bold', sans-serif;
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+/* =========================
+   Horizontal Scroll Container
+=========================== */
+.property-grid-boost {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding: 2rem;
+  scroll-behavior: smooth;
+}
+
+.property-grid-boost::-webkit-scrollbar {
+  height: 8px;
+}
+
+.property-grid-boost::-webkit-scrollbar-thumb {
+  background-color: rgba(138, 43, 226, 0.6);
+  border-radius: 4px;
+}
+
+/* =========================
+   Property Card Styles
+=========================== */
+.property-card-boost {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 3px solid transparent;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #f9f9f9;
+}
+
+/* Image styling */
+.property-card-boost img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+/* Hover effects */
+.property-card-boost:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 30px rgba(138, 43, 226, 0.6); /* violet glow */
+  z-index: 1;
+}
+
+.property-card-boost:hover img {
+  transform: scale(1.05);
+}
+
+/* =========================
+   Overlay Info
+=========================== */
+.property-card-boost .overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+.property-card-boost:hover .overlay {
+  transform: translateY(0);
+}
+
+/* Overlay text */
+.property-card-boost .overlay h4 {
+  font-family: 'Satoshi-Bold', sans-serif;
+  font-size: 1rem;
+  margin: 0 0 0.25rem 0;
+  color: #111;
+}
+
+.property-card-boost .overlay p {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 0.9rem;
+  margin: 0;
+  color: #555;
+}
+
+/* =========================
+   Selected Property Effect
+=========================== */
+.property-card-boost.selected {
+  border: 3px dashed #8a2be2;
+  transform: translateY(-3px);
 }
 
 /* ===========================

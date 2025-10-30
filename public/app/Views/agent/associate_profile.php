@@ -204,7 +204,7 @@
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/company_listing.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_review.css">
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/agent_wallet.css">
-<script src="https://www.paypal.com/sdk/js?client-id=<?= $paypalClientId ?>&currency=PHP"></script>
+<scipt src="https://www.paypal.com/sdk/js?client-id=<?= $paypalClientId ?>&currency=PHP"></scipt>
 
 <div class="dashboard-container">
     <!-- Arrow Button for Mobile -->
@@ -255,46 +255,133 @@
                             <li><a href="?view=associate_profile&tab=wallet" class="<?= ($tab === 'wallet') ? 'active' : '' ?>"><i class="fa-solid fa-wallet"></i><span>Wallet</span></a></li>
                         </ul>
                     </nav>
+                    
                     <!-- Boost Section -->
                     <div class="boost-container">
                         <p style="font-weight: 500; margin-bottom: 10px;">Get your property featured and stand out from the rest!</p>
                         <button class="boost-btn" onclick="openBoostModal()">Boost Now</button>
                     </div>
 
-                    <!-- Boost Modal -->
                     <div id="boostModal" class="boost-modal">
-                    <div class="boost-modal-content">
-                        <span class="boost-close" onclick="closeBoostModal()">&times;</span>
-                        <h2 class="boost-title">Choose Your Featured Plan</h2>
-                        <p class="boost-subtext">Get your property featured and attract more buyers!</p>
+                        <div class="boost-modal-content">
+                            <span class="boost-close">&times;</span>
+                            <h2 class="boost-title">Choose Your Featured Plan</h2>
+                            <p class="boost-subtext">Get your property featured and attract more buyers!</p>
 
-                        <div class="boost-tiers">
-                        <!-- Basic Plan -->
-                        <div class="boost-card" data-plan="basic" onclick="selectBoostPlan('basic')">
-                            <h3>Basic</h3>
-                            <p class="old-price">₱560</p>
-                            <p class="price">₱499</p>
-                            <p class="duration">7 Days</p>
-                        </div>
+                            <!-- Tier Cards -->
+                            <div class="boost-tiers">
+                            <div class="boost-card" data-plan="basic"></div>
+                            <div class="boost-card" data-plan="standard"></div>
+                            <div class="boost-card" data-plan="premium"></div>
+                            </div>
 
-                        <!-- Standard Plan -->
-                        <div class="boost-card" data-plan="standard" onclick="selectBoostPlan('standard')">
-                            <h3>Standard</h3>
-                            <p class="old-price">₱999</p>
-                            <p class="price">₱899</p>
-                            <p class="duration">15 Days</p>
-                        </div>
+                            <!-- Property Grid (disabled until tier selected) -->
+                            <div id="propertyGridSection" class="property-grid-section" style="opacity:0.5; pointer-events:none; margin-top: 2rem;">
+                            <h3>Select a Property</h3>
+                                <div id="propertyGrid" class="property-grid-boost">
+                                    <!-- Sample PHP-generated cards -->
+                                    <?php if (!empty($listings)): ?>
+                                        <?php foreach ($listings as $property): 
+                                            $first_img_src = !empty($property['images'][0]['image_path'])
+                                            ? "/BatEstateExplorer/" . $property['images'][0]['image_path']
+                                            : "/BatEstateExplorer/assets/images/no-image.png";
+                                        ?>
+                                            <div class="property-card-boost" data-property-id="<?= $property['id'] ?>">
+                                                <img src="<?= $first_img_src ?>" alt="Property Image">
+                                                <div class="overlay">
+                                                    <h4><?= htmlspecialchars($property['title']) ?></h4>
+                                                    <p><?= htmlspecialchars($property['location']) ?></p>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <p>No properties found.</p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
 
-                        <!-- Premium Plan -->
-                        <div class="boost-card" data-plan="premium" onclick="selectBoostPlan('premium')">
-                            <h3>Premium</h3>
-                            <p class="old-price">₱1699</p>
-                            <p class="price">₱1499</p>
-                            <p class="duration">30 Days</p>
-                        </div>
                         </div>
                     </div>
-                    </div>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const modal = document.getElementById('boostModal');
+                            const closeBtn = modal.querySelector('.boost-close');
+                            const tierCards = modal.querySelectorAll('.boost-card');
+                            const propertyGridSection = document.getElementById('propertyGridSection');
+                            const propertyCards = modal.querySelectorAll('.property-card-boost');
+                            let selectedPlan = null;
+                            let selectedPropertyId = null;
+
+                            // --- Open modal ---
+                            window.openBoostModal = function() {
+                                modal.style.display = 'flex';
+                            };
+
+                            // --- Close modal ---
+                            function closeModal() {
+                                modal.style.display = 'none';
+                            }
+                            closeBtn.addEventListener('click', closeModal);
+                            window.addEventListener('click', e => {
+                                if (e.target === modal) closeModal();
+                            });
+
+                            // --- Tier card selection / deselection ---
+                            tierCards.forEach(card => {
+                                card.addEventListener('click', () => {
+                                    const plan = card.dataset.plan;
+
+                                    // Unselect if same one clicked again
+                                    if (selectedPlan === plan) {
+                                        card.classList.remove('selected');
+                                        selectedPlan = null;
+                                        propertyGridSection.style.opacity = '0.5';
+                                        propertyGridSection.style.pointerEvents = 'none';
+                                        console.log('Tier unselected');
+                                        return;
+                                    }
+
+                                    // Select new one
+                                    tierCards.forEach(c => c.classList.remove('selected'));
+                                    card.classList.add('selected');
+                                    selectedPlan = plan;
+                                    console.log('Selected tier:', selectedPlan);
+
+                                    // Enable property grid
+                                    propertyGridSection.style.opacity = '1';
+                                    propertyGridSection.style.pointerEvents = 'auto';
+                                });
+                            });
+
+                            // --- Property card selection / deselection ---
+                            propertyCards.forEach(card => {
+                                card.addEventListener('click', () => {
+                                    const propertyId = card.dataset.propertyId;
+
+                                    // Only allow selection if a tier is active
+                                    if (!selectedPlan) {
+                                        console.log('Select a tier first.');
+                                        return;
+                                    }
+
+                                    // If same property is clicked again, unselect it
+                                    if (selectedPropertyId === propertyId) {
+                                        card.classList.remove('selected');
+                                        selectedPropertyId = null;
+                                        console.log('Property unselected');
+                                        return;
+                                    }
+
+                                    // Select new property
+                                    propertyCards.forEach(c => c.classList.remove('selected'));
+                                    card.classList.add('selected');
+                                    selectedPropertyId = propertyId;
+                                    console.log('Selected property ID:', selectedPropertyId);
+                                });
+                            });
+                        });
+                    </script>
 
                 </div>
             </div>
@@ -882,7 +969,7 @@
                     </div>
                 </div>
 
-                <script>
+                <scipt>
                     document.addEventListener('DOMContentLoaded', () => {
                         const modal = document.getElementById('depositModal');
                         const balanceEl = document.getElementById('walletBalance');
@@ -967,7 +1054,7 @@
 
                         }).render('#paypal-button-container');
                     });
-                </script>
+                </scipt>
             <?php break; ?>
 
             <?php default:
