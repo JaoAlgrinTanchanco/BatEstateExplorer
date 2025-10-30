@@ -185,6 +185,7 @@
     // ================================
     // Fetch Featured Properties
     //  - Top 3 Rated (always included)
+    //  - Fallback to fill top 3 if not enough rated
     //  - Then all active Paid Featured (ranked by plan duration)
     // Supports: available, sold, ongoing_inquiry
     // ================================
@@ -226,7 +227,7 @@
     }
 
     // -------------------------------
-    // 2️⃣ Fallback: Fill missing Top 3 if not enough rated ones
+    // 2️⃣ Fallback: Fill missing top-rated slots
     // -------------------------------
     if (count($featuredProperties) < 3) {
         $remaining = 3 - count($featuredProperties);
@@ -278,8 +279,8 @@
             AND p.status IN ($statusList)
             $excludeStr
         ORDER BY 
-            feature_duration DESC,       -- Higher duration = higher plan
-            p.featured_until DESC,       -- Recently renewed first
+            feature_duration DESC,    -- longer duration = higher plan
+            p.featured_until DESC,    -- most recent renewal first
             p.created_at DESC
     ";
 
@@ -296,9 +297,10 @@
     }
 
     // -------------------------------
-    // 4️⃣ Combine Results
+    // 4️⃣ Combine Top Rated + Paid Featured
     // -------------------------------
     $featuredProperties = array_merge($featuredProperties, $paidFeatured);
+
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/search.css">

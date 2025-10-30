@@ -263,63 +263,68 @@
                     </div>
                     <!-- Boost Modal -->
                     <div id="boostModal" class="boost-modal">
-                    <div class="boost-modal-content">
-                        <span class="boost-close">&times;</span>
-                        <h2 class="boost-title">Choose Your Featured Plan</h2>
-                        <p class="boost-subtext">Get your property featured and attract more buyers!</p>
+                        <div class="boost-modal-content">
+                            <span class="boost-close">&times;</span>
+                            <h2 class="boost-title">Choose Your Featured Plan</h2>
+                            <p class="boost-subtext">Get your property featured and attract more buyers!</p>
 
-                        <!-- Tier Cards -->
-                        <div class="boost-tiers">
-                            <div class="boost-card" data-plan="basic"></div>
-                            <div class="boost-card" data-plan="standard"></div>
-                            <div class="boost-card" data-plan="premium"></div>
-                        </div>
+                            <!-- Tier Cards -->
+                            <div class="boost-tiers">
+                                <div class="boost-card" data-plan="basic"></div>
+                                <div class="boost-card" data-plan="standard"></div>
+                                <div class="boost-card" data-plan="premium"></div>
+                            </div>
 
-                        <!-- Property Grid (disabled until tier selected) -->
-                        <div id="propertyGridSection" class="property-grid-section" style="opacity: 0.5; pointer-events: none; margin-top: 2rem;">
-                        <h3>Select a Property</h3>
-                        <div id="propertyGrid" class="property-grid-boost">
-                            <?php if (!empty($listings)): ?>
-                            <?php foreach ($listings as $property):
-                                $first_img_src = !empty($property['images'][0]['image_path'])
-                                ? "/BatEstateExplorer/" . $property['images'][0]['image_path']
-                                : "/BatEstateExplorer/assets/images/no-image.png";
-                            ?>
-                                <div class="property-card-boost" 
-                                    data-property-id="<?= $property['id'] ?>"
-                                    data-featured="<?= $property['is_featured'] ?>"
-                                    data-featured-until="<?= $property['featured_until'] ?>">
-                                <img src="<?= $first_img_src ?>" alt="Property Image">
-                                <div class="overlay">
-                                    <h4><?= htmlspecialchars($property['title']) ?></h4>
-                                    <p><?= htmlspecialchars($property['location']) ?></p>
-                                </div>
-                                </div>
-                            <?php endforeach; ?>
-                            <?php else: ?>
-                            <p>No properties found.</p>
-                            <?php endif; ?>
-                        </div>
-                        </div>
+                            <!-- Property Grid (disabled until tier selected) -->
+                            <div id="propertyGridSection" class="property-grid-section" style="opacity: 0.5; pointer-events: none; margin-top: 2rem;">
+                            <h3>Select a Property</h3>
+                            <div id="propertyGrid" class="property-grid-boost">
+                                <?php if (!empty($listings)): ?>
+                                <?php foreach ($listings as $property):
+                                    $first_img_src = !empty($property['images'][0]['image_path'])
+                                    ? "/BatEstateExplorer/" . $property['images'][0]['image_path']
+                                    : "/BatEstateExplorer/assets/images/no-image.png";
+                                ?>
+                                    <div class="property-card-boost" 
+                                        data-property-id="<?= $property['id'] ?>"
+                                        data-featured="<?= $property['is_featured'] ?>"
+                                        data-featured-until="<?= $property['featured_until'] ?>">
+                                    <img src="<?= $first_img_src ?>" alt="Property Image">
+                                    <div class="overlay">
+                                        <h4><?= htmlspecialchars($property['title']) ?></h4>
+                                        <p><?= htmlspecialchars($property['location']) ?></p>
+                                    </div>
+                                    </div>
+                                <?php endforeach; ?>
+                                <?php else: ?>
+                                <p>No properties found.</p>
+                                <?php endif; ?>
+                            </div>
+                            </div>
 
-                        <!-- Boost Now Button -->
-                        <div class="boost-action">
-                        <button id="boostNowBtn" disabled>Boost Now</button>
+                            <!-- Boost Now Button -->
+                            <div class="boost-action">
+                            <button id="boostNowBtn" disabled>Boost Now</button>
+                            </div>
                         </div>
-                    </div>
                     </div>
                     <!-- Confirmation Modal -->
                     <div id="confirmBoostModal" class="confirm-modal">
-                    <div class="confirm-modal-content">
-                        <h3>Confirm Boost</h3>
-                        <p>Are you sure you want to feature this property under the selected plan?</p>
-                        <div class="confirm-actions">
-                        <button id="confirmYesBtn" class="confirm-btn confirm-yes">Yes, Boost</button>
-                        <button id="confirmCancelBtn" class="confirm-btn confirm-cancel">Cancel</button>
+                        <div class="confirm-modal-content">
+                            <h3>Confirm Boost</h3>
+                            <p id="boostDetails">
+                                Loading payment details...
+                            </p>
+                            <div class="wallet-info">
+                                <strong>Wallet Balance:</strong> ₱<span id="walletBalance"><?= $walletBalanceFormatted ?></span><br>
+                                <strong>Boost Tier Cost:</strong> ₱<span id="tierCost">0.00</span>
+                            </div>
+                            <div class="confirm-actions">
+                                <button id="payBoostBtn" class="confirm-btn confirm-pay">Pay</button>
+                                <button id="confirmCancelBtn" class="confirm-btn confirm-cancel">Cancel</button>
+                            </div>
                         </div>
                     </div>
-                    </div>
-
                 </div>
             </div>
         </div>
@@ -1173,181 +1178,215 @@
         });
     });
     document.addEventListener('DOMContentLoaded', () => {
-    // --- Remove duplicate property cards ---
-    (function removeDuplicatePropertyCards() {
-        const seen = new Set();
-        document.querySelectorAll('.property-card-boost').forEach(card => {
-        const id = card.dataset.propertyId?.toString();
-        if (!id) return;
-        if (seen.has(id)) card.remove();
-        else seen.add(id);
-        });
-    })();
+        // --- Remove duplicate property cards ---
+        (function removeDuplicatePropertyCards() {
+            const seen = new Set();
+            document.querySelectorAll('.property-card-boost').forEach(card => {
+            const id = card.dataset.propertyId?.toString();
+            if (!id) return;
+            if (seen.has(id)) card.remove();
+            else seen.add(id);
+            });
+        })();
+        // --- Update Confirm Boost Modal with tier & cost ---
+        function updateConfirmModal() {
+            const tierEl = document.getElementById('tierCost');
+            const detailsEl = document.getElementById('boostDetails');
 
-    // --- Elements ---
-    const modal = document.getElementById('boostModal');
-    const closeBtn = modal.querySelector('.boost-close');
-    const tierCards = modal.querySelectorAll('.boost-card');
-    const propertyGridSection = document.getElementById('propertyGridSection');
-    const propertyCards = modal.querySelectorAll('.property-card-boost');
-    const boostBtn = document.getElementById('boostNowBtn');
-    const confirmModal = document.getElementById('confirmBoostModal');
-    const confirmYesBtn = document.getElementById('confirmYesBtn');
-    const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+            let tierCost = 0;
+            let planName = selectedPlan;
 
-    let selectedPlan = null;
-    let selectedPropertyId = null;
-
-    // --- Disable expired featured properties automatically ---
-    async function refreshFeaturedStatus() {
-        try {
-        const res = await fetch('/BatEstateExplorer/public/api/feature_check.php');
-        const data = await res.json();
-
-        // After cleaning up expired features, refresh UI for still-active ones
-        propertyCards.forEach(card => {
-            const isFeatured = card.dataset.featured === '1';
-            const until = card.dataset.featuredUntil;
-            if (isFeatured && until && new Date(until) > new Date()) {
-            const overlay = document.createElement('div');
-            overlay.className = 'boosted-overlay';
-            const endDate = new Date(until).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            overlay.innerHTML = `<span>Featured until ${endDate}</span>`;
-            card.appendChild(overlay);
-            card.classList.add('disabled');
+            // Set fixed prices based on plan
+            switch (selectedPlan) {
+                case 'basic':
+                    tierCost = 499;
+                    planName = 'Basic';
+                    break;
+                case 'standard':
+                    tierCost = 899;
+                    planName = 'Standard';
+                    break;
+                case 'premium':
+                    tierCost = 1499;
+                    planName = 'Premium';
+                    break;
+                default:
+                    tierCost = 0;
+                    planName = '';
             }
-        });
-        } catch {
-        notify('error', 'Failed to update featured status.');
+
+            tierEl.textContent = tierCost.toFixed(2);
+
+            if (selectedPlan && selectedPropertyId) {
+                detailsEl.textContent = `You're about to boost property ID with the "${planName}" plan.`;
+            } else {
+                detailsEl.textContent = 'Select a property and plan to see details here.';
+            }
         }
-    }
 
-    refreshFeaturedStatus();
+        // --- Elements ---
+        const modal = document.getElementById('boostModal');
+        const closeBtn = modal.querySelector('.boost-close');
+        const tierCards = modal.querySelectorAll('.boost-card');
+        const propertyGridSection = document.getElementById('propertyGridSection');
+        const propertyCards = modal.querySelectorAll('.property-card-boost');
+        const boostBtn = document.getElementById('boostNowBtn');
+        const confirmModal = document.getElementById('confirmBoostModal');
+        const confirmYesBtn = document.getElementById('payBoostBtn');
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
 
-    // --- Update Boost Button ---
-    function updateBoostButton() {
-        boostBtn.disabled = !(selectedPlan && selectedPropertyId);
-    }
+        let selectedPlan = null;
+        let selectedPropertyId = null;
 
-    // --- Open Modal ---
-    window.openBoostModal = function () {
-        modal.style.display = 'flex';
-    };
+        // --- Disable expired featured properties automatically ---
+        async function refreshFeaturedStatus() {
+            try {
+            const res = await fetch('/BatEstateExplorer/public/api/feature_check.php');
+            const data = await res.json();
 
-    // --- Close Modal ---
-    function closeModal() {
-        modal.style.display = 'none';
-        tierCards.forEach(c => c.classList.remove('selected'));
-        propertyCards.forEach(c => c.classList.remove('selected'));
-        selectedPlan = null;
-        selectedPropertyId = null;
-        propertyGridSection.style.opacity = '0.5';
-        propertyGridSection.style.pointerEvents = 'none';
-        boostBtn.disabled = true;
-    }
+            // After cleaning up expired features, refresh UI for still-active ones
+            propertyCards.forEach(card => {
+                const isFeatured = card.dataset.featured === '1';
+                const until = card.dataset.featuredUntil;
+                if (isFeatured && until && new Date(until) > new Date()) {
+                const overlay = document.createElement('div');
+                overlay.className = 'boosted-overlay';
+                const endDate = new Date(until).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                overlay.innerHTML = `<span>Featured until ${endDate}</span>`;
+                card.appendChild(overlay);
+                card.classList.add('disabled');
+                }
+            });
+            } catch {
+            notify('error', 'Failed to update featured status.');
+            }
+        }
 
-    closeBtn.addEventListener('click', closeModal);
-    window.addEventListener('click', e => {
-        if (e.target === modal) closeModal();
-        if (e.target === confirmModal) confirmModal.style.display = 'none';
-    });
+        refreshFeaturedStatus();
 
-    // --- Tier Card Select ---
-    tierCards.forEach(card => {
-        card.addEventListener('click', () => {
-        const plan = card.dataset.plan;
-        if (selectedPlan === plan) {
-            card.classList.remove('selected');
+        // --- Update Boost Button ---
+        function updateBoostButton() {
+            boostBtn.disabled = !(selectedPlan && selectedPropertyId);
+        }
+
+        // --- Open Modal ---
+        window.openBoostModal = function () {
+            modal.style.display = 'flex';
+        };
+
+        // --- Close Modal ---
+        function closeModal() {
+            modal.style.display = 'none';
+            tierCards.forEach(c => c.classList.remove('selected'));
+            propertyCards.forEach(c => c.classList.remove('selected'));
             selectedPlan = null;
+            selectedPropertyId = null;
             propertyGridSection.style.opacity = '0.5';
             propertyGridSection.style.pointerEvents = 'none';
-            propertyCards.forEach(c => c.classList.remove('selected'));
-            selectedPropertyId = null;
-            updateBoostButton();
-            return;
+            boostBtn.disabled = true;
         }
 
-        tierCards.forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-        selectedPlan = plan;
-        propertyGridSection.style.opacity = '1';
-        propertyGridSection.style.pointerEvents = 'auto';
-        updateBoostButton();
-        });
-    });
-
-    // --- Property Card Select ---
-    propertyCards.forEach(card => {
-        card.addEventListener('click', () => {
-        if (card.classList.contains('disabled')) {
-            notify('error', 'This property is already featured.');
-            return;
-        }
-
-        const propertyId = card.dataset.propertyId;
-        if (!selectedPlan) {
-            notify('error', 'Please select a plan first.');
-            return;
-        }
-
-        if (selectedPropertyId === propertyId) {
-            card.classList.remove('selected');
-            selectedPropertyId = null;
-            updateBoostButton();
-            return;
-        }
-
-        propertyCards.forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-        selectedPropertyId = propertyId;
-        updateBoostButton();
-        });
-    });
-
-    // --- Boost Now Click ---
-    boostBtn.addEventListener('click', () => {
-        if (!selectedPlan || !selectedPropertyId) {
-        notify('error', 'Please select a plan and property.');
-        return;
-        }
-        confirmModal.style.display = 'flex';
-    });
-
-    // --- Confirm Boost ---
-    confirmCancelBtn.addEventListener('click', () => {
-        confirmModal.style.display = 'none';
-    });
-
-    confirmYesBtn.addEventListener('click', async () => {
-        confirmModal.style.display = 'none';
-        boostBtn.disabled = true;
-        boostBtn.textContent = 'Processing...';
-
-        try {
-        const response = await fetch('/BatEstateExplorer/public/api/paid_featured.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-            plan: selectedPlan,
-            property_id: selectedPropertyId
-            })
+        closeBtn.addEventListener('click', closeModal);
+        window.addEventListener('click', e => {
+            if (e.target === modal) closeModal();
+            if (e.target === confirmModal) confirmModal.style.display = 'none';
         });
 
-        const data = await response.json();
+        // --- Tier Card Selection ---
+        tierCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Toggle selection
+                if (selectedPlan === card.dataset.plan) {
+                    card.classList.remove('selected');
+                    selectedPlan = null;
+                    selectedPropertyId = null;
+                    propertyCards.forEach(c => c.classList.remove('selected'));
+                    propertyGridSection.style.opacity = '0.5';
+                    propertyGridSection.style.pointerEvents = 'none';
+                } else {
+                    tierCards.forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    selectedPlan = card.dataset.plan;
+                    propertyGridSection.style.opacity = '1';
+                    propertyGridSection.style.pointerEvents = 'auto';
+                }
 
-        if (response.ok && data.success) {
-            notify('success', 'Property successfully boosted!');
-            closeModal();
-            refreshFeaturedStatus();
-        } else {
-            notify('error', data.error || 'Failed to boost property.');
-        }
-        } catch {
-        notify('error', 'Something went wrong. Please try again.');
-        } finally {
-        boostBtn.disabled = false;
-        boostBtn.textContent = 'Boost Now';
-        }
-    });
+                updateBoostButton();
+                updateConfirmModal();
+            });
+        });
+
+        // --- Property Card Selection ---
+        propertyCards.forEach(card => {
+            card.addEventListener('click', () => {
+                if (!selectedPlan) {
+                    notify('error', 'Please select a plan first.');
+                    return;
+                }
+                if (card.classList.contains('disabled')) {
+                    notify('error', 'This property is already featured.');
+                    return;
+                }
+
+                if (selectedPropertyId === card.dataset.propertyId) {
+                    card.classList.remove('selected');
+                    selectedPropertyId = null;
+                } else {
+                    propertyCards.forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    selectedPropertyId = card.dataset.propertyId;
+                }
+
+                updateBoostButton();
+                updateConfirmModal();
+            });
+        });
+
+        // --- Boost Now Click ---
+        boostBtn.addEventListener('click', () => {
+            if (!selectedPlan || !selectedPropertyId) {
+                notify('error', 'Please select a plan and property.');
+                return;
+            }
+            updateConfirmModal();
+            confirmModal.style.display = 'flex';
+        });
+
+        // --- Confirm Boost ---
+        confirmCancelBtn.addEventListener('click', () => {
+            confirmModal.style.display = 'none';
+        });
+
+        confirmYesBtn.addEventListener('click', async () => {
+            confirmModal.style.display = 'none';
+            boostBtn.disabled = true;
+            boostBtn.textContent = 'Processing...';
+
+            try {
+            const response = await fetch('/BatEstateExplorer/public/api/paid_featured.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                plan: selectedPlan,
+                property_id: selectedPropertyId
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                notify('success', 'Property successfully boosted!');
+                closeModal();
+                refreshFeaturedStatus();
+            } else {
+                notify('error', data.error || 'Failed to boost property.');
+            }
+            } catch {
+            notify('error', 'Something went wrong. Please try again.');
+            } finally {
+            boostBtn.disabled = false;
+            boostBtn.textContent = 'Boost Now';
+            }
+        });
     });
 </script>

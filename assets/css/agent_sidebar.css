@@ -57,27 +57,30 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
-/* Confirmation Modal */
+/* Confirmation Modal Overlay */
 .confirm-modal {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999;
 }
 
+/* Modal Content Box */
 .confirm-modal-content {
   background: #fff;
   border-radius: 20px;
   padding: 2rem;
   text-align: center;
   width: 380px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
   animation: popIn 0.25s ease-out;
 }
 
+/* Action Buttons Container */
 .confirm-actions {
   display: flex;
   justify-content: center;
@@ -85,36 +88,56 @@
   margin-top: 1.5rem;
 }
 
+/* Buttons */
 .confirm-btn {
   border: none;
   border-radius: 8px;
   padding: 0.6rem 1.5rem;
   cursor: pointer;
   font-weight: bold;
-  transition: all 0.3s ease;
+  transition: background 0.3s ease, transform 0.2s ease;
 }
 
-.confirm-yes {
-  background: #111;
+.confirm-pay {
+  background-color: #111;
   color: #fff;
 }
 
 .confirm-cancel {
-  background: #ccc;
+  background-color: #ccc;
   color: #111;
 }
 
-.confirm-yes:hover {
-  background: #000;
+.confirm-pay:hover {
+  background-color: #000;
+  transform: scale(1.05);
 }
 
 .confirm-cancel:hover {
-  background: #b5b5b5;
+  background-color: #b5b5b5;
+  transform: scale(1.05);
 }
 
+/* Modal pop-in animation */
 @keyframes popIn {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Optional: Wallet info styling */
+.wallet-info {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  color: #333;
+}
+.wallet-info strong {
+  font-weight: 600;
 }
 
 .boost-container {
