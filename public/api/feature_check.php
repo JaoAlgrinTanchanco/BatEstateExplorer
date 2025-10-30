@@ -2,7 +2,7 @@
 /**
  * feature_check.php
  *
- * This script checks all featured properties and unfeatures any that have expired.
+ * Checks all featured properties (Premium & Platinum) and unfeatures any that have expired.
  * Can be run via cron job or triggered manually by an admin.
  */
 
@@ -12,9 +12,9 @@ header('Content-Type: application/json');
 try {
     // --- Find all expired featured properties ---
     $query = "
-        SELECT id, title, featured_until
+        SELECT id, title, featured_until, is_featured
         FROM properties
-        WHERE is_featured = 1 
+        WHERE is_featured IN (1,2)  -- 1 = Featured, 2 = Top Featured
           AND featured_until IS NOT NULL 
           AND featured_until < NOW()
     ";

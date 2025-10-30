@@ -260,74 +260,45 @@ document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('addListingForm');
       if (!form) return;
 
-      // 🛑 VALIDATION: Drafts must have a title
-      const titleInput = form.title; // Assumes the input element has name="title"
+      // Validation: draft must have a title
+      const titleInput = form.title;
       const titleValue = titleInput?.value.trim();
-
       if (!titleValue) {
           notify('error', 'The draft must have a title to be saved as draft.');
           titleInput?.focus();
-          return; // Stop the process
+          return;
       }
 
-      // Initialize FormData empty. We append fields manually to prevent file duplication.
       const fd = new FormData();
       const isUpdate = !!window.currentDraftId;
-
       if (isUpdate) fd.append('id', window.currentDraftId);
-      
-      // Manually append all non-file form fields
+
+      // Append non-file fields
       for (const [key, value] of new FormData(form).entries()) {
-          // Exclude file input fields as they are handled manually via selectedFiles/Documents.
-          if (key !== 'images[]' && key !== 'property_document[]') {
-              fd.append(key, value);
-          }
+          if (key !== 'images[]' && key !== 'property_document[]') fd.append(key, value);
       }
 
-      // -------------------------
-      // Handle Images
-      // -------------------------
-      const existingImages = window.existingImages || []; // Existing URLs from DB
-      const newImages = window.selectedFiles.filter(f => f instanceof File); // New File objects
-      // URLs currently in selectedFiles (must be preserved)
+      // Handle images
+      const existingImages = window.existingImages || [];
+      const newImages = window.selectedFiles.filter(f => f instanceof File);
       const remainingImages = existingImages.filter(url => window.selectedFiles.includes(url));
-      // URLs that were present but are now missing (must be removed)
       const removedImages = existingImages.filter(url => !window.selectedFiles.includes(url));
-      
-      // 1. Mark images for removal
       removedImages.forEach(img => fd.append('remove_images[]', img));
-
-      // 2. Append new image files
       newImages.forEach(file => fd.append('images[]', file));
-
-      // 3. Include remaining existing images
       remainingImages.forEach(img => fd.append('existing_images[]', img));
 
-
-      // -------------------------
-      // Handle Documents
-      // -------------------------
-      window.deduplicateSelectedDocuments?.(); // Ensure this is available and runs
-      
+      // Handle documents
+      window.deduplicateSelectedDocuments?.();
       const existingDocs = window.existingDocs || [];
       const newDocs = window.selectedDocuments.filter(f => f instanceof File);
       const remainingDocs = existingDocs.filter(doc => window.selectedDocuments.includes(doc));
       const removedDocs = existingDocs.filter(doc => !window.selectedDocuments.includes(doc));
-      
-      // 1. Mark documents for removal
       removedDocs.forEach(doc => fd.append('remove_docs[]', doc));
-      
-      // 2. Append new document files
       newDocs.forEach(file => fd.append('property_document[]', file));
-      
-      // 3. Include remaining existing documents
       remainingDocs.forEach(doc => fd.append('existing_property_documents[]', doc));
-      
-      
-      // -------------------------
-      // Debug FormData
-      // -------------------------
-      console.group("FormData Before Upload (Post-Validation)");
+
+      // Debug
+      console.group("FormData Before Upload (Draft)");
       for (let [key, val] of fd.entries()) console.log(key, val);
       console.groupEnd();
 
@@ -335,18 +306,13 @@ document.addEventListener('DOMContentLoaded', () => {
           const url = isUpdate
               ? '/BatEstateExplorer/public/api/update_draft.php'
               : '/BatEstateExplorer/public/api/save_draft.php';
-
           const res = await fetch(url, { method: 'POST', body: fd });
-          
           if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-          
           const data = await res.json();
           console.log('Draft Save/Update Response:', data);
 
           if (data.success) {
               notify('success', isUpdate ? 'Draft updated successfully!' : 'Draft saved successfully!');
-              
-              // Reset form and global state variables on success
               form.reset();
               window.resetImageUpload?.();
               window.resetDocumentUpload?.();
@@ -355,13 +321,10 @@ document.addEventListener('DOMContentLoaded', () => {
               window.existingDocs = [];
               window.selectedFiles = [];
               window.selectedDocuments = [];
-
-              // Reload the list of drafts
               window.loadDrafts?.();
           } else {
               notify('error', data.error || 'Failed to save draft.');
           }
-
       } catch (err) {
           console.error('Draft save/update error:', err);
           notify('error', err.message || 'Network error while saving draft.');
@@ -369,69 +332,88 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------
-  // Show Listing Fee & Open Modal
+  // Open Standalone Boost Modal on Save Listing
   // -------------------------
   document.getElementById('openListingModalBtn')?.addEventListener('click', async () => {
       const form = document.getElementById('addListingForm');
 
-      // Validate form first
       if (!validateForm(form, false)) return;
       if (!form.checkValidity()) return form.reportValidity();
 
-      // Check for at least one image
       const totalImages = (window.selectedFiles?.length || 0) + (window.draftImages?.length || 0);
-      if (totalImages === 0) return notify('error', 'Please upload at least one image.');
+      if (totalImages === 0) return notify('error', 'Please upload at least one property image.');
 
-      // Get property type
-      const propertyType = document.getElementById('property_type')?.value || 'Lot';
+      const boostModal = document.getElementById('boostModalStandalone');
+      if (!boostModal) return console.warn('Standalone Boost Modal not found');
+      boostModal.style.display = 'flex';
 
-      try {
-          // Fetch listing fee info without deducting
-          const res = await fetch('/BatEstateExplorer/public/api/show_fee.php', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: `property_type=${encodeURIComponent(propertyType)}`
+      const tierCards = boostModal.querySelectorAll('.boost-card-standalone');
+      const proceedBtn = document.getElementById('proceedNowBtn');
+      let selectedPlan = null;
+      let selectedPlanCost = 0;
+
+      tierCards.forEach(card => {
+          card.addEventListener('click', () => {
+              tierCards.forEach(c => c.classList.remove('selected-standalone'));
+              card.classList.add('selected-standalone');
+              selectedPlan = card.dataset.plan;
+              selectedPlanCost = parseFloat(card.dataset.cost || 0);
+              proceedBtn.disabled = !selectedPlan;
           });
-          const data = await res.json();
+      });
 
-          if (!data.success) throw new Error(data.error || 'Failed to fetch listing fee.');
+      boostModal.querySelector('.boost-close-standalone')?.addEventListener('click', () => {
+          boostModal.style.display = 'none';
+      });
 
-          // Update modal with fee details
-          document.getElementById('listingBaseFee').innerText = data.base_fee.toLocaleString('en-PH', { minimumFractionDigits: 2 });
-          document.getElementById('listingVAT').innerText = data.vat.toLocaleString('en-PH', { minimumFractionDigits: 2 });
-          document.getElementById('listingTotal').innerText = data.total_deduction.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+      proceedBtn?.addEventListener('click', async () => {
+          if (!selectedPlan) return;
 
-          // Open modal
-          document.getElementById('listingFeeModal').style.display = 'flex';
+          // Close boost modal and open listing fee modal
+          boostModal.style.display = 'none';
 
-      } catch (err) {
-          notify('error', err.message || 'Failed to load listing fee.');
-      }
+          const propertyType = document.getElementById('property_type')?.value || 'Lot';
+          try {
+              const res = await fetch('/BatEstateExplorer/public/api/show_fee.php', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                  body: `property_type=${encodeURIComponent(propertyType)}&tier_plan=${encodeURIComponent(selectedPlan)}`
+              });
+              const data = await res.json();
+              if (!data.success) throw new Error(data.error || 'Failed to fetch listing fee.');
+
+              // Include tier cost in total
+              const totalDeduction = data.total_deduction + selectedPlanCost;
+
+              document.getElementById('listingBaseFee').innerText = data.base_fee.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+              document.getElementById('listingVAT').innerText = data.vat.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+              document.getElementById('listingTotal').innerText = totalDeduction.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+              document.getElementById('listingFeeModal').style.display = 'flex';
+          } catch (err) {
+              notify('error', err.message || 'Failed to load listing fee.');
+          }
+      });
   });
 
+  // Close Listing Fee Modal
   function closeListingFeeModal() {
-    document.getElementById('listingFeeModal').style.display = 'none';
+      document.getElementById('listingFeeModal').style.display = 'none';
   }
   window.closeListingFeeModal = closeListingFeeModal;
 
-  // ------------------------------------------
-  // Pay Listing Fee & Submit with Separate Confirmation Modal
-  // ------------------------------------------
+  // Pay Listing Fee & Open Confirmation Modal
   document.getElementById('payListingFeeBtn')?.addEventListener('click', () => {
-      // Get total fee from the listing modal
       const total = document.getElementById('listingTotal').innerText;
       document.getElementById('confirmTotalAmount').innerText = total;
-
-      // Open the confirmation modal
       document.getElementById('confirmFeeModal').style.display = 'flex';
   });
 
-  // Cancel button closes confirmation modal
   document.getElementById('cancelPayBtn')?.addEventListener('click', () => {
       document.getElementById('confirmFeeModal').style.display = 'none';
   });
 
-  // Confirm button executes the original payListingFee logic
+  // Confirm Payment and Trigger Listing Save
   document.getElementById('confirmPayBtn')?.addEventListener('click', async () => {
       document.getElementById('confirmFeeModal').style.display = 'none';
 
@@ -439,39 +421,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const walletBalanceEl = document.getElementById('agentWalletBalance');
       const fd = new FormData(form);
 
-      // Deduplicate and append files
       deduplicateSelectedDocuments();
-
-      window.selectedFiles.forEach(f => {
-          if (f instanceof File) fd.append('images[]', f);
-          else if (typeof f === 'string') fd.append('existing_images[]', f);
-      });
-
-      window.selectedDocuments?.forEach(f => {
-          if (f instanceof File) fd.append('property_documents[]', f);
-          else if (typeof f === 'string') fd.append('existing_property_documents[]', f);
-      });
-
+      window.selectedFiles.forEach(f => f instanceof File ? fd.append('images[]', f) : fd.append('existing_images[]', f));
+      window.selectedDocuments?.forEach(f => f instanceof File ? fd.append('property_document[]', f) : fd.append('existing_property_documents[]', f));
       if (window.currentDraftId) fd.append('draft_id', window.currentDraftId);
 
       try {
-          // Step 1: Save listing first
           const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
           const saveData = await saveRes.json();
           if (!saveData.success) {
-              notify('error', 'Failed to save listing data or files: ' + (saveData.error || 'Unknown server error.'));
+              notify('error', 'Failed to save listing: ' + (saveData.error || 'Unknown server error.'));
               return;
           }
 
           fd.append('listing_id', saveData.listing_id);
-
-          // Step 2: Pay listing fee
           const propertyType = document.getElementById('property_type')?.value || 'Lot';
           fd.append('property_type', propertyType);
 
           const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
           const feeData = await feeRes.json();
-
           if (!feeData.success) {
               notify('error', 'Listing saved but fee payment failed: ' + (feeData.error || 'Payment failed.'));
               if (feeData.current_balance !== undefined) {
@@ -480,7 +448,6 @@ document.addEventListener('DOMContentLoaded', () => {
               return;
           }
 
-          // Success
           notify('success', `Listing submitted! Fee: PHP ${feeData.total_deduction.toLocaleString('en-PH', { minimumFractionDigits:2 })}. Awaiting admin approval.`);
           window.closeListingFeeModal?.();
           walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
@@ -490,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
               mainSubmitBtn.innerHTML = `Save Listing (Balance: ₱${feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 })})`;
           }
 
-          // Clear form and reset state
+          // Reset form and state
           form.reset();
           window.resetImageUpload?.();
           window.resetDocumentUpload?.();
@@ -499,16 +466,12 @@ document.addEventListener('DOMContentLoaded', () => {
           window.existingDocs = [];
           window.selectedFiles = [];
           window.selectedDocuments = [];
-
-          const draftCard = document.querySelector(`.draft-card[data-id="${window.currentDraftId}"]`);
-          draftCard?.remove();
           window.loadDrafts?.();
 
       } catch (err) {
           notify('error', err.message || 'A critical network error occurred.');
       }
   });
-
 
   initDraftCards();
 

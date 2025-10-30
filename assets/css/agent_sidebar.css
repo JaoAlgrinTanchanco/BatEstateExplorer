@@ -219,7 +219,8 @@
 }
 
 /* Modal Background */
-.boost-modal {
+.boost-modal,
+.boost-modal-standalone {
   display: none;
   position: fixed;
   z-index: 1000;
@@ -233,7 +234,8 @@
 }
 
 /* Modal Box */
-.boost-modal-content {
+.boost-modal-content,
+.boost-modal-content-standalone {
   position: relative;
   background: #fff;
   width: auto;
@@ -244,25 +246,27 @@
 }
 
 /* Modal background logo effect */
-.boost-modal-content::before {
+.boost-modal-content::before,
+.boost-modal-content-standalone::before {
   content: "";
   position: absolute;
   inset: 0;
   background: url("../images/Vector 1.png") repeat center;
   background-size: 30% auto;
-  background-repeat: repeat;
   opacity: 0.03;
   z-index: 0;
 }
 
 /* Make inner content appear above the overlay */
-.boost-modal-content > * {
+.boost-modal-content > *,
+.boost-modal-content-standalone > * {
   position: relative;
   z-index: 1;
 }
 
 /* Close Button */
-.boost-close {
+.boost-close,
+.boost-close-standalone {
   position: absolute;
   top: 15px;
   right: 20px;
@@ -271,16 +275,19 @@
 }
 
 /* Title and Subtext */
-.boost-title {
+.boost-title,
+.boost-title-standalone {
   margin-bottom: 0.25rem;
 }
-.boost-subtext {
+.boost-subtext,
+.boost-subtext-standalone {
   margin-bottom: 2rem;
   color: #666;
 }
 
 /* Tiers Layout */
-.boost-tiers {
+.boost-tiers,
+.boost-tiers-standalone {
   display: flex;
   justify-content: space-between;
   gap: 2rem;
@@ -288,59 +295,66 @@
 }
 
 /* Card Styles */
-.boost-card {
+.boost-card,
+.boost-card-standalone {
   flex: 1;
   min-width: 250px;
   min-height: 250px;
   background: #fff;
-  background-size: cover; /* make the image cover the card */
-  background-position: center; /* center the image */
+  background-size: cover;
+  background-position: center;
   background-repeat: no-repeat;
-  border-radius: 30px; 
+  border-radius: 30px;
   border: 3px solid transparent;
   padding: 1.5rem;
   text-align: center;
   cursor: pointer;
-  position: relative; /* needed for overlay */
-  transition: all 0.3s ease;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05),
-              0 0 10px rgba(41, 41, 41, 0.05);
+  position: relative;
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.05),
+              0 0 10px rgba(41,41,41,0.05);
 }
 
 /* Add specific backgrounds for each tier */
-.boost-card[data-plan="basic"] {
+.boost-card[data-plan="basic"],
+.boost-card-standalone[data-plan="basic"] {
   background-image: url('/BatEstateExplorer/assets/images/BASIC.png');
 }
 
-.boost-card[data-plan="standard"] {
+.boost-card[data-plan="standard"],
+.boost-card-standalone[data-plan="standard"] {
   background-image: url('/BatEstateExplorer/assets/images/STANDARD.png');
 }
 
-.boost-card[data-plan="premium"] {
+.boost-card[data-plan="premium"],
+.boost-card-standalone[data-plan="premium"] {
   background-image: url('/BatEstateExplorer/assets/images/PREMIUM.png');
 }
 
 /* Hover / Active states */
-.boost-card:hover {
+.boost-card:hover,
+.boost-card-standalone:hover {
   transform: translateY(-5px);
-  z-index: 1; /* hover above overlay */
+  z-index: 1;
 }
 
 /* Selected state */
-.boost-card.selected {
+.boost-card.selected,
+.boost-card-standalone.selected-standalone {
   border-color: #111;
-  box-shadow: 0 0 25px rgba(31, 31, 31, 1); /* violet glow */
-  z-index: 2; /* make sure border is above overlay */
+  box-shadow: 0 0 25px rgba(31,31,31,1);
+  z-index: 2;
 }
 
-.boost-action {
+.boost-action,
+.boost-action-standalone {
   display: flex;
   justify-content: center;
   margin-top: 2rem;
 }
 
-#boostNowBtn {
+#boostNowBtn,
+#proceedNowBtn {
   background: #111;
   color: #fff;
   border: 2px solid #111;
@@ -352,13 +366,15 @@
   transition: all 0.3s ease;
 }
 
-#boostNowBtn:hover:not(:disabled) {
+#boostNowBtn:hover:not(:disabled),
+#proceedNowBtn:hover:not(:disabled) {
   background: #fff;
   color: #111;
   border: 2px solid #111;
 }
 
-#boostNowBtn:disabled {
+#boostNowBtn:disabled,
+#proceedNowBtn:disabled {
   border: 2px solid #ccc;
   background: #ccc;
   color: #fff;
@@ -366,7 +382,6 @@
   transform: none;
   box-shadow: none;
 }
-
 
 /* =========================
    Boost Modal Property Grid

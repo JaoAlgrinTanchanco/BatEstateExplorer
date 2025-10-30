@@ -25,11 +25,12 @@ if (!$property_id || !$plan) {
     exit;
 }
 
-// --- Plan mapping ---
+// --- Plan mapping (4 tiers) ---
 $PLAN_PACKAGES = [
-    'basic'    => ['days' => 7,  'cost' => 499.00],
-    'standard' => ['days' => 14, 'cost' => 899.00],
-    'premium'  => ['days' => 30, 'cost' => 1499.00],
+    'basic'    => ['days' => 30,  'cost' => 399.00],
+    'standard' => ['days' => 45,  'cost' => 699.00],
+    'premium'  => ['days' => 60,  'cost' => 1199.00],
+    'platinum' => ['days' => 90,  'cost' => 1799.00],
 ];
 
 if (!array_key_exists($plan, $PLAN_PACKAGES)) {
