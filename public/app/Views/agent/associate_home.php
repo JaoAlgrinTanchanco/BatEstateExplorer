@@ -354,6 +354,7 @@
         </div>
     </div>
 
+    <h4>Top Featured</h4>
     <!-- Featured -->
     <div class="property-grid-x" id="propertyGridX">
         <?php if (!empty($featuredProperties)): ?>
@@ -577,5 +578,28 @@
             }
         })();
 
+        const cards = Array.from(document.querySelectorAll("#propertyGridX > .property-card"));
+
+        const labels = [
+        "🏆 TOP 1 Performing",
+        "🥈 TOP 2 Performing",
+        "🥉 TOP 3 Performing"
+        ];
+
+        const colors = [
+        "linear-gradient(135deg, #8b5cf6, #6d28d9)", // Deep royal purple
+        "linear-gradient(135deg, #a78bfa, #7c3aed)", // Medium amethyst
+        "linear-gradient(135deg, #c4b5fd, #a78bfa)"  // Soft lavender
+        ];
+
+        cards.slice(0, 3).forEach((card, index) => {
+        if (card.querySelector(".top-badge")) return;
+
+        const badge = document.createElement("div");
+        badge.className = "top-badge";
+        badge.textContent = labels[index];
+        badge.style.background = colors[index];
+        card.appendChild(badge);
+        });
     });
 </script>
