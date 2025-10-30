@@ -239,9 +239,9 @@
 
                             <!-- Tier Cards -->
                             <div class="boost-tiers">
-                            <div class="boost-card" data-plan="basic"></div>
-                            <div class="boost-card" data-plan="standard"></div>
-                            <div class="boost-card" data-plan="premium"></div>
+                                <div class="boost-card" data-plan="basic"></div>
+                                <div class="boost-card" data-plan="standard"></div>
+                                <div class="boost-card" data-plan="premium"></div>
                             </div>
 
                             <!-- Property Grid (disabled until tier selected) -->
@@ -281,10 +281,16 @@
                     <div id="confirmBoostModal" class="confirm-modal">
                         <div class="confirm-modal-content">
                             <h3>Confirm Boost</h3>
-                            <p>Are you sure you want to feature this property under the selected plan?</p>
+                            <p id="boostDetails">
+                                Loading payment details...
+                            </p>
+                            <div class="wallet-info">
+                                <strong>Wallet Balance:</strong> ₱<span id="walletBalance"><?= $walletBalanceFormatted ?></span><br>
+                                <strong>Boost Tier Cost:</strong> ₱<span id="tierCost">0.00</span>
+                            </div>
                             <div class="confirm-actions">
-                            <button id="confirmYesBtn" class="confirm-btn confirm-yes">Yes, Boost</button>
-                            <button id="confirmCancelBtn" class="confirm-btn confirm-cancel">Cancel</button>
+                                <button id="payBoostBtn" class="confirm-btn confirm-pay">Pay</button>
+                                <button id="confirmCancelBtn" class="confirm-btn confirm-cancel">Cancel</button>
                             </div>
                         </div>
                     </div>
@@ -1155,6 +1161,41 @@
             else seen.add(id);
             });
         })();
+        // --- Update Confirm Boost Modal with tier & cost ---
+        function updateConfirmModal() {
+            const tierEl = document.getElementById('tierCost');
+            const detailsEl = document.getElementById('boostDetails');
+
+            let tierCost = 0;
+            let planName = selectedPlan;
+
+            // Set fixed prices based on plan
+            switch (selectedPlan) {
+                case 'basic':
+                    tierCost = 499;
+                    planName = 'Basic';
+                    break;
+                case 'standard':
+                    tierCost = 899;
+                    planName = 'Standard';
+                    break;
+                case 'premium':
+                    tierCost = 1499;
+                    planName = 'Premium';
+                    break;
+                default:
+                    tierCost = 0;
+                    planName = '';
+            }
+
+            tierEl.textContent = tierCost.toFixed(2);
+
+            if (selectedPlan && selectedPropertyId) {
+                detailsEl.textContent = `You're about to boost property with the "${planName}" plan.`;
+            } else {
+                detailsEl.textContent = 'Select a property and plan to see details here.';
+            }
+        }
 
         // --- Elements ---
         const modal = document.getElementById('boostModal');
@@ -1164,7 +1205,7 @@
         const propertyCards = modal.querySelectorAll('.property-card-boost');
         const boostBtn = document.getElementById('boostNowBtn');
         const confirmModal = document.getElementById('confirmBoostModal');
-        const confirmYesBtn = document.getElementById('confirmYesBtn');
+        const confirmYesBtn = document.getElementById('payBoostBtn');
         const confirmCancelBtn = document.getElementById('confirmCancelBtn');
 
         let selectedPlan = null;
@@ -1224,64 +1265,63 @@
             if (e.target === confirmModal) confirmModal.style.display = 'none';
         });
 
-        // --- Tier Card Select ---
+        // --- Tier Card Selection ---
         tierCards.forEach(card => {
             card.addEventListener('click', () => {
-            const plan = card.dataset.plan;
-            if (selectedPlan === plan) {
-                card.classList.remove('selected');
-                selectedPlan = null;
-                propertyGridSection.style.opacity = '0.5';
-                propertyGridSection.style.pointerEvents = 'none';
-                propertyCards.forEach(c => c.classList.remove('selected'));
-                selectedPropertyId = null;
-                updateBoostButton();
-                return;
-            }
+                // Toggle selection
+                if (selectedPlan === card.dataset.plan) {
+                    card.classList.remove('selected');
+                    selectedPlan = null;
+                    selectedPropertyId = null;
+                    propertyCards.forEach(c => c.classList.remove('selected'));
+                    propertyGridSection.style.opacity = '0.5';
+                    propertyGridSection.style.pointerEvents = 'none';
+                } else {
+                    tierCards.forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    selectedPlan = card.dataset.plan;
+                    propertyGridSection.style.opacity = '1';
+                    propertyGridSection.style.pointerEvents = 'auto';
+                }
 
-            tierCards.forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            selectedPlan = plan;
-            propertyGridSection.style.opacity = '1';
-            propertyGridSection.style.pointerEvents = 'auto';
-            updateBoostButton();
+                updateBoostButton();
+                updateConfirmModal();
             });
         });
 
-        // --- Property Card Select ---
+        // --- Property Card Selection ---
         propertyCards.forEach(card => {
             card.addEventListener('click', () => {
-            if (card.classList.contains('disabled')) {
-                notify('error', 'This property is already featured.');
-                return;
-            }
+                if (!selectedPlan) {
+                    notify('error', 'Please select a plan first.');
+                    return;
+                }
+                if (card.classList.contains('disabled')) {
+                    notify('error', 'This property is already featured.');
+                    return;
+                }
 
-            const propertyId = card.dataset.propertyId;
-            if (!selectedPlan) {
-                notify('error', 'Please select a plan first.');
-                return;
-            }
+                if (selectedPropertyId === card.dataset.propertyId) {
+                    card.classList.remove('selected');
+                    selectedPropertyId = null;
+                } else {
+                    propertyCards.forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    selectedPropertyId = card.dataset.propertyId;
+                }
 
-            if (selectedPropertyId === propertyId) {
-                card.classList.remove('selected');
-                selectedPropertyId = null;
                 updateBoostButton();
-                return;
-            }
-
-            propertyCards.forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            selectedPropertyId = propertyId;
-            updateBoostButton();
+                updateConfirmModal();
             });
         });
 
         // --- Boost Now Click ---
         boostBtn.addEventListener('click', () => {
             if (!selectedPlan || !selectedPropertyId) {
-            notify('error', 'Please select a plan and property.');
-            return;
+                notify('error', 'Please select a plan and property.');
+                return;
             }
+            updateConfirmModal();
             confirmModal.style.display = 'flex';
         });
 

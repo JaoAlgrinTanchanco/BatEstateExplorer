@@ -142,7 +142,9 @@
     // Main Query
     // ================================
     $sql = "
-        SELECT p.*, 
+        SELECT 
+            p.*, 
+            p.listed_by_agent_id,
             (
                 SELECT image_path 
                 FROM property_images 
@@ -179,6 +181,126 @@
     $stmt->execute();
     $result     = $stmt->get_result();
     $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+
+    // ================================
+    // Fetch Featured Properties
+    //  - Top 3 Rated (always included)
+    //  - Fallback to fill top 3 if not enough rated
+    //  - Then all active Paid Featured (ranked by plan duration)
+    // Supports: available, sold, ongoing_inquiry
+    // ================================
+
+    $featuredProperties = [];
+
+    $allowedStatuses = ["available", "sold", "ongoing_inquiry"];
+    $statusList = "'" . implode("','", $allowedStatuses) . "'";
+
+    // -------------------------------
+    // 1️⃣ Fetch Top 3 Rated Properties
+    // -------------------------------
+    $topRatedSql = "
+        SELECT 
+            p.*,
+            COALESCE(AVG(r.rating), 0) AS avg_rating,
+            COUNT(r.id) AS total_reviews
+        FROM properties p
+        LEFT JOIN property_reviews r 
+            ON p.id = r.property_id
+        WHERE p.status IN ($statusList)
+        GROUP BY p.id
+        ORDER BY 
+            avg_rating DESC,
+            total_reviews DESC,
+            p.created_at DESC
+        LIMIT 3
+    ";
+
+    if ($stmt = $conn->prepare($topRatedSql)) {
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result && $result->num_rows > 0) {
+            $featuredProperties = $result->fetch_all(MYSQLI_ASSOC);
+        }
+        $stmt->close();
+    } else {
+        error_log("❌ Failed to prepare top rated properties query: " . $conn->error);
+    }
+
+    // -------------------------------
+    // 2️⃣ Fallback: Fill missing top-rated slots
+    // -------------------------------
+    if (count($featuredProperties) < 3) {
+        $remaining = 3 - count($featuredProperties);
+        $excludeIds = array_column($featuredProperties, 'id');
+        $excludeStr = !empty($excludeIds)
+            ? "AND p.id NOT IN (" . implode(',', array_map('intval', $excludeIds)) . ")"
+            : "";
+
+        $fallbackSql = "
+            SELECT 
+                p.*, 
+                0 AS avg_rating, 
+                0 AS total_reviews
+            FROM properties p
+            WHERE p.status IN ($statusList) $excludeStr
+            ORDER BY p.created_at DESC
+            LIMIT $remaining
+        ";
+
+        if ($fallbackStmt = $conn->prepare($fallbackSql)) {
+            $fallbackStmt->execute();
+            $fallbackResult = $fallbackStmt->get_result();
+            if ($fallbackResult) {
+                $featuredProperties = array_merge(
+                    $featuredProperties,
+                    $fallbackResult->fetch_all(MYSQLI_ASSOC)
+                );
+            }
+            $fallbackStmt->close();
+        }
+    }
+
+    // -------------------------------
+    // 3️⃣ Fetch All Active Paid Featured Properties
+    // -------------------------------
+    $excludeIds = array_column($featuredProperties, 'id');
+    $excludeStr = !empty($excludeIds)
+        ? "AND p.id NOT IN (" . implode(',', array_map('intval', $excludeIds)) . ")"
+        : "";
+
+    $paidFeaturedSql = "
+        SELECT 
+            p.*,
+            TIMESTAMPDIFF(DAY, p.created_at, p.featured_until) AS feature_duration
+        FROM properties p
+        WHERE 
+            p.is_featured = 1
+            AND p.featured_until > NOW()
+            AND p.status IN ($statusList)
+            $excludeStr
+        ORDER BY 
+            feature_duration DESC,    -- longer duration = higher plan
+            p.featured_until DESC,    -- most recent renewal first
+            p.created_at DESC
+    ";
+
+    $paidFeatured = [];
+    if ($paidStmt = $conn->prepare($paidFeaturedSql)) {
+        $paidStmt->execute();
+        $paidResult = $paidStmt->get_result();
+        if ($paidResult && $paidResult->num_rows > 0) {
+            $paidFeatured = $paidResult->fetch_all(MYSQLI_ASSOC);
+        }
+        $paidStmt->close();
+    } else {
+        error_log("❌ Failed to prepare paid featured properties query: " . $conn->error);
+    }
+
+    // -------------------------------
+    // 4️⃣ Combine Top Rated + Paid Featured
+    // -------------------------------
+    $featuredProperties = array_merge($featuredProperties, $paidFeatured);
+
 ?>
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/search.css">
@@ -187,7 +309,7 @@
 
 <!-- Welcome Banner -->
 <div class="welcome-card">
-    <img src="/BatEstateExplorer/assets/images/Frame 7.png" alt="Welcome Banner" class="welcome-image">
+    <img src="/BatEstateExplorer/assets/images/Frame 6.png" alt="Welcome Banner" class="welcome-image">
 </div>
 
 <div class="search-container">
@@ -279,6 +401,20 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
             </button>
         </div>
+    </div>
+
+    <h4>🏆Top Featured</h4>
+    <!-- Featured -->
+    <div class="property-grid-x" id="propertyGridX">
+        <?php if (!empty($featuredProperties)): ?>
+            <?php foreach ($featuredProperties as $property):
+                $property['data_type'] = $property['property_type'];
+                $property['data_size'] = $property['sqm'];
+                render_property_card($property);
+            endforeach; ?>
+        <?php else: ?>
+            <p>No top-rated properties available.</p>
+        <?php endif; ?>
     </div>
 
     <div class="properties-grid" id="propertiesGrid">
@@ -407,5 +543,132 @@
 
         // Initial pagination binding
         bindPagination();
+
+        // === Dynamic Notices Modal with Conditional Icons ===
+        (async () => {
+            try {
+                const res = await fetch("/BatEstateExplorer/public/api/get_unseen_notices.php");
+                const data = await res.json();
+
+                if (!data.success || !data.notices.length) return;
+
+                let currentIndex = 0;
+
+                const showNextNotice = async () => {
+                if (currentIndex >= data.notices.length) {
+                    document.querySelector(".notice-modal")?.remove();
+                    return;
+                }
+
+                const notice = data.notices[currentIndex];
+                document.querySelector(".notice-modal")?.remove();
+
+                // --- Determine icon and color ---
+                let iconSvg = "";
+                let accentColor = "#22c55e"; // success green
+                let iconBg = "#f0fff4";
+                let titleText = "Success";
+                let contentClass = "success"; // default
+
+                if (notice.message.includes("Another agent")) {
+                    accentColor = "#eab308"; // amber
+                    iconBg = "#fffbeb";
+                    titleText = "Notice";
+                    contentClass = "warning";
+
+                    iconSvg = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="${accentColor}" stroke-width="2.5">
+                        <circle cx="32" cy="32" r="28" fill="${iconBg}" stroke="${accentColor}"/>
+                        <line x1="32" y1="18" x2="32" y2="38" stroke="${accentColor}" stroke-width="5" stroke-linecap="round"/>
+                        <circle cx="32" cy="46" r="3.5" fill="${accentColor}"/>
+                    </svg>
+                    `;
+                } else {
+                    iconSvg = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="${accentColor}" stroke-width="2.5">
+                        <circle cx="32" cy="32" r="28" fill="${iconBg}" stroke="${accentColor}"/>
+                        <path d="M20 33l7 7 17-17" stroke="${accentColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    `;
+                }
+
+                // --- Build Modal ---
+                const modal = document.createElement("div");
+                modal.className = "notice-modal";
+                modal.innerHTML = `
+                <div class="notice-content ${contentClass} animate-in">
+                    <div class="notice-icon">${iconSvg}</div>
+                    <h3>${titleText}</h3>
+                    <p>${notice.message}</p>
+                    <button class="btn btn-primary">Okay</button>
+                </div>
+                `;
+
+                document.body.appendChild(modal);
+
+                // --- Button click handler ---
+                modal.querySelector(".btn").addEventListener("click", async () => {
+                    modal.classList.add("hidden");
+
+                    await fetch("/BatEstateExplorer/public/api/mark_notice_seen.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: notice.id }),
+                    });
+
+                    currentIndex++;
+                    setTimeout(showNextNotice, 400);
+                });
+                };
+
+                showNextNotice();
+            } catch (err) {
+                console.error("Failed to load notices:", err);
+            }
+        })();
+
+        const cards = Array.from(document.querySelectorAll("#propertyGridX > .property-card"));
+
+        const labels = [
+        "🥇TOP 1 Performing",
+        "🥈 TOP 2 Performing",
+        "🥉 TOP 3 Performing"
+        ];
+
+        const colors = [
+        "linear-gradient(135deg, #8b5cf6, #6d28d9)", // Deep royal purple
+        "linear-gradient(135deg, #a78bfa, #7c3aed)", // Medium amethyst
+        "linear-gradient(135deg, #c4b5fd, #a78bfa)"  // Soft lavender
+        ];
+
+        cards.slice(0, 3).forEach((card, index) => {
+        if (card.querySelector(".top-badge")) return;
+
+        const badge = document.createElement("div");
+        badge.className = "top-badge";
+        badge.textContent = labels[index];
+        badge.style.background = colors[index];
+        card.appendChild(badge);
+        });
+
+
+    });
+    // Trigger feature check on page reload
+    window.addEventListener('load', () => {
+        fetch('/BatEstateExplorer/public/api/feature_check.php')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log(data.message);
+                    if (data.expired && data.expired.length > 0) {
+                        console.log('Expired properties:', data.expired);
+                    }
+                } else if (data.error) {
+                    console.error('Feature check error:', data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Failed to trigger feature check:', err);
+            });
     });
 </script>
