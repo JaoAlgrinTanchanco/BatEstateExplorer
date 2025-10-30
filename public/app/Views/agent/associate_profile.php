@@ -1218,7 +1218,7 @@
             tierEl.textContent = tierCost.toFixed(2);
 
             if (selectedPlan && selectedPropertyId) {
-                detailsEl.textContent = `You're about to boost property ID with the "${planName}" plan.`;
+                detailsEl.textContent = `You're about to boost property with the "${planName}" plan.`;
             } else {
                 detailsEl.textContent = 'Select a property and plan to see details here.';
             }
