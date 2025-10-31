@@ -15,22 +15,22 @@
 }
 
 /* ============================================
-   REPORT AGENT MODAL (Airbnb-style)
+   REPORT PROPERTY MODAL (Airbnb-style)
    ============================================ */
 
-.report-modal {
+#reportPropertyModal {
   position: fixed;
   inset: 0;
-  background: rgba(17, 17, 17, 0.45); /* subtle dark overlay */
+  background: rgba(17, 17, 17, 0.45); /* Subtle dark overlay */
   backdrop-filter: blur(4px);
   display: none;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  z-index: 99999;
   animation: fadeIn 0.3s ease forwards;
 }
 
-.report-modal-content {
+#reportPropertyModal .report-modal-content {
   background: #fff;
   border-radius: 24px;
   padding: 2rem;
@@ -43,7 +43,8 @@
   animation: slideUp 0.35s ease forwards;
 }
 
-.report-modal-content h2 {
+/* ===== Header ===== */
+#reportPropertyModal .report-modal-content h2 {
   font-family: 'Satoshi', sans-serif;
   font-size: 24px;
   font-weight: 600;
@@ -52,7 +53,8 @@
   text-align: center;
 }
 
-.report-modal-content label {
+/* ===== Labels ===== */
+#reportPropertyModal .report-modal-content label {
   display: block;
   font-size: 0.95rem;
   font-weight: 500;
@@ -60,11 +62,12 @@
   margin-bottom: 0.5rem;
 }
 
-.report-modal-content select,
-.report-modal-content textarea,
-.report-modal-content input[type="text"] {
+/* ===== Inputs & Textareas ===== */
+#reportPropertyModal .report-modal-content select,
+#reportPropertyModal .report-modal-content textarea,
+#reportPropertyModal .report-modal-content input[type="text"] {
   width: 100%;
-  box-sizing: border-box; /* ensures consistent width */
+  box-sizing: border-box;
   border: 1px solid #ddd;
   border-radius: 12px;
   padding: 0.75rem;
@@ -73,25 +76,26 @@
   transition: border 0.25s ease, box-shadow 0.25s ease;
 }
 
-.report-modal-content select:focus,
-.report-modal-content textarea:focus,
-.report-modal-content input[type="text"]:focus {
+#reportPropertyModal .report-modal-content select:focus,
+#reportPropertyModal .report-modal-content textarea:focus,
+#reportPropertyModal .report-modal-content input[type="text"]:focus {
   outline: none;
   border-color: #222;
   box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.1);
 }
 
-#otherReasonContainer {
+#reportPropertyModal #otherReasonContainer {
   display: none;
   margin-top: 1rem;
 }
 
-.report-modal-content textarea {
+#reportPropertyModal .report-modal-content textarea {
   resize: none;
   height: 110px;
 }
 
-.report-modal-content button {
+/* ===== Button ===== */
+#reportPropertyModal .report-modal-content button {
   width: 100%;
   margin-top: 1.5rem;
   padding: 0.9rem;
@@ -106,12 +110,13 @@
   font-family: 'Satoshi-Regular', sans-serif;
 }
 
-.report-modal-content button:hover {
+#reportPropertyModal .report-modal-content button:hover {
   background: #e74c3c;
   transform: translateY(-2px);
 }
 
-.report-modal-content .close {
+/* ===== Close Button ===== */
+#reportPropertyModal .report-modal-content .close {
   position: absolute;
   top: 12px;
   right: 18px;
@@ -121,7 +126,7 @@
   transition: color 0.25s ease, transform 0.2s ease;
 }
 
-.report-modal-content .close:hover {
+#reportPropertyModal .report-modal-content .close:hover {
   color: #e74c3c;
   transform: rotate(90deg);
 }
@@ -139,17 +144,17 @@
 
 /* ===== Responsive ===== */
 @media (max-width: 480px) {
-  .report-modal-content {
+  #reportPropertyModal .report-modal-content {
     padding: 1.25rem;
     max-width: 90%;
     border-radius: 18px;
   }
 
-  .report-modal-content h2 {
+  #reportPropertyModal .report-modal-content h2 {
     font-size: 20px;
   }
 
-  .report-modal-content button {
+  #reportPropertyModal .report-modal-content button {
     padding: 0.75rem;
   }
 }

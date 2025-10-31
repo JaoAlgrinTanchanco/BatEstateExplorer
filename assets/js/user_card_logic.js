@@ -620,3 +620,70 @@ function updatePropertyModal(property) {
   });
 
 })();
+
+// Report Property
+(() => {
+  const reportLink = document.querySelector('.nav-link.report-agent');
+  const modal = document.getElementById('reportPropertyModal');
+  const closeBtn = modal?.querySelector('.close');
+  const form = modal?.querySelector('#reportPropertyForm');
+  const reasonSelect = modal?.querySelector('#report-reason');
+  const otherReasonContainer = modal?.querySelector('#otherReasonContainer');
+
+  if (!reportLink || !modal || !form) return;
+
+  // ====== Open Modal ======
+  reportLink.addEventListener('click', e => {
+    e.preventDefault();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // prevent scroll
+  });
+
+  // ====== Close Modal ======
+  const closeModal = () => {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    form.reset();
+    otherReasonContainer.style.display = 'none';
+  };
+
+  closeBtn?.addEventListener('click', closeModal);
+  window.addEventListener('click', e => {
+    if (e.target === modal) closeModal();
+  });
+
+  // ====== Toggle "Other Reason" Field ======
+  reasonSelect?.addEventListener('change', () => {
+    if (reasonSelect.value === 'other') {
+      otherReasonContainer.style.display = 'block';
+    } else {
+      otherReasonContainer.style.display = 'none';
+    }
+  });
+
+  // ====== Submit Report ======
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+
+    try {
+      const res = await fetch('/BatEstateExplorer/public/api/report_property.php', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (data.status === 'success') {
+        alert('✅ Report submitted successfully.');
+        closeModal();
+      } else {
+        alert(`⚠️ ${data.message || 'Something went wrong.'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('❌ Error submitting report. Please try again later.');
+    }
+  });
+})();
