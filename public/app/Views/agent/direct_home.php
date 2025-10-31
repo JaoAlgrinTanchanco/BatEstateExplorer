@@ -362,8 +362,26 @@
                     'label' => 'Property Type',
                     'options' => [
                         '' => 'All Type',
-                        'Property' => 'Property',
-                        'Lot' => 'Lot'
+                        'Condominium' => 'Condominium',
+                        'Apartment' => 'Apartment',
+                        'Townhouse' => 'Townhouse',
+                        'House and Lot' => 'House and Lot',
+                        'Commercial Building' => 'Commercial Building',
+                        'Lot Only' => 'Lot Only',
+                        'Farm Lot' => 'Farm Lot',
+                        'Industrial Lot' => 'Industrial Lot',
+                        'Beachfront Property' => 'Beachfront Property',
+                        'Resort' => 'Resort',
+                        'Hotels and Motels' => 'Hotels and Motels',
+                        'Dormitory' => 'Dormitory',
+                        'Office Space' => 'Office Space',
+                        'Warehouse' => 'Warehouse',
+                        'Retail Space' => 'Retail Space',
+                        'Mixed-Use Development' => 'Mixed-Use Development',
+                        'Luxury Estate' => 'Luxury Estate',
+                        'Foreclosed Property' => 'Foreclosed Property',
+                        'Subdivision Development' => 'Subdivision Development',
+                        'Others' => 'Others'
                     ]
                 ],
 

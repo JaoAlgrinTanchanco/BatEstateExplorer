@@ -239,6 +239,7 @@
   position: relative;
   background: #fff;
   width: auto;
+  max-width: 1165px;
   border-radius: 30px;
   padding: 2rem;
   text-align: center;
@@ -329,6 +330,11 @@
 .boost-card[data-plan="premium"],
 .boost-card-standalone[data-plan="premium"] {
   background-image: url('/BatEstateExplorer/assets/images/PREMIUM.png');
+}
+
+.boost-card[data-plan="platinum"],
+.boost-card-standalone[data-plan="platinum"] {
+  background-image: url('/BatEstateExplorer/assets/images/PLATINUM.png');
 }
 
 /* Hover / Active states */
