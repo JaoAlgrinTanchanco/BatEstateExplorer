@@ -2,19 +2,19 @@
 /**
  * feature_check.php
  *
- * Checks all featured properties (Premium & Platinum) and unfeatures any that have expired.
- * Can be run via cron job or triggered manually by an admin.
+ * Checks all featured properties (all tiers) and unfeatures any that have expired.
+ * Returns tier_plan for frontend badge display.
  */
 
 require_once __DIR__ . '/../app/bootstrap.php';
 header('Content-Type: application/json');
 
 try {
-    // --- Find all expired featured properties ---
+    // --- Find all expired featured properties (any tier) ---
     $query = "
-        SELECT id, title, featured_until, is_featured
+        SELECT id, title, featured_until, is_featured, tier_plan
         FROM properties
-        WHERE is_featured IN (1,2)  -- 1 = Featured, 2 = Top Featured
+        WHERE is_featured = 1
           AND featured_until IS NOT NULL 
           AND featured_until < NOW()
     ";
@@ -32,35 +32,47 @@ try {
         $expiredProperties[] = $row;
     }
 
-    if (empty($expiredProperties)) {
-        echo json_encode([
-            'success' => true,
-            'message' => 'No expired featured properties found.'
-        ]);
-        exit;
-    }
-
     // --- Unfeature expired properties ---
-    $updateQuery = "
-        UPDATE properties
-        SET is_featured = 0, featured_until = NULL
-        WHERE id = ?
-    ";
-    $updateStmt = $conn->prepare($updateQuery);
+    if (!empty($expiredProperties)) {
+        $updateQuery = "
+            UPDATE properties
+            SET is_featured = 0,
+                featured_until = NULL,
+                tier_plan = NULL
+            WHERE id = ?
+        ";
+        $updateStmt = $conn->prepare($updateQuery);
 
-    if (!$updateStmt) {
-        throw new Exception("Failed to prepare update query: " . $conn->error);
+        if (!$updateStmt) {
+            throw new Exception("Failed to prepare update query: " . $conn->error);
+        }
+
+        foreach ($expiredProperties as $prop) {
+            $updateStmt->bind_param('i', $prop['id']);
+            $updateStmt->execute();
+        }
     }
 
-    foreach ($expiredProperties as $prop) {
-        $updateStmt->bind_param('i', $prop['id']);
-        $updateStmt->execute();
+    // --- Get all currently active featured properties ---
+    $activeQuery = "
+        SELECT id, title, featured_until, is_featured, tier_plan
+        FROM properties
+        WHERE is_featured = 1
+    ";
+    $activeStmt = $conn->prepare($activeQuery);
+    $activeStmt->execute();
+    $activeResult = $activeStmt->get_result();
+
+    $featuredProperties = [];
+    while ($row = $activeResult->fetch_assoc()) {
+        $featuredProperties[] = $row;
     }
 
     echo json_encode([
         'success' => true,
-        'message' => count($expiredProperties) . ' expired featured properties have been updated.',
-        'expired' => $expiredProperties
+        'message' => 'Featured properties retrieved.',
+        'expired' => $expiredProperties,
+        'active' => $featuredProperties
     ]);
 
 } catch (Exception $e) {

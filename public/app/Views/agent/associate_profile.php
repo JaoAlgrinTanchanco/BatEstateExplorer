@@ -61,14 +61,20 @@
             $company_name = $company['name'] ?? $company_name;
         }
 
-        // Fetch all properties listed by this agent
+        // Fetch all properties listed by this agent (only allowed statuses)
+        $allowedStatuses = ['available', 'sold', 'ongoing_inquiry'];
+        $placeholders = implode(',', array_fill(0, count($allowedStatuses), '?'));
+        $types = str_repeat('s', count($allowedStatuses));
+
         $stmt = $conn->prepare("
             SELECT DISTINCT p.*
             FROM properties p
             WHERE p.listed_by_agent_id = ?
+            AND p.status IN ($placeholders)
             ORDER BY p.created_at DESC
         ");
-        $stmt->bind_param("i", $agent_id);
+        $params = array_merge([$agent_id], $allowedStatuses);
+        $stmt->bind_param("i" . str_repeat("s", count($allowedStatuses)), ...$params);
         $stmt->execute();
         $listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
@@ -289,7 +295,8 @@
                                     <div class="property-card-boost" 
                                         data-property-id="<?= $property['id'] ?>"
                                         data-featured="<?= $property['is_featured'] ?>"
-                                        data-featured-until="<?= $property['featured_until'] ?>">
+                                        data-featured-until="<?= $property['featured_until'] ?>"
+                                        data-tier="<?= htmlspecialchars($property['tier_plan']) ?>">
                                     <img src="<?= $first_img_src ?>" alt="Property Image">
                                     <div class="overlay">
                                         <h4><?= htmlspecialchars($property['title']) ?></h4>
@@ -1219,16 +1226,15 @@
         });
     });
     document.addEventListener('DOMContentLoaded', () => {
+
         // --- Remove duplicate property cards ---
-        (function removeDuplicatePropertyCards() {
-            const seen = new Set();
-            document.querySelectorAll('.property-card-boost').forEach(card => {
-                const id = card.dataset.propertyId?.toString();
-                if (!id) return;
-                if (seen.has(id)) card.remove();
-                else seen.add(id);
-            });
-        })();
+        const propertyCardsSet = new Set();
+        document.querySelectorAll('.property-card-boost').forEach(card => {
+            const id = card.dataset.propertyId?.toString();
+            if (!id) return;
+            if (propertyCardsSet.has(id)) card.remove();
+            else propertyCardsSet.add(id);
+        });
 
         // --- Elements ---
         const modal = document.getElementById('boostModal');
@@ -1246,7 +1252,6 @@
         let selectedPlan = null;
         let selectedPropertyId = null;
 
-        // --- Tier Prices ---
         const tierPrices = {
             basic: 399,
             standard: 699,
@@ -1254,17 +1259,20 @@
             platinum: 1799
         };
 
+        const tierOrder = ['basic','standard','premium','platinum'];
+
+        // --- Disable Basic tier card from selection ---
+        tierCards.forEach(card => {
+            if (card.dataset.plan === 'basic') card.classList.add('disabled');
+        });
+
         // --- Update Confirm Modal ---
         function updateConfirmModal() {
             const planName = selectedPlan ? selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1) : '';
-            const tierCost = selectedPlan ? tierPrices[selectedPlan] : 0;
-            tierEl.textContent = tierCost.toFixed(2);
-
-            if (selectedPlan && selectedPropertyId) {
-                detailsEl.textContent = `You're about to boost this property with the "${planName}" plan.`;
-            } else {
-                detailsEl.textContent = 'Select a property and plan to see details here.';
-            }
+            tierEl.textContent = selectedPlan ? tierPrices[selectedPlan].toFixed(2) : '0.00';
+            detailsEl.textContent = (selectedPlan && selectedPropertyId)
+                ? `You're about to boost this property with the "${planName}" plan.`
+                : 'Select a property and plan to see details here.';
         }
 
         // --- Update Boost Button ---
@@ -1272,22 +1280,32 @@
             boostBtn.disabled = !(selectedPlan && selectedPropertyId);
         }
 
-        // --- Disable expired featured properties ---
+        // --- Refresh Featured Status & Show Badges ---
         async function refreshFeaturedStatus() {
             try {
                 const res = await fetch('/BatEstateExplorer/public/api/feature_check.php');
                 const data = await res.json();
 
                 propertyCards.forEach(card => {
+                    const tier = card.dataset.tier?.toLowerCase() || 'basic';
                     const isFeatured = parseInt(card.dataset.featured) > 0;
                     const until = card.dataset.featuredUntil;
+
+                    // Remove existing badge
+                    const existingBadge = card.querySelector('.boosted-badge');
+                    if (existingBadge) existingBadge.remove();
+
+                    // Add badge if currently featured
                     if (isFeatured && until && new Date(until) > new Date()) {
-                        const overlay = document.createElement('div');
-                        overlay.className = 'boosted-overlay';
-                        const endDate = new Date(until).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                        overlay.innerHTML = `<span>Featured until ${endDate}</span>`;
-                        card.appendChild(overlay);
-                        card.classList.add('disabled');
+                        const badge = document.createElement('div');
+                        badge.className = 'boosted-badge';
+                        badge.textContent = tier.charAt(0).toUpperCase() + tier.slice(1);
+                        card.appendChild(badge);
+
+                        // Disable platinum featured properties
+                        card.classList.toggle('disabled', tier === 'platinum');
+                    } else {
+                        card.classList.remove('disabled');
                     }
                 });
             } catch {
@@ -1301,10 +1319,10 @@
         window.openBoostModal = () => modal.style.display = 'flex';
         function closeModal() {
             modal.style.display = 'none';
-            tierCards.forEach(c => c.classList.remove('selected'));
-            propertyCards.forEach(c => c.classList.remove('selected'));
             selectedPlan = null;
             selectedPropertyId = null;
+            tierCards.forEach(c => c.classList.remove('selected'));
+            propertyCards.forEach(c => c.classList.remove('selected'));
             propertyGridSection.style.opacity = '0.5';
             propertyGridSection.style.pointerEvents = 'none';
             boostBtn.disabled = true;
@@ -1318,6 +1336,8 @@
 
         // --- Tier Card Selection ---
         tierCards.forEach(card => {
+            if (card.dataset.plan === 'basic') return; // Basic is unclickable
+
             card.addEventListener('click', () => {
                 if (selectedPlan === card.dataset.plan) {
                     card.classList.remove('selected');
@@ -1334,6 +1354,15 @@
                     propertyGridSection.style.pointerEvents = 'auto';
                 }
 
+                // --- Disable properties higher or equal to selected tier ---
+                const selectedIndex = tierOrder.indexOf(selectedPlan);
+                propertyCards.forEach(card => {
+                    const tierIndex = tierOrder.indexOf(card.dataset.tier?.toLowerCase() || 'basic');
+                    // Disable if tier >= selected tier or platinum featured
+                    card.classList.toggle('disabled', tierIndex >= selectedIndex || card.dataset.tier === 'platinum');
+                    if (card.classList.contains('disabled')) card.classList.remove('selected');
+                });
+
                 updateBoostButton();
                 updateConfirmModal();
             });
@@ -1347,7 +1376,7 @@
                     return;
                 }
                 if (card.classList.contains('disabled')) {
-                    notify('error', 'This property is already featured.');
+                    notify('error', 'This property cannot be boosted.');
                     return;
                 }
 
@@ -1411,5 +1440,6 @@
                 boostBtn.textContent = 'Boost Now';
             }
         });
+
     });
 </script>

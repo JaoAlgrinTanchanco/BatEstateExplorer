@@ -2,21 +2,16 @@
 header('Content-Type: application/json');
 require_once __DIR__ . '/../app/bootstrap.php';
 
-// Start session only if not active
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+if (session_status() === PHP_SESSION_NONE) session_start();
 
-// --- Auth check ---
 if (empty($_SESSION['user_id'])) {
     echo json_encode(['error' => 'Unauthorized. Please log in.']);
     exit;
 }
 
 $agent_id = $_SESSION['user_id'];
-
-// --- Parse JSON body ---
 $input = json_decode(file_get_contents('php://input'), true);
+
 $property_id = $input['property_id'] ?? null;
 $plan = $input['plan'] ?? null;
 
@@ -25,12 +20,11 @@ if (!$property_id || !$plan) {
     exit;
 }
 
-// --- Plan mapping (4 tiers) ---
 $PLAN_PACKAGES = [
-    'basic'    => ['days' => 30,  'cost' => 399.00],
-    'standard' => ['days' => 45,  'cost' => 699.00],
-    'premium'  => ['days' => 60,  'cost' => 1199.00],
-    'platinum' => ['days' => 90,  'cost' => 1799.00],
+    'basic'    => ['days' => 30,  'cost' => 399.00,  'rank' => 1],
+    'standard' => ['days' => 45,  'cost' => 699.00,  'rank' => 2],
+    'premium'  => ['days' => 60,  'cost' => 1199.00, 'rank' => 3],
+    'platinum' => ['days' => 90,  'cost' => 1799.00, 'rank' => 4],
 ];
 
 if (!array_key_exists($plan, $PLAN_PACKAGES)) {
@@ -40,13 +34,13 @@ if (!array_key_exists($plan, $PLAN_PACKAGES)) {
 
 $duration = $PLAN_PACKAGES[$plan]['days'];
 $cost     = $PLAN_PACKAGES[$plan]['cost'];
+$new_rank = $PLAN_PACKAGES[$plan]['rank'];
 
 // --- Get agent wallet ---
 $agent_stmt = $conn->prepare("SELECT id, wallet_balance FROM users WHERE id = ?");
 $agent_stmt->bind_param("i", $agent_id);
 $agent_stmt->execute();
-$agent_result = $agent_stmt->get_result();
-$agent = $agent_result->fetch_assoc();
+$agent = $agent_stmt->get_result()->fetch_assoc();
 $agent_stmt->close();
 
 if (!$agent) {
@@ -57,8 +51,7 @@ if (!$agent) {
 // --- Get admin ---
 $admin_stmt = $conn->prepare("SELECT id FROM users WHERE user_type = 'admin' LIMIT 1");
 $admin_stmt->execute();
-$admin_result = $admin_stmt->get_result();
-$admin = $admin_result->fetch_assoc();
+$admin = $admin_stmt->get_result()->fetch_assoc();
 $admin_stmt->close();
 
 if (!$admin) {
@@ -72,12 +65,11 @@ if ($agent['wallet_balance'] < $cost) {
     exit;
 }
 
-// --- Check if property is already featured ---
-$check_stmt = $conn->prepare("SELECT is_featured, featured_until FROM properties WHERE id = ?");
+// --- Get property info ---
+$check_stmt = $conn->prepare("SELECT is_featured, featured_until, tier_plan FROM properties WHERE id = ?");
 $check_stmt->bind_param("i", $property_id);
 $check_stmt->execute();
-$check_result = $check_stmt->get_result();
-$property = $check_result->fetch_assoc();
+$property = $check_stmt->get_result()->fetch_assoc();
 $check_stmt->close();
 
 if (!$property) {
@@ -85,8 +77,19 @@ if (!$property) {
     exit;
 }
 
-if ($property['is_featured'] && $property['featured_until'] && strtotime($property['featured_until']) > time()) {
-    echo json_encode(['error' => 'This property is already featured.']);
+// --- Prevent upgrading Platinum ---
+$current_rank = isset($property['tier_plan']) && array_key_exists(strtolower($property['tier_plan']), $PLAN_PACKAGES)
+    ? $PLAN_PACKAGES[strtolower($property['tier_plan'])]['rank']
+    : 0;
+
+if ($current_rank === 4) { // Platinum
+    echo json_encode(['error' => 'Platinum featured properties cannot be upgraded.']);
+    exit;
+}
+
+// --- Prevent downgrade ---
+if ($new_rank <= $current_rank) {
+    echo json_encode(['error' => 'You can only upgrade to a higher plan.']);
     exit;
 }
 
@@ -94,13 +97,13 @@ if ($property['is_featured'] && $property['featured_until'] && strtotime($proper
 $conn->begin_transaction();
 
 try {
-    // Deduct from agent
+    // Deduct agent wallet
     $stmt = $conn->prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?");
     $stmt->bind_param("di", $cost, $agent_id);
     $stmt->execute();
     $stmt->close();
 
-    // Credit admin
+    // Credit admin wallet
     $stmt = $conn->prepare("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?");
     $stmt->bind_param("di", $cost, $admin['id']);
     $stmt->execute();
@@ -111,28 +114,26 @@ try {
         INSERT INTO transactions (user_id, property, amount, status, method)
         VALUES (?, ?, ?, 'completed', 'wallet')
     ");
+    $desc = "Property #$property_id Featured/Upgrade ($plan plan)";
 
-    $desc = "Property #$property_id Featured ($plan plan)";
-
-    // Agent debit
     $neg_cost = -$cost;
     $trans_stmt->bind_param("isd", $agent_id, $desc, $neg_cost);
     $trans_stmt->execute();
 
-    // Admin credit
     $trans_stmt->bind_param("isd", $admin['id'], $desc, $cost);
     $trans_stmt->execute();
     $trans_stmt->close();
 
-    // --- Update property as featured ---
+    // Update property featured info
     $update_stmt = $conn->prepare("
         UPDATE properties
         SET is_featured = 1,
+            tier_plan = ?,
             featured_until = DATE_ADD(NOW(), INTERVAL ? DAY),
             updated_at = NOW()
         WHERE id = ?
     ");
-    $update_stmt->bind_param("ii", $duration, $property_id);
+    $update_stmt->bind_param("sii", $plan, $duration, $property_id);
     $update_stmt->execute();
     $update_stmt->close();
 
@@ -140,11 +141,12 @@ try {
 
     echo json_encode([
         'success' => true,
-        'message' => 'Property successfully featured!',
+        'message' => 'Property successfully boosted/upgraded!',
         'plan' => $plan,
         'duration_days' => $duration,
         'cost' => $cost
     ]);
+
 } catch (Exception $e) {
     $conn->rollback();
     echo json_encode(['error' => 'Transaction failed: ' . $e->getMessage()]);
