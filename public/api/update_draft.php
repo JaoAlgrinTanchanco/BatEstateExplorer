@@ -31,6 +31,9 @@ try {
     $bathrooms     = isset($_POST['bathrooms']) ? intval($_POST['bathrooms']) : null;
     $lot_size      = isset($_POST['lot_size']) ? floatval($_POST['lot_size']) : null;
     $property_type = trim($_POST['property_type'] ?? '');
+    $is_company_listing = isset($_POST['is_company_listing']) ? intval($_POST['is_company_listing']) : 0;
+    $company_listing_id = trim($_POST['company_listing_id'] ?? '') ?: null;
+    $company_prop_id    = trim($_POST['company_prop_id'] ?? '') ?: null;
 
     // =========================
     // Setup upload directories
@@ -169,12 +172,15 @@ try {
     $stmt = $pdo->prepare("
         UPDATE property_drafts SET
             title = ?, location = ?, price = ?, lot_size = ?, property_type = ?,
-            bedrooms = ?, bathrooms = ?, description = ?, image_path = ?, property_document_path = ?, updated_at = NOW()
+            bedrooms = ?, bathrooms = ?, description = ?, image_path = ?, property_document_path = ?,
+            is_company_listing = ?, company_listing_id = ?, company_prop_id = ?,
+            updated_at = NOW()
         WHERE id = ? AND user_id = ?
     ");
     $stmt->execute([
         $title, $location, $price, $lot_size, $property_type,
         $bedrooms, $bathrooms, $description, $image_path, $property_document_path,
+        $is_company_listing, $company_listing_id, $company_prop_id,
         $draft_id, $user_id
     ]);
 
@@ -190,7 +196,10 @@ try {
             'removed_images' => $remove_images,
             'removed_docs' => $remove_docs,
             'existing_images_from_form' => $existing_images_from_form,
-            'existing_docs_from_form' => $existing_docs_from_form
+            'existing_docs_from_form' => $existing_docs_from_form,
+            'is_company_listing' => $is_company_listing,
+            'company_listing_id' => $company_listing_id,
+            'company_prop_id' => $company_prop_id
         ]
     ]);
 

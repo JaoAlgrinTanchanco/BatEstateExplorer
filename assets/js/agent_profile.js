@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (key !== 'images[]' && key !== 'property_document[]') fd.append(key, value);
       }
 
-      // Handle images
+      // --- Handle images ---
       const existingImages = window.existingImages || [];
       const newImages = window.selectedFiles.filter(f => f instanceof File);
       const remainingImages = existingImages.filter(url => window.selectedFiles.includes(url));
@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
       newImages.forEach(file => fd.append('images[]', file));
       remainingImages.forEach(img => fd.append('existing_images[]', img));
 
-      // Handle documents
+      // --- Handle documents ---
       window.deduplicateSelectedDocuments?.();
       const existingDocs = window.existingDocs || [];
       const newDocs = window.selectedDocuments.filter(f => f instanceof File);
@@ -297,7 +297,22 @@ document.addEventListener('DOMContentLoaded', () => {
       newDocs.forEach(file => fd.append('property_document[]', file));
       remainingDocs.forEach(doc => fd.append('existing_property_documents[]', doc));
 
-      // Debug
+      // --- Handle new Company Listing fields ---
+      const companyCheckbox = document.getElementById('company_listing');
+      const companyInput = document.getElementById('company_listing_id');
+
+      if (companyCheckbox && companyInput) {
+          fd.append('is_company_listing', companyCheckbox.checked ? 1 : 0);
+          fd.append('company_listing_id', companyInput.value.trim());
+      }
+
+      // --- Ensure company_prop_id is still included (legacy field) ---
+      const companyPropIdInput = form.querySelector('[name="company_prop_id"]');
+      if (companyPropIdInput) {
+          fd.append('company_prop_id', companyPropIdInput.value.trim());
+      }
+
+      // Debugging output
       console.group("FormData Before Upload (Draft)");
       for (let [key, val] of fd.entries()) console.log(key, val);
       console.groupEnd();
@@ -306,6 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const url = isUpdate
               ? '/BatEstateExplorer/public/api/update_draft.php'
               : '/BatEstateExplorer/public/api/save_draft.php';
+
           const res = await fetch(url, { method: 'POST', body: fd });
           if (!res.ok) throw new Error(`HTTP error ${res.status}`);
           const data = await res.json();
@@ -358,6 +374,8 @@ document.addEventListener('DOMContentLoaded', () => {
               card.classList.add('selected-standalone');
               selectedPlan = card.dataset.plan;
               selectedPlanCost = parseFloat(card.dataset.cost || 0);
+              window.selectedTier = selectedPlan;
+              window.selectedTierCost = selectedPlanCost;
               proceedBtn.disabled = !selectedPlan;
           });
       });
@@ -383,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
               if (!data.success) throw new Error(data.error || 'Failed to fetch listing fee.');
 
               // Include tier cost in total
-              const totalDeduction = data.total_deduction + selectedPlanCost;
+              const totalDeduction = data.total_deduction;
 
               document.getElementById('listingBaseFee').innerText = data.base_fee.toLocaleString('en-PH', { minimumFractionDigits: 2 });
               document.getElementById('listingVAT').innerText = data.vat.toLocaleString('en-PH', { minimumFractionDigits: 2 });
@@ -426,6 +444,12 @@ document.addEventListener('DOMContentLoaded', () => {
       window.selectedDocuments?.forEach(f => f instanceof File ? fd.append('property_document[]', f) : fd.append('existing_property_documents[]', f));
       if (window.currentDraftId) fd.append('draft_id', window.currentDraftId);
 
+      if (window.selectedTier) {
+          fd.append('tier_plan', window.selectedTier);
+      } else {
+          fd.append('tier_plan', 'basic'); // default fallback
+      }
+
       try {
           const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
           const saveData = await saveRes.json();
@@ -467,6 +491,8 @@ document.addEventListener('DOMContentLoaded', () => {
           window.selectedFiles = [];
           window.selectedDocuments = [];
           window.loadDrafts?.();
+          window.selectedTier = null;
+          window.selectedTierCost = 0;
 
       } catch (err) {
           notify('error', err.message || 'A critical network error occurred.');
@@ -1094,6 +1120,36 @@ function loadDraftIntoForm(draftId) {
               window.selectedDocuments.push(fullPath);
               window.existingDocs.push(fullPath);
           });
+      }
+
+      // -------------------------
+      // Handle Company Listing Checkbox + ID Field
+      // -------------------------
+      const companyCheckbox = document.getElementById('company_listing');
+      const companyIdInput = document.getElementById('company_listing_id');
+
+      if (companyCheckbox && companyIdInput) {
+        // 🚀 FIX: support both new fields properly
+        const isCompanyListing = parseInt(data.is_company_listing || 0);
+        const companyListingId = data.company_listing_id || '';
+        const companyPropId = data.company_prop_id || '';
+
+        // Determine checkbox + input behavior
+        if (isCompanyListing === 1 || companyListingId || companyPropId) {
+          companyCheckbox.checked = true;
+          companyIdInput.disabled = false;
+          companyIdInput.value = companyListingId || companyPropId;
+        } else {
+          companyCheckbox.checked = false;
+          companyIdInput.disabled = true;
+          companyIdInput.value = '';
+        }
+
+        // Ensure toggle behavior stays reactive
+        companyCheckbox.addEventListener('change', () => {
+          companyIdInput.disabled = !companyCheckbox.checked;
+          if (!companyCheckbox.checked) companyIdInput.value = '';
+        });
       }
 
       // -------------------------

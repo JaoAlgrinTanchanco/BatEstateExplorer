@@ -25,6 +25,7 @@ try {
     $bathrooms     = isset($_POST['bathrooms']) ? intval($_POST['bathrooms']) : null;
     $lot_size      = isset($_POST['lot_size']) ? floatval($_POST['lot_size']) : null;
     $property_type = trim($_POST['property_type'] ?? '');
+    $company_prop_id = trim($_POST['company_prop_id'] ?? null);
 
     // =========================
     // Setup upload directories
@@ -109,8 +110,8 @@ try {
     // =========================
     $stmt = $pdo->prepare("
         INSERT INTO property_drafts 
-        (user_id, title, location, price, lot_size, property_type, bedrooms, bathrooms, description, image_path, property_document_path, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        (user_id, title, location, price, lot_size, property_type, bedrooms, bathrooms, description, image_path, property_document_path, company_prop_id, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     ");
     $stmt->execute([
         $user_id,
@@ -123,7 +124,8 @@ try {
         $bathrooms,
         $description,
         $image_path,
-        $property_document_path
+        $property_document_path,
+        $company_prop_id
     ]);
 
     echo json_encode([

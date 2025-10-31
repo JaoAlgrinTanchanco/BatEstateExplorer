@@ -10,29 +10,26 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$property_type = trim($_POST['property_type'] ?? '');
+$tier_plan = ucfirst(strtolower(trim($_POST['tier_plan'] ?? 'Basic')));
 
-if (!$property_type) {
-    echo json_encode(['success' => false, 'error' => 'Property type is required']);
-    exit;
-}
-
-// Property-type fees
-$fee_map = [
-    'Condominium' => 50,
-    'Apartment' => 40,
-    'House' => 30,
-    'Lot' => 20,
-    'Land' => 20,
-    'Commercial Space' => 60
+// Tier plan pricing
+$tier_plans = [
+    'Basic' => 399,
+    'Standard' => 699,
+    'Premium' => 1199,
+    'Platinum' => 1799
 ];
 
-$baseFee = $fee_map[$property_type] ?? 20;
-$vat = round($baseFee * 0.12, 2);
-$totalDeduction = round($baseFee + $vat, 2);
+$tierCost = $tier_plans[$tier_plan] ?? 399;
+
+// -----------------------------
+// VAT and Total
+// -----------------------------
+$vat = round($tierCost * 0.12, 2);
+$totalDeduction = round($tierCost + $vat, 2);
 
 try {
-    // Get agent wallet balance (no locking, no deduction)
+    // Get agent wallet balance
     $stmt = $conn->prepare("SELECT wallet_balance FROM users WHERE id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
@@ -43,7 +40,8 @@ try {
 
     echo json_encode([
         'success' => true,
-        'base_fee' => $baseFee,
+        'tier_plan' => $tier_plan,
+        'base_fee' => $tierCost, // the tier itself is now the listing fee
         'vat' => $vat,
         'total_deduction' => $totalDeduction,
         'wallet_balance' => (float)$agent['wallet_balance']

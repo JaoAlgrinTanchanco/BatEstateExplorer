@@ -106,6 +106,13 @@ try {
                 }
             }
         }
+
+        // Handle Company Listing Fields from Draft
+        $company_prop_id = $draft['company_prop_id'] ?? null;
+        $company_listing_id = $draft['company_listing_id'] ?? null;
+        $is_company_listing = intval($draft['is_company_listing'] ?? 0);
+        $claim_prop = $is_company_listing ? 1 : 0; // auto-claim if marked as company listing
+
         $stmtDel = $pdo->prepare("DELETE FROM property_drafts WHERE id = ? AND user_id = ?");
         $stmtDel->execute([$draftId, $user_data['id']]);
 
@@ -212,8 +219,8 @@ try {
     // INSERT INTO properties 
     $stmt = $pdo->prepare("
         INSERT INTO properties
-        (title, description, property_type, location, price, bedrooms, bathrooms, lot_size, agent_id, listed_by_agent_id, company_prop_id, status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())
+        (title, description, property_type, location, price, bedrooms, bathrooms, lot_size, agent_id, listed_by_agent_id, company_prop_id, claim_prop, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())
     ");
 
     $stmt->execute([
@@ -227,7 +234,8 @@ try {
         $lot_size,
         $agent_id,
         $agent_id,
-        $company_prop_id
+        $company_prop_id,
+        $claim_prop
     ]);
 
     $property_id = $pdo->lastInsertId();
@@ -255,6 +263,74 @@ try {
             ]);
         }
     }
+
+    // -------------------------
+    // Apply Tier Logic (Featured & Duration)
+    // -------------------------
+    $tier = get_post_data('tier'); // Expect values: basic, standard, premium, platinum
+    $durationDays = 0;
+    $isFeatured = 0;
+
+    switch (strtolower($tier)) {
+        case 'basic':
+            $durationDays = 30;
+            $isFeatured = 0;
+            break;
+        case 'standard':
+            $durationDays = 45;
+            $isFeatured = 0;
+            break;
+        case 'premium':
+            $durationDays = 60;
+            $isFeatured = 1;
+            break;
+        case 'platinum':
+            $durationDays = 90;
+            $isFeatured = 1;
+            break;
+        default:
+            $durationDays = 30;
+            $isFeatured = 0;
+    }
+
+    // -------------------------
+    // Validate and deduct listing fee
+    // -------------------------
+    $property_type = $property_type ?? '';
+    $tier_plan = strtolower($tier ?? 'basic');
+
+    // Call listing fee API internally
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, "http://localhost/BatEstateExplorer/public/api/listing_fee.php");
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'property_type' => $property_type,
+        'property_id' => $property_id,
+        'tier_plan' => $tier_plan
+    ]));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_COOKIE, session_name() . '=' . session_id()); // Pass session
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $result = json_decode($response, true);
+
+    // Abort if fee payment failed
+    if (empty($result['success']) || !$result['success']) {
+        $pdo->rollBack();
+        echo json_encode(['success' => false, 'error' => 'Listing saved but fee payment failed: ' . ($result['error'] ?? 'Unknown error')]);
+        exit;
+    }
+
+    $featuredUntil = date('Y-m-d H:i:s', strtotime("+$durationDays days"));
+
+    $stmtTier = $pdo->prepare("
+        UPDATE properties 
+        SET is_featured = ?, featured_until = ?
+        WHERE id = ?
+    ");
+    $stmtTier->execute([$isFeatured, $featuredUntil, $property_id]);
     
     $pdo->commit(); 
 
