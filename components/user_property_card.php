@@ -271,6 +271,10 @@
         </div>
       </div>
 
+      <a href="#" class="nav-link report-agent">
+        <i class="fa-solid fa-flag"></i>
+        <span>Report Listing</span>
+      </a>
     </div>
   </div>
 </div>
@@ -304,6 +308,54 @@
 
       <!-- Submit Button -->
       <button type="submit" class="btn btn-success">Post Review</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== Report Agent Modal ===== -->
+<div id="reportAgentModal" class="report-modal" style="display:none;">
+  <div class="report-modal-content">
+    <span class="close">&times;</span>
+    <h2>Report this Agent</h2>
+
+    <form id="reportAgentForm" method="POST" action="/BatEstateExplorer/public/api/report_agent.php" enctype="multipart/form-data">
+      <!-- Hidden fields -->
+      <input type="hidden" name="agent_id" value="<?= $agent_user_id ?>">
+      <input type="hidden" name="reporter_id" value="<?= $current_user_id ?>">
+
+      <!-- Reason dropdown -->
+      <label for="report-reason">Reason</label>
+      <select name="reason" id="report-reason" required>
+        <option value="">Select a reason</option>
+        <option value="fraudulent_listing">Fraudulent or fake listing</option>
+        <option value="harassment">Harassment or inappropriate behavior</option>
+        <option value="misinformation">False or misleading information</option>
+        <option value="spam">Spam or irrelevant contact</option>
+        <option value="other">Other</option>
+      </select>
+
+      <!-- Other reason input -->
+      <div id="otherReasonContainer" style="display: none; margin-top: 0.5rem;">
+        <input 
+          type="text" 
+          name="other_reason" 
+          id="other-reason" 
+          placeholder="Please specify your reason..."
+        >
+      </div>
+
+      <!-- Details textarea -->
+      <label for="details">Additional Details</label>
+      <textarea 
+        name="details" 
+        id="details" 
+        rows="4" 
+        placeholder="Describe what happened..."
+        required
+      ></textarea>
+
+      <!-- Submit -->
+      <button type="submit" class="btn-report">Submit Report</button>
     </form>
   </div>
 </div>
