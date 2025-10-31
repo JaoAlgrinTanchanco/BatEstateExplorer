@@ -1,125 +1,216 @@
 <?php
-    // --- Correct path to bootstrap ---
-    require_once __DIR__ . '/../../bootstrap.php';
+// --- Correct path to bootstrap ---
+require_once __DIR__ . '/../../bootstrap.php';
 
-    // --- Ensure database connection exists ---
-    $conn = $GLOBALS['conn'] ?? null;
-    if (!$conn) die("Database connection not found.");
+// --- Ensure database connection exists ---
+$conn = $GLOBALS['conn'] ?? null;
+if (!$conn) die("Database connection not found.");
 
-    // --- Fetch reported accounts ---
-    $sql = "
-        SELECT 
-            ar.id,
-            'agent' AS report_type,
-            ar.reporter_id,
-            ar.agent_id AS reported_id,
-            ar.reason,
-            ar.other_reason,
-            ar.details,
-            ar.status,
-            ar.created_at,
-            reporter.first_name AS reporter_fname, reporter.last_name AS reporter_lname, reporter.email AS reporter_email,
-            reported.first_name AS reported_fname, reported.last_name AS reported_lname, reported.email AS reported_email
-        FROM agent_reports ar
-        LEFT JOIN users reporter ON ar.reporter_id = reporter.id
-        LEFT JOIN users reported ON ar.agent_id = reported.id
+// ===============================
+// Fetch reported accounts
+// ===============================
+$sqlAccounts = "
+    SELECT 
+        ar.id,
+        'agent' AS report_type,
+        ar.reporter_id,
+        ar.agent_id AS reported_id,
+        ar.reason,
+        ar.other_reason,
+        ar.details,
+        ar.status,
+        ar.created_at,
+        reporter.first_name AS reporter_fname, reporter.last_name AS reporter_lname, reporter.email AS reporter_email,
+        reported.first_name AS reported_fname, reported.last_name AS reported_lname, reported.email AS reported_email
+    FROM agent_reports ar
+    LEFT JOIN users reporter ON ar.reporter_id = reporter.id
+    LEFT JOIN users reported ON ar.agent_id = reported.id
 
-        UNION ALL
+    UNION ALL
 
-        SELECT 
-            ur.id,
-            'user' AS report_type,
-            ur.reporter_id,
-            ur.reported_user_id AS reported_id,
-            ur.reason,
-            ur.other_reason,
-            ur.details,
-            ur.status,
-            ur.created_at,
-            reporter.first_name AS reporter_fname, reporter.last_name AS reporter_lname, reporter.email AS reporter_email,
-            reported.first_name AS reported_fname, reported.last_name AS reported_lname, reported.email AS reported_email
-        FROM user_reports ur
-        LEFT JOIN users reporter ON ur.reporter_id = reporter.id
-        LEFT JOIN users reported ON ur.reported_user_id = reported.id
+    SELECT 
+        ur.id,
+        'user' AS report_type,
+        ur.reporter_id,
+        ur.reported_user_id AS reported_id,
+        ur.reason,
+        ur.other_reason,
+        ur.details,
+        ur.status,
+        ur.created_at,
+        reporter.first_name AS reporter_fname, reporter.last_name AS reporter_lname, reporter.email AS reporter_email,
+        reported.first_name AS reported_fname, reported.last_name AS reported_lname, reported.email AS reported_email
+    FROM user_reports ur
+    LEFT JOIN users reporter ON ur.reporter_id = reporter.id
+    LEFT JOIN users reported ON ur.reported_user_id = reported.id
 
-        ORDER BY created_at DESC
-    ";
+    ORDER BY created_at DESC
+";
 
-    $result = $conn->query($sql);
-    $reports = [];
-    while ($row = $result->fetch_assoc()) {
-        $reports[] = $row;
-    }
+$resultAccounts = $conn->query($sqlAccounts);
+$reportsAccounts = [];
+while ($row = $resultAccounts->fetch_assoc()) {
+    $reportsAccounts[] = $row;
+}
+
+// ===============================
+// Fetch reported properties
+// ===============================
+$sqlProperties = "
+    SELECT 
+        pr.id,
+        pr.property_id,
+        pr.reporter_id,
+        u.first_name AS reporter_fname, u.last_name AS reporter_lname,
+        CONCAT(u.first_name, ' ', u.last_name, ' (', u.email, ')') AS reporter_name,
+        p.title AS property_title,
+        pr.reason,
+        pr.other_reason,
+        pr.details,
+        pr.status,
+        pr.created_at
+    FROM property_reports pr
+    LEFT JOIN users u ON pr.reporter_id = u.id
+    LEFT JOIN properties p ON pr.property_id = p.id
+    ORDER BY pr.created_at DESC
+";
+
+$resultProperties = $conn->query($sqlProperties);
+$reportsProperties = [];
+while ($row = $resultProperties->fetch_assoc()) {
+    $reportsProperties[] = $row;
+}
 ?>
+
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_reported_accounts.css" />
 
 <header class="content-header">
-    <h1>Reported Accounts</h1>
+    <h1>Reports Management</h1>
 </header>
 
 <div class="content-body">
 
-    <div class="sort-row">
-        <div class="sort-by">
-            <label for="statusFilter">Filter by Status:</label>
-            <select id="statusFilter">
-                <option value="all">All</option>
-                <option value="pending">Pending</option>
-                <option value="blocked">Blocked</option>
-                <option value="unblocked">Unblocked</option>
-            </select>
-        </div>
-    </div>
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="accountsTab">Accounts</button>
+    <button class="tab-btn" data-tab="propertiesTab">Properties</button>
+  </div>
 
-    <div class="reported-accounts-table">
-        <table border="1" cellpadding="8" cellspacing="0" width="100%">
-            <thead>
-                <tr>
-                    <th>Reporter</th>
-                    <th>Reported Account</th>
-                    <th>Type</th>
-                    <th>Reason</th>
-                    <th>Other Reason</th>
-                    <th>Details</th>
-                    <th>Status</th>
-                    <th>Date Reported</th>
-                </tr>
-            </thead>
-            <tbody id="reportsBody">
-                <?php if (empty($reports)): ?>
-                    <tr>
-                        <td colspan="7" style="text-align:center;">No reported accounts found.</td>
-                    </tr>
-                <?php else: ?>
-                    <?php foreach ($reports as $r): ?>
-                        <tr class="clickable-row" 
-                            data-status="<?= htmlspecialchars($r['status']); ?>"
-                            data-reporter="<?= htmlspecialchars($r['reporter_fname'] . ' ' . $r['reporter_lname'] . ' (' . $r['reporter_email'] . ')'); ?>"
-                            data-reported="<?= htmlspecialchars($r['reported_fname'] . ' ' . $r['reported_lname'] . ' (' . $r['reported_email'] . ')'); ?>"
-                            data-reason="<?= htmlspecialchars($r['reason']); ?>"
-                            data-other-reason="<?= htmlspecialchars($r['other_reason']); ?>"
-                            data-details="<?= htmlspecialchars($r['details']); ?>"
-                            data-category="<?= htmlspecialchars($r['reason']); ?>"
-                            data-reported-id="<?= htmlspecialchars($r['reported_id']); ?>"
-                            data-report-id="<?= htmlspecialchars($r['id']); ?>"
-                            data-type="<?= htmlspecialchars($r['report_type']); ?>"
-                            data-created-at="<?= htmlspecialchars($r['created_at']); ?>"
-                        >
-                            <td><?= htmlspecialchars($r['reporter_fname'] . ' ' . $r['reporter_lname'] . ' (' . $r['reporter_email'] . ')'); ?></td>
-                            <td><?= htmlspecialchars($r['reported_fname'] . ' ' . $r['reported_lname'] . ' (' . $r['reported_email'] . ')'); ?></td>
-                            <td><?= ucfirst(htmlspecialchars($r['report_type'])); ?></td>
-                            <td><?= htmlspecialchars($r['reason']); ?></td>
-                            <td><?= htmlspecialchars($r['other_reason']); ?></td>
-                            <td><?= htmlspecialchars($r['details']); ?></td>
-                            <td><?= htmlspecialchars(ucfirst($r['status'])); ?></td>
-                            <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($r['created_at']))); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
+  <!-- Filter -->
+  <div class="sort-row">
+    <div class="sort-by">
+      <label for="statusFilter">Filter by Status:</label>
+      <select id="statusFilter">
+        <option value="all">All</option>
+        <option value="pending">Pending</option>
+        <option value="blocked">Blocked</option>
+        <option value="unblocked">Unblocked</option>
+      </select>
     </div>
+  </div>
+
+  <!-- Accounts Reports Table -->
+  <div class="tab-content active" id="accountsTab">
+    <div class="reported-accounts-table">
+      <table border="1" cellpadding="8" cellspacing="0" width="100%">
+        <thead>
+          <tr>
+            <th>Reporter</th>
+            <th>Reported Account</th>
+            <th>Type</th>
+            <th>Reason</th>
+            <th>Other Reason</th>
+            <th>Details</th>
+            <th>Status</th>
+            <th>Date Reported</th>
+          </tr>
+        </thead>
+        <tbody id="accountsBody">
+          <?php if (empty($reportsAccounts)): ?>
+            <tr>
+              <td colspan="8" style="text-align:center;">No reported accounts found.</td>
+            </tr>
+          <?php else: ?>
+            <?php foreach ($reportsAccounts as $r): ?>
+              <tr class="clickable-row" 
+                  data-status="<?= htmlspecialchars($r['status']); ?>"
+                  data-reporter="<?= htmlspecialchars($r['reporter_fname'] . ' ' . $r['reporter_lname'] . ' (' . $r['reporter_email'] . ')'); ?>"
+                  data-reported="<?= htmlspecialchars($r['reported_fname'] . ' ' . $r['reported_lname'] . ' (' . $r['reported_email'] . ')'); ?>"
+                  data-reason="<?= htmlspecialchars($r['reason']); ?>"
+                  data-other-reason="<?= htmlspecialchars($r['other_reason']); ?>"
+                  data-details="<?= htmlspecialchars($r['details']); ?>"
+                  data-category="<?= htmlspecialchars($r['reason']); ?>"
+                  data-reported-id="<?= htmlspecialchars($r['reported_id']); ?>"
+                  data-report-id="<?= htmlspecialchars($r['id']); ?>"
+                  data-type="account"
+                  data-created-at="<?= htmlspecialchars($r['created_at']); ?>"
+              >
+                <td><?= htmlspecialchars($r['reporter_fname'] . ' ' . $r['reporter_lname'] . ' (' . $r['reporter_email'] . ')'); ?></td>
+                <td><?= htmlspecialchars($r['reported_fname'] . ' ' . $r['reported_lname'] . ' (' . $r['reported_email'] . ')'); ?></td>
+                <td>Account</td>
+                <td><?= htmlspecialchars($r['reason']); ?></td>
+                <td><?= htmlspecialchars($r['other_reason']); ?></td>
+                <td><?= htmlspecialchars($r['details']); ?></td>
+                <td><?= htmlspecialchars(ucfirst($r['status'])); ?></td>
+                <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($r['created_at']))); ?></td>
+              </tr>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Properties Reports Table -->
+  <div class="tab-content" id="propertiesTab">
+    <div class="reported-properties-table">
+      <table border="1" cellpadding="8" cellspacing="0" width="100%">
+        <thead>
+          <tr>
+            <th>Reporter</th>
+            <th>Reported Property</th>
+            <th>Reason</th>
+            <th>Other Reason</th>
+            <th>Details</th>
+            <th>Status</th>
+            <th>Date Reported</th>
+          </tr>
+        </thead>
+        <tbody id="propertiesBody">
+          <?php if (empty($reportsProperties)): ?>
+            <tr>
+              <td colspan="7" style="text-align:center;">No reported properties found.</td>
+            </tr>
+          <?php else: ?>
+            <?php foreach ($reportsProperties as $r): ?>
+              <tr class="clickable-row"
+                  data-status="<?= htmlspecialchars($r['status']); ?>"
+                  data-reporter="<?= htmlspecialchars($r['reporter_name']); ?>"
+                  data-reported="<?= htmlspecialchars($r['property_title']); ?>"
+                  data-reason="<?= htmlspecialchars($r['reason']); ?>"
+                  data-other-reason="<?= htmlspecialchars($r['other_reason']); ?>"
+                  data-details="<?= htmlspecialchars($r['details']); ?>"
+                  data-category="<?= htmlspecialchars($r['reason']); ?>"
+                  data-reported-id="<?= htmlspecialchars($r['property_id']); ?>"
+                  data-report-id="<?= htmlspecialchars($r['id']); ?>"
+                  data-type="property"
+                  data-created-at="<?= htmlspecialchars($r['created_at']); ?>"
+              >
+                <td><?= htmlspecialchars($r['reporter_name']); ?></td>
+                <td><?= htmlspecialchars($r['property_title']); ?></td>
+                <td><?= htmlspecialchars($r['reason']); ?></td>
+                <td><?= htmlspecialchars($r['other_reason']); ?></td>
+                <td><?= htmlspecialchars($r['details']); ?></td>
+                <td><?= htmlspecialchars(ucfirst($r['status'])); ?></td>
+                <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($r['created_at']))); ?></td>
+              </tr>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
 </div>
 
@@ -148,6 +239,24 @@
         const modalBody = document.getElementById('modalBody');
         const blockUnblockBtn = document.getElementById('blockUnblockBtn');
         const deleteReportBtn = document.getElementById('deleteReportBtn');
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        statusFilter.addEventListener('change', () => {
+            const value = statusFilter.value;
+            document.querySelectorAll('.tab-content.active tbody tr').forEach(row => {
+            row.style.display = (value === 'all' || row.dataset.status === value) ? '' : 'none';
+            });
+        });
 
         /* =====================================================
         PENALTIES & CATEGORY DEFINITIONS
@@ -193,24 +302,48 @@
         let currentStatus = null;
         let currentType = null; // 'agent' or 'user'
 
-        /* =====================================================
-        Helper: Update row color and label based on status
-        ===================================================== */
-        function updateStatusCell(row, status) {
-            const statusCell = row.querySelector('td:nth-child(7)');
+        // =============================
+        // Helper: Update row color based on status
+        // =============================
+        function updateStatusCell(row) {
+            const statusCell = row.querySelector('td:nth-child(6)'); // Status is 6th td in Properties table, 7th in Accounts
             if (!statusCell) return;
+
+            const status = row.dataset.status || statusCell.textContent.trim().toLowerCase();
             statusCell.textContent = status.charAt(0).toUpperCase() + status.slice(1);
 
-            switch (status) {
+            switch (status.toLowerCase()) {
                 case 'blocked':
-                    statusCell.style.color = '#ff0000';
+                    statusCell.style.color = '#ff0000'; // red
                     break;
                 case 'unblocked':
-                    statusCell.style.color = '#008dff';
+                    statusCell.style.color = '#008dff'; // blue
                     break;
                 default:
-                    statusCell.style.color = '#12d800';
+                    statusCell.style.color = '#12d800'; // green
                     break;
+            }
+        }
+
+        // =============================
+        // Apply to all rows in both tables
+        // =============================
+        const allRows = document.querySelectorAll(
+            '.reported-accounts-table tr.clickable-row, .reported-properties-table tr.clickable-row'
+        );
+
+        allRows.forEach(row => updateStatusCell(row));
+
+        // =============================
+        // Optional: Reapply when status changes dynamically
+        // =============================
+        function updateRowStatus(reportId, newStatus) {
+            const row = document.querySelector(
+                `.reported-accounts-table tr[data-report-id="${reportId}"], .reported-properties-table tr[data-report-id="${reportId}"]`
+            );
+            if (row) {
+                row.dataset.status = newStatus;
+                updateStatusCell(row);
             }
         }
 

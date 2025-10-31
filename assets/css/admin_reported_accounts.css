@@ -11,6 +11,55 @@
 @font-face { font-family: 'Satoshi-Regular'; src: url('../fonts/Satoshi-Regular.otf') format('opentype'); font-style: normal; }
 
 /* ===========================
+   Tabs Content
+=========================== */
+.tab-content {
+  display: none; /* hide all tab content by default */
+}
+
+.tab-content.active {
+  display: block; /* show only the active tab */
+}
+
+.tab-bar {
+  display: flex;
+  gap: 2rem; /* space between tabs */
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 0.5rem 0;
+  font-family: 'Satoshi-Regular', sans-serif;
+  font-weight: 400;
+  font-size: 1rem;
+  color: #374151; /* dark gray for inactive */
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: #111827; /* darker on hover */
+}
+
+.tab-btn.active {
+  color: #111827; /* black for active tab */
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; /* aligns with tab bar bottom */
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #111827; /* underline for active tab */
+  border-radius: 2px;
+}
+
+/* ===========================
    Content Header
 =========================== */
 .content-header {
@@ -67,9 +116,10 @@
 }
 
 /* ===========================
-   Table
+   Table (Accounts + Properties)
 =========================== */
-.reported-accounts-table table {
+.reported-accounts-table table,
+.reported-properties-table table {
   width: 100%;
   border-collapse: collapse;
   font-family: 'Satoshi', sans-serif;
@@ -78,13 +128,16 @@
 }
 
 .reported-accounts-table th,
-.reported-accounts-table td {
+.reported-accounts-table td,
+.reported-properties-table th,
+.reported-properties-table td {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
 }
 
-.reported-accounts-table th {
+.reported-accounts-table th,
+.reported-properties-table th {
   background: #eaeaea;
   color: #111827;
   font-weight: 600;
