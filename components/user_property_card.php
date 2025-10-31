@@ -227,10 +227,7 @@
       <!-- Reviews inside the same scrollable column -->
       <div class="modal-review">
         <div class="modal-reviews">
-          <h3>Reviews</h3>
-          <div id="modalPastReviews">
-            <p>Reviews will load here when modal opens.</p>
-          </div>
+
         </div>
       </div>
 

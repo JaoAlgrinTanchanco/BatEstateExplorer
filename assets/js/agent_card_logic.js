@@ -63,179 +63,187 @@ function renderStars(rating) {
     if (overlay) mainImage.appendChild(overlay);
   };
 
-  // Open Property Modal
+  // Open Property Modal (Agent Version)
   async function openPropertyModal(propertyId) {
-    currentPropertyId = propertyId;
-    const modal = document.getElementById("propertyModal");
-    if (!modal) return;
+      currentPropertyId = propertyId;
+      const modal = document.getElementById("propertyModal");
+      if (!modal) return;
 
-    const reviewContainer = modal.querySelector("#modalPastReviews");
-    const reviewBtn = modal.querySelector("#leaveReviewBtn");
-    const optionsBtn = document.getElementById('propertyOptionsBtn');
-    const dropdown = document.getElementById('propertyOptionsDropdown');
+      const reviewContainer = modal.querySelector(".modal-reviews");
+      const reviewBtn = modal.querySelector("#leaveReviewBtn");
+      const optionsBtn = document.getElementById('propertyOptionsBtn');
+      const dropdown = document.getElementById('propertyOptionsDropdown');
 
-    try {
-      // Fetch property details
-      const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
-      const data = await res.json();
-      if (!data.success) return;
-
-      const prop = data.property;
-      const images = prop.images.length ? prop.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
-      modal.dataset.id = prop.id;
-
-      // Map listed_by_agent_id to user_id (fallback to agent_id if missing)
-      let listedAgentUserId = null;
-      const lookupId = prop.listed_by_agent_id ?? prop.agent_id;
       try {
-        const agentRes = await fetch(`/BatEstateExplorer/public/api/get_agent_user_id.php?agent_id=${lookupId}`);
-        const agentData = await agentRes.json();
-        if (agentData.success) {
-          listedAgentUserId = agentData.user_id;
-          modal.dataset.listedAgentId = listedAgentUserId;
-        }
-        // ✅ Fetch the correct listed agent's user info (name, avatar, etc.)
-        if (listedAgentUserId) {
-          try {
-            const userRes = await fetch(`/BatEstateExplorer/public/api/get_user_details.php?id=${listedAgentUserId}`);
-            const userData = await userRes.json();
-            if (userData.success && userData.user) {
-              const user = userData.user;
-              const avatar = modal.querySelector("#agentAvatar");
-              const name = modal.querySelector("#agentName");
-              const link = modal.querySelector("#agentProfileLink");
+          // Fetch property details
+          const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
+          const data = await res.json();
+          if (!data.success) return;
 
-              if (avatar) avatar.src = user.profile_image || "/BatEstateExplorer/assets/images/default-avatar.png";
-              if (name) name.textContent = `${user.first_name} ${user.last_name}`;
-              if (link) link.href = `/BatEstateExplorer/public/agent_page.php?agent_id=${lookupId}`;
-            }
-          } catch (e) {
-            console.error("Failed to fetch listed agent info:", e);
+          const prop = data.property;
+          const images = prop.images.length ? prop.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
+          modal.dataset.id = prop.id;
+
+          // Map listed_by_agent_id to user_id (fallback to agent_id if missing)
+          let listedAgentUserId = null;
+          const lookupId = prop.listed_by_agent_id ?? prop.agent_id;
+
+          try {
+              const agentRes = await fetch(`/BatEstateExplorer/public/api/get_agent_user_id.php?agent_id=${lookupId}`);
+              const agentData = await agentRes.json();
+              if (agentData.success) {
+                  listedAgentUserId = agentData.user_id;
+                  modal.dataset.listedAgentId = listedAgentUserId;
+              }
+
+              if (listedAgentUserId) {
+                  try {
+                      const userRes = await fetch(`/BatEstateExplorer/public/api/get_user_details.php?id=${listedAgentUserId}`);
+                      const userData = await userRes.json();
+                      if (userData.success && userData.user) {
+                          const user = userData.user;
+                          const avatar = modal.querySelector("#agentAvatar");
+                          const name = modal.querySelector("#agentName");
+                          const link = modal.querySelector("#agentProfileLink");
+
+                          if (avatar) avatar.src = user.profile_image || "/BatEstateExplorer/assets/images/default-avatar.png";
+                          if (name) name.textContent = `${user.first_name} ${user.last_name}`;
+                          if (link) link.href = `/BatEstateExplorer/public/agent_page.php?agent_id=${lookupId}`;
+                      }
+                  } catch (e) {
+                      console.error("Failed to fetch listed agent info:", e);
+                  }
+              }
+          } catch (err) {
+              console.error("Failed to map listed_by_agent_id to user_id:", err);
           }
-        }
+
+          const loggedInUserId = parseInt(modal.dataset.loggedInAgentId);
+
+          // Show or hide options button for the agent
+          optionsBtn.style.display = (loggedInUserId && listedAgentUserId && loggedInUserId === listedAgentUserId)
+              ? 'flex' 
+              : 'none';
+
+          // Set main image and thumbnails
+          const mainImage = modal.querySelector(".property-main-image");
+          mainImage.style.backgroundImage = `url('${images[0]}')`;
+          modal.querySelector(".property-name").textContent = prop.title || "No title";
+
+          const thumbs = modal.querySelector(".property-images");
+          thumbs.innerHTML = images.map((img, i) =>
+              `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`
+          ).join("");
+
+          thumbs.querySelectorAll("img").forEach(imgEl => {
+              imgEl.addEventListener("click", () => {
+                  mainImage.style.backgroundImage = `url('${imgEl.src}')`;
+                  thumbs.querySelectorAll("img").forEach(i => i.classList.remove("active"));
+                  imgEl.classList.add("active");
+              });
+          });
+
+          // Set property details
+          modal.querySelector(".location").textContent = prop.location || "-";
+          modal.querySelector(".price").textContent = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
+          modal.querySelector(".property-type").textContent = prop.property_type || "-";
+          modal.querySelector(".bedrooms").textContent = prop.bedrooms ?? "-";
+          modal.querySelector(".bathrooms").textContent = prop.bathrooms ?? "-";
+          modal.querySelector(".lot_size").textContent = prop.lot_size ?? "-";
+          modal.querySelector(".date_uploaded").textContent = prop.created_at ? new Date(prop.created_at).toLocaleDateString() : "-";
+          modal.querySelector(".property-description").textContent = prop.description || "No description available.";
+
+          // Review button visibility
+          if (reviewBtn) {
+              if (data.has_privilege) {
+                  reviewBtn.style.display = "inline-flex";
+                  reviewBtn.dataset.propertyId = prop.id;
+              } else {
+                  reviewBtn.style.display = "none";
+                  reviewBtn.dataset.propertyId = "";
+              }
+          }
+
+          // Highlight current status in dropdown
+          if (dropdown) {
+              dropdown.querySelectorAll('.status-option').forEach(btn => {
+                  btn.style.background = (btn.dataset.status === prop.status)
+                      ? (prop.status === 'available' ? '#d0f0c0' :
+                        prop.status === 'sold' ? '#f8d0d0' :
+                        prop.status === 'ongoing_inquiry' ? '#fff9a5' : '')
+                      : '';
+              });
+          }
+
+          // Show modal
+          modal.hidden = false;
+          modal.style.display = 'flex';
+
+          // Update SOLD overlay based on current status
+          window.updateSoldOverlay(prop.status);
+
+          // Fetch past reviews and render with average rating
+          if (reviewContainer) {
+              try {
+                  const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${prop.id}`);
+                  const reviewData = await reviewRes.json();
+
+                  if (reviewData.success) {
+                      renderReviews(reviewData.reviews, reviewContainer);
+                  } else {
+                      reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
+                  }
+              } catch (e) {
+                  console.error("Failed to fetch reviews:", e);
+                  reviewContainer.innerHTML = `<p style="color:red;">Failed to load reviews.</p>`;
+              }
+          }
 
       } catch (err) {
-        console.error("Failed to map listed_by_agent_id to user_id:", err);
+          console.error("Failed to open property modal:", err);
       }
-
-      const loggedInUserId = parseInt(modal.dataset.loggedInAgentId);
-
-      // Show or hide options button
-      if (loggedInUserId && listedAgentUserId && loggedInUserId === listedAgentUserId) {
-        optionsBtn.style.display = 'flex';
-      } else {
-        optionsBtn.style.display = 'none';
-      }
-
-      // Set main image and thumbnails
-      const mainImage = modal.querySelector(".property-main-image");
-      mainImage.style.backgroundImage = `url('${images[0]}')`;
-      modal.querySelector(".property-name").textContent = prop.title || "No title";
-
-      const thumbs = modal.querySelector(".property-images");
-      thumbs.innerHTML = images.map((img, i) =>
-        `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`
-      ).join("");
-
-      thumbs.querySelectorAll("img").forEach(imgEl => {
-        imgEl.addEventListener("click", () => {
-          mainImage.style.backgroundImage = `url('${imgEl.src}')`;
-          thumbs.querySelectorAll("img").forEach(i => i.classList.remove("active"));
-          imgEl.classList.add("active");
-        });
-      });
-
-      // Set property details
-      modal.querySelector(".location").textContent = prop.location || "-";
-      modal.querySelector(".price").textContent = `₱${parseFloat(prop.price || 0).toLocaleString()}`;
-      modal.querySelector(".property-type").textContent = prop.property_type || "-";
-      modal.querySelector(".bedrooms").textContent = prop.bedrooms ?? "-";
-      modal.querySelector(".bathrooms").textContent = prop.bathrooms ?? "-";
-      modal.querySelector(".lot_size").textContent = prop.lot_size ?? "-";
-      modal.querySelector(".date_uploaded").textContent = prop.created_at ? new Date(prop.created_at).toLocaleDateString() : "-";
-      modal.querySelector(".property-description").textContent = prop.description || "No description available.";
-
-      // Review button visibility
-      if (reviewBtn) {
-        if (data.has_privilege) {
-          reviewBtn.style.display = "inline-flex";
-          reviewBtn.dataset.propertyId = prop.id;
-        } else {
-          reviewBtn.style.display = "none";
-          reviewBtn.dataset.propertyId = "";
-        }
-      }
-
-      // Highlight current status in dropdown
-      if (dropdown) {
-        dropdown.querySelectorAll('.status-option').forEach(btn => {
-          if (btn.dataset.status === prop.status) {
-            // Use correct highlight based on exact status
-            btn.style.background = prop.status === 'available' ? '#d0f0c0' :
-                                  prop.status === 'sold' ? '#f8d0d0' :
-                                  prop.status === 'ongoing_inquiry' ? '#fff9a5' : '';
-          } else {
-            btn.style.background = '';
-          }
-        });
-      }
-
-      // Show modal
-      modal.hidden = false;
-      modal.style.display = 'flex';
-
-      // Update SOLD overlay based on current status
-      window.updateSoldOverlay(prop.status);
-
-      // Fetch past reviews
-      if (reviewContainer) {
-          try {
-              const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${prop.id}`);
-              const reviewData = await reviewRes.json();
-
-              if (reviewData.success) {
-                  // Use renderReviews to properly show avatar + clickable name
-                  renderReviews(reviewData.reviews, reviewContainer);
-              } else {
-                  reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
-              }
-          } catch (e) {
-              console.error("Failed to fetch reviews:", e);
-              reviewContainer.innerHTML = `<p style="color:red;">Failed to load reviews.</p>`;
-          }
-      }
-    } catch (err) {
-      console.error("Failed to open property modal:", err);
-    }
   }
 
-  // Render reviews in modal
+  // Render reviews in agent modal with average rating
   function renderReviews(reviews, container) {
       if (!container) return;
-      
-      if (reviews.length > 0) {
-          container.innerHTML = reviews.map(r => {
-              const avatar = r.profile_image || "/BatEstateExplorer/assets/images/default-avatar.png";
-              const userProfileUrl = `/BatEstateExplorer/public/user_page.php?user_id=${r.user_id}`;
-              return `
-                  <div class="review-card" style="margin-bottom:10px; display:flex; gap:10px; align-items:flex-start;">
-                      <a href="${userProfileUrl}" target="_blank">
-                          <img src="${avatar}" alt="${r.user_name}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
-                      </a>
-                      <div style="flex:1;">
-                          <a href="${userProfileUrl}" target="_blank" style="font-weight:bold;text-decoration:none;color:inherit;">
-                              ${r.user_name}
-                          </a>
-                          <div style="float:right;">${renderStars(r.rating)}</div>
-                          <p style="margin:4px 0;">${r.review_text}</p>
-                          <small style="opacity:0.6;">${new Date(r.created_at).toLocaleDateString()}</small>
-                      </div>
-                  </div>
-              `;
-          }).join("");
-      } else {
-          container.innerHTML = `<p>No reviews yet.</p>`;
-      }
+
+      const totalReviews = reviews.length;
+      const avgRating = totalReviews > 0
+          ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1)
+          : 0;
+      const starEmoji = '⭐';
+
+      container.innerHTML = `
+          <div class="modal-reviews">
+              <h3>Reviews ${totalReviews > 0 ? `${avgRating}${starEmoji}` : ''}</h3>
+              <div id="modalPastReviewsContent" style="max-height:300px; overflow-y:auto; margin-top:10px;">
+                  ${
+                      totalReviews > 0
+                      ? reviews.map(r => {
+                          const avatar = r.profile_image || "/BatEstateExplorer/assets/images/default-avatar.png";
+                          const userProfileUrl = `/BatEstateExplorer/public/user_page.php?user_id=${r.user_id}`;
+                          return `
+                              <div class="review-card" style="margin-bottom:10px; display:flex; gap:10px; align-items:flex-start;">
+                                  <a href="${userProfileUrl}" target="_blank">
+                                      <img src="${avatar}" alt="${r.user_name}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+                                  </a>
+                                  <div style="flex:1;">
+                                      <a href="${userProfileUrl}" target="_blank" style="font-weight:bold;text-decoration:none;color:inherit;">
+                                          ${r.user_name}
+                                      </a>
+                                      <div style="float:right;">${renderStars(r.rating)}</div>
+                                      <p style="margin:4px 0;">${r.review_text}</p>
+                                      <small style="opacity:0.6;">${new Date(r.created_at).toLocaleDateString()}</small>
+                                  </div>
+                              </div>
+                          `;
+                      }).join('')
+                      : `<p>No reviews yet.</p>`
+                  }
+              </div>
+          </div>
+      `;
   }
 
   // Open Review Modal

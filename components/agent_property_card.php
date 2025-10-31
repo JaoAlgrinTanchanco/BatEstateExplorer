@@ -170,10 +170,7 @@
       <!-- Reviews now correctly nested -->
       <div class="modal-review">
         <div class="modal-reviews">
-          <h3>Reviews</h3>
-          <div id="modalPastReviews">
-            <p>Reviews will load here when modal opens.</p>
-          </div>
+
         </div>
       </div>
 
