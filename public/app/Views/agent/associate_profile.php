@@ -603,8 +603,26 @@
                             <label for="property_type"><strong>Property Type</strong></label>
                             <select id="property_type" name="property_type" required>
                                 <option value="">-- Select Type --</option>
-                                <option value="Property">Property</option>
-                                <option value="Lot">Lot</option>
+                                <option value="Condominium">Condominium</option>
+                                <option value="Apartment">Apartment</option>
+                                <option value="Townhouse">Townhouse</option>
+                                <option value="House and Lot">House and Lot</option>
+                                <option value="Commercial Building">Commercial Building</option>
+                                <option value="Lot Only">Lot Only</option>
+                                <option value="Farm Lot">Farm Lot</option>
+                                <option value="Industrial Lot">Industrial Lot</option>
+                                <option value="Beachfront Property">Beachfront Property</option>
+                                <option value="Resort">Resort</option>
+                                <option value="Hotels and Motels">Hotels and Motels</option>
+                                <option value="Dormitory">Dormitory</option>
+                                <option value="Office Space">Office Space</option>
+                                <option value="Warehouse">Warehouse</option>
+                                <option value="Retail Space">Retail Space</option>
+                                <option value="Mixed-Use Development">Mixed-Use Development</option>
+                                <option value="Luxury Estate">Luxury Estate</option>
+                                <option value="Foreclosed Property">Foreclosed Property</option>
+                                <option value="Subdivision Development">Subdivision Development</option>
+                                <option value="Others">Others</option>
                             </select>
 
                             <label for="bedrooms"><strong>Bedrooms</strong></label>

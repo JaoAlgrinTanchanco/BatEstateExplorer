@@ -439,49 +439,55 @@ document.addEventListener('DOMContentLoaded', () => {
       const walletBalanceEl = document.getElementById('agentWalletBalance');
       const fd = new FormData(form);
 
+      // Add files & documents
       deduplicateSelectedDocuments();
       window.selectedFiles.forEach(f => f instanceof File ? fd.append('images[]', f) : fd.append('existing_images[]', f));
       window.selectedDocuments?.forEach(f => f instanceof File ? fd.append('property_document[]', f) : fd.append('existing_property_documents[]', f));
+
       if (window.currentDraftId) fd.append('draft_id', window.currentDraftId);
 
-      if (window.selectedTier) {
-          fd.append('tier_plan', window.selectedTier);
-      } else {
-          fd.append('tier_plan', 'basic'); // default fallback
-      }
+      // -----------------------------
+      // Ensure tier_plan is sent properly
+      // -----------------------------
+      const tier = window.selectedTier?.toLowerCase() || 'basic'; // normalize
+      fd.append('tier_plan', tier.charAt(0).toUpperCase() + tier.slice(1)); // Basic, Standard, Premium, Platinum
+
+      // Property type fallback
+      const propertyType = document.getElementById('property_type')?.value || 'Lot';
+      fd.append('property_type', propertyType);
 
       try {
+          // -----------------------------
+          // Step 1: Attempt payment
+          // -----------------------------
+          const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
+          const feeData = await feeRes.json();
+
+          if (!feeData.success) {
+              notify('error', 'Payment failed: ' + (feeData.error || 'Unknown error.'));
+              if (feeData.wallet_balance !== undefined) {
+                  walletBalanceEl.innerText = feeData.wallet_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+              }
+              return;
+          }
+
+          // -----------------------------
+          // Step 2: Save listing
+          // -----------------------------
           const saveRes = await fetch('/BatEstateExplorer/public/api/save_listing.php', { method: 'POST', body: fd });
           const saveData = await saveRes.json();
+
           if (!saveData.success) {
               notify('error', 'Failed to save listing: ' + (saveData.error || 'Unknown server error.'));
               return;
           }
 
-          fd.append('listing_id', saveData.listing_id);
-          const propertyType = document.getElementById('property_type')?.value || 'Lot';
-          fd.append('property_type', propertyType);
-
-          const feeRes = await fetch('/BatEstateExplorer/public/api/listing_fee.php', { method: 'POST', body: fd });
-          const feeData = await feeRes.json();
-          if (!feeData.success) {
-              notify('error', 'Listing saved but fee payment failed: ' + (feeData.error || 'Payment failed.'));
-              if (feeData.current_balance !== undefined) {
-                  walletBalanceEl.innerText = feeData.current_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
-              }
-              return;
-          }
-
+          // Success: include tier info from API
           notify('success', `Listing submitted! Fee: PHP ${feeData.total_deduction.toLocaleString('en-PH', { minimumFractionDigits:2 })}. Awaiting admin approval.`);
           window.closeListingFeeModal?.();
           walletBalanceEl.innerText = feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
-          const mainSubmitBtn = document.getElementById('openListingModalBtn');
-          if (mainSubmitBtn && feeData.new_balance !== undefined) {
-              mainSubmitBtn.innerHTML = `Save Listing (Balance: ₱${feeData.new_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 })})`;
-          }
-
-          // Reset form and state
+          // Reset form & state
           form.reset();
           window.resetImageUpload?.();
           window.resetDocumentUpload?.();
@@ -493,6 +499,15 @@ document.addEventListener('DOMContentLoaded', () => {
           window.loadDrafts?.();
           window.selectedTier = null;
           window.selectedTierCost = 0;
+
+          // Optionally store tier info from response
+          window.lastSavedPropertyTier = {
+              tier_plan: saveData.tier_plan,
+              plan_duration: saveData.plan_duration,
+              is_featured: saveData.is_featured,
+              featured_until: saveData.featured_until,
+              company_prop_id: saveData.company_prop_id
+          };
 
       } catch (err) {
           notify('error', err.message || 'A critical network error occurred.');

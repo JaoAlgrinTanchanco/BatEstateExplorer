@@ -25,7 +25,8 @@ try {
     $bathrooms     = isset($_POST['bathrooms']) ? intval($_POST['bathrooms']) : null;
     $lot_size      = isset($_POST['lot_size']) ? floatval($_POST['lot_size']) : null;
     $property_type = trim($_POST['property_type'] ?? '');
-    $company_prop_id = trim($_POST['company_prop_id'] ?? null);
+    $company_prop_id = trim($_POST['company_listing_id'] ?? null); // match JS
+    $company_prop_id = $company_prop_id !== '' ? $company_prop_id : null; // ensure null if empty
 
     // =========================
     // Setup upload directories

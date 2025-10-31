@@ -66,6 +66,7 @@ try {
     $bathrooms     = 0;
     $lot_size      = 0.0;
     $property_type = '';
+    $company_prop_id  = null;
     $images        = [];
     $documents_to_insert = []; 
     $projectRoot = realpath(__DIR__ . '/../../');
@@ -87,6 +88,7 @@ try {
         $title = $draft['title']; $description = $draft['description']; $price = $draft['price'];
         $location = $draft['location']; $bedrooms = $draft['bedrooms']; $bathrooms = $draft['bathrooms'];
         $lot_size = $draft['lot_size']; $property_type = $draft['property_type'];
+        $company_prop_id = $draft['company_prop_id'] ?? null; // ensure it exists
 
         // Move draft images
         $draftImages = !empty($draft['image_path']) ? array_filter(explode(',', $draft['image_path'])) : [];
@@ -269,48 +271,51 @@ try {
     // -------------------------
     // Apply Tier Logic (Featured & Duration)
     // -------------------------
-    $tier = get_post_data('tier'); // Expect values: basic, standard, premium, platinum
-    $durationDays = 0;
-    $isFeatured = 0;
+    $tier_plan = ucfirst(strtolower(get_post_data('tier_plan', 'Basic'))); // basic, standard, premium, platinum
+    $tierDurations = ['Basic'=>30,'Standard'=>45,'Premium'=>60,'Platinum'=>90];
+    $tierFeatured  = ['Basic'=>0,'Standard'=>0,'Premium'=>1,'Platinum'=>1];
 
-    switch (strtolower($tier)) {
-        case 'basic':
-            $durationDays = 30;
-            $isFeatured = 0;
-            break;
-        case 'standard':
-            $durationDays = 45;
-            $isFeatured = 0;
-            break;
-        case 'premium':
-            $durationDays = 60;
-            $isFeatured = 1;
-            break;
-        case 'platinum':
-            $durationDays = 90;
-            $isFeatured = 1;
-            break;
-        default:
-            $durationDays = 30;
-            $isFeatured = 0;
-    }
+    $plan_duration = $tierDurations[$tier_plan] ?? 30;
+    $is_featured   = $tierFeatured[$tier_plan] ?? 0;
+    $featured_until = date('Y-m-d H:i:s', strtotime("+$plan_duration days"));
 
-    $featuredUntil = date('Y-m-d H:i:s', strtotime("+$durationDays days"));
-
+    // -------------------------
+    // Update property with tier & company info
+    // -------------------------
     $stmtTier = $pdo->prepare("
         UPDATE properties 
-        SET is_featured = ?, featured_until = ?
+        SET 
+            is_featured = ?, 
+            featured_until = ?, 
+            tier_plan = ?, 
+            plan_duration = ?, 
+            company_prop_id = ?
         WHERE id = ?
     ");
-    $stmtTier->execute([$isFeatured, $featuredUntil, $property_id]);
-    
+    $stmtTier->execute([
+        $is_featured,
+        $featured_until,
+        $tier_plan,
+        $plan_duration,
+        $company_prop_id,
+        $property_id
+    ]);
+
     $pdo->commit(); 
 
+    // -------------------------
+    // Return updated info in response
+    // -------------------------
     echo json_encode([
-        'success'=>true,
-        'message'=>'Property submitted successfully! Awaiting admin approval.',
-        'property_id'=>$property_id
-    ]);
+        'success' => true,
+        'message' => 'Property submitted successfully! Awaiting admin approval.',
+        'property_id' => $property_id,
+        'tier_plan' => $tier_plan,
+        'plan_duration' => $plan_duration,
+        'is_featured' => $is_featured,
+        'featured_until' => $featured_until,
+        'company_prop_id' => $company_prop_id
+    ]); 
 
 } catch(Exception $e) {
     if ($pdo->inTransaction()) $pdo->rollBack(); 

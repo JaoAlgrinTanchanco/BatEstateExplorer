@@ -13,31 +13,22 @@ $property_type = trim($_POST['property_type'] ?? '');
 $tier_plan = trim($_POST['tier_plan'] ?? 'Basic');
 $listing_id = intval($_POST['listing_id'] ?? 0);
 
-if (!$property_type || !$listing_id) {
-    echo json_encode(['success' => false, 'error' => 'Missing property type or listing ID']);
+if (!$property_type) {
+    echo json_encode(['success' => false, 'error' => 'Missing property type']);
     exit;
 }
 
-// -----------------------------
-// Tier plan configuration
-// -----------------------------
-$tier_plans = [
-    'Basic' => ['price' => 399, 'duration' => 30, 'is_featured' => 0],
-    'Standard' => ['price' => 699, 'duration' => 45, 'is_featured' => 0],
-    'Premium' => ['price' => 1199, 'duration' => 60, 'is_featured' => 1],
-    'Platinum' => ['price' => 1799, 'duration' => 90, 'is_featured' => 1],
-];
+// Normalize tier plan
+$tier_plan = ucfirst(strtolower($tier_plan)); 
+$tier_prices = ['Basic'=>399,'Standard'=>699,'Premium'=>1199,'Platinum'=>1799];
+$tierCost = $tier_prices[$tier_plan] ?? 399;
 
-// Default fallback
-$tier = $tier_plans[$tier_plan] ?? $tier_plans['Basic'];
-$tierCost = $tier['price'];
-$tierDuration = $tier['duration'];
-$isFeatured = $tier['is_featured'];
+$tierDurations = ['Basic'=>30,'Standard'=>45,'Premium'=>60,'Platinum'=>90];
+$tierFeatured  = ['Basic'=>0,'Standard'=>0,'Premium'=>1,'Platinum'=>1];
 
-// -----------------------------
-// Tier Cost = Listing Fee
-// VAT applies to tier cost only
-// -----------------------------
+$tierDuration = $tierDurations[$tier_plan];
+$isFeatured   = $tierFeatured[$tier_plan];
+
 $baseFee = $tierCost;
 $vat = round($tierCost * 0.12, 2);
 $totalDeduction = round($tierCost + $vat, 2);
