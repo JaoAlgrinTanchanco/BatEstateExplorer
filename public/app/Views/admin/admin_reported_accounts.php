@@ -1,87 +1,86 @@
 <?php
-// --- Correct path to bootstrap ---
-require_once __DIR__ . '/../../bootstrap.php';
+    // --- Correct path to bootstrap ---
+    require_once __DIR__ . '/../../bootstrap.php';
 
-// --- Ensure database connection exists ---
-$conn = $GLOBALS['conn'] ?? null;
-if (!$conn) die("Database connection not found.");
+    // --- Ensure database connection exists ---
+    $conn = $GLOBALS['conn'] ?? null;
+    if (!$conn) die("Database connection not found.");
 
-// ===============================
-// Fetch reported accounts
-// ===============================
-$sqlAccounts = "
-    SELECT 
-        ar.id,
-        'agent' AS report_type,
-        ar.reporter_id,
-        ar.agent_id AS reported_id,
-        ar.reason,
-        ar.other_reason,
-        ar.details,
-        ar.status,
-        ar.created_at,
-        reporter.first_name AS reporter_fname, reporter.last_name AS reporter_lname, reporter.email AS reporter_email,
-        reported.first_name AS reported_fname, reported.last_name AS reported_lname, reported.email AS reported_email
-    FROM agent_reports ar
-    LEFT JOIN users reporter ON ar.reporter_id = reporter.id
-    LEFT JOIN users reported ON ar.agent_id = reported.id
+    // ===============================
+    // Fetch reported accounts
+    // ===============================
+    $sqlAccounts = "
+        SELECT 
+            ar.id,
+            'agent' AS report_type,
+            ar.reporter_id,
+            ar.agent_id AS reported_id,
+            ar.reason,
+            ar.other_reason,
+            ar.details,
+            ar.status,
+            ar.created_at,
+            reporter.first_name AS reporter_fname, reporter.last_name AS reporter_lname, reporter.email AS reporter_email,
+            reported.first_name AS reported_fname, reported.last_name AS reported_lname, reported.email AS reported_email
+        FROM agent_reports ar
+        LEFT JOIN users reporter ON ar.reporter_id = reporter.id
+        LEFT JOIN users reported ON ar.agent_id = reported.id
 
-    UNION ALL
+        UNION ALL
 
-    SELECT 
-        ur.id,
-        'user' AS report_type,
-        ur.reporter_id,
-        ur.reported_user_id AS reported_id,
-        ur.reason,
-        ur.other_reason,
-        ur.details,
-        ur.status,
-        ur.created_at,
-        reporter.first_name AS reporter_fname, reporter.last_name AS reporter_lname, reporter.email AS reporter_email,
-        reported.first_name AS reported_fname, reported.last_name AS reported_lname, reported.email AS reported_email
-    FROM user_reports ur
-    LEFT JOIN users reporter ON ur.reporter_id = reporter.id
-    LEFT JOIN users reported ON ur.reported_user_id = reported.id
+        SELECT 
+            ur.id,
+            'user' AS report_type,
+            ur.reporter_id,
+            ur.reported_user_id AS reported_id,
+            ur.reason,
+            ur.other_reason,
+            ur.details,
+            ur.status,
+            ur.created_at,
+            reporter.first_name AS reporter_fname, reporter.last_name AS reporter_lname, reporter.email AS reporter_email,
+            reported.first_name AS reported_fname, reported.last_name AS reported_lname, reported.email AS reported_email
+        FROM user_reports ur
+        LEFT JOIN users reporter ON ur.reporter_id = reporter.id
+        LEFT JOIN users reported ON ur.reported_user_id = reported.id
 
-    ORDER BY created_at DESC
-";
+        ORDER BY created_at DESC
+    ";
 
-$resultAccounts = $conn->query($sqlAccounts);
-$reportsAccounts = [];
-while ($row = $resultAccounts->fetch_assoc()) {
-    $reportsAccounts[] = $row;
-}
+    $resultAccounts = $conn->query($sqlAccounts);
+    $reportsAccounts = [];
+    while ($row = $resultAccounts->fetch_assoc()) {
+        $reportsAccounts[] = $row;
+    }
 
-// ===============================
-// Fetch reported properties
-// ===============================
-$sqlProperties = "
-    SELECT 
-        pr.id,
-        pr.property_id,
-        pr.reporter_id,
-        u.first_name AS reporter_fname, u.last_name AS reporter_lname,
-        CONCAT(u.first_name, ' ', u.last_name, ' (', u.email, ')') AS reporter_name,
-        p.title AS property_title,
-        pr.reason,
-        pr.other_reason,
-        pr.details,
-        pr.status,
-        pr.created_at
-    FROM property_reports pr
-    LEFT JOIN users u ON pr.reporter_id = u.id
-    LEFT JOIN properties p ON pr.property_id = p.id
-    ORDER BY pr.created_at DESC
-";
+    // ===============================
+    // Fetch reported properties
+    // ===============================
+    $sqlProperties = "
+        SELECT 
+            pr.id,
+            pr.property_id,
+            pr.reporter_id,
+            u.first_name AS reporter_fname, u.last_name AS reporter_lname,
+            CONCAT(u.first_name, ' ', u.last_name, ' (', u.email, ')') AS reporter_name,
+            p.title AS property_title,
+            pr.reason,
+            pr.other_reason,
+            pr.details,
+            pr.status,
+            pr.created_at
+        FROM property_reports pr
+        LEFT JOIN users u ON pr.reporter_id = u.id
+        LEFT JOIN properties p ON pr.property_id = p.id
+        ORDER BY pr.created_at DESC
+    ";
 
-$resultProperties = $conn->query($sqlProperties);
-$reportsProperties = [];
-while ($row = $resultProperties->fetch_assoc()) {
-    $reportsProperties[] = $row;
-}
+    $resultProperties = $conn->query($sqlProperties);
+    $reportsProperties = [];
+    while ($row = $resultProperties->fetch_assoc()) {
+        $reportsProperties[] = $row;
+    }
 ?>
-
 
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_reported_accounts.css" />
 
@@ -259,28 +258,34 @@ while ($row = $resultProperties->fetch_assoc()) {
         });
 
         /* =====================================================
-        PENALTIES & CATEGORY DEFINITIONS
+        PENALTIES & CATEGORY DEFINITIONS (Accounts, Agents, Properties)
         ===================================================== */
 
         const penaltyNotes = {
-            // --- User-specific ---
+            // --- User / Account ---
             'harassment': 'User temporarily suspended for 7 days due to harassment or inappropriate behavior.',
             'spam': 'User messaging privileges restricted for 48 hours due to spam or irrelevant contact.',
             'fake_review': 'User banned from posting reviews for 30 days due to fake feedback.',
             'misinformation': 'User restricted for 7 days for spreading misinformation.',
-            'false_report': 'User temporarily restricted from reporting agents for 7 days.',
+            'false_report': 'User temporarily restricted from reporting accounts for 7 days.',
             'fraudulent_activity': 'User permanently banned for fraudulent or impersonation activity.',
             'impersonation': 'User permanently banned for impersonating another person.',
             'other': 'Admin may assign a custom temporary penalty depending on severity.',
 
-            // --- Agent-specific (for completeness) ---
+            // --- Agent-specific ---
             'fraudulent_listing': 'Agent banned for life due to fraudulent or fake listings.',
             'harassment_agent': 'Agent permanently banned for harassment or unprofessional conduct.',
             'misinformation_agent': 'Agent suspended for 7 days due to false or misleading information.',
             'spam_agent': 'Agent suspended for 48 hours for excessive or irrelevant contact.',
+
+            // --- Property-specific ---
+            'fraudulent_property': 'Property suspended for 7 days due to fraudulent listing. Admin may remove or suspend listing.',
+            'illegal_listing': 'Property suspended for 7 days due to violation of regulations. Admin may remove listing.',
+            'misleading_info': 'Property suspended for 3 days due to misleading or false information. Admin may restrict property posting.',
         };
 
         const categoryFullNames = {
+            // --- Account / User ---
             'harassment': 'Harassment or inappropriate behavior',
             'spam': 'Spam or irrelevant contact',
             'fake_review': 'Fake or manipulated review',
@@ -289,18 +294,24 @@ while ($row = $resultProperties->fetch_assoc()) {
             'fraudulent_activity': 'Fraudulent or deceptive activity',
             'impersonation': 'Impersonation or identity misuse',
             'other': 'Other (Custom penalty)',
-            // For agents:
+
+            // --- Agent ---
             'fraudulent_listing': 'Fraudulent or fake listing',
             'harassment_agent': 'Harassment or inappropriate behavior (Agent)',
             'misinformation_agent': 'False or misleading information (Agent)',
             'spam_agent': 'Spam or irrelevant contact (Agent)',
+
+            // --- Property ---
+            'fraudulent_property': 'Fraudulent property listing',
+            'illegal_listing': 'Illegal or prohibited listing',
+            'misleading_info': 'Misleading property information',
         };
 
         let currentReportedId = null;
         let currentReportId = null;
         let currentCategory = null;
         let currentStatus = null;
-        let currentType = null; // 'agent' or 'user'
+        let currentType = null; // 'account', 'agent', 'user', or 'property'
 
         // =============================
         // Helper: Update row color based on status
@@ -347,10 +358,6 @@ while ($row = $resultProperties->fetch_assoc()) {
             }
         }
 
-        reportsBody.querySelectorAll('tr.clickable-row').forEach(row => {
-            updateStatusCell(row, row.dataset.status);
-        });
-
         /* =====================================================
         Filter by status
         ===================================================== */
@@ -362,59 +369,96 @@ while ($row = $resultProperties->fetch_assoc()) {
         });
 
         /* =====================================================
-        Modal open on row click
+        // Row Click Handler (Modal Open) - Accounts & Properties
         ===================================================== */
-        reportsBody?.addEventListener('click', e => {
-            const row = e.target.closest('tr.clickable-row');
-            if (!row) return;
+        document.querySelectorAll('.tab-content tbody tr.clickable-row').forEach(row => {
+            updateStatusCell(row);
+        });
+        document.querySelectorAll('.tab-content tbody').forEach(tbody => {
+            tbody.addEventListener('click', e => {
+                const row = e.target.closest('tr.clickable-row');
+                if (!row) return; // Ignore clicks that aren't on a clickable row
 
-            currentReportedId = row.dataset.reportedId;
-            currentReportId = row.dataset.reportId;
-            currentCategory = row.dataset.category || 'other';
-            currentStatus = row.dataset.status;
-            currentType = row.dataset.type; // 'agent' or 'user'
+                // --- Capture row data (assuming currentReportedId, currentReportId, etc. are global variables) ---
+                currentReportedId = row.dataset.reportedId;
+                currentReportId = row.dataset.reportId;
+                currentCategory = row.dataset.category || 'other';
+                currentStatus = row.dataset.status;
+                currentType = row.dataset.type;
 
-            const isUser = currentType === 'user';
-            const categoryKey = currentCategory;
-            const fullReason = categoryFullNames[categoryKey] || 'Other';
+                // --- Determine display label and full reason ---
+                let typeLabel = '';
+                switch (currentType) {
+                    case 'user':
+                    case 'account':
+                        typeLabel = 'User';
+                        break;
+                    case 'agent':
+                        typeLabel = 'Agent';
+                        break;
+                    case 'property':
+                        typeLabel = 'Property';
+                        break;
+                    default:
+                        typeLabel = 'Reported';
+                }
 
-            let penaltyHtml = `<p style="color:red;"><strong>Penalty Note:</strong> ${
-                penaltyNotes[categoryKey] || penaltyNotes['other']
-            }</p>`;
+                const categoryKey = currentCategory;
+                const fullReason = categoryFullNames[categoryKey] || 'Other';
+                const defaultPenalty = penaltyNotes[categoryKey] || penaltyNotes['other'];
 
-            // If custom penalty duration is needed
-            if (currentCategory === 'other') {
-                penaltyHtml += `
-                    <p><strong>Set Penalty Duration:</strong>
-                        <select id="banDurationSelect">
-                            <option value="48hrs">48 hours</option>
-                            <option value="7days">7 days</option>
-                            <option value="30days">30 days</option>
-                            <option value="lifetime">Permanent Ban</option>
-                        </select>
-                    </p>`;
-            }
+                // --- Build penalty HTML ---
+                let penaltyHtml = `<p style="color:red;"><strong>Penalty Note:</strong> ${defaultPenalty}</p>`;
 
-            modalBody.innerHTML = `
-                <p><strong>Reporter:</strong> ${row.dataset.reporter}</p>
-                <p><strong>Reported ${isUser ? 'User' : 'Agent'}:</strong> ${row.dataset.reported}</p>
-                <p><strong>Reason:</strong> ${fullReason}</p>
-                <p><strong>Other Reason:</strong> ${row.dataset.otherReason || 'N/A'}</p>
-                <p><strong>Details:</strong> ${row.dataset.details}</p>
-                <p><strong>Reported On:</strong> ${new Date(row.dataset.createdAt).toLocaleString()}</p>
-                ${penaltyHtml}
-            `;
+                // --- Custom penalty duration for 'other' (If applies) ---
+                if (currentCategory === 'other') {
+                    penaltyHtml += `
+                        <p><strong>Set Penalty Duration:</strong>
+                            <select id="banDurationSelect">
+                                <option value="48hrs">48 hours</option>
+                                <option value="7days">7 days</option>
+                                <option value="30days">30 days</option>
+                                <option value="lifetime">Permanent</option>
+                            </select>
+                        </p>`;
+                }
 
-            blockUnblockBtn.textContent =
-                currentStatus === 'blocked'
-                    ? `Unblock ${isUser ? 'User' : 'Agent'}`
-                    : `Block ${isUser ? 'User' : 'Agent'}`;
+                // --- Populate modal body ---
+                modalBody.innerHTML = `
+                    <p><strong>Reporter:</strong> ${row.dataset.reporter}</p>
+                    <p><strong>Reported ${typeLabel}:</strong> ${row.dataset.reported}</p>
+                    <p><strong>Reason:</strong> ${fullReason}</p>
+                    <p><strong>Other Reason:</strong> ${row.dataset.otherReason || 'N/A'}</p>
+                    <p><strong>Details:</strong> ${row.dataset.details}</p>
+                    <p><strong>Reported On:</strong> ${new Date(row.dataset.createdAt).toLocaleString()}</p>
+                    ${penaltyHtml}
+                `;
 
-            reportModal.style.display = 'block';
+                // --- Update Block/Unblock button text and visibility ---
+                if (['user', 'account', 'agent'].includes(currentType)) {
+                    blockUnblockBtn.textContent =
+                        currentStatus === 'blocked'
+                            ? `Unblock ${typeLabel}`
+                            : `Block ${typeLabel}`;
+                    blockUnblockBtn.classList.remove('btn-warning'); // Assume default red
+                    blockUnblockBtn.style.display = 'inline-block';
+
+                } else if (currentType === 'property') {
+                    // Properties are typically suspended/removed, not blocked/unblocked
+                    blockUnblockBtn.textContent = 'Suspend Listing';
+                    blockUnblockBtn.classList.add('btn-warning'); // Optional: change color to orange for 'suspend'
+                    blockUnblockBtn.style.display = 'inline-block';
+                } else {
+                    blockUnblockBtn.style.display = 'none';
+                }
+
+                // --- Show modal ---
+                reportModal.style.display = 'block';
+            });
         });
 
         /* =====================================================
-        Block / Unblock logic
+        Block / Unblock logic (Accounts, Agents, Users, Properties)
         ===================================================== */
         blockUnblockBtn.addEventListener('click', () => {
             if (!currentReportedId || !currentType) return;
@@ -425,59 +469,92 @@ while ($row = $resultProperties->fetch_assoc()) {
 
             if (!confirm(`Are you sure you want to ${action} this ${displayType}?`)) return;
 
-            const endpoint =
-                currentType === 'agent'
-                    ? '/BatEstateExplorer/public/api/admin_block_agent.php'
-                    : '/BatEstateExplorer/public/api/admin_block_user.php';
-
-            // --- Send correct ID key based on type ---
+            // Determine the correct API endpoint
+            let endpoint = '';
             const payload = {
                 action,
                 category: currentCategory,
                 duration: action === 'block' ? duration : null
             };
-            if (currentType === 'agent') payload.agent_id = currentReportedId;
-            else payload.user_id = currentReportedId;
+
+            switch (currentType) {
+                case 'agent':
+                    endpoint = '/BatEstateExplorer/public/api/admin_block_agent.php';
+                    payload.agent_id = currentReportedId;
+                    break;
+                case 'user':
+                case 'account':
+                    endpoint = '/BatEstateExplorer/public/api/admin_block_user.php';
+                    payload.user_id = currentReportedId;
+                    break;
+                case 'property':
+                    endpoint = '/BatEstateExplorer/public/api/admin_block_property.php';
+                    payload.property_id = currentReportedId;
+                    break;
+                default:
+                    alert('Unknown type for blocking/unblocking.');
+                    return;
+            }
 
             fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.message);
-                        const row = reportsBody.querySelector(`tr[data-report-id="${currentReportId}"]`);
-                        if (row) {
-                            row.dataset.status = data.status; // use backend response
-                            updateStatusCell(row, row.dataset.status);
-                        }
-                        reportModal.style.display = 'none';
-                    } else {
-                        alert(data.error || `Failed to ${action} ${currentType}.`);
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+
+                    // Update status cell in the correct table
+                    const rowSelector = `tr[data-report-id="${currentReportId}"]`;
+                    let row = reportsBody.querySelector(rowSelector);
+                    if (!row && currentType === 'property') {
+                        row = document.getElementById('propertiesBody')?.querySelector(rowSelector);
                     }
-                })
-                .catch(() => alert(`Error trying to ${action} ${currentType}.`));
+
+                    if (row) {
+                        row.dataset.status = data.status; // Update dataset
+                        updateStatusCell(row, row.dataset.status);
+                    }
+
+                    reportModal.style.display = 'none';
+                } else {
+                    alert(data.error || `Failed to ${action} ${displayType}.`);
+                }
+            })
+            .catch(() => alert(`Error trying to ${action} ${displayType}.`));
         });
 
         /* =====================================================
-        Delete report
+        Delete report (Accounts, Agents, Users, Properties)
         ===================================================== */
         deleteReportBtn.addEventListener('click', () => {
-            if (!currentReportId) return;
+            if (!currentReportId || !currentType) return;
+
             if (!confirm('Are you sure you want to delete this report?')) return;
 
-            fetch('/BatEstateExplorer/public/api/admin_delete_report.php', {
+            // Determine endpoint based on type
+            const endpoint =
+                currentType === 'property'
+                    ? '/BatEstateExplorer/public/api/admin_delete_report_property.php'
+                    : '/BatEstateExplorer/public/api/admin_delete_report.php';
+
+            fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ report_id: currentReportId, type: currentType }),
+                body: JSON.stringify({ report_id: currentReportId }),
             })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
-                        const row = reportsBody.querySelector(`tr[data-report-id="${currentReportId}"]`);
+                        // Determine which tbody to search
+                        const tableBodyId =
+                            currentType === 'property' ? 'propertiesBody' : 'accountsBody';
+                        const row = document
+                            .getElementById(tableBodyId)
+                            .querySelector(`tr[data-report-id="${currentReportId}"]`);
                         if (row) row.remove();
                         reportModal.style.display = 'none';
                     } else {
