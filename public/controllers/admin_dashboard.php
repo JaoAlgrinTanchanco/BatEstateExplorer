@@ -22,9 +22,6 @@ switch ($view) {
     case 'properties':
         require __DIR__ . '/../app/Views/admin/admin_property_listings.php';
         break;
-    case 'reports':
-        require __DIR__ . '/../app/Views/admin/admin_reports.php';
-        break;
     case 'reports_agents':
         require __DIR__ . '/../app/Views/admin/admin_reports_agents.php';
         break;
@@ -34,7 +31,7 @@ switch ($view) {
     case 'performance':
         require __DIR__ . '/../app/Views/admin/admin_performance.php';
         break;
-    case 'reported_accounts':
+    case 'reports':
         require __DIR__ . '/../app/Views/admin/admin_reported_accounts.php';
         break;
     case 'wallet':
