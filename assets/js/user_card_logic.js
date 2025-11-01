@@ -63,7 +63,7 @@ function renderStars(rating) {
     if (overlay) mainImage.appendChild(overlay);
   };
 
-  // Open Property Modal (User Version)
+  // Open Property Modal (User Version) - Fully Corrected
   async function openPropertyModal(propertyId) {
       currentPropertyId = propertyId;
       const modal = document.getElementById("propertyModal");
@@ -73,19 +73,21 @@ function renderStars(rating) {
       const reviewBtn = modal.querySelector("#leaveReviewBtn");
       const agentProfileLink = modal.querySelector("#agentProfileLink");
       const messageBtn = modal.querySelector(".modal-actions a[href*='message.php']");
+      const reportBtn = modal.querySelector('.nav-link.report-agent'); // scoped inside modal
+      const reportFormInput = modal.querySelector('#reportPropertyForm input[name="property_id"]');
 
       try {
           // --- Fetch property details ---
           const res = await fetch(`/BatEstateExplorer/public/api/get_property_details.php?id=${encodeURIComponent(propertyId)}`);
           const data = await res.json();
-          if (!data.success) return;
+          if (!data.success || !data.property) return;
 
-          const prop = data.property;
-          const images = prop.images.length ? prop.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
-          modal.dataset.id = prop.id;
+          const property = data.property; // consistently use 'property'
+          const images = property.images && property.images.length ? property.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
+          modal.dataset.id = property.id;
 
           // --- Agent link ---
-          const lookupId = prop.listed_by_agent_id ?? prop.agent_id;
+          const lookupId = property.listed_by_agent_id ?? property.agent_id;
           let listedAgentUserId = null;
           if (agentProfileLink) agentProfileLink.href = lookupId ? `/BatEstateExplorer/public/agent_page.php?agent_id=${lookupId}` : "#";
 
@@ -120,35 +122,37 @@ function renderStars(rating) {
 
           // --- Images ---
           const mainImage = modal.querySelector(".property-main-image");
-          mainImage.style.backgroundImage = `url('${images[0]}')`;
+          if (mainImage) mainImage.style.backgroundImage = `url('${images[0]}')`;
 
           const thumbs = modal.querySelector(".property-images");
-          thumbs.innerHTML = images.map((img, i) => `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`).join("");
-          thumbs.querySelectorAll("img").forEach(imgEl => {
-              imgEl.addEventListener("click", () => {
-                  mainImage.style.backgroundImage = `url('${imgEl.src}')`;
-                  thumbs.querySelectorAll("img").forEach(i => i.classList.remove("active"));
-                  imgEl.classList.add("active");
+          if (thumbs) {
+              thumbs.innerHTML = images.map((img, i) => `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`).join("");
+              thumbs.querySelectorAll("img").forEach(imgEl => {
+                  imgEl.addEventListener("click", () => {
+                      mainImage.style.backgroundImage = `url('${imgEl.src}')`;
+                      thumbs.querySelectorAll("img").forEach(i => i.classList.remove("active"));
+                      imgEl.classList.add("active");
+                  });
               });
-          });
+          }
 
           // --- Property details ---
           const setText = (selector, value) => { const el = modal.querySelector(selector); if (el) el.textContent = value ?? "-"; };
-          setText(".property-name", prop.title);
-          setText(".price", `₱${parseFloat(prop.price || 0).toLocaleString()}`);
-          setText(".location", prop.location);
-          setText(".property-type", prop.property_type);
-          setText(".bedrooms", prop.bedrooms);
-          setText(".bathrooms", prop.bathrooms);
-          setText(".lot_size", prop.lot_size);
-          setText(".date_uploaded", prop.created_at ? new Date(prop.created_at).toLocaleDateString() : "-");
-          setText(".property-description", prop.description);
+          setText(".property-name", property.title);
+          setText(".price", `₱${parseFloat(property.price || 0).toLocaleString()}`);
+          setText(".location", property.location);
+          setText(".property-type", property.property_type);
+          setText(".bedrooms", property.bedrooms);
+          setText(".bathrooms", property.bathrooms);
+          setText(".lot_size", property.lot_size);
+          setText(".date_uploaded", property.created_at ? new Date(property.created_at).toLocaleDateString() : "-");
+          setText(".property-description", property.description);
 
           // --- Review button visibility ---
           if (reviewBtn) {
               if (data.has_privilege) {
                   reviewBtn.style.display = "inline-flex";
-                  reviewBtn.dataset.propertyId = prop.id;
+                  reviewBtn.dataset.propertyId = property.id;
               } else {
                   reviewBtn.style.display = "none";
                   reviewBtn.dataset.propertyId = "";
@@ -160,18 +164,15 @@ function renderStars(rating) {
           modal.style.display = "flex";
 
           // --- SOLD overlay ---
-          if (window.updateSoldOverlay) window.updateSoldOverlay(prop.status);
+          if (window.updateSoldOverlay) window.updateSoldOverlay(property.status);
 
           // --- Fetch and render reviews dynamically ---
           if (reviewSection) {
               reviewSection.innerHTML = `<p style="opacity:0.6;">Loading reviews...</p>`;
-
               try {
-                  const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${prop.id}`);
+                  const reviewRes = await fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${property.id}`);
                   const reviewData = await reviewRes.json();
-
                   if (reviewData.success) {
-                      // Generate entire reviews section dynamically
                       renderReviews(reviewData.reviews, reviewSection);
                   } else {
                       reviewSection.innerHTML = `<p>No reviews yet.</p>`;
@@ -180,6 +181,12 @@ function renderStars(rating) {
                   console.error("Failed to fetch reviews:", e);
                   reviewSection.innerHTML = `<p style="color:red;">Failed to load reviews.</p>`;
               }
+          }
+
+          // --- Update Report button inside modal ---
+          if (reportBtn) {
+              reportBtn.dataset.propertyId = property.id;
+              if (reportFormInput) reportFormInput.value = property.id;
           }
 
       } catch (err) {
@@ -402,86 +409,99 @@ function renderStars(rating) {
     }
   });
 
+// Update Property Modal (Safe & Fully Corrected)
 function updatePropertyModal(property) {
-  const modal = document.getElementById('propertyModal');
-  if (!modal) return;
+    const modal = document.getElementById('propertyModal');
+    if (!modal || !property) return;
 
-  const mainImage = modal.querySelector('.property-main-image');
-  const imagesContainer = modal.querySelector('.property-images');
-  const reviewContainer = modal.querySelector("#modalPastReviews");
-  const optionsBtn = document.getElementById('propertyOptionsBtn');
-  const dropdown = document.getElementById('propertyOptionsDropdown');
+    const mainImage = modal.querySelector('.property-main-image');
+    const imagesContainer = modal.querySelector('.property-images');
+    const reviewContainer = modal.querySelector("#modalPastReviews");
+    const optionsBtn = document.getElementById('propertyOptionsBtn');
+    const dropdown = document.getElementById('propertyOptionsDropdown');
+    const reportBtn = modal.querySelector('.nav-link.report-agent');
+    const reportFormInput = modal.querySelector('#reportPropertyForm input[name="property_id"]');
 
-  // Safe helper
-  const setText = (selector, value) => {
-    const el = modal.querySelector(selector);
-    if (el) el.textContent = value ?? '-';
-  }
+    // --- Helper to safely set text content ---
+    const setText = (selector, value) => {
+        const el = modal.querySelector(selector);
+        if (el) el.textContent = value ?? '-';
+    };
 
-  modal.dataset.id = property.id;
-  setText('.property-name', property.title);
-  setText('.price', `₱${parseFloat(property.price || 0).toLocaleString()}`);
-  setText('.location', property.location);
-  setText('.property-type', property.property_type);
-  setText('.bedrooms', property.bedrooms);
-  setText('.bathrooms', property.bathrooms);
-  setText('.lot_size', property.lot_size);
-  setText('.date_uploaded', property.created_at ? new Date(property.created_at).toLocaleDateString() : '-');
-  setText('.property-description', property.description);
-  setText('.status', property.status);
+    // --- Set property details ---
+    modal.dataset.id = property.id;
+    setText('.property-name', property.title);
+    setText('.price', `₱${parseFloat(property.price || 0).toLocaleString()}`);
+    setText('.location', property.location);
+    setText('.property-type', property.property_type);
+    setText('.bedrooms', property.bedrooms);
+    setText('.bathrooms', property.bathrooms);
+    setText('.lot_size', property.lot_size);
+    setText('.date_uploaded', property.created_at ? new Date(property.created_at).toLocaleDateString() : '-');
+    setText('.property-description', property.description);
+    setText('.status', property.status);
 
-  // --- Images ---
-  if (mainImage && imagesContainer) {
-    const imgs = property.images && property.images.length ? property.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
-    mainImage.style.backgroundImage = `url('${imgs[0]}')`;
-    imagesContainer.innerHTML = imgs.map((img, i) => `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`).join("");
+    // --- Update images ---
+    if (mainImage && imagesContainer) {
+        const imgs = property.images && property.images.length ? property.images : ["/BatEstateExplorer/assets/images/bg4.jpg"];
+        mainImage.style.backgroundImage = `url('${imgs[0]}')`;
 
-    imagesContainer.querySelectorAll("img").forEach(imgEl => {
-      imgEl.addEventListener("click", () => {
-        mainImage.style.backgroundImage = `url('${imgEl.src}')`;
-        imagesContainer.querySelectorAll("img").forEach(i => i.classList.remove("active"));
-        imgEl.classList.add("active");
-      });
-    });
-  }
+        // Clear existing images first to avoid duplicate listeners
+        imagesContainer.innerHTML = imgs.map((img, i) =>
+            `<img src="${img}" alt="Property image" ${i === 0 ? "class='active'" : ""}>`
+        ).join("");
 
-  // --- SOLD overlay ---
-  if (window.updateSoldOverlay) window.updateSoldOverlay(property.status);
-
-  // --- Options button ---
-  if (optionsBtn) {
-    const loggedInAgentId = parseInt(modal.dataset.loggedInAgentId);
-    const listedAgentId = parseInt(modal.dataset.listedAgentId);
-    optionsBtn.style.display = (loggedInAgentId && listedAgentId && loggedInAgentId === listedAgentId) ? 'flex' : 'none';
-  }
-
-  // --- Status dropdown ---
-  if (dropdown) {
-    dropdown.querySelectorAll('.status-option').forEach(btn => {
-      btn.style.background = btn.dataset.status === property.status
-        ? (property.status === 'available' ? '#d0f0c0' : '#f8d0d0')
-        : '';
-    });
-  }
-
-  // --- Reviews ---
-  if (reviewContainer) {
-      reviewContainer.innerHTML = `<p style="opacity:0.6;">Loading reviews...</p>`;
-      fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${property.id}`)
-        .then(res => res.json())
-        .then(reviewData => {
-          if (reviewData.success) {
-              // Use renderReviews to properly display avatars and clickable names
-              renderReviews(reviewData.reviews, reviewContainer);
-          } else {
-              reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
-          }
-        })
-        .catch(err => {
-          console.error('Error loading reviews:', err);
-          reviewContainer.innerHTML = `<p style="color:red;">Failed to load reviews.</p>`;
+        imagesContainer.querySelectorAll("img").forEach(imgEl => {
+            imgEl.addEventListener("click", () => {
+                mainImage.style.backgroundImage = `url('${imgEl.src}')`;
+                imagesContainer.querySelectorAll("img").forEach(i => i.classList.remove("active"));
+                imgEl.classList.add("active");
+            });
         });
-  }
+    }
+
+    // --- SOLD overlay ---
+    if (window.updateSoldOverlay) window.updateSoldOverlay(property.status);
+
+    // --- Options button visibility ---
+    if (optionsBtn) {
+        const loggedInAgentId = parseInt(modal.dataset.loggedInAgentId);
+        const listedAgentId = parseInt(modal.dataset.listedAgentId);
+        optionsBtn.style.display = (loggedInAgentId && listedAgentId && loggedInAgentId === listedAgentId) ? 'flex' : 'none';
+    }
+
+    // --- Status dropdown highlighting ---
+    if (dropdown) {
+        dropdown.querySelectorAll('.status-option').forEach(btn => {
+            btn.style.background = btn.dataset.status === property.status
+                ? (property.status === 'available' ? '#d0f0c0' : '#f8d0d0')
+                : '';
+        });
+    }
+
+    // --- Fetch and render reviews ---
+    if (reviewContainer) {
+        reviewContainer.innerHTML = `<p style="opacity:0.6;">Loading reviews...</p>`;
+        fetch(`/BatEstateExplorer/public/api/get_reviews.php?property_id=${property.id}`)
+            .then(res => res.json())
+            .then(reviewData => {
+                if (reviewData.success) {
+                    renderReviews(reviewData.reviews, reviewContainer);
+                } else {
+                    reviewContainer.innerHTML = `<p>No reviews yet.</p>`;
+                }
+            })
+            .catch(err => {
+                console.error('Error loading reviews:', err);
+                reviewContainer.innerHTML = `<p style="color:red;">Failed to load reviews.</p>`;
+            });
+    }
+
+    // --- Update report button & hidden input ---
+    if (reportBtn) {
+        reportBtn.dataset.propertyId = property.id;
+        if (reportFormInput) reportFormInput.value = property.id;
+    }
 }
 
 })();

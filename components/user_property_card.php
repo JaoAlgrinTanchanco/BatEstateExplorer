@@ -271,10 +271,13 @@
         </div>
       </div>
 
-      <a href="#" class="nav-link report-agent">
-        <i class="fa-solid fa-flag"></i>
-        <span>Report Listing</span>
+      <!-- Report Listing Button -->
+      <a href="#" class="nav-link report-agent" 
+        data-property-id="<?= (int)$propertyId ?>">
+          <i class="fa-solid fa-flag"></i>
+          <span>Report Listing</span>
       </a>
+
     </div>
   </div>
 </div>

@@ -2,7 +2,6 @@
 session_start();
 header('Content-Type: application/json');
 
-// --- Load bootstrap ---
 require_once __DIR__ . '/../app/bootstrap.php';
 
 // --- Ensure logged in ---
@@ -26,7 +25,7 @@ $reason = null;
 $other_reason = null;
 $details = null;
 
-// Check if request is JSON
+// Check for JSON input first
 $rawInput = file_get_contents('php://input');
 $jsonInput = json_decode($rawInput, true);
 
@@ -36,24 +35,23 @@ if (!empty($jsonInput)) {
     $other_reason = isset($jsonInput['other_reason']) ? trim($jsonInput['other_reason']) : null;
     $details      = isset($jsonInput['details']) ? trim($jsonInput['details']) : null;
 } else {
-    // fallback to $_POST (form-data)
+    // fallback to form-data
     $property_id  = isset($_POST['property_id']) ? (int) $_POST['property_id'] : null;
     $reason       = isset($_POST['reason']) ? trim($_POST['reason']) : null;
     $other_reason = isset($_POST['other_reason']) ? trim($_POST['other_reason']) : null;
     $details      = isset($_POST['details']) ? trim($_POST['details']) : null;
 }
 
-// --- Basic validation ---
+// --- Validation ---
 if (!$property_id || !$reason) {
     echo json_encode(['status' => 'error', 'message' => 'Please select a reason for your report.']);
     exit;
 }
 
-// --- Only keep other_reason if reason is "other" ---
+// Keep other_reason only if reason is "other"
 if ($reason !== 'other') $other_reason = null;
 
 try {
-    // --- Determine DB connection ---
     $dbConn = null;
     if (isset($pdo) && $pdo instanceof PDO) $dbConn = $pdo;
     elseif (isset($db) && method_exists($db, 'getConnection')) $dbConn = $db->getConnection();
@@ -74,7 +72,9 @@ try {
             ':details'      => $details
         ]);
 
-        // --- Update property flag ---
+        $reportId = $dbConn->lastInsertId();
+
+        // Update property flag
         $update = $dbConn->prepare("UPDATE properties SET is_reported = 1 WHERE id = :id");
         $update->execute([':id' => $property_id]);
 
@@ -85,19 +85,30 @@ try {
         ");
         $stmt->bind_param('iisss', $reporter_id, $property_id, $reason, $other_reason, $details);
         $stmt->execute();
+        $reportId = $stmt->insert_id;
 
         $update = $dbConn->prepare("UPDATE properties SET is_reported = 1 WHERE id = ?");
         $update->bind_param('i', $property_id);
         $update->execute();
     }
 
-    // --- Success response ---
-    echo json_encode(['status' => 'success', 'message' => 'Property report submitted successfully.']);
+    // --- Success response with details ---
+    echo json_encode([
+        'status'       => 'success',
+        'message'      => 'Property report submitted successfully.',
+        'report'       => [
+            'report_id'    => $reportId ?? null,
+            'property_id'  => $property_id,
+            'reason'       => $reason,
+            'other_reason' => $other_reason,
+            'details'      => $details
+        ]
+    ]);
 
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
-        'status' => 'error',
+        'status'  => 'error',
         'message' => 'Database error: ' . $e->getMessage()
     ]);
 }
