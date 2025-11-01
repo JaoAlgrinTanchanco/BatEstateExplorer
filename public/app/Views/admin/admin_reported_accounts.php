@@ -436,17 +436,25 @@
 
                 // --- Update Block/Unblock button text and visibility ---
                 if (['user', 'account', 'agent'].includes(currentType)) {
+                    // Logic for Users/Accounts/Agents (which is already correct)
                     blockUnblockBtn.textContent =
                         currentStatus === 'blocked'
                             ? `Unblock ${typeLabel}`
                             : `Block ${typeLabel}`;
-                    blockUnblockBtn.classList.remove('btn-warning'); // Assume default red
+                    blockUnblockBtn.classList.remove('btn-warning');
                     blockUnblockBtn.style.display = 'inline-block';
 
                 } else if (currentType === 'property') {
-                    // Properties are typically suspended/removed, not blocked/unblocked
-                    blockUnblockBtn.textContent = 'Suspend Listing';
-                    blockUnblockBtn.classList.add('btn-warning'); // Optional: change color to orange for 'suspend'
+                    // NEW Logic for Properties: Check currentStatus to toggle text
+                    if (currentStatus === 'blocked') {
+                        blockUnblockBtn.textContent = 'Unsuspend Listing';
+                        blockUnblockBtn.classList.remove('btn-warning'); // Use default color for 'unblock'
+                        blockUnblockBtn.classList.add('btn-success');   // Optional: Add a success class for better visibility
+                    } else {
+                        blockUnblockBtn.textContent = 'Suspend Listing';
+                        blockUnblockBtn.classList.remove('btn-success');
+                        blockUnblockBtn.classList.add('btn-warning'); // Use warning color for 'suspend'
+                    }
                     blockUnblockBtn.style.display = 'inline-block';
                 } else {
                     blockUnblockBtn.style.display = 'none';
@@ -458,18 +466,22 @@
         });
 
         /* =====================================================
-        Block / Unblock logic (Accounts, Agents, Users, Properties)
+            Block / Unblock logic (Accounts, Agents, Users, Properties)
         ===================================================== */
-        blockUnblockBtn.addEventListener('click', () => {
+        blockUnblockBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+
             if (!currentReportedId || !currentType) return;
 
             const duration = document.getElementById('banDurationSelect')?.value || null;
-            const action = blockUnblockBtn.textContent.toLowerCase().includes('unblock') ? 'unblock' : 'block';
+            const isUnblockAction =
+                blockUnblockBtn.textContent.toLowerCase().includes('unblock') ||
+                blockUnblockBtn.textContent.toLowerCase().includes('unsuspend');
+            const action = isUnblockAction ? 'unblock' : 'block';
             const displayType = currentType.charAt(0).toUpperCase() + currentType.slice(1);
 
             if (!confirm(`Are you sure you want to ${action} this ${displayType}?`)) return;
 
-            // Determine the correct API endpoint
             let endpoint = '';
             const payload = {
                 action,
@@ -506,28 +518,32 @@
                 if (data.success) {
                     alert(data.message);
 
-                    // Update status cell in the correct table
+                    // ✅ Safe row lookup
                     const rowSelector = `tr[data-report-id="${currentReportId}"]`;
-                    let row = reportsBody.querySelector(rowSelector);
-                    if (!row && currentType === 'property') {
-                        row = document.getElementById('propertiesBody')?.querySelector(rowSelector);
-                    }
-
+                    const row = document.querySelector(`#accountsBody ${rowSelector}, #propertiesBody ${rowSelector}`);
                     if (row) {
-                        row.dataset.status = data.status; // Update dataset
+                        row.dataset.status = data.status;
                         updateStatusCell(row, row.dataset.status);
                     }
 
                     reportModal.style.display = 'none';
+
+                    // 🔄 Reload page after 1s
+                    setTimeout(() => location.reload(), 1000);
                 } else {
                     alert(data.error || `Failed to ${action} ${displayType}.`);
+                    reportModal.style.display = 'none';
                 }
             })
-            .catch(() => alert(`Error trying to ${action} ${displayType}.`));
+            .catch((err) => {
+                console.error('Fetch error:', err);
+                alert(`Error trying to ${action} ${displayType}.`);
+                reportModal.style.display = 'none';
+            });
         });
 
         /* =====================================================
-        Delete report (Accounts, Agents, Users, Properties)
+                Delete report (Accounts, Agents, Users, Properties)
         ===================================================== */
         deleteReportBtn.addEventListener('click', () => {
             if (!currentReportId || !currentType) return;
@@ -549,13 +565,17 @@
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
-                        // Determine which tbody to search
-                        const tableBodyId =
-                            currentType === 'property' ? 'propertiesBody' : 'accountsBody';
-                        const row = document
-                            .getElementById(tableBodyId)
-                            .querySelector(`tr[data-report-id="${currentReportId}"]`);
-                        if (row) row.remove();
+                        
+                        // --- CORRECTED ROW LOOKUP ---
+                        // 1. Get the currently active tab content area (e.g., Accounts Tab or Properties Tab)
+                        const activeContent = document.querySelector('.tab-content.active');
+                        if (activeContent) {
+                            // 2. Search ONLY within the active tab's table for the matching row
+                            const row = activeContent.querySelector(`tr[data-report-id="${currentReportId}"]`);
+                            
+                            if (row) row.remove();
+                        }
+                        
                         reportModal.style.display = 'none';
                     } else {
                         alert(data.error || 'Failed to delete report.');
