@@ -621,25 +621,33 @@ function updatePropertyModal(property) {
 
 })();
 
-// Report Property
+// Report Property Modal
 (() => {
-  const reportLink = document.querySelector('.nav-link.report-agent');
+  const reportLinks = document.querySelectorAll('.nav-link.report-agent');
   const modal = document.getElementById('reportPropertyModal');
   const closeBtn = modal?.querySelector('.close');
   const form = modal?.querySelector('#reportPropertyForm');
-  const reasonSelect = modal?.querySelector('#report-reason');
+  const reasonSelect = modal?.querySelector('#report-reason-select');
   const otherReasonContainer = modal?.querySelector('#otherReasonContainer');
 
-  if (!reportLink || !modal || !form) return;
+  if (!reportLinks.length || !modal || !form) return;
 
-  // ====== Open Modal ======
-  reportLink.addEventListener('click', e => {
-    e.preventDefault();
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden'; // prevent scroll
+  // ===== Open Modal =====
+  reportLinks.forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const propertyId = link.dataset.propertyId; // ensure each link has data-property-id
+      if (!propertyId) return console.error('Property ID not found on link.');
+
+      // Set hidden input value
+      form.querySelector('input[name="property_id"]').value = propertyId;
+
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden'; // prevent scroll
+    });
   });
 
-  // ====== Close Modal ======
+  // ===== Close Modal =====
   const closeModal = () => {
     modal.style.display = 'none';
     document.body.style.overflow = '';
@@ -652,18 +660,20 @@ function updatePropertyModal(property) {
     if (e.target === modal) closeModal();
   });
 
-  // ====== Toggle "Other Reason" Field ======
+  // ===== Toggle "Other Reason" Field =====
   reasonSelect?.addEventListener('change', () => {
-    if (reasonSelect.value === 'other') {
-      otherReasonContainer.style.display = 'block';
-    } else {
-      otherReasonContainer.style.display = 'none';
-    }
+    otherReasonContainer.style.display = reasonSelect.value === 'other' ? 'block' : 'none';
   });
 
-  // ====== Submit Report ======
+  // ===== Submit Report =====
   form.addEventListener('submit', async e => {
     e.preventDefault();
+
+    // Basic validation
+    const reason = reasonSelect.value;
+    const propertyId = form.querySelector('input[name="property_id"]').value;
+    if (!reason) return alert('⚠️ Please select a reason for your report.');
+    if (!propertyId) return alert('⚠️ Property ID is missing.');
 
     const formData = new FormData(form);
 

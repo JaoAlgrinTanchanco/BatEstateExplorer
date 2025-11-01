@@ -318,17 +318,18 @@
     <span class="close">&times;</span>
     <h2>Report this Listing</h2>
 
-    <form id="reportPropertyForm" method="POST" action="/BatEstateExplorer/public/api/report_property.php" enctype="multipart/form-data">
-      <input type="hidden" name="property_id" value="<?= $property['id'] ?>">
+    <form id="reportPropertyForm">
+      <!-- property_id will be set dynamically via JS -->
+      <input type="hidden" name="property_id" value="">
       <input type="hidden" name="reporter_id" value="<?= $_SESSION['user_id'] ?? 0 ?>">
 
-      <label for="report-reason">Reason</label>
-      <select name="reason" id="report-reason" required>
+      <label for="report-reason-select">Reason</label>
+      <select name="reason" id="report-reason-select" required>
         <option value="">Select a reason</option>
-        <option value="fraudulent_listing">Fraudulent or fake listing</option>
+        <option value="fraudulent_property">Fraudulent or deceptive property listing</option>
+        <option value="illegal_listing">Illegal or prohibited listing</option>
+        <option value="misleading_info">Misleading or false property information</option>
         <option value="already_sold">Property already sold</option>
-        <option value="misinformation">False or misleading information</option>
-        <option value="spam">Spam or irrelevant content</option>
         <option value="other">Other</option>
       </select>
 

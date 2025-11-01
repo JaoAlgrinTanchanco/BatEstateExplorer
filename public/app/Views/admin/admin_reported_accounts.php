@@ -260,52 +260,58 @@
         /* =====================================================
         PENALTIES & CATEGORY DEFINITIONS (Accounts, Agents, Properties)
         ===================================================== */
-        const penaltyNotes = {
-            // --- User / Account ---
-            'harassment': 'User temporarily suspended for 7 days due to harassment or inappropriate behavior.',
-            'spam': 'User messaging privileges restricted for 48 hours due to spam or irrelevant contact.',
-            'fake_review': 'User banned from posting reviews for 30 days due to fake or manipulated feedback.',
-            'misinformation': 'User restricted for 7 days for spreading false or misleading information.',
-            'false_report': 'User temporarily restricted from reporting for 7 days due to false or malicious reports.',
-            'fraudulent_activity': 'User permanently banned for fraudulent or deceptive activity.',
-            'impersonation': 'User permanently banned for impersonating another person.',
-            'other': 'Admin may assign a custom temporary penalty depending on severity.',
-
-            // --- Agent-specific (aligned with backend category keys) ---
-            'fraudulent_listing': 'Agent permanently banned due to fraudulent or fake listings.',
-            'harassment': 'Agent permanently banned for harassment or unprofessional conduct.',
-            'misinformation': 'Agent suspended for 7 days due to false or misleading information.',
-            'spam': 'Agent suspended for 48 hours for excessive or irrelevant contact.',
-
-            // --- Property-specific (permanent) ---
-            'fraudulent_property': 'Property permanently removed due to fraudulent or deceptive listing.',
-            'illegal_listing': 'Property permanently taken down due to illegal or prohibited content.',
-            'misleading_info': 'Property permanently removed due to false or misleading information.',
-            'already_sold': 'Property taken down due to being already sold. Associated agent will also be blocked.',
+        const penalties = {
+            user: {
+                harassment: 'User temporarily suspended for 7 days due to harassment or inappropriate behavior.',
+                spam: 'User messaging privileges restricted for 48 hours due to spam or irrelevant contact.',
+                fake_review: 'User banned from posting reviews for 30 days due to fake or manipulated feedback.',
+                misinformation: 'User restricted for 7 days for spreading false or misleading information.',
+                false_report: 'User temporarily restricted from reporting for 7 days due to false or malicious reports.',
+                fraudulent_activity: 'User permanently banned for fraudulent or deceptive activity.',
+                impersonation: 'User permanently banned for impersonating another person.',
+                other: 'Admin may assign a custom temporary penalty depending on severity.',
+            },
+            agent: {
+                fraudulent_listing: 'Agent permanently banned due to fraudulent or fake listings.',
+                harassment: 'Agent permanently banned for harassment or unprofessional conduct.',
+                misinformation: 'Agent suspended for 7 days due to false or misleading information.',
+                spam: 'Agent suspended for 48 hours for excessive or irrelevant contact.',
+                other: 'Admin may assign a custom temporary penalty depending on severity.',
+            },
+            property: {
+                fraudulent_property: 'Property permanently removed due to fraudulent or deceptive listing.',
+                illegal_listing: 'Property permanently taken down due to illegal or prohibited content.',
+                misleading_info: 'Property permanently removed due to false or misleading information.',
+                already_sold: 'Property taken down due to being already sold. Associated agent will also be blocked.',
+                other: 'Admin may assign a custom penalty depending on severity.',
+            }
         };
 
-        const categoryFullNames = {
-            // --- Account / User ---
-            'harassment': 'Harassment or inappropriate behavior',
-            'spam': 'Spam or irrelevant contact',
-            'fake_review': 'Fake or manipulated review',
-            'misinformation': 'False or misleading information',
-            'false_report': 'False or malicious report',
-            'fraudulent_activity': 'Fraudulent or deceptive activity',
-            'impersonation': 'Impersonation or identity misuse',
-            'other': 'Other (Custom penalty)',
-
-            // --- Agent ---
-            'fraudulent_listing': 'Fraudulent or fake listing (Agent)',
-            'harassment': 'Harassment or inappropriate behavior (Agent)',
-            'misinformation': 'False or misleading information (Agent)',
-            'spam': 'Spam or irrelevant contact (Agent)',
-
-            // --- Property ---
-            'fraudulent_property': 'Fraudulent property listing (Permanent ban)',
-            'illegal_listing': 'Illegal or prohibited listing (Permanent ban)',
-            'misleading_info': 'Misleading or false property information (Permanent ban)',
-            'already_sold': 'Property already sold (Taken down and linked agent blocked)',
+        const categoryNames = {
+            user: {
+                harassment: 'Harassment or inappropriate behavior',
+                spam: 'Spam or irrelevant contact',
+                fake_review: 'Fake or manipulated review',
+                misinformation: 'False or misleading information',
+                false_report: 'False or malicious report',
+                fraudulent_activity: 'Fraudulent or deceptive activity',
+                impersonation: 'Impersonation or identity misuse',
+                other: 'Other (Custom penalty)',
+            },
+            agent: {
+                fraudulent_listing: 'Fraudulent or fake listing (Agent)',
+                harassment: 'Harassment or inappropriate behavior (Agent)',
+                misinformation: 'False or misleading information (Agent)',
+                spam: 'Spam or irrelevant contact (Agent)',
+                other: 'Other (Custom penalty)',
+            },
+            property: {
+                fraudulent_property: 'Fraudulent property listing (Permanent ban)',
+                illegal_listing: 'Illegal or prohibited listing (Permanent ban)',
+                misleading_info: 'Misleading or false property information (Permanent ban)',
+                already_sold: 'Property already sold (Taken down and linked agent blocked)',
+                other: 'Other (Custom penalty)',
+            }
         };
 
         // Current state variables
@@ -313,7 +319,19 @@
         let currentReportId = null;
         let currentCategory = null;
         let currentStatus = null;
-        let currentType = null; // 'account', 'agent', 'user', or 'property'
+        let currentType = null; // 'user', 'account', 'agent', or 'property'
+
+        /* Helper function to get penalty note based on type & category */
+        function getPenaltyNote(type, category) {
+            const key = type === 'account' ? 'user' : type; // treat account same as user
+            return penalties[key]?.[category] || penalties[key]?.other || 'Admin may assign a custom penalty.';
+        }
+
+        /* Helper function to get category display name */
+        function getCategoryName(type, category) {
+            const key = type === 'account' ? 'user' : type;
+            return categoryNames[key]?.[category] || categoryNames[key]?.other || 'Other';
+        }
 
         // =============================
         // Helper: Update row color based on status
@@ -377,48 +395,40 @@
         });
 
         /* =====================================================
-        // Row Click Handler (Modal Open) - Accounts & Properties
+        Row Click Handler (Modal Open) - Accounts, Agents & Properties
         ===================================================== */
         document.querySelectorAll('.tab-content tbody tr.clickable-row').forEach(row => {
-            updateStatusCell(row);
+            updateStatusCell(row); // Initialize status display
         });
+
         document.querySelectorAll('.tab-content tbody').forEach(tbody => {
             tbody.addEventListener('click', e => {
                 const row = e.target.closest('tr.clickable-row');
-                if (!row) return; // Ignore clicks that aren't on a clickable row
+                if (!row) return; // Ignore clicks outside clickable rows
 
-                // --- Capture row data (assuming currentReportedId, currentReportId, etc. are global variables) ---
+                // --- Capture row data ---
                 currentReportedId = row.dataset.reportedId;
                 currentReportId = row.dataset.reportId;
                 currentCategory = row.dataset.category || 'other';
                 currentStatus = row.dataset.status;
                 currentType = row.dataset.type;
 
-                // --- Determine display label and full reason ---
-                let typeLabel = '';
-                switch (currentType) {
-                    case 'user':
-                    case 'account':
-                        typeLabel = 'User';
-                        break;
-                    case 'agent':
-                        typeLabel = 'Agent';
-                        break;
-                    case 'property':
-                        typeLabel = 'Property';
-                        break;
-                    default:
-                        typeLabel = 'Reported';
-                }
+                // --- Determine type label ---
+                let typeLabel = {
+                    user: 'User',
+                    account: 'User',
+                    agent: 'Agent',
+                    property: 'Property'
+                }[currentType] || 'Reported';
 
-                const categoryKey = currentCategory;
-                const fullReason = categoryFullNames[categoryKey] || 'Other';
-                const defaultPenalty = penaltyNotes[categoryKey] || penaltyNotes['other'];
+                // --- Safe access to category full name & penalty note ---
+                const fullReason = getCategoryName(currentType, currentCategory);
+                const defaultPenalty = getPenaltyNote(currentType, currentCategory);
 
                 // --- Build penalty HTML ---
                 let penaltyHtml = `<p style="color:red;"><strong>Penalty Note:</strong> ${defaultPenalty}</p>`;
 
-                // --- Custom penalty duration for 'other' (If applies) ---
+                // --- Custom penalty duration select for 'other' ---
                 if (currentCategory === 'other') {
                     penaltyHtml += `
                         <p><strong>Set Penalty Duration:</strong>
@@ -442,27 +452,30 @@
                     ${penaltyHtml}
                 `;
 
-                // --- Update Block/Unblock button text and visibility ---
+                // --- Update Block/Take Down button ---
                 if (['user', 'account', 'agent'].includes(currentType)) {
-                    // Logic for Users/Accounts/Agents (which is already correct)
-                    blockUnblockBtn.textContent =
-                        currentStatus === 'blocked'
-                            ? `Unblock ${typeLabel}`
-                            : `Block ${typeLabel}`;
-                    blockUnblockBtn.classList.remove('btn-warning');
+                    blockUnblockBtn.textContent = currentStatus === 'blocked'
+                        ? `Unblock ${typeLabel}`
+                        : `Block ${typeLabel}`;
+                    blockUnblockBtn.classList.remove('btn-warning', 'btn-success', 'btn-secondary');
                     blockUnblockBtn.style.display = 'inline-block';
+                    blockUnblockBtn.disabled = false;
+                    blockUnblockBtn.title = '';
+                }
+                else if (currentType === 'property') {
+                    blockUnblockBtn.textContent = 'Take Down Listing';
+                    blockUnblockBtn.classList.remove('btn-success', 'btn-secondary');
+                    blockUnblockBtn.classList.add('btn-warning');
 
-                } else if (currentType === 'property') {
-                    // NEW Logic for Properties: Check currentStatus to toggle text
                     if (currentStatus === 'blocked') {
-                        blockUnblockBtn.textContent = 'Unsuspend Listing';
-                        blockUnblockBtn.classList.remove('btn-warning'); // Use default color for 'unblock'
-                        blockUnblockBtn.classList.add('btn-success');   // Optional: Add a success class for better visibility
+                        blockUnblockBtn.disabled = true;
+                        blockUnblockBtn.classList.add('btn-secondary'); // Gray out
+                        blockUnblockBtn.title = 'This property has already been taken down.';
                     } else {
-                        blockUnblockBtn.textContent = 'Suspend Listing';
-                        blockUnblockBtn.classList.remove('btn-success');
-                        blockUnblockBtn.classList.add('btn-warning'); // Use warning color for 'suspend'
+                        blockUnblockBtn.disabled = false;
+                        blockUnblockBtn.title = '';
                     }
+
                     blockUnblockBtn.style.display = 'inline-block';
                 } else {
                     blockUnblockBtn.style.display = 'none';
@@ -474,33 +487,31 @@
         });
 
         /* =====================================================
-                Block / Take Down logic (Accounts, Agents, Users, Properties)
+        Block / Take Down logic (Accounts, Agents, Users, Properties)
         ===================================================== */
         blockUnblockBtn.addEventListener('click', async (event) => {
             event.preventDefault();
-
             if (!currentReportedId || !currentType) return;
 
             const isProperty = currentType === 'property';
-            const action = isProperty ? 'block' : (
-                blockUnblockBtn.textContent.toLowerCase().includes('unblock') ? 'unblock' : 'block'
-            );
-
             const displayType = currentType.charAt(0).toUpperCase() + currentType.slice(1);
-            const duration = document.getElementById('banDurationSelect')?.value || null;
+            const action = isProperty
+                ? 'block'
+                : blockUnblockBtn.textContent.toLowerCase().includes('unblock')
+                    ? 'unblock'
+                    : 'block';
 
+            const duration = 'lifetime'; // all blocks are permanent
+
+            // Confirm action
             const confirmMsg = isProperty
-                ? `Are you sure you want to take down this property? This action is permanent.`
+                ? `Are you sure you want to take down this property? This action is permanent and cannot be undone.`
                 : `Are you sure you want to ${action} this ${displayType}?`;
 
             if (!confirm(confirmMsg)) return;
 
-            const payload = {
-                action,
-                category: currentCategory,
-                duration: action === 'block' ? duration : null,
-            };
-
+            // Prepare payload
+            const payload = { action, category: currentCategory, duration: isProperty ? duration : null };
             let endpoint = '';
             switch (currentType) {
                 case 'agent':
@@ -528,114 +539,58 @@
                     body: JSON.stringify(payload),
                 });
                 const data = await res.json();
-
                 if (!data.success) throw new Error(data.error || `Failed to ${action} ${displayType}.`);
 
                 alert(data.message);
 
-                // ✅ Update status cell
-                const rowSelector = `tr[data-report-id="${currentReportId}"]`;
-                const row = document.querySelector(`#accountsBody ${rowSelector}, #propertiesBody ${rowSelector}`);
-                if (row) {
-                    row.dataset.status = data.status;
-                    updateStatusCell(row, row.dataset.status);
+                // ===== Update ONLY the clicked row =====
+                const activeRow = document.querySelector(
+                    `.tab-content.active tr.clickable-row[data-report-id="${currentReportId}"]`
+                );
+                if (activeRow) {
+                    activeRow.dataset.status = data.status;
+                    updateStatusCell(activeRow);
                 }
 
-                /* =====================================================
-                    🔔 Send notification if property is taken down
-                ===================================================== */
-                if (isProperty && action === 'block') {
+                // ===== Property notice =====
+                if (isProperty && data.property_owner_id) {
                     const noticePayload = {
-                        user_id: data.property_owner_id, // must be returned by backend
-                        company_prop_id: data.property_id || currentReportedId,
-                        message: `Your property "${data.property_title || 'Unknown Property'}" has been taken down due to "${categoryFullNames[currentCategory] || currentCategory}". This action cannot be undone.`,
+                        property_id: data.property_id || currentReportedId,
+                        owner_id: data.property_owner_id,
+                        agent_id: data.agent_id || null,
+                        notice_type: 'take_down',
+                        category: currentCategory || 'other',
+                        message: `Your property "${data.property_title || 'Unknown Property'}" has been taken down due to "${getCategoryName(currentType, currentCategory)}". This action cannot be undone.`,
+                        duration: 'lifetime'
                     };
 
                     try {
-                        const noticeRes = await fetch('/BatEstateExplorer/public/api/notice.php', {
+                        const noticeRes = await fetch('/BatEstateExplorer/public/api/property_notice.php', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(noticePayload),
+                            body: JSON.stringify(noticePayload)
                         });
                         const noticeData = await noticeRes.json();
-                        if (noticeData.success) {
-                            console.log('Notice sent:', noticeData);
-                        } else {
-                            console.warn('Failed to send notice:', noticeData.error);
-                        }
+                        if (!noticeData.success) console.warn('Failed to send notice:', noticeData.error);
                     } catch (noticeErr) {
                         console.error('Error sending notice:', noticeErr);
                     }
                 }
 
-                /* =====================================================
-                    🔥 Agent block handling for property violations
-                ===================================================== */
-                if (isProperty && action === 'block') {
-                    // For severe property cases (auto prompt)
+                // ===== Auto-block agent for severe property violations =====
+                if (isProperty) {
                     const severeCases = ['fraudulent_property', 'illegal_listing', 'misleading_info'];
-                    // For "already sold" (auto block agent too)
                     const autoAgentBlockCases = ['already_sold'];
+                    const agentId = currentAgentId || data.agent_id || null;
 
-                    // --- Case 1: Property already sold → auto-block agent
-                    if (autoAgentBlockCases.includes(currentCategory)) {
-                        const agentId = currentAgentId || null;
-                        if (agentId) {
-                            const agentPayload = {
-                                action: 'block',
-                                agent_id: agentId,
-                                category: currentCategory,
-                                duration: duration || '7days', // Admin-selected duration
-                            };
-
-                            const agentRes = await fetch('/BatEstateExplorer/public/api/admin_block_agent.php', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(agentPayload),
-                            });
-
-                            const agentData = await agentRes.json();
-                            if (agentData.success) {
-                                alert('Associated agent has been blocked because the property was already sold.');
-                            } else {
-                                alert('Property taken down, but failed to block associated agent.');
-                            }
-                        } else {
-                            console.warn('No agent ID found for this property; skipping auto agent block.');
-                        }
-                    }
-
-                    // --- Case 2: Severe property violations → optional prompt
-                    else if (severeCases.includes(currentCategory)) {
+                    if (autoAgentBlockCases.includes(currentCategory) && agentId) {
+                        await blockAgent(agentId, currentCategory, duration, 'Associated agent has been blocked because the property was already sold.');
+                    } else if (severeCases.includes(currentCategory) && agentId) {
                         const confirmAgentBlock = confirm(
                             `This property violation is severe.\nWould you also like to block the agent associated with this property?`
                         );
-
                         if (confirmAgentBlock) {
-                            const agentId = currentAgentId || null;
-                            if (agentId) {
-                                const agentPayload = {
-                                    action: 'block',
-                                    agent_id: agentId,
-                                    category: currentCategory,
-                                    duration: duration || '7days',
-                                };
-
-                                const agentRes = await fetch('/BatEstateExplorer/public/api/admin_block_agent.php', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(agentPayload),
-                                });
-
-                                const agentData = await agentRes.json();
-                                if (agentData.success) {
-                                    alert('Associated agent has also been blocked due to severe property violation.');
-                                } else {
-                                    alert('Property taken down, but failed to block associated agent.');
-                                }
-                            } else {
-                                console.warn('No agent ID found for this property; skipping agent block.');
-                            }
+                            await blockAgent(agentId, currentCategory, duration, 'Associated agent has also been blocked due to severe property violation.');
                         }
                     }
                 }
@@ -650,28 +605,48 @@
             }
         });
 
+        /* Helper function to block an agent */
+        async function blockAgent(agentId, category, duration, successMessage) {
+            const agentPayload = { action: 'block', agent_id: agentId, category, duration };
+            try {
+                const agentRes = await fetch('/BatEstateExplorer/public/api/admin_block_agent.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(agentPayload)
+                });
+                const agentData = await agentRes.json();
+                if (agentData.success) alert(successMessage);
+                else alert('Property taken down, but failed to block associated agent.');
+            } catch (err) {
+                console.error('Error blocking agent:', err);
+                alert('Property taken down, but failed to block associated agent.');
+            }
+        }
+
         /* =====================================================
-            Delete report (Accounts, Agents, Users, Properties)
+        Delete report (Accounts, Agents, Users, Properties)
         ===================================================== */
         deleteReportBtn.addEventListener('click', () => {
             if (!currentReportId || !currentType) return;
 
             if (!confirm('Are you sure you want to delete this report?')) return;
 
-            // Use a single unified endpoint
             const endpoint = '/BatEstateExplorer/public/api/admin_delete_report.php';
 
+            // 🟢 FIX: include report_type
             fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ report_id: currentReportId }),
+                body: JSON.stringify({
+                    report_id: currentReportId,
+                    report_type: currentType, // <--- added this line
+                }),
             })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
 
-                        // ✅ CORRECTED ROW LOOKUP
                         const activeContent = document.querySelector('.tab-content.active');
                         if (activeContent) {
                             const row = activeContent.querySelector(`tr[data-report-id="${currentReportId}"]`);

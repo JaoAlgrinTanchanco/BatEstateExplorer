@@ -19,12 +19,29 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// --- Gather & sanitize inputs ---
-$reporter_id  = (int) $_SESSION['user_id'];
-$property_id  = isset($_POST['property_id']) ? (int) $_POST['property_id'] : null;
-$reason       = isset($_POST['reason']) ? trim($_POST['reason']) : null;
-$other_reason = isset($_POST['other_reason']) ? trim($_POST['other_reason']) : null;
-$details      = isset($_POST['details']) ? trim($_POST['details']) : null;
+// --- Gather input ---
+$reporter_id = (int) $_SESSION['user_id'];
+$property_id = null;
+$reason = null;
+$other_reason = null;
+$details = null;
+
+// Check if request is JSON
+$rawInput = file_get_contents('php://input');
+$jsonInput = json_decode($rawInput, true);
+
+if (!empty($jsonInput)) {
+    $property_id  = isset($jsonInput['property_id']) ? (int) $jsonInput['property_id'] : null;
+    $reason       = isset($jsonInput['reason']) ? trim($jsonInput['reason']) : null;
+    $other_reason = isset($jsonInput['other_reason']) ? trim($jsonInput['other_reason']) : null;
+    $details      = isset($jsonInput['details']) ? trim($jsonInput['details']) : null;
+} else {
+    // fallback to $_POST (form-data)
+    $property_id  = isset($_POST['property_id']) ? (int) $_POST['property_id'] : null;
+    $reason       = isset($_POST['reason']) ? trim($_POST['reason']) : null;
+    $other_reason = isset($_POST['other_reason']) ? trim($_POST['other_reason']) : null;
+    $details      = isset($_POST['details']) ? trim($_POST['details']) : null;
+}
 
 // --- Basic validation ---
 if (!$property_id || !$reason) {
@@ -32,13 +49,11 @@ if (!$property_id || !$reason) {
     exit;
 }
 
-// --- If reason is not "other", ignore other_reason ---
-if ($reason !== 'other') {
-    $other_reason = null;
-}
+// --- Only keep other_reason if reason is "other" ---
+if ($reason !== 'other') $other_reason = null;
 
 try {
-    // --- Determine database connection ---
+    // --- Determine DB connection ---
     $dbConn = null;
     if (isset($pdo) && $pdo instanceof PDO) $dbConn = $pdo;
     elseif (isset($db) && method_exists($db, 'getConnection')) $dbConn = $db->getConnection();
@@ -71,7 +86,6 @@ try {
         $stmt->bind_param('iisss', $reporter_id, $property_id, $reason, $other_reason, $details);
         $stmt->execute();
 
-        // --- Update property flag ---
         $update = $dbConn->prepare("UPDATE properties SET is_reported = 1 WHERE id = ?");
         $update->bind_param('i', $property_id);
         $update->execute();
@@ -86,5 +100,4 @@ try {
         'status' => 'error',
         'message' => 'Database error: ' . $e->getMessage()
     ]);
-    exit;
 }

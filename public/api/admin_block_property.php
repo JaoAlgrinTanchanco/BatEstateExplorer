@@ -31,7 +31,7 @@ try {
         $stmt->execute();
 
         // --- 2. Update all reports related to this property as permanently blocked ---
-        $duration = 'lifetime';
+        $duration = 'lifetime'; // ✅ always lifetime
         $stmt2 = $conn->prepare("
             UPDATE property_reports
             SET status = 'blocked',
@@ -42,7 +42,7 @@ try {
         $stmt2->bind_param("si", $duration, $propertyId);
         $stmt2->execute();
 
-        $message = 'Property permanently blocked (down for life).';
+        $message = 'Property permanently blocked (lifetime).';
         $status  = 'blocked';
 
     } else {

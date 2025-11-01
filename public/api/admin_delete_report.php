@@ -10,10 +10,9 @@ if (!$conn) {
     exit;
 }
 
-// Get JSON input
 $data = json_decode(file_get_contents('php://input'), true);
-$reportId   = $data['report_id'] ?? null;
-$reportType = $data['report_type'] ?? null; // expected: 'agent', 'property', 'user'
+$reportId   = isset($data['report_id']) ? (int)$data['report_id'] : null;
+$reportType = $data['report_type'] ?? null; // expected: 'agent', 'property', 'user', 'account'
 
 if (!$reportId) {
     http_response_code(400);
@@ -34,13 +33,34 @@ switch ($reportType) {
         $table = 'user_reports';
         break;
     default:
-        // fallback to user_reports to avoid invalid table names
-        $table = 'user_reports';
-        break;
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid report type.']);
+        exit;
 }
 
 try {
-    // ✅ Use prepared statement
+    // 🔍 Check if the report actually exists
+    $checkStmt = $conn->prepare("SELECT id FROM {$table} WHERE id = ?");
+    $checkStmt->bind_param("i", $reportId);
+    $checkStmt->execute();
+    $result = $checkStmt->get_result();
+
+    if ($result->num_rows === 0) {
+        http_response_code(404);
+        echo json_encode([
+            'error' => 'Report not found or already deleted.',
+            'debug' => [
+                'report_id' => $reportId,
+                'table' => $table,
+                'report_type' => $reportType
+            ]
+        ]);
+        $checkStmt->close();
+        exit;
+    }
+    $checkStmt->close();
+
+    // ✅ Perform deletion
     $stmt = $conn->prepare("DELETE FROM {$table} WHERE id = ?");
     $stmt->bind_param("i", $reportId);
     $stmt->execute();
@@ -48,11 +68,20 @@ try {
     if ($stmt->affected_rows > 0) {
         echo json_encode([
             'success' => true,
-            'message' => ucfirst($reportType ?: 'User') . ' report deleted successfully.'
+            'message' => ucfirst($reportType) . ' report deleted successfully.',
+            'deleted_id' => $reportId,
+            'table' => $table
         ]);
     } else {
         http_response_code(404);
-        echo json_encode(['error' => 'Report not found or already deleted.']);
+        echo json_encode([
+            'error' => 'Report not found or already deleted.',
+            'debug' => [
+                'report_id' => $reportId,
+                'table' => $table,
+                'report_type' => $reportType
+            ]
+        ]);
     }
 
     $stmt->close();
@@ -61,6 +90,11 @@ try {
     http_response_code(500);
     echo json_encode([
         'error' => 'Failed to delete report.',
-        'details' => $e->getMessage()
+        'details' => $e->getMessage(),
+        'debug' => [
+            'report_id' => $reportId,
+            'table' => $table,
+            'report_type' => $reportType
+        ]
     ]);
 }
