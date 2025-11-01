@@ -645,6 +645,81 @@
             }
         })();
 
+        // === Property Notices Modal Display ===
+        (async () => {
+            try {
+                const res = await fetch("/BatEstateExplorer/public/api/check_notice.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({}), // <- safe version
+                });
+
+                const data = await res.json();
+                if (!data.success || !data.notices?.length) return;
+
+                let currentIndex = 0;
+
+                const showNextPropertyNotice = async () => {
+                if (currentIndex >= data.notices.length) {
+                    document.querySelector(".property-notice-modal")?.remove();
+                    return;
+                }
+
+                const notice = data.notices[currentIndex];
+                document.querySelector(".property-notice-modal")?.remove();
+
+                // --- Style and icon logic ---
+                let iconSvg = "";
+                let accentColor = "#3b82f6";
+                let iconBg = "#eff6ff";
+                let titleText = "Information";
+                let contentClass = "info";
+
+                if (notice.category === "already_sold") {
+                    accentColor = "#ef4444";
+                    iconBg = "#fef2f2";
+                    titleText = "Property Sold";
+                    contentClass = "danger";
+                    iconSvg = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="${accentColor}" stroke-width="2.5">
+                        <circle cx="32" cy="32" r="28" fill="${iconBg}" stroke="${accentColor}"/>
+                        <line x1="20" y1="20" x2="44" y2="44" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="44" y1="20" x2="20" y2="44" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
+                    </svg>`;
+                }
+
+                const modal = document.createElement("div");
+                modal.className = "property-notice-modal";
+                modal.innerHTML = `
+                    <div class="property-notice-content ${contentClass} animate-in">
+                    <div class="property-notice-icon">${iconSvg}</div>
+                    <h3>${titleText}</h3>
+                    <p>${notice.message}</p>
+                    <small>Property: <b>${notice.property_title}</b></small><br>
+                    <small>Date: ${new Date(notice.created_at).toLocaleString()}</small>
+                    <button class="btn btn-primary">Okay</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                modal.querySelector(".btn").addEventListener("click", async () => {
+                    modal.classList.add("hidden");
+                    await fetch("/BatEstateExplorer/public/api/mark_property_notice_seen.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: notice.id }),
+                    });
+                    currentIndex++;
+                    setTimeout(showNextPropertyNotice, 400);
+                });
+                };
+
+                showNextPropertyNotice();
+            } catch (err) {
+                console.error("Failed to load property notices:", err);
+            }
+        })();
+
         const cards = Array.from(document.querySelectorAll("#propertyGridX > .property-card"));
 
         const labels = [

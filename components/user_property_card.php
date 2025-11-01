@@ -326,7 +326,7 @@
       <select name="reason" id="report-reason" required>
         <option value="">Select a reason</option>
         <option value="fraudulent_listing">Fraudulent or fake listing</option>
-        <option value="harassment">Harassment or inappropriate behavior</option>
+        <option value="already_sold">Property already sold</option>
         <option value="misinformation">False or misleading information</option>
         <option value="spam">Spam or irrelevant content</option>
         <option value="other">Other</option>

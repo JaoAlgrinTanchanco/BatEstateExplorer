@@ -281,6 +281,7 @@
             'fraudulent_property': 'Property permanently removed due to fraudulent or deceptive listing.',
             'illegal_listing': 'Property permanently taken down due to illegal or prohibited content.',
             'misleading_info': 'Property permanently removed due to false or misleading information.',
+            'already_sold': 'Property taken down due to being already sold. Associated agent will also be blocked.',
         };
 
         const categoryFullNames = {
@@ -304,6 +305,7 @@
             'fraudulent_property': 'Fraudulent property listing (Permanent ban)',
             'illegal_listing': 'Illegal or prohibited listing (Permanent ban)',
             'misleading_info': 'Misleading or false property information (Permanent ban)',
+            'already_sold': 'Property already sold (Taken down and linked agent blocked)',
         };
 
         // Current state variables
@@ -472,14 +474,13 @@
         });
 
         /* =====================================================
-        Block / Take Down logic (Accounts, Agents, Users, Properties)
+                Block / Take Down logic (Accounts, Agents, Users, Properties)
         ===================================================== */
         blockUnblockBtn.addEventListener('click', async (event) => {
             event.preventDefault();
 
             if (!currentReportedId || !currentType) return;
 
-            // === For properties, we ALWAYS take down, never unblock ===
             const isProperty = currentType === 'property';
             const action = isProperty ? 'block' : (
                 blockUnblockBtn.textContent.toLowerCase().includes('unblock') ? 'unblock' : 'block'
@@ -488,14 +489,12 @@
             const displayType = currentType.charAt(0).toUpperCase() + currentType.slice(1);
             const duration = document.getElementById('banDurationSelect')?.value || null;
 
-            // Confirmation message
             const confirmMsg = isProperty
                 ? `Are you sure you want to take down this property? This action is permanent.`
                 : `Are you sure you want to ${action} this ${displayType}?`;
 
             if (!confirm(confirmMsg)) return;
 
-            // Base payload for the main action
             const payload = {
                 action,
                 category: currentCategory,
@@ -534,7 +533,7 @@
 
                 alert(data.message);
 
-                // ✅ Update table row safely
+                // ✅ Update status cell
                 const rowSelector = `tr[data-report-id="${currentReportId}"]`;
                 const row = document.querySelector(`#accountsBody ${rowSelector}, #propertiesBody ${rowSelector}`);
                 if (row) {
@@ -542,23 +541,51 @@
                     updateStatusCell(row, row.dataset.status);
                 }
 
-                // === 🔥 Automatic handling for property: Offer agent block ===
-                if (
-                    isProperty &&
-                    ['fraudulent_property', 'illegal_listing', 'misleading_info'].includes(currentCategory)
-                ) {
-                    const confirmAgentBlock = confirm(
-                        `This property violation is severe.\nWould you also like to block the agent associated with this property?`
-                    );
+                /* =====================================================
+                    🔔 Send notification if property is taken down
+                ===================================================== */
+                if (isProperty && action === 'block') {
+                    const noticePayload = {
+                        user_id: data.property_owner_id, // must be returned by backend
+                        company_prop_id: data.property_id || currentReportedId,
+                        message: `Your property "${data.property_title || 'Unknown Property'}" has been taken down due to "${categoryFullNames[currentCategory] || currentCategory}". This action cannot be undone.`,
+                    };
 
-                    if (confirmAgentBlock) {
+                    try {
+                        const noticeRes = await fetch('/BatEstateExplorer/public/api/notice.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(noticePayload),
+                        });
+                        const noticeData = await noticeRes.json();
+                        if (noticeData.success) {
+                            console.log('Notice sent:', noticeData);
+                        } else {
+                            console.warn('Failed to send notice:', noticeData.error);
+                        }
+                    } catch (noticeErr) {
+                        console.error('Error sending notice:', noticeErr);
+                    }
+                }
+
+                /* =====================================================
+                    🔥 Agent block handling for property violations
+                ===================================================== */
+                if (isProperty && action === 'block') {
+                    // For severe property cases (auto prompt)
+                    const severeCases = ['fraudulent_property', 'illegal_listing', 'misleading_info'];
+                    // For "already sold" (auto block agent too)
+                    const autoAgentBlockCases = ['already_sold'];
+
+                    // --- Case 1: Property already sold → auto-block agent
+                    if (autoAgentBlockCases.includes(currentCategory)) {
                         const agentId = currentAgentId || null;
                         if (agentId) {
                             const agentPayload = {
                                 action: 'block',
                                 agent_id: agentId,
                                 category: currentCategory,
-                                duration: duration || '7days', // Admin-chosen duration
+                                duration: duration || '7days', // Admin-selected duration
                             };
 
                             const agentRes = await fetch('/BatEstateExplorer/public/api/admin_block_agent.php', {
@@ -569,12 +596,46 @@
 
                             const agentData = await agentRes.json();
                             if (agentData.success) {
-                                alert('Associated agent has also been blocked due to severe property violation.');
+                                alert('Associated agent has been blocked because the property was already sold.');
                             } else {
                                 alert('Property taken down, but failed to block associated agent.');
                             }
                         } else {
-                            console.warn('No agent ID found for this property; skipping agent block.');
+                            console.warn('No agent ID found for this property; skipping auto agent block.');
+                        }
+                    }
+
+                    // --- Case 2: Severe property violations → optional prompt
+                    else if (severeCases.includes(currentCategory)) {
+                        const confirmAgentBlock = confirm(
+                            `This property violation is severe.\nWould you also like to block the agent associated with this property?`
+                        );
+
+                        if (confirmAgentBlock) {
+                            const agentId = currentAgentId || null;
+                            if (agentId) {
+                                const agentPayload = {
+                                    action: 'block',
+                                    agent_id: agentId,
+                                    category: currentCategory,
+                                    duration: duration || '7days',
+                                };
+
+                                const agentRes = await fetch('/BatEstateExplorer/public/api/admin_block_agent.php', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(agentPayload),
+                                });
+
+                                const agentData = await agentRes.json();
+                                if (agentData.success) {
+                                    alert('Associated agent has also been blocked due to severe property violation.');
+                                } else {
+                                    alert('Property taken down, but failed to block associated agent.');
+                                }
+                            } else {
+                                console.warn('No agent ID found for this property; skipping agent block.');
+                            }
                         }
                     }
                 }
