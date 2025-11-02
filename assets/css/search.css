@@ -26,6 +26,178 @@
 }
 
 /* =========================
+   Property Notice Modal (Dual Glow Style)
+========================= */
+
+.property-notice-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.property-notice-modal.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* --- Core Content --- */
+.property-notice-content {
+  background: #fff;
+  border-radius: 18px;
+  padding: 2rem 2.2rem;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  animation: fadeSlideIn 0.4s ease forwards;
+  font-family: 'Satoshi', 'Inter', sans-serif;
+  position: relative;
+}
+
+/* --- Icon Container --- */
+.property-notice-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+.property-notice-icon svg {
+  width: 80px;
+  height: 80px;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+/* --- Green Success Glow --- */
+.property-notice-content.success .property-notice-icon svg {
+  filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.5));
+  animation: pulseGreen 2.2s infinite ease-in-out;
+}
+
+@keyframes pulseGreen {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.4));
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 18px rgba(34, 197, 94, 0.75));
+  }
+}
+
+/* --- Yellow Warning Glow --- */
+.property-notice-content.warning .property-notice-icon svg {
+  filter: drop-shadow(0 0 8px rgba(234, 179, 8, 0.5));
+  animation: pulseYellow 2.2s infinite ease-in-out;
+}
+
+@keyframes pulseYellow {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(234, 179, 8, 0.4));
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 18px rgba(234, 179, 8, 0.75));
+  }
+}
+
+/* --- Red Danger Glow --- */
+.property-notice-content.danger .property-notice-icon svg {
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5));
+  animation: pulseRed 2.2s infinite ease-in-out;
+}
+
+@keyframes pulseRed {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.4));
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 18px rgba(239, 68, 68, 0.75));
+  }
+}
+
+/* --- Text --- */
+.property-notice-content h3 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 0.75rem;
+}
+
+.property-notice-content p {
+  font-size: 1rem;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.property-notice-content small {
+  display: block;
+  color: #666;
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+/* --- Button --- */
+.property-notice-content .btn {
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.7rem 1.8rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.2s ease;
+}
+
+.property-notice-content .btn:hover {
+  background: #333;
+  transform: translateY(-2px);
+}
+
+.property-notice-content .btn:active {
+  transform: scale(0.97);
+}
+
+/* --- Entry Animation --- */
+@keyframes fadeSlideIn {
+  from {
+    transform: translateY(25px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* --- Responsive --- */
+@media (max-width: 600px) {
+  .property-notice-content {
+    padding: 1.5rem;
+  }
+  .property-notice-content h3 {
+    font-size: 1.2rem;
+  }
+  .property-notice-content p {
+    font-size: 0.95rem;
+  }
+}
+
+
+/* =========================
    Horizontal Featured Properties Layout
 ========================= */
 h4{

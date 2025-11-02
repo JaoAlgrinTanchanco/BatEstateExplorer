@@ -12,6 +12,7 @@ if (!$conn) {
 // --- Get JSON input ---
 $data       = json_decode(file_get_contents('php://input'), true);
 $propertyId = $data['property_id'] ?? null;
+$reason     = trim($data['reason'] ?? 'unspecified reasons'); // ✅ optional but safer default
 
 if (!$propertyId || !is_numeric($propertyId)) {
     http_response_code(400);
@@ -19,7 +20,7 @@ if (!$propertyId || !is_numeric($propertyId)) {
     exit;
 }
 
-// --- Fetch property info (also get owner_id via agents.user_id fallback) ---
+// --- Fetch property info (with fallback for owner_id via agents.user_id) ---
 $query = "
     SELECT 
         p.id, 
@@ -49,13 +50,21 @@ try {
         throw new Exception('Owner ID not found for this property.');
     }
 
-    // ✅ INSERT into property_notices before deletion
+    // ✅ Prepare the full message with reason
     $noticeType = 'take_down';
     $category   = 'admin_action';
-    $message    = 'Property "' . $property['title'] . '" has been permanently removed by admin.';
     $duration   = 'lifetime';
     $is_read    = 0;
 
+    // Escape and construct message
+    $safeReason = htmlspecialchars($reason, ENT_QUOTES, 'UTF-8');
+    $message = sprintf(
+        'Property "%s" has been permanently removed by admin due to %s.',
+        $property['title'],
+        $safeReason
+    );
+
+    // ✅ INSERT into property_notices before deletion
     $stmtNotice = $conn->prepare("
         INSERT INTO property_notices 
         (property_id, owner_id, agent_id, notice_type, category, message, duration, is_read, created_at)
@@ -77,17 +86,16 @@ try {
         throw new Exception("Failed to insert property notice: " . $stmtNotice->error);
     }
 
-    // ✅ Capture notice_id for response
     $noticeId = $stmtNotice->insert_id;
 
-    // Delete all reports for this property
+    // ✅ Delete related property reports
     $stmtReports = $conn->prepare("DELETE FROM property_reports WHERE property_id = ?");
     $stmtReports->bind_param("i", $propertyId);
     if (!$stmtReports->execute()) {
         throw new Exception("Failed to delete property reports: " . $stmtReports->error);
     }
 
-    // Delete the property itself
+    // ✅ Delete property record
     $stmtProp = $conn->prepare("DELETE FROM properties WHERE id = ?");
     $stmtProp->bind_param("i", $propertyId);
     if (!$stmtProp->execute()) {
@@ -96,21 +104,21 @@ try {
 
     $conn->commit();
 
-    // ✅ Full detailed JSON response
+    // ✅ Return detailed success JSON
     echo json_encode([
-        'success'             => true,
-        'message'             => 'Property deleted successfully and notice recorded.',
-        'status'              => 'blocked',
-        'duration'            => 'lifetime',
-        'property_id'         => $propertyId,
-        'property_title'      => $property['title'] ?? 'Unknown Property',
-        'property_owner_id'   => $property['owner_id'] ?? null,
-        'agent_id'            => $property['agent_id'] ?? null,
-        'blockage_date'       => date('Y-m-d H:i:s'),
-        // ✅ Include notice insertion result
-        'notice_inserted'     => true,
-        'notice_id'           => $noticeId,
-        'notice_message'      => $message
+        'success'           => true,
+        'message'           => 'Property deleted successfully and notice recorded.',
+        'status'            => 'blocked',
+        'duration'          => $duration,
+        'property_id'       => $propertyId,
+        'property_title'    => $property['title'] ?? 'Unknown Property',
+        'property_owner_id' => $property['owner_id'] ?? null,
+        'agent_id'          => $property['agent_id'] ?? null,
+        'blockage_date'     => date('Y-m-d H:i:s'),
+        'notice_inserted'   => true,
+        'notice_id'         => $noticeId,
+        'notice_message'    => $message,
+        'reason'            => $safeReason // include for debugging / UI
     ]);
 
 } catch (Exception $e) {

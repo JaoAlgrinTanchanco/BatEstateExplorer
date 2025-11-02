@@ -3,7 +3,6 @@
 header('Content-Type: application/json');
 require_once __DIR__ . '/../app/bootstrap.php';
 
-// ✅ Start session safely
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -16,7 +15,7 @@ if (!$conn) {
     exit;
 }
 
-// ✅ Logged-in user ID
+// ✅ Get logged-in user ID
 $user_id = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
 if (!$user_id) {
     http_response_code(403);
@@ -25,79 +24,54 @@ if (!$user_id) {
 }
 
 try {
-    // === Step 1: Get all properties that belong to this user and are reported ===
-    $prop_stmt = $conn->prepare("
-        SELECT id, title 
-        FROM properties 
-        WHERE user_id = ? 
-        AND is_reported = 1
-    ");
-    $prop_stmt->bind_param("i", $user_id);
-    $prop_stmt->execute();
-    $props_result = $prop_stmt->get_result();
-
-    $property_ids = [];
-    $property_titles = [];
-
-    while ($row = $props_result->fetch_assoc()) {
-        $property_ids[] = (int)$row['id'];
-        $property_titles[$row['id']] = $row['title'];
-    }
-
-    // 🟡 No reported properties
-    if (empty($property_ids)) {
-        echo json_encode([
-            'success' => true,
-            'notices' => [],
-            'message' => 'No reported properties found.'
-        ]);
-        exit;
-    }
-
-    // === Step 2: Fetch unseen notices for those properties ===
-    $placeholders = implode(',', array_fill(0, count($property_ids), '?'));
-    $types = str_repeat('i', count($property_ids));
-
+    // === Step 1: Fetch all unread notices for this owner ===
     $query = "
         SELECT 
-            id, property_id, agent_id, notice_type, 
-            category, message, duration, isseen, created_at
-        FROM property_notices
-        WHERE property_id IN ($placeholders)
-        AND isseen = 0
-        ORDER BY created_at DESC
+            n.id,
+            n.property_id,
+            p.title AS property_title,
+            n.agent_id,
+            n.notice_type,
+            n.category,
+            n.message,
+            n.duration,
+            n.is_read,
+            n.created_at
+        FROM property_notices n
+        LEFT JOIN properties p ON n.property_id = p.id
+        WHERE n.owner_id = ?
+        AND n.is_read = 0
+        ORDER BY n.created_at DESC
     ";
 
     $stmt = $conn->prepare($query);
-    $stmt->bind_param($types, ...$property_ids);
+    $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
 
     $notices = [];
     while ($row = $result->fetch_assoc()) {
-        $pid = (int)$row['property_id'];
         $notices[] = [
-            'id' => (int)$row['id'],
-            'property_id' => $pid,
-            'property_title' => $property_titles[$pid] ?? '(Untitled Property)',
-            'agent_id' => (int)$row['agent_id'],
-            'notice_type' => $row['notice_type'],
-            'category' => $row['category'],
-            'message' => $row['message'],
-            'duration' => $row['duration'],
-            'isseen' => (bool)$row['isseen'],
-            'created_at' => $row['created_at']
+            'notice_id'       => (int)$row['id'],
+            'property_id'     => (int)$row['property_id'],
+            'property_title'  => $row['property_title'] ?? '(Deleted Property)',
+            'agent_id'        => (int)$row['agent_id'],
+            'notice_type'     => $row['notice_type'],
+            'category'        => $row['category'],
+            'message'         => $row['message'],
+            'duration'        => $row['duration'],
+            'is_read'         => (bool)$row['is_read'],
+            'created_at'      => $row['created_at']
         ];
     }
 
     echo json_encode([
         'success' => true,
-        'notices' => $notices,
-        'count' => count($notices)
+        'count'   => count($notices),
+        'notices' => $notices
     ]);
 
     $stmt->close();
-    $prop_stmt->close();
 
 } catch (Exception $e) {
     http_response_code(500);

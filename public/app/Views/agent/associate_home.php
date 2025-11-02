@@ -647,77 +647,104 @@
 
         // === Property Notices Modal Display ===
         (async () => {
-            try {
-                const res = await fetch("/BatEstateExplorer/public/api/check_notice.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({}), // <- safe version
-                });
+        try {
+            const res = await fetch("/BatEstateExplorer/public/api/check_notice.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+            });
 
-                const data = await res.json();
-                if (!data.success || !data.notices?.length) return;
+            const data = await res.json().catch(() => ({}));
+            if (!data.success || !Array.isArray(data.notices) || !data.notices.length) return;
 
-                let currentIndex = 0;
+            const unseenNotices = data.notices.filter(n => !n.is_read);
+            if (!unseenNotices.length) return;
 
-                const showNextPropertyNotice = async () => {
-                if (currentIndex >= data.notices.length) {
-                    document.querySelector(".property-notice-modal")?.remove();
-                    return;
-                }
+            let currentIndex = 0;
 
-                const notice = data.notices[currentIndex];
+            const showNextNotice = async () => {
+            if (currentIndex >= unseenNotices.length) {
                 document.querySelector(".property-notice-modal")?.remove();
+                return;
+            }
 
-                // --- Style and icon logic ---
-                let iconSvg = "";
-                let accentColor = "#3b82f6";
-                let iconBg = "#eff6ff";
-                let titleText = "Information";
-                let contentClass = "info";
+            const notice = unseenNotices[currentIndex];
+            document.querySelector(".property-notice-modal")?.remove();
 
-                if (notice.category === "already_sold") {
-                    accentColor = "#ef4444";
-                    iconBg = "#fef2f2";
-                    titleText = "Property Sold";
-                    contentClass = "danger";
-                    iconSvg = `
+            // --- Icon logic ---
+            let iconSvg = "", accentColor = "#3b82f6", iconBg = "#eff6ff", titleText = "Information", contentClass = "info";
+            switch (notice.notice_type) {
+                case "take_down":
+                accentColor = "#ef4444";
+                iconBg = "#fef2f2";
+                titleText = "Property Taken Down";
+                contentClass = "danger";
+                iconSvg = `
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="${accentColor}" stroke-width="2.5">
-                        <circle cx="32" cy="32" r="28" fill="${iconBg}" stroke="${accentColor}"/>
-                        <line x1="20" y1="20" x2="44" y2="44" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
-                        <line x1="44" y1="20" x2="20" y2="44" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="32" cy="32" r="28" fill="${iconBg}" stroke="${accentColor}"/>
+                    <line x1="20" y1="20" x2="44" y2="44" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="44" y1="20" x2="20" y2="44" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
                     </svg>`;
-                }
+                break;
+                case "block":
+                accentColor = "#f59e0b";
+                iconBg = "#fffbeb";
+                titleText = "Property Blocked";
+                contentClass = "warning";
+                iconSvg = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="${accentColor}" stroke-width="2.5">
+                    <circle cx="32" cy="32" r="28" fill="${iconBg}" stroke="${accentColor}"/>
+                    <path d="M22 22 L42 42 M42 22 L22 42" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
+                    </svg>`;
+                break;
+                default:
+                iconSvg = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="${accentColor}" stroke-width="2.5">
+                    <circle cx="32" cy="32" r="28" fill="${iconBg}" stroke="${accentColor}"/>
+                    <line x1="32" y1="20" x2="32" y2="36" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="32" cy="44" r="2.5" fill="${accentColor}"/>
+                    </svg>`;
+            }
 
-                const modal = document.createElement("div");
-                modal.className = "property-notice-modal";
-                modal.innerHTML = `
-                    <div class="property-notice-content ${contentClass} animate-in">
-                    <div class="property-notice-icon">${iconSvg}</div>
-                    <h3>${titleText}</h3>
-                    <p>${notice.message}</p>
-                    <small>Property: <b>${notice.property_title}</b></small><br>
-                    <small>Date: ${new Date(notice.created_at).toLocaleString()}</small>
-                    <button class="btn btn-primary">Okay</button>
-                    </div>
-                `;
-                document.body.appendChild(modal);
+            // --- Modal HTML ---
+            const modal = document.createElement("div");
+            modal.className = "property-notice-modal";
+            modal.innerHTML = `
+                <div class="property-notice-content ${contentClass} animate-in">
+                <div class="property-notice-icon">${iconSvg}</div>
+                <h3>${titleText}</h3>
+                <p>${notice.message}</p>
+                <small>Date: ${new Date(notice.created_at).toLocaleString()}</small>
+                <button class="btn btn-primary mt-3">Okay</button>
+                </div>`;
+            document.body.appendChild(modal);
 
-                modal.querySelector(".btn").addEventListener("click", async () => {
-                    modal.classList.add("hidden");
-                    await fetch("/BatEstateExplorer/public/api/mark_property_notice_seen.php", {
+            modal.querySelector(".btn").addEventListener("click", async () => {
+                modal.classList.add("hidden");
+                try {
+                const deleteRes = await fetch("/BatEstateExplorer/public/api/delete_property_notice.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: notice.id }),
-                    });
-                    currentIndex++;
-                    setTimeout(showNextPropertyNotice, 400);
+                    body: JSON.stringify({ id: notice.notice_id })
                 });
-                };
 
-                showNextPropertyNotice();
-            } catch (err) {
-                console.error("Failed to load property notices:", err);
-            }
+                const deleteData = await deleteRes.json().catch(() => ({}));
+                if (!deleteData.success) console.error("Failed to delete notice:", deleteData);
+
+                } catch (err) {
+                console.error("Error deleting notice:", err);
+                }
+
+                currentIndex++;
+                setTimeout(showNextNotice, 400);
+            });
+            };
+
+            showNextNotice();
+
+        } catch (err) {
+            console.error("Failed to load property notices:", err);
+        }
         })();
 
         const cards = Array.from(document.querySelectorAll("#propertyGridX > .property-card"));
