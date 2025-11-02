@@ -500,15 +500,11 @@
                 : blockUnblockBtn.textContent.toLowerCase().includes('unblock')
                     ? 'unblock'
                     : 'block';
+            const duration = 'lifetime';
 
-            const duration = 'lifetime'; // all blocks are permanent
-
-            // Confirm action
-            const confirmMsg = isProperty
+            if (!confirm(isProperty
                 ? `Are you sure you want to take down this property? This action is permanent and cannot be undone.`
-                : `Are you sure you want to ${action} this ${displayType}?`;
-
-            if (!confirm(confirmMsg)) return;
+                : `Are you sure you want to ${action} this ${displayType}?`)) return;
 
             // Prepare payload
             const payload = { action, category: currentCategory, duration: isProperty ? duration : null };
@@ -536,42 +532,36 @@
                 const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-                if (!data.success) throw new Error(data.error || `Failed to ${action} ${displayType}.`);
+
+                if (!data.success) {
+                    alert(`Failed to ${action} ${displayType}: ${data.error || 'Unknown error'}`);
+                    return;
+                }
 
                 alert(data.message);
 
-                // ===== Update ONLY the clicked row =====
-                const activeRow = document.querySelector(
-                    `.tab-content.active tr.clickable-row[data-report-id="${currentReportId}"]`
-                );
+                // Update clicked row only
+                const activeRow = document.querySelector(`.tab-content.active tr.clickable-row[data-report-id="${currentReportId}"]`);
                 if (activeRow) {
                     activeRow.dataset.status = data.status;
                     updateStatusCell(activeRow);
                 }
 
-                // ===== Auto-block agent for severe property violations =====
-                if (isProperty) {
-                    const severeCases = ['fraudulent_property', 'illegal_listing', 'misleading_info'];
-                    const autoAgentBlockCases = ['already_sold'];
-                    const agentId = currentAgentId || data.agent_id || null;
-
-                    if (autoAgentBlockCases.includes(currentCategory) && agentId) {
-                        await blockAgent(agentId, currentCategory, duration, 'Associated agent has been blocked because the property was already sold.');
-                    } else if (severeCases.includes(currentCategory) && agentId) {
-                        const confirmAgentBlock = confirm(
-                            `This property violation is severe.\nWould you also like to block the agent associated with this property?`
-                        );
-                        if (confirmAgentBlock) {
-                            await blockAgent(agentId, currentCategory, duration, 'Associated agent has also been blocked due to severe property violation.');
-                        }
-                    }
+                // ===== Only auto-block agent for already_sold cases =====
+                if (isProperty && data.agent_id && currentCategory === 'already_sold') {
+                    await blockAgent(
+                        data.agent_id,
+                        currentCategory,
+                        duration,
+                        'Associated agent has been blocked because the property was already sold.'
+                    );
                 }
 
                 reportModal.style.display = 'none';
-                setTimeout(() => location.reload(), 1000);
+                // setTimeout(() => location.reload(), 1000);
 
             } catch (err) {
                 console.error('Fetch error:', err);
