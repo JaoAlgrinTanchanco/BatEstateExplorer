@@ -12,13 +12,14 @@ if (!$conn) {
 
 $data = json_decode(file_get_contents('php://input'), true);
 
-$property_id = $data['property_id'] ?? null;
-$owner_id    = $data['owner_id'] ?? null;
-$agent_id    = $data['agent_id'] ?? null;
-$notice_type = $data['notice_type'] ?? 'info';
-$category    = $data['category'] ?? 'general';
-$custom_msg  = trim($data['message'] ?? '');
-$duration    = $data['duration'] ?? null;
+$property_id   = $data['property_id'] ?? null;
+$owner_id      = $data['owner_id'] ?? null;
+$agent_id      = $data['agent_id'] ?? null;
+$notice_type   = $data['notice_type'] ?? 'info';
+$category      = $data['category'] ?? 'general';
+$custom_msg    = trim($data['message'] ?? '');
+$duration      = $data['duration'] ?? null;
+$property_title = trim($data['property_title'] ?? '');
 
 // === Validate input ===
 if (!$property_id || !$owner_id) {
@@ -27,8 +28,8 @@ if (!$property_id || !$owner_id) {
     exit;
 }
 
-try {
-    // 🔍 Get property title from the properties table
+// --- Fetch property title from DB only if not provided ---
+if (!$property_title) {
     $stmtProp = $conn->prepare("SELECT title FROM properties WHERE id = ?");
     $stmtProp->bind_param("i", $property_id);
     $stmtProp->execute();
@@ -43,15 +44,17 @@ try {
     }
 
     $property_title = $property['title'];
+}
 
-    // 📝 Construct message automatically if not provided
-    $message = $custom_msg ?: sprintf(
-        'Your property "%s" has been taken down due to "%s". This action cannot be undone.',
-        $property_title,
-        str_replace('_', ' ', $category)
-    );
+// --- Construct message automatically if not provided ---
+$message = $custom_msg ?: sprintf(
+    'Your property "%s" has been taken down due to "%s". This action cannot be undone.',
+    $property_title,
+    str_replace('_', ' ', $category)
+);
 
-    // ✅ Insert property notice
+try {
+    // --- Insert property notice ---
     $stmt = $conn->prepare("
         INSERT INTO property_notices 
         (property_id, owner_id, agent_id, property_title, notice_type, category, message, duration, is_read, created_at)

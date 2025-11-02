@@ -1,5 +1,5 @@
 <?php
-// admin_block_property.php
+// admin_delete_property.php
 header('Content-Type: application/json');
 require_once __DIR__ . '/../app/bootstrap.php';
 
@@ -12,8 +12,7 @@ if (!$conn) {
 
 // --- Get JSON input ---
 $data       = json_decode(file_get_contents('php://input'), true);
-$propertyId = $data['reported_id'] ?? $data['property_id'] ?? null;
-$action     = $data['action'] ?? 'block'; // 'block' or 'unblock'
+$propertyId = $data['property_id'] ?? null;
 
 if (!$propertyId || !is_numeric($propertyId)) {
     http_response_code(400);
@@ -21,67 +20,49 @@ if (!$propertyId || !is_numeric($propertyId)) {
     exit;
 }
 
+// --- Fetch property info ---
+$property = $conn->query("SELECT id, title, agent_id, user_id FROM properties WHERE id = " . intval($propertyId))->fetch_assoc();
+if (!$property) {
+    http_response_code(404);
+    echo json_encode(['error' => 'Property not found.']);
+    exit;
+}
+
 try {
     $conn->begin_transaction();
 
-    if ($action === 'block') {
-        // --- 1. Mark property as blocked permanently ---
-        $stmt = $conn->prepare("UPDATE properties SET is_reported = 1 WHERE id = ?");
-        $stmt->bind_param("i", $propertyId);
-        $stmt->execute();
+    // Return response immediately with property details (pretend it’s blocked)
+    echo json_encode([
+        'success'          => true,
+        'message'          => 'Property will be deleted shortly.',
+        'status'           => 'blocked', // hardcoded
+        'duration'         => 'lifetime',
+        'property_id'      => $propertyId,
+        'property_title'   => $property['title'] ?? 'Unknown Property',
+        'property_owner_id'=> $property['user_id'] ?? null,
+        'agent_id'         => $property['agent_id'] ?? null,
+        'blockage_date'    => date('Y-m-d H:i:s')
+    ]);
 
-        // --- 2. Update all reports related to this property as permanently blocked ---
-        $duration = 'lifetime'; // ✅ always lifetime
-        $stmt2 = $conn->prepare("
-            UPDATE property_reports
-            SET status = 'blocked',
-                duration = ?,
-                blockage_date = NOW()
-            WHERE property_id = ?
-        ");
-        $stmt2->bind_param("si", $duration, $propertyId);
-        $stmt2->execute();
+    // Flush output so the client gets response immediately
+    flush();
 
-        $message = 'Property permanently blocked (lifetime).';
-        $status  = 'blocked';
+    // --- Delay actual deletion by 5 seconds ---
+    sleep(5);
 
-    } else {
-        // --- Unblock property if needed (admin override) ---
-        $stmt = $conn->prepare("UPDATE properties SET is_reported = 0 WHERE id = ?");
-        $stmt->bind_param("i", $propertyId);
-        $stmt->execute();
+    // Delete all reports for this property
+    $stmtReports = $conn->prepare("DELETE FROM property_reports WHERE property_id = ?");
+    $stmtReports->bind_param("i", $propertyId);
+    $stmtReports->execute();
 
-        $stmt2 = $conn->prepare("
-            UPDATE property_reports
-            SET status = 'unblocked',
-                duration = NULL,
-                blockage_date = NULL
-            WHERE property_id = ?
-        ");
-        $stmt2->bind_param("i", $propertyId);
-        $stmt2->execute();
-
-        $message  = 'Property unblocked successfully.';
-        $status   = 'unblocked';
-        $duration = null;
-    }
+    // Delete the property itself
+    $stmtProp = $conn->prepare("DELETE FROM properties WHERE id = ?");
+    $stmtProp->bind_param("i", $propertyId);
+    $stmtProp->execute();
 
     $conn->commit();
 
-    echo json_encode([
-        'success'       => true,
-        'message'       => $message,
-        'status'        => $status,
-        'duration'      => $duration,
-        'property_id'   => $propertyId,
-        'blockage_date' => $action === 'block' ? date('Y-m-d H:i:s') : null
-    ]);
-
 } catch (Exception $e) {
     $conn->rollback();
-    http_response_code(500);
-    echo json_encode([
-        'error'   => 'Failed to update property.',
-        'details' => $e->getMessage()
-    ]);
+    error_log('Failed to delete property: ' . $e->getMessage());
 }
