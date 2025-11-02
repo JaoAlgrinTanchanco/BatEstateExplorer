@@ -619,11 +619,9 @@
       document.querySelectorAll('.logout-btn').forEach(btn => {
         btn.addEventListener('click', () => logoutModal.classList.add('active-agent'));
       });
-
       document.getElementById('cancelLogoutBtn')?.addEventListener('click', () =>
         logoutModal.classList.remove('active-agent')
       );
-
       document.getElementById('logoutForm')?.addEventListener('submit', () => {
         document.getElementById('logoutSpinner').style.display = 'flex';
       });
@@ -632,14 +630,16 @@
     /* ================================
       Report Agent Modal
     ================================ */
+    const reportLinks = document.querySelectorAll('.report-agent');
     const reportModal = document.getElementById('reportAgentModal');
-    const reportLink = document.querySelector('.report-agent');
     const reportForm = document.getElementById('reportAgentForm');
     const reasonSelect = document.getElementById('report-reason');
     const otherContainer = document.getElementById('otherReasonContainer');
     const otherInput = document.getElementById('other-reason');
 
-    // Helper: show notification (no emojis)
+    if (!reportLinks.length || !reportModal || !reportForm) return;
+
+    // Helper: show notification
     const showNotification = (type, message) => {
       const notif = document.createElement('div');
       notif.className = 'notification-container';
@@ -655,12 +655,9 @@
         </div>`;
       document.body.appendChild(notif);
 
-      // Handle close + fade out
       const notifBox = notif.querySelector('.notification');
       const closeBtn = notif.querySelector('.notification__close');
-      if (closeBtn) {
-        closeBtn.addEventListener('click', () => fadeOutNotif(notifBox));
-      }
+      closeBtn?.addEventListener('click', () => fadeOutNotif(notifBox));
 
       setTimeout(() => fadeOutNotif(notifBox), 5000);
 
@@ -670,27 +667,33 @@
       }
     };
 
+    // Open Modal
+    reportLinks.forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const agentId = link.dataset.agentId || reportForm.querySelector('input[name="agent_id"]').value;
+        if (!agentId) return console.error('Agent ID not found.');
+        reportForm.querySelector('input[name="agent_id"]').value = agentId;
+
+        reportModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      });
+    });
+
+    // Close Modal
     const closeReportModal = () => {
-      if (!reportModal) return;
       reportModal.style.display = 'none';
-      document.body.style.overflow = 'auto';
-      reportForm?.reset();
+      document.body.style.overflow = '';
+      reportForm.reset();
       if (otherContainer) {
         otherContainer.style.display = 'none';
         if (otherInput) otherInput.required = false;
       }
     };
 
-    // Open Modal
-    reportLink?.addEventListener('click', e => {
-      e.preventDefault();
-      reportModal.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-    });
-
-    // Close Modal (outside click or close icon)
-    reportModal?.addEventListener('click', e => {
-      if (e.target.classList.contains('report-modal') || e.target.classList.contains('close')) {
+    // Close on outside click or close button
+    reportModal.addEventListener('click', e => {
+      if (e.target === reportModal || e.target.classList.contains('close')) {
         closeReportModal();
       }
     });
@@ -698,13 +701,13 @@
     // Toggle "Other" reason field
     reasonSelect?.addEventListener('change', () => {
       const isOther = reasonSelect.value === 'other';
-      otherContainer.style.display = isOther ? 'block' : 'none';
-      otherInput.required = isOther;
+      if (otherContainer) otherContainer.style.display = isOther ? 'block' : 'none';
+      if (otherInput) otherInput.required = isOther;
       if (isOther) otherInput.focus();
     });
 
     // Submit Report Form (AJAX)
-    reportForm?.addEventListener('submit', async e => {
+    reportForm.addEventListener('submit', async e => {
       e.preventDefault();
       const formData = new FormData(reportForm);
 

@@ -23,7 +23,6 @@ function getDurationSeconds($duration) {
     return match($d) {
         '2mins', '2 mins' => 2 * 60,
         '10mins', '10 mins' => 10 * 60,
-        '24hrs', '24 hours' => 24 * 3600,
         '48hrs', '48 hours' => 48 * 3600,
         '7days', '7 days' => 7 * 24 * 3600,
         '30days', '30 days' => 30 * 24 * 3600,
@@ -116,44 +115,11 @@ try {
     $userRows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     processBlocks($userRows, 'user', $conn, $unblockedUsers, $debugInfo);
 
-    // ======================
-    // Current logged-in user block info
-    // ======================
-    $currentUserId = $_SESSION['user_id'] ?? null;
-    $currentUserBlock = [
-        'blocked' => false,
-        'message' => null,
-        'duration' => null,
-        'permanent' => false,
-        'property_block' => false
-    ];
-
-    if ($currentUserId) {
-        $stmt = $conn->prepare("
-            SELECT u.is_blocked, ar.duration, n.company_prop_id, n.notice_except, n.message
-            FROM users u
-            LEFT JOIN agent_reports ar ON ar.agent_id = u.id AND ar.status = 'blocked'
-            LEFT JOIN notices n ON n.user_id = u.id
-            ORDER BY n.id DESC
-            LIMIT 1
-        ");
-        $stmt->execute();
-        $stmt->bind_result($is_blocked, $duration, $company_prop_id, $notice_except, $message);
-        if ($stmt->fetch() && (int)$is_blocked === 1) {
-            $currentUserBlock['blocked'] = true;
-            $currentUserBlock['message'] = $message ?? 'Violation of platform policies';
-            $currentUserBlock['duration'] = $duration ?? '24hrs';
-            $currentUserBlock['permanent'] = strtolower($duration ?? '') === 'lifetime';
-            $currentUserBlock['property_block'] = is_null($company_prop_id) && is_null($notice_except);
-        }
-    }
-
     echo json_encode([
         'success' => true,
         'message' => 'Block check completed successfully.',
         'unblocked_agents' => $unblockedAgents,
         'unblocked_users' => $unblockedUsers,
-        'current_user_block' => $currentUserBlock,
         'debug' => $debugInfo
     ], JSON_PRETTY_PRINT);
 

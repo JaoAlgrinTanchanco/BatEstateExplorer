@@ -58,18 +58,14 @@ try {
     $property = $stmtProp->get_result()->fetch_assoc();
     $propertyTitle = $property['title'] ?? 'Unknown Property';
 
-    // --- 5. Insert notice ---
-    $noticeMsg = sprintf(
-        'Property "%s" has been reported as already sold. Your account has been blocked.',
-        $propertyTitle
-    );
-    $stmtNotice = $conn->prepare("
-        INSERT INTO notices (user_id, message, isseen, created_at)
-        VALUES (?, ?, 0, NOW())
+    // --- 5. Insert into agent_reports ---
+    $stmtReportInsert = $conn->prepare("
+        INSERT INTO agent_reports (agent_id, duration, status, blockage_date, reason)
+        VALUES (?, ?, 'blocked', NOW(), ?)
     ");
-    $stmtNotice->bind_param("is", $userId, $noticeMsg);
-    if (!$stmtNotice->execute()) {
-        throw new Exception("Failed to insert notice: " . $stmtNotice->error);
+    $stmtReportInsert->bind_param("iss", $agentId, $duration, $reason);
+    if (!$stmtReportInsert->execute()) {
+        throw new Exception("Failed to insert into agent_reports: " . $stmtReportInsert->error);
     }
 
     $conn->commit();

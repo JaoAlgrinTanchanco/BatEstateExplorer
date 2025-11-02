@@ -85,7 +85,7 @@
             $durationRaw = $blockInfo['duration'] ?? 'lifetime'; // default to lifetime if missing
 
             $isPermanent = false;
-            $displayDuration = 'Permanent'; // default for lifetime
+            $displayDuration = '7 days';
 
             if ($durationRaw) {
                 $durationLower = strtolower(trim($durationRaw));
@@ -93,6 +93,7 @@
                     $isPermanent = true;
                     $displayDuration = 'Permanent';
                 } else {
+                    // Map common shorthand to readable duration
                     $map = [
                         '48hrs' => '48 hours',
                         '48 hours' => '48 hours',

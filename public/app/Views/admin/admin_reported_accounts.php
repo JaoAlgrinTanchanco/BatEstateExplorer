@@ -411,15 +411,17 @@
                 currentReportId = row.dataset.reportId;
                 currentCategory = row.dataset.category || 'other';
                 currentStatus = row.dataset.status;
-                currentType = row.dataset.type;
+                currentType = (row.dataset.type || '').toLowerCase();
 
-                // --- Determine type label ---
-                let typeLabel = {
-                    user: 'User',
-                    account: 'User',
-                    agent: 'Agent',
-                    property: 'Property'
-                }[currentType] || 'Reported';
+                // Treat 'account' as 'agent'
+                if (currentType === 'account') currentType = 'agent';
+
+                // Now decide typeLabel
+                let typeLabel;
+                if (currentType === 'user') typeLabel = 'User';
+                else if (currentType === 'agent') typeLabel = 'Agent';
+                else if (currentType === 'property') typeLabel = 'Property';
+                else typeLabel = 'Reported';
 
                 // --- Safe access to category full name & penalty note ---
                 const fullReason = getCategoryName(currentType, currentCategory);
@@ -504,16 +506,20 @@
             event.preventDefault();
             if (!currentReportedId || !currentType) return;
 
-            const isProperty = currentType === 'property';
-            const displayType = currentType.charAt(0).toUpperCase() + currentType.slice(1);
+            // Normalize type to lowercase to avoid mismatch
+            const type = currentType.toLowerCase();
+            const isProperty = type === 'property';
+            const displayType = type.charAt(0).toUpperCase() + type.slice(1);
+
+            // Determine action: block or unblock
             const action = isProperty
                 ? 'block'
                 : blockUnblockBtn.textContent.toLowerCase().includes('unblock')
                     ? 'unblock'
                     : 'block';
-            let duration = 'lifetime'; // default
 
-            // Allow custom duration for 'other' and 'already_sold'
+            // Determine duration (for custom cases)
+            let duration = 'lifetime';
             const otherDuration = document.getElementById('banDurationSelect')?.value;
             const soldDuration = document.getElementById('soldDurationSelect')?.value;
 
@@ -523,13 +529,12 @@
                 duration = soldDuration;
             }
 
+            // Confirm action
             let confirmMessage;
             if (isProperty) {
-                if (currentCategory === 'already_sold') {
-                    confirmMessage = `This property will be permanently removed.\nThe associated agent will also be blocked.\n\nProceed?`;
-                } else {
-                    confirmMessage = `Are you sure you want to take down this property? This action is permanent and cannot be undone.`;
-                }
+                confirmMessage = currentCategory === 'already_sold'
+                    ? `This property will be permanently removed.\nThe associated agent will also be blocked.\n\nProceed?`
+                    : `Are you sure you want to take down this property? This action is permanent and cannot be undone.`;
             } else {
                 confirmMessage = `Are you sure you want to ${action} this ${displayType}?`;
             }
@@ -538,7 +543,8 @@
             // Prepare payload
             const payload = { action, category: currentCategory, duration: isProperty ? duration : null };
             let endpoint = '';
-            switch (currentType) {
+
+            switch (type) {
                 case 'agent':
                     endpoint = '/BatEstateExplorer/public/api/admin_block_agent.php';
                     payload.agent_id = currentReportedId;
@@ -557,6 +563,7 @@
                     return;
             }
 
+            // Send block/unblock request
             try {
                 const res = await fetch(endpoint, {
                     method: 'POST',
@@ -572,17 +579,16 @@
 
                 alert(data.message);
 
-                // Update clicked row only
+                // Update row status
                 const activeRow = document.querySelector(`.tab-content.active tr.clickable-row[data-report-id="${currentReportId}"]`);
                 if (activeRow) {
                     activeRow.dataset.status = data.status;
                     updateStatusCell(activeRow);
                 }
 
-                // ===== Only auto-block agent for already_sold cases =====
+                // Auto-block agent if property is already sold
                 if (isProperty && data.agent_id && currentCategory === 'already_sold') {
-                    const soldDuration = document.getElementById('soldDurationSelect')?.value || '7days';
-
+                    const soldDur = document.getElementById('soldDurationSelect')?.value || '7days';
                     try {
                         const agentRes = await fetch('/BatEstateExplorer/public/api/admin_block_agent_sold.php', {
                             method: 'POST',
@@ -590,17 +596,14 @@
                             body: JSON.stringify({
                                 agent_id: data.agent_id,
                                 property_id: currentReportedId,
-                                duration: soldDuration
+                                duration: soldDur
                             })
                         });
-
                         const agentData = await agentRes.json();
-                        if (agentData.success) {
-                            alert('Associated agent blocked successfully for already sold property.');
-                        } else {
-                            alert('Property taken down, but failed to block associated agent.');
-                        }
-
+                        alert(agentData.success
+                            ? 'Associated agent blocked successfully for already sold property.'
+                            : 'Property taken down, but failed to block associated agent.'
+                        );
                     } catch (err) {
                         console.error('Error blocking agent:', err);
                         alert('Property taken down, but failed to block associated agent.');
@@ -608,7 +611,6 @@
                 }
 
                 reportModal.style.display = 'none';
-                // setTimeout(() => location.reload(), 1000);
 
             } catch (err) {
                 console.error('Fetch error:', err);
