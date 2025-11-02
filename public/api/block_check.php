@@ -92,7 +92,7 @@ try {
     // ======================
     $res = $conn->query("
         SELECT 
-            ar.id AS report_id, ar.agent_id, ar.duration, ar.blockage_date,
+            ar.id AS report_id, ar.agent_id, ar.duration, ar.reason, ar.other_reason, ar.blockage_date,
             u.is_blocked, u.first_name, u.last_name
         FROM agent_reports ar
         INNER JOIN users u ON u.id = ar.agent_id
@@ -106,7 +106,7 @@ try {
     // ======================
     $res = $conn->query("
         SELECT 
-            ur.id AS report_id, ur.reported_user_id, ur.duration, ur.blockage_date,
+            ur.id AS report_id, ur.reported_user_id, ur.duration, ur.reason, ur.other_reason, ur.blockage_date,
             u.is_blocked, u.first_name, u.last_name
         FROM user_reports ur
         INNER JOIN users u ON u.id = ur.reported_user_id
@@ -115,11 +115,48 @@ try {
     $userRows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     processBlocks($userRows, 'user', $conn, $unblockedUsers, $debugInfo);
 
+    // ======================
+    // Current logged-in user block info
+    // ======================
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    $currentUserBlock = null;
+    if (isset($_SESSION['user_id'])) {
+        $userId = $_SESSION['user_id'];
+        // check if user is blocked
+        $stmt = $conn->prepare("
+            SELECT u.is_blocked, ur.reason, ur.other_reason, ur.duration
+            FROM users u
+            LEFT JOIN user_reports ur ON ur.reported_user_id = u.id AND ur.status = 'blocked'
+            WHERE u.id = ?
+            ORDER BY ur.blockage_date DESC
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        if ($row && (int)$row['is_blocked'] === 1) {
+            $reasonText = $row['reason'] === 'other' ? ($row['other_reason'] ?? 'Violation') : $row['reason'];
+            $durationRaw = $row['duration'] ?? 'lifetime';
+            $isPermanent = in_array(strtolower(trim($durationRaw)), ['lifetime','permanent']);
+
+            $currentUserBlock = [
+                'blocked' => true,
+                'reason' => $reasonText,
+                'duration' => $durationRaw,
+                'permanent' => $isPermanent
+            ];
+        }
+    }
+
     echo json_encode([
         'success' => true,
         'message' => 'Block check completed successfully.',
         'unblocked_agents' => $unblockedAgents,
         'unblocked_users' => $unblockedUsers,
+        'current_user_block' => $currentUserBlock,
         'debug' => $debugInfo
     ], JSON_PRETTY_PRINT);
 

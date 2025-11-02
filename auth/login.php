@@ -82,7 +82,7 @@
                 ? $blockInfo['other_reason']
                 : ucfirst($blockInfo['reason'] ?? 'Violation');
 
-            $durationRaw = $blockInfo['duration'] ?? 'lifetime'; // default to lifetime if missing
+            $durationRaw = $blockInfo['duration'] ?? null;
 
             $isPermanent = false;
             $displayDuration = '7 days';
@@ -231,6 +231,7 @@
         // Show Blocked Account Modal
         // ================================
         const urlParams = new URLSearchParams(window.location.search);
+        
         if (urlParams.get('blocked') === '1') {
             const reason = urlParams.get('reason') || 'Violation of platform policies';
             const duration = urlParams.get('duration') || '7 days';
