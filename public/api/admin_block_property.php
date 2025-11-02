@@ -31,25 +31,6 @@ if (!$property) {
 try {
     $conn->begin_transaction();
 
-    // Return response immediately with property details (pretend it’s blocked)
-    echo json_encode([
-        'success'          => true,
-        'message'          => 'Property will be deleted shortly.',
-        'status'           => 'blocked', // hardcoded
-        'duration'         => 'lifetime',
-        'property_id'      => $propertyId,
-        'property_title'   => $property['title'] ?? 'Unknown Property',
-        'property_owner_id'=> $property['user_id'] ?? null,
-        'agent_id'         => $property['agent_id'] ?? null,
-        'blockage_date'    => date('Y-m-d H:i:s')
-    ]);
-
-    // Flush output so the client gets response immediately
-    flush();
-
-    // --- Delay actual deletion by 5 seconds ---
-    sleep(5);
-
     // Delete all reports for this property
     $stmtReports = $conn->prepare("DELETE FROM property_reports WHERE property_id = ?");
     $stmtReports->bind_param("i", $propertyId);
@@ -62,7 +43,24 @@ try {
 
     $conn->commit();
 
+    // Return response with 'blocked' status even though it was deleted
+    echo json_encode([
+        'success'          => true,
+        'message'          => 'Property deleted successfully.',
+        'status'           => 'blocked', // <-- hardcoded as requested
+        'duration'         => 'lifetime',
+        'property_id'      => $propertyId,
+        'property_title'   => $property['title'] ?? 'Unknown Property',
+        'property_owner_id'=> $property['user_id'] ?? null,
+        'agent_id'         => $property['agent_id'] ?? null,
+        'blockage_date'    => date('Y-m-d H:i:s')
+    ]);
+
 } catch (Exception $e) {
     $conn->rollback();
-    error_log('Failed to delete property: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'error'   => 'Failed to delete property.',
+        'details' => $e->getMessage()
+    ]);
 }
