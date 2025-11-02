@@ -428,7 +428,7 @@
                 // --- Build penalty HTML ---
                 let penaltyHtml = `<p style="color:red;"><strong>Penalty Note:</strong> ${defaultPenalty}</p>`;
 
-                // --- Custom penalty duration select for 'other' ---
+                // --- Custom penalty duration select for 'other' and 'already_sold' ---
                 if (currentCategory === 'other') {
                     penaltyHtml += `
                         <p><strong>Set Penalty Duration:</strong>
@@ -437,6 +437,17 @@
                                 <option value="7days">7 days</option>
                                 <option value="30days">30 days</option>
                                 <option value="lifetime">Permanent</option>
+                            </select>
+                        </p>`;
+                }
+                else if (currentCategory === 'already_sold') {
+                    penaltyHtml += `
+                        <p><strong>Agent Block Duration (choose severity):</strong>
+                            <select id="soldDurationSelect">
+                                <option value="24hrs">24 hours</option>
+                                <option value="48hrs">48 hours</option>
+                                <option value="7days">7 days</option>
+                                <option value="lifetime" selected>Lifetime (severe)</option>
                             </select>
                         </p>`;
                 }
@@ -500,11 +511,29 @@
                 : blockUnblockBtn.textContent.toLowerCase().includes('unblock')
                     ? 'unblock'
                     : 'block';
-            const duration = 'lifetime';
+            let duration = 'lifetime'; // default
 
-            if (!confirm(isProperty
-                ? `Are you sure you want to take down this property? This action is permanent and cannot be undone.`
-                : `Are you sure you want to ${action} this ${displayType}?`)) return;
+            // Allow custom duration for 'other' and 'already_sold'
+            const otherDuration = document.getElementById('banDurationSelect')?.value;
+            const soldDuration = document.getElementById('soldDurationSelect')?.value;
+
+            if (currentCategory === 'other' && otherDuration) {
+                duration = otherDuration;
+            } else if (currentCategory === 'already_sold' && soldDuration) {
+                duration = soldDuration;
+            }
+
+            let confirmMessage;
+            if (isProperty) {
+                if (currentCategory === 'already_sold') {
+                    confirmMessage = `This property will be permanently removed.\nThe associated agent will also be blocked.\n\nProceed?`;
+                } else {
+                    confirmMessage = `Are you sure you want to take down this property? This action is permanent and cannot be undone.`;
+                }
+            } else {
+                confirmMessage = `Are you sure you want to ${action} this ${displayType}?`;
+            }
+            if (!confirm(confirmMessage)) return;
 
             // Prepare payload
             const payload = { action, category: currentCategory, duration: isProperty ? duration : null };
@@ -552,16 +581,34 @@
 
                 // ===== Only auto-block agent for already_sold cases =====
                 if (isProperty && data.agent_id && currentCategory === 'already_sold') {
-                    await blockAgent(
-                        data.agent_id,
-                        currentCategory,
-                        duration,
-                        'Associated agent has been blocked because the property was already sold.'
-                    );
+                    const soldDuration = document.getElementById('soldDurationSelect')?.value || '7days';
+
+                    try {
+                        const agentRes = await fetch('/BatEstateExplorer/public/api/admin_block_agent_sold.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                agent_id: data.agent_id,
+                                property_id: currentReportedId,
+                                duration: soldDuration
+                            })
+                        });
+
+                        const agentData = await agentRes.json();
+                        if (agentData.success) {
+                            alert('Associated agent blocked successfully for already sold property.');
+                        } else {
+                            alert('Property taken down, but failed to block associated agent.');
+                        }
+
+                    } catch (err) {
+                        console.error('Error blocking agent:', err);
+                        alert('Property taken down, but failed to block associated agent.');
+                    }
                 }
 
                 reportModal.style.display = 'none';
-                setTimeout(() => location.reload(), 1000);
+                // setTimeout(() => location.reload(), 1000);
 
             } catch (err) {
                 console.error('Fetch error:', err);
@@ -569,24 +616,6 @@
                 reportModal.style.display = 'none';
             }
         });
-
-        /* Helper function to block an agent */
-        async function blockAgent(agentId, category, duration, successMessage) {
-            const agentPayload = { action: 'block', agent_id: agentId, category, duration };
-            try {
-                const agentRes = await fetch('/BatEstateExplorer/public/api/admin_block_agent.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(agentPayload)
-                });
-                const agentData = await agentRes.json();
-                if (agentData.success) alert(successMessage);
-                else alert('Property taken down, but failed to block associated agent.');
-            } catch (err) {
-                console.error('Error blocking agent:', err);
-                alert('Property taken down, but failed to block associated agent.');
-            }
-        }
 
         /* =====================================================
         Delete report (Accounts, Agents, Users, Properties)
