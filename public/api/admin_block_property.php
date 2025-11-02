@@ -12,7 +12,6 @@ if (!$conn) {
 // --- Get JSON input ---
 $data       = json_decode(file_get_contents('php://input'), true);
 $propertyId = $data['property_id'] ?? null;
-$reason     = trim($data['reason'] ?? 'unspecified reasons'); // ✅ optional but safer default
 
 if (!$propertyId || !is_numeric($propertyId)) {
     http_response_code(400);
@@ -42,6 +41,22 @@ if (!$property) {
     exit;
 }
 
+// --- Fetch report reason from property_reports (if available) ---
+$reasonQuery = "
+    SELECT reason, other_reason
+    FROM property_reports
+    WHERE property_id = ?
+    ORDER BY created_at DESC
+    LIMIT 1
+";
+$stmtReason = $conn->prepare($reasonQuery);
+$stmtReason->bind_param("i", $propertyId);
+$stmtReason->execute();
+$report = $stmtReason->get_result()->fetch_assoc();
+
+// Prefer `other_reason` if available, else fallback to `reason`
+$reason = trim($report['other_reason'] ?? '') ?: trim($report['reason'] ?? 'unspecified reasons');
+
 try {
     $conn->begin_transaction();
 
@@ -56,7 +71,6 @@ try {
     $duration   = 'lifetime';
     $is_read    = 0;
 
-    // Escape and construct message
     $safeReason = htmlspecialchars($reason, ENT_QUOTES, 'UTF-8');
     $message = sprintf(
         'Property "%s" has been permanently removed by admin due to %s.',
@@ -64,7 +78,7 @@ try {
         $safeReason
     );
 
-    // ✅ INSERT into property_notices before deletion
+    // ✅ INSERT into property_notices
     $stmtNotice = $conn->prepare("
         INSERT INTO property_notices 
         (property_id, owner_id, agent_id, notice_type, category, message, duration, is_read, created_at)
@@ -88,14 +102,7 @@ try {
 
     $noticeId = $stmtNotice->insert_id;
 
-    // ✅ Delete related property reports
-    $stmtReports = $conn->prepare("DELETE FROM property_reports WHERE property_id = ?");
-    $stmtReports->bind_param("i", $propertyId);
-    if (!$stmtReports->execute()) {
-        throw new Exception("Failed to delete property reports: " . $stmtReports->error);
-    }
-
-    // ✅ Delete property record
+    // ✅ Delete property record only (keep reports)
     $stmtProp = $conn->prepare("DELETE FROM properties WHERE id = ?");
     $stmtProp->bind_param("i", $propertyId);
     if (!$stmtProp->execute()) {
@@ -118,7 +125,7 @@ try {
         'notice_inserted'   => true,
         'notice_id'         => $noticeId,
         'notice_message'    => $message,
-        'reason'            => $safeReason // include for debugging / UI
+        'reason'            => $safeReason
     ]);
 
 } catch (Exception $e) {
