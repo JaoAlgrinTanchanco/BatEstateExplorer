@@ -1,69 +1,113 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_accounts.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_database.php';
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/config/database.php';
+    require_once __DIR__ . '/components/agent_property_card.php';
 
-session_start();
+    // ================================
+    // Fetch Top Performing Properties (Industry Standard)
+    // ================================
+    $featuredProperties = [];
+    $allowedStatuses = ["available", "sold", "ongoing_inquiry"];
+    $statusList = "'" . implode("','", $allowedStatuses) . "'";
 
-if (isset($_SESSION['flash_message'])) {
-    echo '<div class="flash-message" id="flashMessage">'
-        . htmlspecialchars($_SESSION['flash_message'])
-        . '<button class="close-btn" onclick="document.getElementById(\'flashMessage\').style.display=\'none\'">&times;</button>'
-        . '</div>';
-    unset($_SESSION['flash_message']);
-}
+    // 🏆 1️⃣ Top Rated Properties
+    $topRatedSql = "
+        SELECT 
+            p.*,
+            ROUND(AVG(r.rating), 2) AS avg_rating,
+            COUNT(r.id) AS total_reviews
+        FROM properties p
+        INNER JOIN property_reviews r ON p.id = r.property_id
+        WHERE 
+            p.status IN ($statusList)
+        GROUP BY p.id
+        HAVING 
+            avg_rating >= 4.0
+            AND total_reviews >= 5
+        ORDER BY 
+            avg_rating DESC, 
+            total_reviews DESC, 
+            p.created_at DESC
+        LIMIT 3
+    ";
+
+    if ($stmt = $conn->prepare($topRatedSql)) {
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result && $result->num_rows > 0) {
+            $featuredProperties = $result->fetch_all(MYSQLI_ASSOC);
+        }
+        $stmt->close();
+    }
+
+    // -------------------------------
+    // 2️⃣ Fetch Paid Featured Properties if top-rated < 3
+    // -------------------------------
+    $needed = 3 - count($featuredProperties);
+    if ($needed > 0) {
+        $excludeIds = array_column($featuredProperties, 'id');
+        $excludeStr = !empty($excludeIds)
+            ? "AND p.id NOT IN (" . implode(',', array_map('intval', $excludeIds)) . ")"
+            : "";
+
+        $paidFeaturedSql = "
+            SELECT 
+                p.*,
+                TIMESTAMPDIFF(DAY, NOW(), p.featured_until) AS feature_duration
+            FROM properties p
+            WHERE 
+                p.is_featured = 1
+                AND p.featured_until > NOW()
+                AND p.status IN ($statusList)
+                $excludeStr
+            ORDER BY 
+                feature_duration DESC,
+                p.featured_until DESC,
+                p.created_at DESC
+            LIMIT $needed
+        ";
+
+        $paidFeatured = [];
+        if ($paidStmt = $conn->prepare($paidFeaturedSql)) {
+            $paidStmt->execute();
+            $paidResult = $paidStmt->get_result();
+            if ($paidResult && $paidResult->num_rows > 0) {
+                $paidFeatured = $paidResult->fetch_all(MYSQLI_ASSOC);
+            }
+            $paidStmt->close();
+        }
+
+        // Merge top-rated + paid featured
+        $featuredProperties = array_merge($featuredProperties, $paidFeatured);
+    }
+
+    // Optional: Decode JSON images for each property
+    foreach ($featuredProperties as &$prop) {
+        if (!empty($prop['images'])) {
+            $prop['images'] = json_decode($prop['images'], true);
+        }
+    }
+    unset($prop); // break reference
+
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BatEstate Explorer - Find Your Dream Property</title>
     <link rel="stylesheet" href="assets/css/hero.css">
+    <link rel="stylesheet" href="assets/css/property_card.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        /* Scroll animations */
-        .scroll-animation {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s ease-out;
-        }
-        .scroll-animation.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Flash message styles (existing) */
-        .flash-message {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 99999;
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-            padding: 15px 20px;
-            max-width: 350px;
-            border-radius: 6px;
-            font-weight: 600;
-            text-align: center;
-            font-family: Arial, sans-serif;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        }
-        .flash-message .close-btn {
-            position: absolute;
-            right: 12px;
-            top: 12px;
-            background: transparent;
-            border: none;
-            font-size: 18px;
-            font-weight: bold;
-            color: #155724;
-            cursor: pointer;
-        }
-    </style>
 </head>
+
 <body>
+    <?php
+        // Determine if there are any featured properties
+        $hasFeaturedProperties = !empty($featuredProperties);
+    ?>
+
     <!-- Navigation -->
     <nav class="navbar scroll-animation">
         <div class="nav-container">
@@ -74,7 +118,11 @@ if (isset($_SESSION['flash_message'])) {
 
             <div class="nav-menu scroll-animation">
                 <a href="#home" class="nav-link">Home</a>
-                <a href="#properties" class="nav-link">Properties</a>
+                
+                <?php if ($hasFeaturedProperties): ?>
+                    <a href="#properties" class="nav-link">Properties</a>
+                <?php endif; ?>
+                
                 <a href="#about" class="nav-link">About</a>
                 <a href="#contact" class="nav-link">Contact</a>
                 <a href="#cta" class="nav-link glow-link">Become an Agent</a>
@@ -101,71 +149,42 @@ if (isset($_SESSION['flash_message'])) {
     </section>
 
     <!-- Properties Section -->
-    <section id="properties" class="properties scroll-animation">
-        <div class="container scroll-animation">
-            <h2 class="section-title scroll-animation">Featured Properties</h2>
-            <p class="section-subtitle scroll-animation">Discover our handpicked selection of premium properties</p>
-            <div class="properties-grid">
-                <div class="property-card scroll-animation">
-                    <div class="property-image scroll-animation">
-                        <img src="assets/images/aa.jpeg" alt="Luxury Home">
-                        <div class="property-badge">Featured</div>
-                    </div>
-                    <div class="property-content scroll-animation">
-                        <h3>Modern Luxury Villa</h3>
-                        <p class="property-location"><i class="fas fa-map-marker-alt"></i> Prime Location</p>
-                        <p class="property-price">$850,000</p>
-                        <div class="property-features">
-                            <span><i class="fas fa-bed"></i> 4 Beds</span>
-                            <span><i class="fas fa-bath"></i> 3 Baths</span>
-                            <span><i class="fas fa-ruler-combined"></i> 2,500 sqft</span>
-                        </div>
-                        <a href="auth/login.php" class="btn btn-outline" style="padding: 7px 12px; margin-top: 20px; font-size: 12px;">View Details</a>
-                    </div>
+    <?php if (!empty($featuredProperties)): ?>
+        <section id="properties" class="properties scroll-animation">
+            <div class="container scroll-animation">
+                <h2 class="section-title scroll-animation">Featured Properties</h2>
+                <p class="section-subtitle scroll-animation">Discover our handpicked selection of premium properties</p>
+                <div class="properties-grid">
+                    <?php
+                    // Limit to 3 properties
+                    $displayProperties = array_slice($featuredProperties, 0, 3);
+
+                    // Render each property card
+                    foreach ($displayProperties as $property):
+                        // Add extra metadata if needed
+                        $property['data_type'] = $property['property_type'] ?? '';
+                        $property['data_size'] = $property['sqm'] ?? 0;
+
+                        // Render card
+                        render_agent_property_card($property, false);
+                    endforeach;
+
+                    // If fewer than 3 properties, fill remaining slots with hidden placeholders
+                    $missing = 3 - count($displayProperties);
+                    for ($i = 0; $i < $missing; $i++): ?>
+                        <div class="property-card scroll-animation" style="visibility:hidden;"></div>
+                    <?php endfor; ?>
                 </div>
-                <div class="property-card scroll-animation">
-                    <div class="property-image scroll-animation">
-                        <img src="assets/images/bb.jpeg" alt="Townhouse">
-                        <div class="property-badge">New</div>
-                    </div>
-                    <div class="property-content scroll-animation">
-                        <h3>Cozy Townhouse</h3>
-                        <p class="property-location"><i class="fas fa-map-marker-alt"></i> Family Neighborhood</p>
-                        <p class="property-price">$450,000</p>
-                        <div class="property-features">
-                            <span><i class="fas fa-bed"></i> 3 Beds</span>
-                            <span><i class="fas fa-bath"></i> 2 Baths</span>
-                            <span><i class="fas fa-ruler-combined"></i> 1,800 sqft</span>
-                        </div>
-                        <a href="auth/login.php" class="btn btn-outline" style="padding: 7px 12px; margin-top: 20px; font-size: 12px;">View Details</a>
-                    </div>
-                </div>
-                <div class="property-card scroll-animation">
-                    <div class="property-image scroll-animation">
-                        <img src="assets/images/cc.jpeg" alt="Apartment">
-                        <div class="property-badge">Hot Deal</div>
-                    </div>
-                    <div class="property-content scroll-animation">
-                        <h3>Downtown Apartment</h3>
-                        <p class="property-location"><i class="fas fa-map-marker-alt"></i> City Center</p>
-                        <p class="property-price">$320,000</p>
-                        <div class="property-features">
-                            <span><i class="fas fa-bed"></i> 2 Beds</span>
-                            <span><i class="fas fa-bath"></i> 2 Baths</span>
-                            <span><i class="fas fa-ruler-combined"></i> 1,200 sqft</span>
-                        </div>
-                        <a href="auth/login.php" class="btn btn-outline" style="padding: 7px 12px; margin-top: 20px; font-size: 12px;">View Details</a>
-                    </div>
+
+                <div class="properties-cta scroll-animation">
+                    <a href="auth/login.php" class="btn btn-primary btn-large">
+                        <i class="fas fa-search"></i>
+                        Browse All Properties
+                    </a>
                 </div>
             </div>
-            <div class="properties-cta scroll-animation">
-                <a href="auth/login.php" class="btn btn-primary btn-large">
-                    <i class="fas fa-search"></i>
-                    Browse All Properties
-                </a>
-            </div>
-        </div>
-    </section>
+        </section>
+    <?php endif; ?>
 
     <!-- Features Section -->
     <section id="features" class="features scroll-animation">
@@ -318,112 +337,114 @@ if (isset($_SESSION['flash_message'])) {
         </div>
     </footer>
 
-<script>
-  // Smooth scroll to section and highlight active nav link
-  const navLinks = document.querySelectorAll('.nav-link');
+    <script>
+    // Smooth scroll to section and highlight active nav link
+    const navLinks = document.querySelectorAll('.nav-link');
 
-  function removeActive() {
+    function removeActive() {
+        navLinks.forEach(link => {
+        link.style.color = '';
+        link.style.transform = '';
+        });
+    }
+
     navLinks.forEach(link => {
-      link.style.color = '';
-      link.style.transform = '';
-    });
-  }
+        link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href').substring(1);
+        const target = document.getElementById(targetId);
 
-  navLinks.forEach(link => {
-    link.addEventListener('click', function(e) {
-      e.preventDefault();
-      const targetId = this.getAttribute('href').substring(1);
-      const target = document.getElementById(targetId);
+        if (target) {
+            const targetTop = target.getBoundingClientRect().top + window.scrollY;
+            const sectionHeight = target.offsetHeight;
+            const viewportHeight = window.innerHeight;
+            const scrollTo = targetTop - (viewportHeight / 2) + (sectionHeight / 2);
 
-      if (target) {
-        const targetTop = target.getBoundingClientRect().top + window.scrollY;
-        const sectionHeight = target.offsetHeight;
-        const viewportHeight = window.innerHeight;
-        const scrollTo = targetTop - (viewportHeight / 2) + (sectionHeight / 2);
+            window.scrollTo({
+            top: scrollTo,
+            behavior: 'smooth'
+            });
 
-        window.scrollTo({
-          top: scrollTo,
-          behavior: 'smooth'
-        });
-
-        // Highlight active link
-        removeActive();
-        this.style.color = '#000';
-        this.style.transform = 'scale(1.3)';
-      }
-    });
-  });
-
-  // Highlight nav link on scroll based on viewport
-  const sections = document.querySelectorAll('section');
-  window.addEventListener('scroll', () => {
-    let scrollPos = window.scrollY + window.innerHeight / 2; // center of viewport
-    sections.forEach(sec => {
-      const secTop = sec.offsetTop;
-      const secBottom = secTop + sec.offsetHeight;
-      const id = sec.getAttribute('id');
-
-      if (scrollPos >= secTop && scrollPos < secBottom) {
-        removeActive();
-        const activeLink = document.querySelector(`.nav-link[href="#${id}"]`);
-        if (activeLink) {
-          activeLink.style.color = '#000';
-          activeLink.style.transform = 'scale(1.3)';
+            // Highlight active link
+            removeActive();
+            this.style.color = '#000';
+            this.style.transform = 'scale(1.3)';
         }
-      }
-    });
-  });
-
-  // Contact form handler
-  document.getElementById('contactForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const formData = new FormData(this);
-    const name = formData.get('name');
-    const email = formData.get('email');
-    const message = formData.get('message');
-
-    if (!name || !email || !message) {
-      alert('Please fill in all fields.');
-      return;
-    }
-
-    alert("Thank you for your message! We'll get back to you soon.");
-    this.reset();
-  });
-
-  // Navbar scroll behavior
-  window.addEventListener("scroll", () => {
-    const navbar = document.querySelector(".navbar");
-    if (window.scrollY > 50) {
-      navbar.classList.add("scrolled");
-    } else {
-      navbar.classList.remove("scrolled");
-    }
-  });
-
-  // Intersection Observer with staggered delay
-  const scrollElements = document.querySelectorAll('.scroll-animation');
-
-  const observer = new IntersectionObserver((entries, obs) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const parent = entry.target.parentElement;
-        const children = Array.from(parent.children).filter(child => child.classList.contains('scroll-animation'));
-        
-        children.forEach((child, index) => {
-          setTimeout(() => {
-            child.classList.add('visible');
-          }, index * 150);
         });
-
-        obs.unobserve(entry.target);
-      }
     });
-  }, { threshold: 0.1 });
 
-  scrollElements.forEach(el => observer.observe(el));
-</script>
+    // Highlight nav link on scroll based on viewport
+    const sections = document.querySelectorAll('section');
+    window.addEventListener('scroll', () => {
+        let scrollPos = window.scrollY + window.innerHeight / 2; // center of viewport
+        sections.forEach(sec => {
+        const secTop = sec.offsetTop;
+        const secBottom = secTop + sec.offsetHeight;
+        const id = sec.getAttribute('id');
+
+        if (scrollPos >= secTop && scrollPos < secBottom) {
+            removeActive();
+            const activeLink = document.querySelector(`.nav-link[href="#${id}"]`);
+            if (activeLink) {
+            activeLink.style.color = '#000';
+            activeLink.style.transform = 'scale(1.3)';
+            }
+        }
+        });
+    });
+
+    // Contact form handler
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const name = formData.get('name');
+        const email = formData.get('email');
+        const message = formData.get('message');
+
+        if (!name || !email || !message) {
+        alert('Please fill in all fields.');
+        return;
+        }
+
+        alert("Thank you for your message! We'll get back to you soon.");
+        this.reset();
+    });
+
+    // Navbar scroll behavior
+    window.addEventListener("scroll", () => {
+        const navbar = document.querySelector(".navbar");
+        if (window.scrollY > 50) {
+        navbar.classList.add("scrolled");
+        } else {
+        navbar.classList.remove("scrolled");
+        }
+    });
+
+    // Intersection Observer with staggered delay
+    const scrollElements = document.querySelectorAll('.scroll-animation');
+
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const parent = entry.target.parentElement;
+            const children = Array.from(parent.children).filter(child => child.classList.contains('scroll-animation'));
+            
+            children.forEach((child, index) => {
+            setTimeout(() => {
+                child.classList.add('visible');
+            }, index * 150);
+            });
+
+            obs.unobserve(entry.target);
+        }
+        });
+    }, { threshold: 0.1 });
+
+    scrollElements.forEach(el => observer.observe(el));
+    </script>
 
 </body>
+
 </html>
+
