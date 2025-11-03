@@ -66,12 +66,11 @@
 /* Stat Card */
 .stat-card {
     background: linear-gradient(90deg, #111, #ffffff02);
-    border-radius: 2rem;
+    border-radius: 2rem 0 0 2rem;
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
     padding: 1rem 1.5rem;
-    min-height: 163px;
     position: relative;
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
@@ -88,7 +87,7 @@
 .stat-icon {
     position: absolute;
     right: 0;
-    font-size: 8.5rem;
+    font-size: 6.5rem;
     color: rgba(255, 255, 255, 0.3);
     pointer-events: none;
 }
@@ -100,7 +99,7 @@
 
 .stat-content h3 {
     font-family: 'Satoshi-Bold';
-    font-size: 5rem;
+    font-size: 4rem;
     margin: 0;
     color: #fff;
     font-weight: 900;
@@ -137,6 +136,13 @@
     display: grid;
     grid-template-rows: 1fr 1fr;
     gap: 1.5rem;
+    height: 100%; /* ensures equal space split */
+    overflow: hidden;
+}
+
+.right-top,
+.right-bottom {
+    overflow: hidden;
 }
 
 /* ====== Recent Applications Card ====== */
@@ -369,14 +375,17 @@
 
 /* Right top: split into 2 columns */
 .right-top {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  height: 100%;
 }
 
+/* ====== Chart container ====== */
 .chart-container {
-    height: -webkit-fill-available;
-    height: 315px;
+    flex: 1;
+    min-height: 280px; /* ensures enough space for labels */
+    max-height: 320px;
     background: #fff;
     border-radius: 20px;
     padding: 1rem;
@@ -388,16 +397,19 @@
 }
 
 .chart-container h2 {
-    font-family: 'Satoshi-Bold';
-    font-size: 1.1rem;
-    color: #111827;
-    margin-bottom: 1rem;
+  font-family: 'Satoshi-Bold';
+  font-size: 1.1rem;
+  color: #111827;
+  margin-bottom: 1rem;
+  text-align: left;
 }
 
-/* Chart canvas sizing */
+/* ====== Chart canvas fill ====== */
 .chart-container canvas {
-    max-height: 200px;
-    width: 100%;
+  flex: 1;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
 }
 
 /*=======right bottom ====== */
@@ -561,7 +573,6 @@
     }
 
     .chart-container {
-        padding: 0.75rem;
         width: 100%; 
     }
 

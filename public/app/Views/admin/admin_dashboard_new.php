@@ -348,6 +348,7 @@
         data: lineData,
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
                 x: {
@@ -414,6 +415,7 @@
         data: barData,
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
                 x: { ticks: { color: "#6b7280" }, grid: { display: false } },
