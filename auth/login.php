@@ -47,43 +47,56 @@
             exit;
         }
 
-        if ((int)$user['is_blocked'] === 1) {
-            // Determine if this is an agent or a regular user
-            $reportQuery = null;
+        function normalize_reason(string $reason): string {
+            $clean = preg_replace('/[_\-]+/', ' ', $reason);
+            $clean = trim($clean);
+            $clean = ucwords($clean);
+            return $clean;
+        }
 
-            if ($user['user_type'] === 'agent') {
+        // Check if user is blocked
+        if ((int)$user['is_blocked'] === 1) {
+
+            $blockInfo = null;
+
+            // Agent logic: use user's ID directly in agent_reports.agent_id
+            if ($user['user_type'] === 'direct_agent' || $user['user_type'] === 'associate_agent') {
                 $reportQuery = "
-                    SELECT reason, other_reason, duration 
-                    FROM agent_reports 
-                    WHERE agent_id = ? 
-                    AND status = 'blocked'
-                    ORDER BY blockage_date DESC 
+                    SELECT reason, other_reason, duration
+                    FROM agent_reports
+                    WHERE agent_id = ? AND status = 'blocked'
+                    ORDER BY blockage_date DESC
                     LIMIT 1
                 ";
-            } else { // normal user
+                $blockQuery = mysqli_prepare($conn, $reportQuery);
+                mysqli_stmt_bind_param($blockQuery, "i", $user['id']); // use user ID as agent_id
+                mysqli_stmt_execute($blockQuery);
+                $blockResult = mysqli_stmt_get_result($blockQuery);
+                $blockInfo = mysqli_fetch_assoc($blockResult);
+
+            } else { // Normal user
                 $reportQuery = "
-                    SELECT reason, other_reason, duration 
-                    FROM user_reports 
-                    WHERE reported_user_id = ? 
-                    AND status = 'blocked'
-                    ORDER BY blockage_date DESC 
+                    SELECT reason, other_reason, duration
+                    FROM user_reports
+                    WHERE reported_user_id = ? AND status = 'blocked'
+                    ORDER BY blockage_date DESC
                     LIMIT 1
                 ";
+                $blockQuery = mysqli_prepare($conn, $reportQuery);
+                mysqli_stmt_bind_param($blockQuery, "i", $user['id']);
+                mysqli_stmt_execute($blockQuery);
+                $blockResult = mysqli_stmt_get_result($blockQuery);
+                $blockInfo = mysqli_fetch_assoc($blockResult);
             }
 
-            $blockQuery = mysqli_prepare($conn, $reportQuery);
-            mysqli_stmt_bind_param($blockQuery, "i", $user['id']);
-            mysqli_stmt_execute($blockQuery);
-            $blockResult = mysqli_stmt_get_result($blockQuery);
-            $blockInfo = mysqli_fetch_assoc($blockResult);
-
-            // --- Determine block reason and duration properly ---
-            $reasonText = $blockInfo['reason'] === 'other'
+            // Determine block reason and duration
+            $rawReason = $blockInfo['reason'] === 'other'
                 ? $blockInfo['other_reason']
-                : ucfirst($blockInfo['reason'] ?? 'Violation');
+                : $blockInfo['reason'] ?? 'Violation';
+
+            $reasonText = normalize_reason($rawReason);
 
             $durationRaw = $blockInfo['duration'] ?? null;
-
             $isPermanent = false;
             $displayDuration = '7 days';
 
@@ -93,7 +106,6 @@
                     $isPermanent = true;
                     $displayDuration = 'Permanent';
                 } else {
-                    // Map common shorthand to readable duration
                     $map = [
                         '48hrs' => '48 hours',
                         '48 hours' => '48 hours',
@@ -106,12 +118,11 @@
                 }
             }
 
-            // Redirect with permanent flag
-            header("Location: login.php?blocked=1&reason=" . urlencode($reasonText) 
-                . "&duration=" . urlencode($displayDuration) 
+            // Redirect with blocked info
+            header("Location: login.php?blocked=1&reason=" . urlencode($reasonText)
+                . "&duration=" . urlencode($displayDuration)
                 . "&permanent=" . ($isPermanent ? 1 : 0));
             exit;
-
         }
 
         // Check account status
@@ -231,7 +242,6 @@
         // Show Blocked Account Modal
         // ================================
         const urlParams = new URLSearchParams(window.location.search);
-        
         if (urlParams.get('blocked') === '1') {
             const reason = urlParams.get('reason') || 'Violation of platform policies';
             const duration = urlParams.get('duration') || '7 days';
