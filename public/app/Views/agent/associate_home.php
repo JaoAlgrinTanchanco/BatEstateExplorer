@@ -183,36 +183,32 @@
     $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 
     // ================================
-    // Fetch Featured Properties
-    //  - Top 3 Rated (always included)
-    //  - Fallback to fill top 3 if not enough rated
-    //  - Then all active Paid Featured (ranked by plan duration)
-    // Supports: available, sold, ongoing_inquiry
+    // Fetch Top Performing Properties (Industry Standard)
     // ================================
 
     $featuredProperties = [];
-
     $allowedStatuses = ["available", "sold", "ongoing_inquiry"];
     $statusList = "'" . implode("','", $allowedStatuses) . "'";
 
-    // -------------------------------
-    // 1️⃣ Fetch Top 3 Rated Properties
-    // -------------------------------
+    // 🏆 1️⃣ Only include properties that truly qualify as top performing
     $topRatedSql = "
         SELECT 
             p.*,
-            COALESCE(AVG(r.rating), 0) AS avg_rating,
+            ROUND(AVG(r.rating), 2) AS avg_rating,
             COUNT(r.id) AS total_reviews
         FROM properties p
-        LEFT JOIN property_reviews r 
-            ON p.id = r.property_id
-        WHERE p.status IN ($statusList)
+        INNER JOIN property_reviews r ON p.id = r.property_id
+        WHERE 
+            p.status IN ('available','sold','ongoing_inquiry')
         GROUP BY p.id
+        HAVING 
+            avg_rating >= 4.0    -- Minimum quality threshold
+            AND total_reviews >= 5   -- Minimum credibility threshold
         ORDER BY 
-            avg_rating DESC,
-            total_reviews DESC,
+            avg_rating DESC, 
+            total_reviews DESC, 
             p.created_at DESC
-        LIMIT 3
+        LIMIT 3;
     ";
 
     if ($stmt = $conn->prepare($topRatedSql)) {
@@ -222,42 +218,6 @@
             $featuredProperties = $result->fetch_all(MYSQLI_ASSOC);
         }
         $stmt->close();
-    } else {
-        error_log("❌ Failed to prepare top rated properties query: " . $conn->error);
-    }
-
-    // -------------------------------
-    // 2️⃣ Fallback: Fill missing top-rated slots
-    // -------------------------------
-    if (count($featuredProperties) < 3) {
-        $remaining = 3 - count($featuredProperties);
-        $excludeIds = array_column($featuredProperties, 'id');
-        $excludeStr = !empty($excludeIds)
-            ? "AND p.id NOT IN (" . implode(',', array_map('intval', $excludeIds)) . ")"
-            : "";
-
-        $fallbackSql = "
-            SELECT 
-                p.*, 
-                0 AS avg_rating, 
-                0 AS total_reviews
-            FROM properties p
-            WHERE p.status IN ($statusList) $excludeStr
-            ORDER BY p.created_at DESC
-            LIMIT $remaining
-        ";
-
-        if ($fallbackStmt = $conn->prepare($fallbackSql)) {
-            $fallbackStmt->execute();
-            $fallbackResult = $fallbackStmt->get_result();
-            if ($fallbackResult) {
-                $featuredProperties = array_merge(
-                    $featuredProperties,
-                    $fallbackResult->fetch_all(MYSQLI_ASSOC)
-                );
-            }
-            $fallbackStmt->close();
-        }
     }
 
     // -------------------------------
@@ -421,19 +381,17 @@
         </div>
     </div>
 
-    <h4>🏆Top Featured</h4>
-    <!-- Featured -->
-    <div class="property-grid-x" id="propertyGridX">
-        <?php if (!empty($featuredProperties)): ?>
+    <?php if (!empty($featuredProperties)): ?>
+        <h4>🏆 Top Featured</h4>
+        <!-- Featured -->
+        <div class="property-grid-x" id="propertyGridX">
             <?php foreach ($featuredProperties as $property):
                 $property['data_type'] = $property['property_type'];
                 $property['data_size'] = $property['sqm'];
                 render_agent_property_card($property);
             endforeach; ?>
-        <?php else: ?>
-            <p>No top-rated properties available.</p>
-        <?php endif; ?>
-    </div>
+        </div>
+    <?php endif; ?>
 
     <div class="properties-grid" id="propertiesGrid">
         <?php if (!empty($properties)): ?>

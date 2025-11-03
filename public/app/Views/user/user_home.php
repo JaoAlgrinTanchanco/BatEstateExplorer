@@ -183,36 +183,32 @@
     $properties = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 
     // ================================
-    // Fetch Featured Properties
-    //  - Top 3 Rated (always included)
-    //  - Fallback to fill top 3 if not enough rated
-    //  - Then all active Paid Featured (ranked by plan duration)
-    // Supports: available, sold, ongoing_inquiry
+    // Fetch Top Performing Properties (Industry Standard)
     // ================================
 
     $featuredProperties = [];
-
     $allowedStatuses = ["available", "sold", "ongoing_inquiry"];
     $statusList = "'" . implode("','", $allowedStatuses) . "'";
 
-    // -------------------------------
-    // 1️⃣ Fetch Top 3 Rated Properties
-    // -------------------------------
+    // 🏆 1️⃣ Only include properties that truly qualify as top performing
     $topRatedSql = "
         SELECT 
             p.*,
-            COALESCE(AVG(r.rating), 0) AS avg_rating,
+            ROUND(AVG(r.rating), 2) AS avg_rating,
             COUNT(r.id) AS total_reviews
         FROM properties p
-        LEFT JOIN property_reviews r 
-            ON p.id = r.property_id
-        WHERE p.status IN ($statusList)
+        INNER JOIN property_reviews r ON p.id = r.property_id
+        WHERE 
+            p.status IN ('available','sold','ongoing_inquiry')
         GROUP BY p.id
+        HAVING 
+            avg_rating >= 4.0    -- Minimum quality threshold
+            AND total_reviews >= 5   -- Minimum credibility threshold
         ORDER BY 
-            avg_rating DESC,
-            total_reviews DESC,
+            avg_rating DESC, 
+            total_reviews DESC, 
             p.created_at DESC
-        LIMIT 3
+        LIMIT 3;
     ";
 
     if ($stmt = $conn->prepare($topRatedSql)) {
@@ -222,42 +218,6 @@
             $featuredProperties = $result->fetch_all(MYSQLI_ASSOC);
         }
         $stmt->close();
-    } else {
-        error_log("❌ Failed to prepare top rated properties query: " . $conn->error);
-    }
-
-    // -------------------------------
-    // 2️⃣ Fallback: Fill missing top-rated slots
-    // -------------------------------
-    if (count($featuredProperties) < 3) {
-        $remaining = 3 - count($featuredProperties);
-        $excludeIds = array_column($featuredProperties, 'id');
-        $excludeStr = !empty($excludeIds)
-            ? "AND p.id NOT IN (" . implode(',', array_map('intval', $excludeIds)) . ")"
-            : "";
-
-        $fallbackSql = "
-            SELECT 
-                p.*, 
-                0 AS avg_rating, 
-                0 AS total_reviews
-            FROM properties p
-            WHERE p.status IN ($statusList) $excludeStr
-            ORDER BY p.created_at DESC
-            LIMIT $remaining
-        ";
-
-        if ($fallbackStmt = $conn->prepare($fallbackSql)) {
-            $fallbackStmt->execute();
-            $fallbackResult = $fallbackStmt->get_result();
-            if ($fallbackResult) {
-                $featuredProperties = array_merge(
-                    $featuredProperties,
-                    $fallbackResult->fetch_all(MYSQLI_ASSOC)
-                );
-            }
-            $fallbackStmt->close();
-        }
     }
 
     // -------------------------------
@@ -421,19 +381,17 @@
         </div>
     </div>
 
-    <h4>🏆Top Featured</h4>
-    <!-- Featured -->
-    <div class="property-grid-x" id="propertyGridX">
-        <?php if (!empty($featuredProperties)): ?>
+    <?php if (!empty($featuredProperties)): ?>
+        <h4>🏆 Top Featured</h4>
+        <!-- Featured -->
+        <div class="property-grid-x" id="propertyGridX">
             <?php foreach ($featuredProperties as $property):
                 $property['data_type'] = $property['property_type'];
                 $property['data_size'] = $property['sqm'];
                 render_property_card($property);
             endforeach; ?>
-        <?php else: ?>
-            <p>No top-rated properties available.</p>
-        <?php endif; ?>
-    </div>
+        </div>
+    <?php endif; ?>
 
     <div class="properties-grid" id="propertiesGrid">
         <?php if (!empty($properties)): ?>
@@ -643,6 +601,108 @@
             } catch (err) {
                 console.error("Failed to load notices:", err);
             }
+        })();
+
+        // === Property Notices Modal Display ===
+        (async () => {
+        try {
+            const res = await fetch("/BatEstateExplorer/public/api/check_notice.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!data.success || !Array.isArray(data.notices) || !data.notices.length) return;
+
+            const unseenNotices = data.notices.filter(n => !n.is_read);
+            if (!unseenNotices.length) return;
+
+            let currentIndex = 0;
+
+            const showNextNotice = async () => {
+            if (currentIndex >= unseenNotices.length) {
+                document.querySelector(".property-notice-modal")?.remove();
+                return;
+            }
+
+            const notice = unseenNotices[currentIndex];
+            document.querySelector(".property-notice-modal")?.remove();
+
+            // --- Icon logic ---
+            let iconSvg = "", accentColor = "#3b82f6", iconBg = "#eff6ff", titleText = "Information", contentClass = "info";
+            switch (notice.notice_type) {
+                case "take_down":
+                accentColor = "#ef4444";
+                iconBg = "#fef2f2";
+                titleText = "Property Taken Down";
+                contentClass = "danger";
+                iconSvg = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="${accentColor}" stroke-width="2.5">
+                    <circle cx="32" cy="32" r="28" fill="${iconBg}" stroke="${accentColor}"/>
+                    <line x1="20" y1="20" x2="44" y2="44" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="44" y1="20" x2="20" y2="44" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
+                    </svg>`;
+                break;
+                case "block":
+                accentColor = "#f59e0b";
+                iconBg = "#fffbeb";
+                titleText = "Property Blocked";
+                contentClass = "warning";
+                iconSvg = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="${accentColor}" stroke-width="2.5">
+                    <circle cx="32" cy="32" r="28" fill="${iconBg}" stroke="${accentColor}"/>
+                    <path d="M22 22 L42 42 M42 22 L22 42" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
+                    </svg>`;
+                break;
+                default:
+                iconSvg = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="${accentColor}" stroke-width="2.5">
+                    <circle cx="32" cy="32" r="28" fill="${iconBg}" stroke="${accentColor}"/>
+                    <line x1="32" y1="20" x2="32" y2="36" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="32" cy="44" r="2.5" fill="${accentColor}"/>
+                    </svg>`;
+            }
+
+            // --- Modal HTML ---
+            const modal = document.createElement("div");
+            modal.className = "property-notice-modal";
+            modal.innerHTML = `
+                <div class="property-notice-content ${contentClass} animate-in">
+                <div class="property-notice-icon">${iconSvg}</div>
+                <h3>${titleText}</h3>
+                <p>${notice.message}</p>
+                <small>Date: ${new Date(notice.created_at).toLocaleString()}</small>
+                <button class="btn btn-primary mt-3">Okay</button>
+                </div>`;
+            document.body.appendChild(modal);
+
+            modal.querySelector(".btn").addEventListener("click", async () => {
+                modal.classList.add("hidden");
+                try {
+                const deleteRes = await fetch("/BatEstateExplorer/public/api/delete_property_notice.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: notice.notice_id })
+                });
+
+                const deleteData = await deleteRes.json().catch(() => ({}));
+                if (!deleteData.success) console.error("Failed to delete notice:", deleteData);
+
+                } catch (err) {
+                console.error("Error deleting notice:", err);
+                }
+
+                currentIndex++;
+                setTimeout(showNextNotice, 400);
+            });
+            };
+
+            showNextNotice();
+
+        } catch (err) {
+            console.error("Failed to load property notices:", err);
+        }
         })();
 
         const cards = Array.from(document.querySelectorAll("#propertyGridX > .property-card"));
