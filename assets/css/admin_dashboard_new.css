@@ -376,6 +376,7 @@
 
 .chart-container {
     height: -webkit-fill-available;
+    height: 315px;
     background: #fff;
     border-radius: 20px;
     padding: 1rem;
