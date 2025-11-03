@@ -65,6 +65,7 @@
 
 /* Stat Card */
 .stat-card {
+    text-decoration: none;
     background: linear-gradient(90deg, #111, #ffffff02);
     border-radius: 2rem 0 0 2rem;
     display: flex;
@@ -406,11 +407,14 @@
 
 /* ====== Chart canvas fill ====== */
 .chart-container canvas {
-  flex: 1;
   width: 100% !important;
-  height: 100% !important;
-  max-height: none !important;
+  height: auto !important; /* allow natural square scaling */
+  aspect-ratio: 1 / 1; /* keep it circular */
+  max-width: 260px; /* optional: keeps donut from blowing up too large */
+  display: block;
+  margin: 0 auto;
 }
+
 
 /*=======right bottom ====== */
 

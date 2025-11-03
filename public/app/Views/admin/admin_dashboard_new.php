@@ -11,11 +11,14 @@
                         FROM users 
                         WHERE user_type IN ('direct_agent', 'associate_agent') 
                             AND status = 'active'",
-        'total_clients' => "SELECT COUNT(*) as count 
-                            FROM users 
-                            WHERE user_type = 'user' 
-                            AND status = 'active' 
-                            AND JSON_LENGTH(privileges) > 0"
+        'pending_reports' => "
+                        SELECT 
+                            ( 
+                                (SELECT COUNT(*) FROM user_reports WHERE status = 'pending') + 
+                                (SELECT COUNT(*) FROM agent_reports WHERE status = 'pending') + 
+                                (SELECT COUNT(*) FROM property_reports WHERE status = 'pending') 
+                            ) AS count
+                    "
     ];
 
     foreach ($queries as $key => $query) {
@@ -120,37 +123,37 @@
 </header>
 
 <div class="stats-grid">
-    <div class="stat-card">
+    <a href="admin_dashboard.php?view=properties" class="stat-card">
         <div class="stat-icon"><i class="fa-solid fa-house"></i></div>
         <div class="stat-content">
             <h3><?= $stats['total_properties'] ?></h3>
             <p>Active Properties</p>
         </div>
-    </div>
+    </a>
 
-    <div class="stat-card">
+    <a href="admin_dashboard.php?view=applications" class="stat-card">
         <div class="stat-icon"><i class="fa-solid fa-file-lines"></i></div>
         <div class="stat-content">
             <h3><?= $stats['pending_applications'] ?></h3>
             <p>Pending Applications</p>
         </div>
-    </div>
+    </a>
 
-    <div class="stat-card">
+    <a href="admin_dashboard.php?view=agents" class="stat-card">
         <div class="stat-icon"><i class="fa-solid fa-user-tie"></i></div>
         <div class="stat-content">
             <h3><?= $stats['total_agents'] ?></h3>
             <p>Active Agents</p>
         </div>
-    </div>
+    </a>
 
-    <div class="stat-card">
-        <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+    <a href="admin_dashboard.php?view=reports" class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-flag"></i></div>
         <div class="stat-content">
-            <h3><?= $stats['total_clients'] ?></h3>
-            <p>Active Clients</p>
+            <h3><?= $stats['pending_reports'] ?></h3>
+            <p>Pending Reports</p>
         </div>
-    </div>
+    </a>
 </div>
 
 <div class="dashboard-grid">
@@ -326,6 +329,23 @@
         }]
     };
 
+    // ===== Donut Chart =====
+    new Chart(document.getElementById('donutChart'), {
+        type: 'doughnut',
+        data: donutData,
+        options: {
+            responsive: true,
+             maintainAspectRatio: true,
+            cutout: "70%",
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: "#374151", font: { family: "Satoshi-Regular" } }
+                }
+            }
+        }
+    });
+
     // ===== Line Chart =====
     const lineData = {
         labels: <?= json_encode(array_column($applications_over_time, 'month')) ?>,
@@ -364,7 +384,13 @@
                     grid: { display: false }
                 },
                 y: {
-                    ticks: { color: "#6b7280" },
+                    ticks: {
+                        color: "#6b7280",
+                        precision: 0, // Ensures whole numbers
+                        callback: function(value) {
+                            return Number.isInteger(value) ? value : null; // Hide decimals
+                        }
+                    },
                     grid: { color: "rgba(0,0,0,0.05)" },
                     beginAtZero: true
                 }
@@ -382,22 +408,6 @@
             borderRadius: 6
         }]
     };
-
-    // ===== Donut Chart =====
-    new Chart(document.getElementById('donutChart'), {
-        type: 'doughnut',
-        data: donutData,
-        options: {
-            responsive: true,
-            cutout: "70%",
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { color: "#374151", font: { family: "Satoshi-Regular" } }
-                }
-            }
-        }
-    });
 
     // ===== Bar Chart with Black Gradient =====
     const barCtx = document.getElementById('barChart').getContext('2d');
@@ -419,7 +429,17 @@
             plugins: { legend: { display: false } },
             scales: {
                 x: { ticks: { color: "#6b7280" }, grid: { display: false } },
-                y: { ticks: { color: "#6b7280" }, grid: { color: "rgba(0,0,0,0.05)" }, beginAtZero: true }
+                y: {
+                    ticks: {
+                        color: "#6b7280",
+                        precision: 0,
+                        callback: function(value) {
+                            return Number.isInteger(value) ? value : null;
+                        }
+                    },
+                    grid: { color: "rgba(0,0,0,0.05)" },
+                    beginAtZero: true
+                }
             }
         }
     });
