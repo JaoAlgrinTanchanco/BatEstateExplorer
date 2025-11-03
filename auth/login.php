@@ -171,22 +171,30 @@
         <form method="POST" action="">
             <input type="hidden" name="ajax" value="0">
 
+            <!-- Email -->
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" autocomplete="username" required 
                     value="<?php 
                         echo isset($_SESSION['old_email']) ? htmlspecialchars($_SESSION['old_email']) : ''; 
-                        unset($_SESSION['old_email']); // clear after displaying
+                        unset($_SESSION['old_email']);
                     ?>">
             </div>
 
-            <div class="form-group password-wrapper">
+            <!-- Password -->
+            <div class="form-group password-wrapper" id="passwordWrapper">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" autocomplete="current-password" required>
                 <span id="togglePasswordText" class="toggle-password-text">Show</span>
             </div>
 
-            <button type="submit" class="submit-btn">Login</button>
+            <!-- Normal login button -->
+            <button type="submit" class="submit-btn" id="loginBtn">Login</button>
+
+            <a href="/BatEstateExplorer/auth/google_login.php" id="googleBtn" class="google-login-btn">
+                <img src="https://developers.google.com/identity/images/g-logo.png" width="20" alt="Google Logo">
+                Continue with Google
+            </a>
         </form>
 
         <div class="links">

@@ -14,34 +14,52 @@ function login_user($conn, $email, $password = null, $isGoogle = false) {
         return ['error' => 'Incorrect password.'];
     }
 
-    // Check if blocked
+    // 🚫 Block check
     if ((int)$user['is_blocked'] === 1) {
-        $blockQuery = mysqli_prepare($conn, "
-            SELECT reason, other_reason, duration 
-            FROM agent_reports 
-            WHERE agent_id=? AND status='blocked'
-            ORDER BY blockage_date DESC LIMIT 1
-        ");
+        $blockInfo = null;
+
+        // Determine where to check (agent_reports or user_reports)
+        if ($user['user_type'] === 'direct_agent' || $user['user_type'] === 'associate_agent') {
+            $reportQuery = "
+                SELECT reason, other_reason, duration
+                FROM agent_reports
+                WHERE agent_id = ? AND status = 'blocked'
+                ORDER BY blockage_date DESC
+                LIMIT 1
+            ";
+        } else {
+            $reportQuery = "
+                SELECT reason, other_reason, duration
+                FROM user_reports
+                WHERE reported_user_id = ? AND status = 'blocked'
+                ORDER BY blockage_date DESC
+                LIMIT 1
+            ";
+        }
+
+        $blockQuery = mysqli_prepare($conn, $reportQuery);
         mysqli_stmt_bind_param($blockQuery, "i", $user['id']);
         mysqli_stmt_execute($blockQuery);
         $blockResult = mysqli_stmt_get_result($blockQuery);
         $blockInfo = mysqli_fetch_assoc($blockResult);
 
-        $reasonText = $blockInfo['reason'] === 'other'
+        // Determine reason + duration
+        $rawReason = $blockInfo['reason'] === 'other'
             ? $blockInfo['other_reason']
-            : ucfirst($blockInfo['reason']);
-        $duration = $blockInfo['duration'] ?? '7 days';
-        $reason   = $reasonText ?: 'Violation of platform policies';
+            : ($blockInfo['reason'] ?? 'Violation');
 
-        return ['blocked' => true, 'reason' => $reason, 'duration' => $duration];
+        $reasonText = ucwords(str_replace(['_', '-'], ' ', $rawReason));
+        $duration = $blockInfo['duration'] ?? '7 days';
+
+        return ['blocked' => true, 'reason' => $reasonText, 'duration' => $duration];
     }
 
-    // Check account status
+    // 🚫 Account status check
     if ($user['status'] !== 'active') {
         return ['error' => 'Your account is pending approval. Please wait for admin review.'];
     }
 
-    // Successful login: set session
+    // ✅ Successful login
     $_SESSION['user_token'] = generate_token($user['id'], $user['email'], $user['user_type']);
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['user_type'] = $user['user_type'];
@@ -57,3 +75,4 @@ function login_user($conn, $email, $password = null, $isGoogle = false) {
 
     return ['success' => true, 'user_id' => $user['id'], 'user_type' => $user['user_type']];
 }
+?>
