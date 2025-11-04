@@ -12,7 +12,10 @@
 }
 
 html, body {
-  height: 100%;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100dvh;
   font-family: "Inter", Arial, sans-serif;
   background: #f9fafc;
   color: #111;
@@ -23,23 +26,23 @@ html, body {
   position: relative;
 }
 
-/* ==============================
-   Subtle repeating background
-============================== */
+/* Background logo */
 body::before {
   content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url("../images/Vector 1.png");
+  position: absolute;
+  inset: 0;
+  background: url("../images/Vector 1.png") repeat center;
+  background-size: 30% auto; 
   background-repeat: repeat;
-  background-position: center;
-  background-size: 300px auto; /* tweak size as needed */
-  opacity: 0.05; /* faint watermark effect */
+  opacity: 0.03;
   z-index: 0;
-  pointer-events: none;
+}
+
+.logo {
+  display: block;
+  margin: 0 auto 1rem auto;
+  width: 100px;   /* adjust size */
+  height: auto;
 }
 
 /* ==============================
@@ -49,7 +52,7 @@ body::before {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 440px;
+  max-width: 600px;
   padding: 2.8rem 2.2rem;
   background: #fff;
   border-radius: 20px;
@@ -64,7 +67,7 @@ body::before {
   font-family: "Merriweather", serif;
   font-size: 1.8rem;
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 3rem;
 }
 
 .change-wrapper .back-link {
@@ -125,7 +128,7 @@ form button {
   gap: 0.5rem;
   width: 100%;
   padding: 0.9rem 1.5rem;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   border: none;
   border-radius: 30px;
   background: #111;

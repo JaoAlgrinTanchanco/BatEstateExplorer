@@ -180,6 +180,7 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['new_p
     ];
     $step = 1;
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -189,43 +190,48 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['new_p
 <title>Change Password</title>
 <link rel="stylesheet" href="../assets/css/change_pass.css">
 <script>
-function startTimer(duration, display, resendBtn) {
-    let timer = duration;
-    let countdown = setInterval(function() {
-        let minutes = Math.floor(timer / 60);
-        let seconds = timer % 60;
-        display.textContent = (minutes < 10 ? "0" : "") + minutes + ":" +
-                              (seconds < 10 ? "0" : "") + seconds;
-        resendBtn.disabled = true;
-        if (--timer < 0) {
-            clearInterval(countdown);
-            display.textContent = "OTP expired!";
-            resendBtn.disabled = false;
-        }
-    }, 1000);
-}
+    function startTimer(duration, display, resendBtn) {
+        let timer = duration;
+        let countdown = setInterval(function() {
+            let minutes = Math.floor(timer / 60);
+            let seconds = timer % 60;
+            display.textContent = (minutes < 10 ? "0" : "") + minutes + ":" +
+                                (seconds < 10 ? "0" : "") + seconds;
+            resendBtn.disabled = true;
+            if (--timer < 0) {
+                clearInterval(countdown);
+                display.textContent = "OTP expired!";
+                resendBtn.disabled = false;
+            }
+        }, 1000);
+    }
 
-window.onload = function () {
-<?php if($step===2 && isset($_SESSION['otp_expires'])):
-    $remaining = $_SESSION['otp_expires'] - time();
-    if($remaining < 0) $remaining = 0;
-?>
-    startTimer(<?= $remaining ?>, document.querySelector('#timer'), document.querySelector('#resendBtn'));
-<?php endif; ?>
-};
+    window.onload = function () {
+    <?php if($step===2 && isset($_SESSION['otp_expires'])):
+        $remaining = $_SESSION['otp_expires'] - time();
+        if($remaining < 0) $remaining = 0;
+    ?>
+        startTimer(<?= $remaining ?>, document.querySelector('#timer'), document.querySelector('#resendBtn'));
+    <?php endif; ?>
+    };
 </script>
+
 </head>
 <body>
+
+<!-- Centralized Notification -->
+<?php include __DIR__ . '/../components/notification.php'; ?>
+
 <div class="change-wrapper">
-<h2>Change Password</h2>
+
 <!-- Back to Sign Up link -->
-<p style="text-align: center; margin-bottom: 20px;">
+<p style="text-align: left; margin-bottom: 20px;">
     <a href="login.php" style="text-decoration: none; color: #111; font-weight: bold;">
         &larr; Back to Sign In
     </a>
 </p>
-<!-- Centralized Notification -->
-<?php include __DIR__ . '/../components/notification.php'; ?>
+<img src="../assets/images/key.png" alt="Key Logo" class="logo">
+<h2>Change Password</h2>
 
 <?php if($step === 1): ?>
 <form method="POST">
