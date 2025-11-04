@@ -34,8 +34,8 @@
 <link rel="stylesheet" href="../assets/css/hero.css">
 <link rel="stylesheet" href="../assets/css/agent_registration.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
 </head>
+
 <body>
 <?php include '../components/notification.php'; ?>
 
@@ -93,57 +93,37 @@
 
         <!-- First Row: Region | Province | City | Barangay -->
         <div class="address-row">
-            <!-- Region Dropdown -->
-            <div class="form-group">
+        <!-- Region -->
+        <div class="form-group">
             <label for="region">Region</label>
             <select id="region" name="region" required>
-                <option value="">Select Region</option>
-                <option value="Region I (Ilocos Region)">Region I (Ilocos Region)</option>
-                <option value="Region III (Central Luzon)">Region III (Central Luzon)</option>
-                <option value="Region IV-A (CALABARZON)">Region IV-A (CALABARZON)</option>
-                <option value="NCR (National Capital Region)">NCR (National Capital Region)</option>
-                <option value="Region VII (Central Visayas)">Region VII (Central Visayas)</option>
+            <option value="">Select Region</option>
             </select>
-            </div>
+        </div>
 
-            <!-- Province Dropdown -->
-            <div class="form-group">
+        <!-- Province -->
+        <div class="form-group">
             <label for="province">Province</label>
             <select id="province" name="province" required>
-                <option value="">Select Province</option>
-                <option value="Batangas">Batangas</option>
-                <option value="Laguna">Laguna</option>
-                <option value="Quezon">Quezon</option>
-                <option value="Cavite">Cavite</option>
-                <option value="Rizal">Rizal</option>
+            <option value="">Select Province</option>
             </select>
-            </div>
+        </div>
 
-            <!-- City Dropdown -->
-            <div class="form-group">
+        <!-- City -->
+        <div class="form-group">
             <label for="city">City / Municipality</label>
             <select id="city" name="city" required>
-                <option value="">Select City</option>
-                <option value="Lipa City">Lipa City</option>
-                <option value="Batangas City">Batangas City</option>
-                <option value="Tanauan City">Tanauan City</option>
-                <option value="Sto. Tomas City">Sto. Tomas City</option>
-                <option value="San Jose">San Jose</option>
+            <option value="">Select City / Municipality</option>
             </select>
-            </div>
+        </div>
 
-            <!-- Barangay Dropdown -->
-            <div class="form-group">
+        <!-- Barangay -->
+        <div class="form-group">
             <label for="barangay">Barangay</label>
             <select id="barangay" name="barangay" required>
-                <option value="">Select Barangay</option>
-                <option value="Balintawak">Balintawak</option>
-                <option value="Banay-Banay">Banay-Banay</option>
-                <option value="Sabang">Sabang</option>
-                <option value="Marawoy">Marawoy</option>
-                <option value="Santo Toribio">Santo Toribio</option>
+            <option value="">Select Barangay</option>
             </select>
-            </div>
+        </div>
         </div>
 
         <!-- Second Row: Street / Postal Code -->
@@ -623,6 +603,258 @@
                 showAjaxNotification('An error occurred. Please try again.', 'error');
             }
         });
+    });
+    document.addEventListener("DOMContentLoaded", function () {
+        const regionSelect = document.getElementById("region");
+        const provinceSelect = document.getElementById("province");
+        const citySelect = document.getElementById("city");
+        const barangaySelect = document.getElementById("barangay");
+
+        // === REGION → PROVINCES ===
+        const regionProvinces = {
+        "Region I (Ilocos Region)": ["Ilocos Norte", "Ilocos Sur", "La Union", "Pangasinan"],
+        "Region II (Cagayan Valley)": ["Batanes", "Cagayan", "Isabela", "Nueva Vizcaya", "Quirino"],
+        "Region III (Central Luzon)": ["Aurora", "Bataan", "Bulacan", "Nueva Ecija", "Pampanga", "Tarlac", "Zambales"],
+        "Region IV-A (CALABARZON)": ["Batangas", "Cavite", "Laguna", "Quezon", "Rizal"],
+        "MIMAROPA Region (Region IV-B)": ["Marinduque", "Occidental Mindoro", "Oriental Mindoro", "Palawan", "Romblon"],
+        "Region V (Bicol Region)": ["Albay", "Camarines Norte", "Camarines Sur", "Catanduanes", "Masbate", "Sorsogon"],
+        "Region VI (Western Visayas)": ["Aklan", "Antique", "Capiz", "Guimaras", "Iloilo", "Negros Occidental"],
+        "Region VII (Central Visayas)": ["Bohol", "Cebu", "Negros Oriental", "Siquijor"],
+        "Region VIII (Eastern Visayas)": ["Biliran", "Eastern Samar", "Leyte", "Northern Samar", "Samar", "Southern Leyte"],
+        "Region IX (Zamboanga Peninsula)": ["Zamboanga del Norte", "Zamboanga del Sur", "Zamboanga Sibugay"],
+        "Region X (Northern Mindanao)": ["Bukidnon", "Camiguin", "Lanao del Norte", "Misamis Occidental", "Misamis Oriental"],
+        "Region XI (Davao Region)": ["Davao de Oro", "Davao del Norte", "Davao del Sur", "Davao Occidental", "Davao Oriental"],
+        "Region XII (SOCCSKSARGEN)": ["Cotabato", "Sarangani", "South Cotabato", "Sultan Kudarat"],
+        "Region XIII (Caraga)": ["Agusan del Norte", "Agusan del Sur", "Dinagat Islands", "Surigao del Norte", "Surigao del Sur"],
+        "NCR (National Capital Region)": ["Metro Manila"],
+        "CAR (Cordillera Administrative Region)": ["Abra", "Apayao", "Benguet", "Ifugao", "Kalinga", "Mountain Province"],
+        "BARMM (Bangsamoro Autonomous Region in Muslim Mindanao)": ["Basilan", "Lanao del Sur", "Maguindanao del Norte", "Maguindanao del Sur", "Sulu", "Tawi-Tawi"]
+        };
+
+        // === PROVINCE → CITIES ===
+        const provinceCities = {
+        "Abra": ["Bangued"],
+        "Agusan del Norte": ["Butuan City", "Cabadbaran City"],
+        "Agusan del Sur": ["Bayugan City"],
+        "Aklan": ["Kalibo"],
+        "Albay": ["Legazpi City", "Tabaco City", "Ligao City"],
+        "Antique": ["San Jose de Buenavista"],
+        "Apayao": ["Kabugao"],
+        "Aurora": ["Baler"],
+        "Basilan": ["Isabela City", "Lamitan City"],
+        "Bataan": ["Abucay", "Bagac", "Balanga City", "Dinalupihan", "Mariveles", "Orani"],
+        "Batanes": ["Basco"],
+        "Batangas": ["Batangas City", "Lipa City", "Tanauan City", "Sto. Tomas City", "San Jose"],
+        "Benguet": ["Baguio City", "La Trinidad"],
+        "Biliran": ["Naval"],
+        "Bohol": ["Tagbilaran City"],
+        "Bukidnon": ["Malaybalay City", "Valencia City"],
+        "Bulacan": ["Malolos City", "Meycauayan City", "San Jose del Monte City"],
+        "Cagayan": ["Tuguegarao City"],
+        "Camarines Norte": ["Daet"],
+        "Camarines Sur": ["Naga City", "Iriga City"],
+        "Camiguin": ["Mambajao"],
+        "Capiz": ["Roxas City"],
+        "Catanduanes": ["Virac"],
+        "Cavite": [
+            "Cavite City", "Bacoor City", "Dasmariñas City", "Imus City",
+            "Tagaytay City", "Trece Martires City", "General Trias City"
+        ],
+        "Cebu": ["Cebu City", "Mandaue City", "Lapu-Lapu City", "Toledo City", "Bogo City", "Carcar City", "Talisay City", "Danao City", "Naga City"],
+        "Cotabato": ["Kidapawan City"],
+        "Davao de Oro": ["Nabunturan"],
+        "Davao del Norte": ["Tagum City", "Panabo City", "Samal City"],
+        "Davao del Sur": ["Davao City", "Digos City"],
+        "Davao Occidental": ["Malita"],
+        "Davao Oriental": ["Mati City"],
+        "Dinagat Islands": ["San Jose"],
+        "Eastern Samar": ["Borongan City"],
+        "Guimaras": ["Jordan"],
+        "Ifugao": ["Lagawe"],
+        "Ilocos Norte": ["Laoag City"],
+        "Ilocos Sur": ["Vigan City", "Candon City"],
+        "Iloilo": ["Iloilo City", "Passi City"],
+        "Isabela": ["Ilagan City", "Cauayan City", "Santiago City"],
+        "Kalinga": ["Tabuk City"],
+        "La Union": ["San Fernando City"],
+        "Laguna": ["Calamba City", "Biñan City", "Santa Rosa City", "San Pedro City", "San Pablo City", "Cabuyao City"],
+        "Lanao del Norte": ["Iligan City"],
+        "Lanao del Sur": ["Marawi City"],
+        "Leyte": ["Tacloban City", "Ormoc City", "Baybay City"],
+        "Maguindanao del Norte": ["Datu Odin Sinsuat"],
+        "Maguindanao del Sur": ["Buluan"],
+        "Marinduque": ["Boac"],
+        "Masbate": ["Masbate City"],
+        "Misamis Occidental": ["Oroquieta City", "Ozamiz City", "Tangub City"],
+        "Misamis Oriental": ["Cagayan de Oro City", "Gingoog City"],
+        "Mountain Province": ["Bontoc"],
+        "Negros Occidental": [
+            "Bacolod City", "Bago City", "Cadiz City", "Escalante City",
+            "Himamaylan City", "Kabankalan City", "La Carlota City", "San Carlos City",
+            "Silay City", "Sipalay City", "Talisay City", "Victorias City"
+        ],
+        "Negros Oriental": [
+            "Dumaguete City", "Bais City", "Bayawan City", "Canlaon City",
+            "Guihulngan City", "Tanjay City"
+        ],
+        "Northern Samar": ["Catarman"],
+        "Nueva Ecija": ["Cabanatuan City", "Palayan City", "Gapan City", "San Jose City", "Science City of Muñoz"],
+        "Nueva Vizcaya": ["Bayombong"],
+        "Occidental Mindoro": ["Mamburao"],
+        "Oriental Mindoro": ["Calapan City"],
+        "Palawan": ["Puerto Princesa City"],
+        "Pampanga": ["Angeles City", "San Fernando City", "Mabalacat City"],
+        "Pangasinan": ["Dagupan City", "San Carlos City", "Alaminos City", "Urdaneta City"],
+        "Quezon": ["Lucena City", "Tayabas City"],
+        "Quirino": ["Cabarroguis"],
+        "Rizal": ["Antipolo City"],
+        "Romblon": ["Romblon"],
+        "Samar": ["Catbalogan City", "Calbayog City"],
+        "Sarangani": ["Alabel"],
+        "Siquijor": ["Siquijor"],
+        "Sorsogon": ["Sorsogon City"],
+        "South Cotabato": ["Koronadal City", "General Santos City"],
+        "Southern Leyte": ["Maasin City"],
+        "Sultan Kudarat": ["Isulan", "Tacurong City"],
+        "Sulu": ["Jolo"],
+        "Surigao del Norte": ["Surigao City"],
+        "Surigao del Sur": ["Tandag City", "Bislig City"],
+        "Tarlac": ["Tarlac City"],
+        "Tawi-Tawi": ["Bongao"],
+        "Zambales": ["Olongapo City"],
+        "Zamboanga del Norte": ["Dipolog City", "Dapitan City"],
+        "Zamboanga del Sur": ["Pagadian City", "Zamboanga City"],
+        "Zamboanga Sibugay": ["Ipil"],
+        "Metro Manila": [
+            "Manila City", "Quezon City", "Caloocan City", "Makati City", "Pasay City",
+            "Pasig City", "Taguig City", "Mandaluyong City", "Marikina City",
+            "Muntinlupa City", "Parañaque City", "Navotas City", "Malabon City",
+            "Valenzuela City", "Las Piñas City", "San Juan City", "Pateros"
+        ]
+        };
+
+        // === CITY → BARANGAYS ===
+        const cityBarangays = {
+        // === Batangas Province ===
+        "Lipa City": [
+            "Anilao", "Bagong Pook", "Balintawak", "Banay-Banay", "Bolbok", "Bulacnin",
+            "Calamias", "Cumba", "Dagatan", "Duhatan", "Halang", "Inosloban", "Latag",
+            "Lodlod", "Marawoy", "Mataas na Lupa", "Poblacion Barangay 1", "Poblacion Barangay 2",
+            "Poblacion Barangay 3", "Poblacion Barangay 4", "Sabang", "Sampaguita", "San Carlos",
+            "San Celestino", "San Francisco", "San Isidro", "San Jose", "San Salvador",
+            "Santo Niño", "Santo Toribio", "Sico", "Tangob", "Tambo", "Tanguay", "Tibig"
+        ],
+        "Batangas City": [
+            "Alangilan", "Bagong Pook", "Balagtas", "Calicanto", "Concepcion", "Kumintang Ibaba",
+            "Kumintang Ilaya", "Libjo", "Pallocan West", "Sampaga", "Sta. Clara", "Sta. Rita",
+            "Alangilan", "Pallocan East", "San Jose Sico", "Santa Rita Aplaya", "Talumpok Silangan"
+        ],
+        "Sto. Tomas City": [
+            "San Roque", "San Pedro", "San Miguel", "San Vicente", "San Rafael", "San Felix",
+            "San Bartolome", "San Francisco", "San Juan", "San Antonio"
+        ],
+
+        // === Laguna Province ===
+        "Calamba City": [
+            "Bañadero", "Banlic", "Barandal", "Bubuyan", "Canlubang", "Halang", "Looc", "Makiling",
+            "Paciano Rizal", "Palingon", "Pansol", "Parian", "Real", "Saimsim", "Sirang Lupa", "Ulango"
+        ],
+
+        // === Cavite Province ===
+        "Dasmariñas City": [
+            "Burol", "Paliparan I", "Paliparan II", "Paliparan III", "Salitran I", "Salitran II", "Salitran III",
+            "Sabang", "San Agustin I", "San Agustin II", "San Agustin III", "San Jose", "Sta. Cristina I",
+            "Sta. Cristina II", "Victoria Reyes", "Zone I", "Zone II", "Zone III", "Zone IV"
+        ],
+
+        // === NCR ===
+        "Quezon City": [
+            "Alicia", "Amihan", "Bagong Pag-asa", "Bagumbayan", "Bagumbuhayan", "Batasan Hills",
+            "Commonwealth", "Diliman", "Don Antonio", "Fairview", "Gulod", "Holy Spirit", "Kalusugan",
+            "Kamuning", "Old Balara", "Payatas", "Project 6", "Socorro", "Tandang Sora", "UP Campus"
+        ],
+        "Manila City": [
+            "Ermita", "Intramuros", "Malate", "Paco", "Pandacan", "Port Area", "Quiapo", "Sampaloc",
+            "San Andres", "San Miguel", "San Nicolas", "Santa Ana", "Santa Cruz", "Santa Mesa",
+            "Tondo I", "Tondo II"
+        ],
+        "Taguig City": [
+            "Bagumbayan", "Bambang", "Calzada", "Central Bicutan", "Central Signal Village",
+            "Hagonoy", "Ibayo-Tipas", "Ligid-Tipas", "Maharlika Village", "Napindan", "North Daang Hari",
+            "Palingon", "Pinagsama", "San Miguel", "Santa Ana", "South Daang Hari", "Upper Bicutan", "Wawa"
+        ],
+        "Makati City": [
+            "Bangkal", "Bel-Air", "Cembo", "Comembo", "Dasmariñas", "East Rembo", "Forbes Park",
+            "Guadalupe Nuevo", "La Paz", "Magallanes", "Olympia", "Palanan", "Pembo", "Pio del Pilar",
+            "Poblacion", "San Antonio", "San Isidro", "San Lorenzo", "Urdaneta Village", "West Rembo"
+        ],
+
+        // === Visayas ===
+        "Cebu City": [
+            "Apas", "Basak Pardo", "Banilad", "Capitol Site", "Guadalupe", "Inayawan", "Lahug", "Luz",
+            "Mabolo", "Pahina Central", "Pardo", "Sambag I", "Sambag II", "Talamban", "Tisa", "Zapatera"
+        ],
+        "Iloilo City": [
+            "Arevalo", "City Proper", "Jaro", "La Paz", "Lapuz", "Mandurriao", "Molo"
+        ],
+        "Bacolod City": [
+            "Alijis", "Banago", "Estefania", "Granada", "Handumanan", "Mandalagan", "Mansilingan",
+            "Singcang-Airport", "Sum-ag", "Tangub", "Villamonte", "Vista Alegre", "Pahanocoy", "Barangay 1", "Barangay 2"
+        ],
+
+        // === Mindanao ===
+        "Davao City": [
+            "Agdao", "Buhangin", "Bunawan", "Calinan", "Marilog", "Talomo", "Toril", "Tugbok", "Paquibato"
+        ],
+        "Zamboanga City": [
+            "Ayala", "Baliwasan", "Calarian", "Divisoria", "Guiwan", "Putik", "Sta. Maria", "Tetuan",
+            "Tugbungan", "Zone I (Pasonanca)", "Tumaga", "San Roque"
+        ],
+        "General Santos City": [
+            "Apopong", "Baluan", "Bula", "Calumpang", "City Heights", "Dadiangas East",
+            "Dadiangas North", "Dadiangas South", "Labangal", "Lagao", "San Isidro", "Tambler"
+        ],
+        "Cagayan de Oro City": [
+            "Balulang", "Bulua", "Carmen", "Gusa", "Iponan", "Kauswagan", "Lapasan",
+            "Lumbia", "Macasandig", "Nazareth", "Patag", "Puntod", "Tignapoloan", "Tumpagon"
+        ]
+        };
+
+        // Helper function to reset and populate a dropdown
+        function populateDropdown(selectElement, items, placeholder) {
+            selectElement.innerHTML = `<option value="">${placeholder}</option>`;
+            items.forEach(item => {
+                const opt = document.createElement("option");
+                opt.value = item;
+                opt.textContent = item;
+                selectElement.appendChild(opt);
+            });
+            selectElement.disabled = items.length === 0;
+        }
+
+        // When region changes
+        regionSelect.addEventListener("change", function () {
+            const provinces = regionProvinces[this.value] || [];
+            populateDropdown(provinceSelect, provinces, "Select Province");
+            populateDropdown(citySelect, [], "Select City / Municipality");
+            populateDropdown(barangaySelect, [], "Select Barangay");
+        });
+
+        // When province changes
+        provinceSelect.addEventListener("change", function () {
+            const cities = provinceCities[this.value] || [];
+            populateDropdown(citySelect, cities, "Select City / Municipality");
+            populateDropdown(barangaySelect, [], "Select Barangay");
+        });
+
+        // When city changes
+        citySelect.addEventListener("change", function () {
+            const barangays = cityBarangays[this.value] || [];
+            populateDropdown(barangaySelect, barangays, "Select Barangay");
+        });
+
+        // Populate Region dropdown on load
+        populateDropdown(regionSelect, Object.keys(regionProvinces), "Select Region");
     });
 </script>
 
