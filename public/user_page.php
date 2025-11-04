@@ -305,8 +305,8 @@
   <div class="nav-container">
     <!-- Left -->
     <div class="nav-logo">
-      <img src="/BatEstateExplorer/assets/images/vector 1.png" alt="BatEstate Explorer Logo" class="nav-logo-img">
-      <span>BatEstate Explorer</span>
+      <img src="/BatEstateExplorer/assets/images/vector 1.png" alt="BatEstateExplorer Logo" class="nav-logo-img">
+      <span>BatEstateExplorer</span>
       <?php if (in_array($current_user_role, ['direct_agent','associate_agent'])): ?>
         <div class="agent-role">(<?= $current_user_role === 'direct_agent' ? 'Direct' : 'Associate' ?>)</div>
       <?php endif; ?>
@@ -478,7 +478,7 @@
   <div class="container scroll-animation">
     <div class="footer-content scroll-animation">
       <div class="footer-section scroll-animation">
-        <h3>BatEstate Explorer</h3>
+        <h3>BatEstateExplorer</h3>
         <p>Your trusted partner in finding the perfect property.</p>
       </div>
       <div class="footer-section scroll-animation">
@@ -497,7 +497,7 @@
       </div>
     </div>
     <div class="footer-bottom scroll-animation">
-      <p>&copy; 2025 BatEstate Explorer. All rights reserved.</p>
+      <p>&copy; 2025 BatEstateExplorer. All rights reserved.</p>
     </div>
   </div>
 </footer>

@@ -20,8 +20,8 @@ $user = $_SESSION['user'] ?? null; // Logged-in user
   <div class="nav-container">
     <!-- Logo / Left -->
     <div class="nav-logo">
-      <img src="/BatEstateExplorer/assets/images/vector 1.png" alt="BatEstate Explorer Logo" class="nav-logo-img">
-      <span>BatEstate Explorer</span>
+      <img src="/BatEstateExplorer/assets/images/vector 1.png" alt="BatEstateExplorer Logo" class="nav-logo-img">
+      <span>BatEstateExplorer</span>
     </div>
 
     <!-- Mobile burger -->
@@ -100,26 +100,18 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="container scroll-animation">
     <div class="footer-content scroll-animation">
       <div class="footer-section scroll-animation">
-        <h3>BatEstate Explorer</h3>
+        <h3>BatEstateExplorer</h3>
         <p>Your trusted partner in finding the perfect property.</p>
       </div>
-      <div class="footer-section scroll-animation">
-        <h4>Quick Links</h4>
-        <ul>
-          <li><a href="#home">Home</a></li>
-          <li><a href="#properties">Properties</a></li>
-          <li><a href="#about">About</a></li>
-          <li><a href="#contact">Contact</a></li>
-        </ul>
-      </div>
+
       <div class="footer-section scroll-animation">
         <h4>Contact Info</h4>
-        <p><i class="fas fa-envelope"></i> info@batestate.com</p>
+        <p><i class="fas fa-envelope"></i> batestate07@gmail.com</p>
         <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
       </div>
     </div>
     <div class="footer-bottom scroll-animation">
-      <p>&copy; <?= date('Y') ?> BatEstate Explorer. All rights reserved.</p>
+      <p>&copy; <?= date('Y') ?> BatEstateExplorer. All rights reserved.</p>
     </div>
   </div>
 </footer>

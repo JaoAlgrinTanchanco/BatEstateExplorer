@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Registration - BatEstate Explorer</title>
+    <title>User Registration - BatEstateExplorer</title>
     <link rel="stylesheet" href="../assets/css/signup.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -27,7 +27,7 @@
         </a>
         
         <h1 class="stagger-item"><i class="fas fa-user-plus"></i> Create Your Account</h1>
-        <p class="stagger-item">Join thousands of users who found their dream properties with BatEstate Explorer.</p>
+        <p class="stagger-item">Join thousands of users who found their dream properties with BatEstateExplorer.</p>
         
         <form id="signupForm" action="../auth/signup_user.php" method="POST" enctype="multipart/form-data" autocomplete="on">
             <!-- Profile Picture Upload -->

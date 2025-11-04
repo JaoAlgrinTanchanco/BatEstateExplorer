@@ -89,9 +89,8 @@ if ($action === 'approve') {
     } else {
         $response = ['success' => false, 'error' => 'Agent not found for this property'];
     }
-
 } elseif ($action === 'reject') {
-    // Mark property as rejected
+    // --- 1) Find agent linked to this property ---
     $stmt = $conn->prepare("SELECT agent_id FROM properties WHERE id = ? LIMIT 1");
     $stmt->bind_param("i", $property_id);
     $stmt->execute();
@@ -107,48 +106,71 @@ if ($action === 'approve') {
         exit;
     }
 
-    // Update property status
+    // --- 2) Get the most recent Listing Fee amount for this agent ---
+    $stmt = $conn->prepare("
+        SELECT amount
+        FROM transactions
+        WHERE user_id = ?
+          AND property LIKE 'Listing Fee%'
+          AND status = 'completed'
+        ORDER BY created_at DESC
+        LIMIT 1
+    ");
+    $stmt->bind_param("i", $agent_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $listing_fee = null;
+
+    if ($row = $res->fetch_assoc()) {
+        $listing_fee = floatval($row['amount']);
+    }
+    $stmt->close();
+
+    if (!$listing_fee) {
+        echo json_encode(['success' => false, 'error' => 'No matching listing fee found for this agent']);
+        exit;
+    }
+
+    // --- 3) Update property status ---
     $stmt = $conn->prepare("UPDATE properties SET status = 'rejected' WHERE id = ?");
     $stmt->bind_param("i", $property_id);
     $stmt->execute();
     $stmt->close();
 
-    // Start transaction
+    // --- 4) Perform refund transaction ---
     $conn->begin_transaction();
 
     try {
-        $deductAmount = 20.00;                 // system "fee"
-        $agentAmount  = $deductAmount * 0.98;  // ₱19.60 to agent
-        $profit       = $deductAmount - $agentAmount; // ₱0.40 profit for admin
+        $refundAmount = $listing_fee; // dynamic refund value
 
-        // Deduct only ₱19.60 from admin balance (not full ₱20)
+        // Deduct from admin
         $stmt = $conn->prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?");
-        $stmt->bind_param("di", $agentAmount, $current_user['id']);
+        $stmt->bind_param("di", $refundAmount, $current_user['id']);
         $stmt->execute();
         $stmt->close();
 
-        // Add ₱19.60 to agent balance
+        // Credit to agent
         $stmt = $conn->prepare("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?");
-        $stmt->bind_param("di", $agentAmount, $agent_id);
+        $stmt->bind_param("di", $refundAmount, $agent_id);
         $stmt->execute();
         $stmt->close();
 
-        // Insert transaction for admin (-19.60 instead of -20)
+        // Record transaction for admin
         $stmt = $conn->prepare("
             INSERT INTO transactions (user_id, property, amount, status, method)
-            VALUES (?, 'Reject Fee Deduction', ?, 'completed', 'system')
+            VALUES (?, CONCAT('Refund Issued: Property #', ?), ?, 'completed', 'system')
         ");
-        $negAmount = -$agentAmount; // -19.60
-        $stmt->bind_param("id", $current_user['id'], $negAmount);
+        $negAmount = -$refundAmount;
+        $stmt->bind_param("iid", $current_user['id'], $property_id, $negAmount);
         $stmt->execute();
         $stmt->close();
 
-        // Insert transaction for agent (+19.60)
+        // Record transaction for agent
         $stmt = $conn->prepare("
             INSERT INTO transactions (user_id, property, amount, status, method)
-            VALUES (?, 'Reject Fee Credit', ?, 'completed', 'system')
+            VALUES (?, CONCAT('Refund Received: Property #', ?), ?, 'completed', 'system')
         ");
-        $stmt->bind_param("id", $agent_id, $agentAmount);
+        $stmt->bind_param("iid", $agent_id, $property_id, $refundAmount);
         $stmt->execute();
         $stmt->close();
 
@@ -156,7 +178,7 @@ if ($action === 'approve') {
 
         $response = [
             'success' => true,
-            'message' => "Property rejected. ₱{$agentAmount} credited to agent."
+            'message' => "Property rejected. ₱" . number_format($refundAmount, 2) . " refunded to agent."
         ];
 
     } catch (Exception $e) {

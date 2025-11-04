@@ -27,7 +27,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/BatEstateExplorer/database/cleanup_ac
       <div class="sidebar">
         <div class="sidebar-header">
           <img src="/BatEstateExplorer/assets/images/Vector 1.png" alt="BatEstate Logo" class="sidebar-logo" />
-          <h2>BatEstate Explorer</h2>
+          <h2>BatEstateExplorer</h2>
         </div>
 
         <nav class="sidebar-nav">

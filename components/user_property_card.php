@@ -231,44 +231,53 @@
         </div>
       </div>
 
-      <!-- More Properties by this Agent -->
-      <div class="agent-other-properties">
-        <h3>More from this Agent</h3>
-        <div class="agent-properties-list">
-          <?php
-            if ($listedAgentId) {
-              $stmtOther = $conn->prepare("
-                SELECT p.id, p.title, COALESCE(pi.image_path, '') AS image_path
-                FROM properties p
-                LEFT JOIN property_images pi ON p.id = pi.property_id
-                WHERE p.listed_by_agent_id = ?
-                GROUP BY p.id
-                ORDER BY p.created_at DESC
-                LIMIT 6
-              ");
-              $stmtOther->bind_param("i", $listedAgentId);
-              $stmtOther->execute();
-              $resOther = $stmtOther->get_result();
+      <!-- Related Properties -->
+      <div class="related-properties">
+          <h3>Related Properties</h3>
+          <div class="related-properties-list">
+              <?php
+              if (!empty($property['property_type'])) {
+                  $propertyType = $property['property_type'];
+                  $currentPropertyId = (int)$property['id'];
 
-              if ($resOther->num_rows > 0):
-                while ($p = $resOther->fetch_assoc()):
-                  $img = !empty($p['image_path'])
-                    ? '/' . ltrim($p['image_path'], '/')
-                    : '/BatEstateExplorer/assets/default-property.jpg';
-          ?>
-                  <div class="agent-property-card" data-property-id="<?= (int)$p['id'] ?>">
-                    <img src="<?= htmlspecialchars($img) ?>" alt="Property Image">
-                    <span class="property-title"><?= htmlspecialchars($p['title']) ?></span>
-                  </div>
-          <?php
-                endwhile;
-              else:
-                echo "<p style='font-size:0.9rem;color:#666;'>No listings yet.</p>";
-              endif;
-              $stmtOther->close();
-            }
-          ?>
-        </div>
+                  // Fetch related properties from any agent with same property_type
+                  $stmtRelated = $conn->prepare("
+                      SELECT p.id, p.title, COALESCE(pi.image_path, '') AS image_path
+                      FROM properties p
+                      LEFT JOIN property_images pi ON p.id = pi.property_id
+                      JOIN agents a ON a.id = p.listed_by_agent_id
+                      JOIN users u ON u.id = a.user_id AND u.user_type IN ('direct_agent','associate_agent')
+                      WHERE p.property_type = ? 
+                        AND p.id != ?
+                        AND p.status IN ('available','ongoing_inquiry','sold')
+                      GROUP BY p.id
+                      ORDER BY p.created_at DESC
+                      LIMIT 6
+                  ");
+                  $stmtRelated->bind_param("si", $propertyType, $currentPropertyId);
+                  $stmtRelated->execute();
+                  $resRelated = $stmtRelated->get_result();
+
+                  if ($resRelated->num_rows > 0):
+                      while ($p = $resRelated->fetch_assoc()):
+                          $img = !empty($p['image_path'])
+                              ? '/' . ltrim($p['image_path'], '/')
+                              : '/BatEstateExplorer/assets/default-property.jpg';
+              ?>
+                          <div class="related-property-card" data-property-id="<?= (int)$p['id'] ?>">
+                              <img src="<?= htmlspecialchars($img) ?>" alt="Property Image">
+                              <span class="property-title"><?= htmlspecialchars($p['title']) ?></span>
+                          </div>
+              <?php
+                      endwhile;
+                  else:
+                      echo "<p style='font-size:0.9rem;color:#666;'>No related properties found.</p>";
+                  endif;
+
+                  $stmtRelated->close();
+              }
+              ?>
+          </div>
       </div>
 
       <!-- Report Listing Button -->

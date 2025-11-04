@@ -251,7 +251,7 @@
                     <!-- Sidebar Nav -->
                     <nav class="sidebar-nav">
                         <ul>
-                            <li><a href="/BatEstateExplorer/public/agent_page.php?agent_id=<?= $_SESSION['user_id'] ?>" target="_blank"><i class="fa-solid fa-eye"></i><span>View As</span></a></li>
+                            <li><a href="/BatEstateExplorer/public/agent_page.php?agent_id=<?= htmlspecialchars($agent_id) ?>" target="_blank"><i class="fa-solid fa-eye"></i><span>View As</span></a></li>
                             <li><a href="?view=associate_profile&tab=overview" class="<?= ($tab === 'overview') ? 'active' : '' ?>"><i class="fa-solid fa-user"></i><span>Overview</span></a></li>
                             <li><a href="?view=associate_profile&tab=my_listings" class="<?= ($tab === 'my_listings') ? 'active' : '' ?>"><i class="fa-solid fa-building"></i><span>My Listings</span></a></li>
                             <li><a href="?view=associate_profile&tab=add_listing" class="<?= ($tab === 'add_listing') ? 'active' : '' ?>"><i class="fa-solid fa-circle-plus"></i><span>Add Listing</span></a></li>

@@ -96,7 +96,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BatEstate Explorer - Find Your Dream Property</title>
+    <title>BatEstateExplorer - Find Your Dream Property</title>
     <link rel="stylesheet" href="assets/css/hero.css">
     <link rel="stylesheet" href="assets/css/property_card.css">
     <link rel="stylesheet" href="assets/css/notification.css">
@@ -113,8 +113,8 @@
     <nav class="navbar scroll-animation">
         <div class="nav-container">
             <div class="nav-logo">
-                <img src="assets/images/vector 1.png" alt="BatEstate Explorer Logo" class="nav-logo-img">
-                <span>BatEstate Explorer</span>
+                <img src="assets/images/vector 1.png" alt="BatEstateExplorer Logo" class="nav-logo-img">
+                <span>BatEstateExplorer</span>
             </div>
 
             <div class="nav-menu scroll-animation">
@@ -190,7 +190,7 @@
     <!-- Features Section -->
     <section id="features" class="features scroll-animation">
         <div class="container scroll-animation">
-            <h2 class="section-title scroll-animation">Why Choose BatEstate Explorer?</h2>
+            <h2 class="section-title scroll-animation">Why Choose BatEstateExplorer?</h2>
             <div class="features-grid">
                 <div class="feature-card scroll-animation">
                     <div class="feature-icon"><i class="fas fa-search"></i></div>
@@ -216,7 +216,7 @@
         <div class="container scroll-animation">
             <div class="about-content scroll-animation">
                 <div class="about-text scroll-animation">
-                    <h2 class="section-title scroll-animation">About BatEstate Explorer</h2>
+                    <h2 class="section-title scroll-animation">About BatEstateExplorer</h2>
                     <p>We are a leading real estate platform dedicated to connecting buyers, sellers, and agents in a seamless and trustworthy environment...</p>
                     <p>With years of experience in the real estate industry, we understand the importance of finding the perfect property...</p>
                     <div class="about-stats">
@@ -235,7 +235,7 @@
                     </div>
                 </div>
                 <div class="about-image scroll-animation">
-                    <img src="assets/images/dd.jpeg" alt="About BatEstate Explorer">
+                    <img src="assets/images/dd.jpeg" alt="About BatEstateExplorer">
                 </div>
             </div>
         </div>
@@ -314,7 +314,7 @@
         <div class="container scroll-animation">
             <div class="footer-content scroll-animation">
                 <div class="footer-section scroll-animation">
-                    <h3>BatEstate Explorer</h3>
+                    <h3>BatEstateExplorer</h3>
                     <p>Your trusted partner in finding the perfect property.</p>
                 </div>
                 <div class="footer-section scroll-animation">
@@ -333,7 +333,7 @@
                 </div>
             </div>
             <div class="footer-bottom scroll-animation">
-                <p>&copy; 2025 BatEstate Explorer. All rights reserved.</p>
+                <p>&copy; 2025 BatEstateExplorer. All rights reserved.</p>
             </div>
         </div>
     </footer>

@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
   <div class="container">
-    <h1>Create a local password for BatEstate Explorer</h1>
+    <h1>Create a local password for BatEstateExplorer</h1>
     <p>You're signed in as <strong><?php echo htmlspecialchars($email); ?></strong></p>
 
     <?php if (!empty($errors)): ?>

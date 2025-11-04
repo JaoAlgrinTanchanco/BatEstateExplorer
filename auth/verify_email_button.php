@@ -60,7 +60,7 @@ $stmt->execute([$token]);
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Email Verified - BatEstate Explorer</title>
+  <title>Email Verified - BatEstateExplorer</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Merriweather:wght@700&display=swap');
     

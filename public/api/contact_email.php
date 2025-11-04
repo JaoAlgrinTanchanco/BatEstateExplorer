@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p><strong>Email:</strong> $email</p>
             <p><strong>Message:</strong><br>".nl2br(htmlspecialchars($message))."</p>
             <p style='margin-top: 20px; font-size: 0.9rem; color: #555;'>
-                This message was sent via the BatEstate Explorer website contact form.
+                This message was sent via the BatEstateExplorer website contact form.
             </p>
         </div>
         ";

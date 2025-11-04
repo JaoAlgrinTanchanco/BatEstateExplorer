@@ -164,7 +164,7 @@
     <div class="login-container">
         <div class="header">
             <img src="../assets/images/Vector 1.png" alt="BatEstate Logo" class="logo">
-            <h1>BatEstate Explorer</h1>
+            <h1>BatEstateExplorer</h1>
             <p>Welcome Back</p>
         </div>
 

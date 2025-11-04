@@ -65,11 +65,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mail->SMTPSecure = 'tls';
         $mail->Port       = 587;
 
-        $mail->setFrom('batestate07@gmail.com', 'BatEstate Explorer');
+        $mail->setFrom('batestate07@gmail.com', 'BatEstateExplorer');
         $mail->addAddress($email);
         $mail->isHTML(true);
         $mail->CharSet = 'UTF-8';
-        $mail->Subject = 'Email Verification - BatEstate Explorer';
+        $mail->Subject = 'Email Verification - BatEstateExplorer';
 
         $mail->addEmbeddedImage(
             'C:/xampp/htdocs/BatEstateExplorer/assets/images/Vector 1.png',
@@ -84,14 +84,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <tr>
             <td style="text-align:center; padding-bottom:20px;">
                 <img src="cid:batestate_logo" alt="BatEstate Logo" style="max-width:120px; margin-bottom:15px;">
-                <h2 style="color:#111; margin:0;">BatEstate Explorer</h2>
+                <h2 style="color:#111; margin:0;">BatEstateExplorer</h2>
                 <p style="color:#555; font-size:14px; margin-top:5px;">Email Verification</p>
             </td>
             </tr>
             <tr>
             <td style="font-size:15px; color:#333; line-height:1.6;">
                 <p>Hello <b>' . htmlspecialchars($firstName) . '</b>,</p>
-                <p>Welcome to <b>BatEstate Explorer</b>! Please verify your email address to complete your registration and activate your account.</p>
+                <p>Welcome to <b>BatEstateExplorer</b>! Please verify your email address to complete your registration and activate your account.</p>
                 <div style="text-align:center; margin:30px 0;">
                 <a href="' . $verifyUrl . '" 
                     style="display:inline-block; font-size:16px; font-weight:600; color:#fff; background:#007bff; padding:14px 28px; border-radius:8px; text-decoration:none;">

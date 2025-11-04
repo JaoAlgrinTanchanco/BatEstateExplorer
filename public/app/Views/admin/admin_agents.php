@@ -147,7 +147,6 @@
 
                             <div class="direct-agent-actions agent-actions">
                                 <button class="btn btn-view">Details</button>
-                                <button class="btn btn-remove" data-agent-id="<?= $agent['id']; ?>">Remove</button>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -200,7 +199,6 @@
 
                             <div class="direct-agent-actions agent-actions">
                                 <button class="btn btn-view">Details</button>
-                                <button class="btn btn-remove" data-agent-id="<?= $agent['id']; ?>">Remove</button>
                             </div>
                         </div>
                     <?php endforeach; ?>

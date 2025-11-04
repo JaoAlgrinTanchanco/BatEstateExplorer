@@ -107,8 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!propertyType || !bedrooms || !bathrooms) return;
 
+    // Define property types that should disable bedrooms and bathrooms
+    const noBedBathTypes = ['Lot Only', 'Farm Lot', 'Industrial Lot'];
+
     const toggleBedroomsBathrooms = () => {
-        if (propertyType.value === 'Lot') {
+        if (noBedBathTypes.includes(propertyType.value)) {
             bedrooms.value = '';
             bathrooms.value = '';
             bedrooms.disabled = true;
@@ -119,10 +122,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Initial check
+    // Run on page load
     toggleBedroomsBathrooms();
 
-    // Listen for changes
+    // Run whenever property type changes
     propertyType.addEventListener('change', toggleBedroomsBathrooms);
 
   // -------------------------

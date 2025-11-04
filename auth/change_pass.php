@@ -57,12 +57,12 @@ function send_otp($email, $otp) {
         $mail->SMTPSecure = 'tls';
         $mail->Port       = 587;
 
-        $mail->setFrom('batestate07@gmail.com', 'BatEstate Explorer');
+        $mail->setFrom('batestate07@gmail.com', 'BatEstateExplorer');
         $mail->addAddress($email);
         $mail->isHTML(true);
         $mail->CharSet = 'UTF-8'; // for emoji & special chars
         $mail->Encoding = 'base64';
-        $mail->Subject = 'Password Reset OTP - BatEstate Explorer';
+        $mail->Subject = 'Password Reset OTP - BatEstateExplorer';
 
         // Embed your local logo
         $mail->addEmbeddedImage(

@@ -171,20 +171,21 @@
     transform: translateY(-2px);
 }
 
-.agent-other-properties {
+/* Related Properties Section */
+.related-properties {
   margin-top: 1.5rem;
   border-top: 1px solid #e5e7eb;
   padding-top: 1rem;
 }
 
-.agent-other-properties h3 {
-  font-size: 1.1rem;
+.related-properties h3 {
+  font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: 0.75rem;
   color: #222;
 }
 
-.agent-properties-list {
+.related-properties-list {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -193,7 +194,7 @@
   padding-right: 4px;
 }
 
-.agent-property-card {
+.related-property-card {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -205,19 +206,19 @@
   transition: background 0.2s ease, transform 0.1s ease;
 }
 
-.agent-property-card:hover {
+.related-property-card:hover {
   background-color: #f0f0f0;
   transform: translateY(-1px);
 }
 
-.agent-property-card img {
+.related-property-card img {
   width: 60px;
   height: 45px;
   object-fit: cover;
   border-radius: 6px;
 }
 
-.agent-property-card .property-title {
+.related-property-card .property-title {
   flex: 1;
   font-weight: 500;
   font-size: 0.9rem;
@@ -232,6 +233,7 @@
   overflow: hidden;
   border-radius: 12px; /* optional, matches modal card style */
 }
+
 
 .sold-overlay, .ongoing-overlay {
   position: absolute;

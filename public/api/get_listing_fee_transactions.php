@@ -11,10 +11,10 @@ if (!isset($_SESSION['user_id'])) {
 
 try {
     $stmt = $conn->prepare("
-        SELECT t.amount, t.created_at, u.first_name, u.last_name
+        SELECT t.property, t.amount, t.created_at, u.first_name, u.last_name
         FROM transactions t
         JOIN users u ON t.user_id = u.id
-        WHERE t.property = 'Listing Fee'
+        WHERE t.property LIKE 'Listing Fee%' 
         ORDER BY t.created_at DESC
         LIMIT 50
     ");
@@ -25,8 +25,9 @@ try {
     while ($row = $res->fetch_assoc()) {
         $transactions[] = [
             'agent_name' => $row['first_name'] . ' ' . $row['last_name'],
-            'amount' => $row['amount'],
-            'datetime' => date('d/m • h:i A', strtotime($row['created_at']))
+            'property'   => $row['property'],
+            'amount'     => $row['amount'],
+            'datetime'   => date('d/m • h:i A', strtotime($row['created_at']))
         ];
     }
     $stmt->close();

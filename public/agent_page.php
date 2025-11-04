@@ -60,18 +60,26 @@
       if (file_exists($image_path)) $agent_image = '/BatEstateExplorer/storage/uploads/profile_images/' . basename($agent['profile_image_path']);
   }
 
-  // --- Fetch Agent's Properties (available or ongoing_inquiry) ---
+  // --- Fetch Only Agent's Properties That Have Reviews ---
   $properties = [];
+
   $stmt = $conn->prepare("
-      SELECT * FROM properties 
-      WHERE listed_by_agent_id = ? AND status IN ('available','ongoing_inquiry','sold')
-      ORDER BY created_at DESC
+      SELECT 
+          p.*, 
+          ROUND(AVG(r.rating), 1) AS avg_rating, 
+          COUNT(r.id) AS total_reviews
+      FROM properties p
+      INNER JOIN property_reviews r 
+          ON p.id = r.property_id
+      WHERE p.listed_by_agent_id = ?
+        AND p.status IN ('available', 'ongoing_inquiry', 'sold')
+      GROUP BY p.id
+      ORDER BY p.created_at DESC
   ");
-  // FIX: Using listed_by_agent_id to correctly show only properties originally 
-  // posted by the agent, based on the $agent_id (agents.id) from the URL.
-  $stmt->bind_param("i", $agent_id); 
+  $stmt->bind_param("i", $agent_id);
   $stmt->execute();
   $result = $stmt->get_result();
+
   while ($row = $result->fetch_assoc()) {
       $row['images'] = !empty($row['images']) ? json_decode($row['images'], true) : [];
       $properties[] = $row;
@@ -351,8 +359,8 @@
   <div class="nav-container">
     <!-- Left -->
     <div class="nav-logo">
-      <img src="/BatEstateExplorer/assets/images/vector 1.png" alt="BatEstate Explorer Logo" class="nav-logo-img">
-      <span>BatEstate Explorer</span>
+      <img src="/BatEstateExplorer/assets/images/vector 1.png" alt="BatEstateExplorer Logo" class="nav-logo-img">
+      <span>BatEstateExplorer</span>
       <?php if (in_array($current_user_role, ['direct_agent','associate_agent'])): ?>
         <div class="agent-role">(<?= $current_user_role === 'direct_agent' ? 'Direct' : 'Associate' ?>)</div>
       <?php endif; ?>
@@ -573,7 +581,7 @@
   <div class="container scroll-animation">
     <div class="footer-content scroll-animation">
       <div class="footer-section scroll-animation">
-        <h3>BatEstate Explorer</h3>
+        <h3>BatEstateExplorer</h3>
         <p>Your trusted partner in finding the perfect property.</p>
       </div>
       <div class="footer-section scroll-animation">
@@ -592,7 +600,7 @@
       </div>
     </div>
     <div class="footer-bottom scroll-animation">
-      <p>&copy; 2025 BatEstate Explorer. All rights reserved.</p>
+      <p>&copy; 2025 BatEstateExplorer. All rights reserved.</p>
     </div>
   </div>
 </footer>
