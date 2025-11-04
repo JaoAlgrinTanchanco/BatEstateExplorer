@@ -332,9 +332,95 @@
         </div>
 
         <div class="form-group">
-            <button type="submit" class="submit-btn"><i class="fas fa-paper-plane"></i> Submit Application</button>
+            <button type="button" id="openTermsModal" class="submit-btn">
+                <i class="fas fa-paper-plane"></i> Submit Application
+            </button>
         </div>
     </form>
+</div>
+
+<!-- Terms & Conditions Modal -->
+<div id="termsModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Terms and Conditions</h2>
+        <div class="terms-text" style="max-height:400px; overflow-y:auto; padding: 0.5rem 0;">
+            <p><strong>BatEstateExplorer:</strong> A Web-Based System for Property and Lot Inquiry in the Province of Batangas</p>
+            <p><strong>Last Updated:</strong> October 2025</p>
+            <p>Welcome to BatEstateExplorer. These Terms and Conditions (“Terms”) govern your access to and use of our website and services. By accessing or using BatEstateExplorer, you agree to comply with and be bound by these Terms. If you do not agree, you may not use the system.</p>
+
+            <h3>1. Purpose of the System</h3>
+            <p>BatEstateExplorer is an online platform designed to help users search, view, and inquire about available properties and lots within the province of Batangas. The system provides property listings, search filters, and a messaging feature for communication between users and property owners or agents.</p>
+
+            <h3>2. User Accounts</h3>
+            <ul>
+                <li>To access certain features, users are required to create an account.</li>
+                <li>Users must provide accurate and complete information during registration.</li>
+                <li>Users are responsible for maintaining the confidentiality of their account credentials and all activities under their account.</li>
+                <li>BatEstateExplorer reserves the right to suspend or terminate any account that provides false information or violates these Terms.</li>
+            </ul>
+
+            <h3>3. Use of the System</h3>
+            <ul>
+                <li>Use BatEstateExplorer solely for lawful purposes related to property and lot inquiries.</li>
+                <li>Avoid posting or transmitting false, misleading, or unauthorized content.</li>
+                <li>Refrain from attempting unauthorized access to the system, its database, or other users’ accounts.</li>
+                <li>Any misuse of the platform may result in account suspension or permanent ban.</li>
+            </ul>
+
+            <h3>4. Property Listings</h3>
+            <ul>
+                <li>Property listings are provided by property owners, agents, or authorized representatives.</li>
+                <li>BatEstateExplorer does not own, sell, or lease any of the properties listed on the platform.</li>
+                <li>The system serves only as an intermediary between property listers and interested inquirers.</li>
+                <li>Any documents submitted by registered agents or property owners will not be publicly posted and are for verification only.</li>
+                <li>The platform is not responsible for inaccuracies, omissions, or changes in property details provided by listers.</li>
+            </ul>
+
+            <h3>5. Messaging Feature</h3>
+            <ul>
+                <li>Users must use polite and respectful language.</li>
+                <li>Avoid sharing personal, financial, or sensitive information outside the platform.</li>
+                <li>Refrain from sending spam or unsolicited messages.</li>
+                <li>BatEstateExplorer reserves the right to monitor messages for safety and compliance.</li>
+            </ul>
+
+            <h3>6. Privacy, Data Protection, and Agent Registration</h3>
+            <ul>
+                <li>Personal data collected will be handled in accordance with the Data Privacy Act of 2012 (RA 10173).</li>
+                <li>Information like name, email, and contact details will only be used to facilitate property inquiries and system functionality.</li>
+                <li>Direct and associate agents must register and submit valid ID and supporting documents to verify legitimacy.</li>
+                <li>Documents submitted are for verification only and will not be publicly posted.</li>
+                <li>The system admins reserve the right to review and validate all documents before agents can post/manage listings.</li>
+            </ul>
+
+            <h3>7. Intellectual Property Rights</h3>
+            <p>All system content—including logos, design, interface, layout, and system features—is the intellectual property of BatEstateExplorer and its developers. Unauthorized copying, reproduction, modification, or distribution is strictly prohibited.</p>
+
+            <h3>8. Limitation of Liability</h3>
+            <ul>
+                <li>BatEstateExplorer and its developers are not liable for inaccuracies in property listings provided by third parties.</li>
+                <li>Not responsible for any loss, damage, or misunderstanding from user interactions or transactions outside the platform.</li>
+                <li>Not responsible for technical issues or downtime affecting system accessibility.</li>
+            </ul>
+
+            <h3>9. Amendments</h3>
+            <p>BatEstateExplorer reserves the right to update or modify these Terms at any time. Any changes will be posted within the system. Continued use implies acceptance of updated Terms.</p>
+
+            <h3>10. Contact Information</h3>
+            <p>For questions, feedback, or concerns, contact system administrators via the Help & Support section.</p>
+
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <input type="checkbox" id="agreeTermsModal">
+            <label for="agreeTermsModal">I agree to the Terms and Conditions</label>
+        </div>
+
+        <button type="button" id="proceedBtn" class="submit-btn" disabled style="margin-top: 1rem;">
+            Proceed
+        </button>
+    </div>
 </div>
 
 <!-- AJAX Notification Container -->
@@ -357,20 +443,15 @@
         const profileInput = document.getElementById('profile_picture');
         const profilePreview = document.getElementById('profilePicPreview');
 
+        const openModalBtn = document.getElementById('openTermsModal');
+        const termsModal = document.getElementById('termsModal');
+        const closeModal = termsModal.querySelector('.close-modal');
+        const agreeCheckbox = document.getElementById('agreeTermsModal');
+        const proceedBtn = document.getElementById('proceedBtn');
+
         let selectedTags = [];
 
-        // === SPECIALIZATION TAG LOGIC ===
-        specializationSelect.addEventListener('change', () => {
-            const value = specializationSelect.value;
-            if (!value || selectedTags.includes(value)) {
-                specializationSelect.selectedIndex = 0;
-                return;
-            }
-            selectedTags.push(value);
-            renderTags();
-            specializationSelect.selectedIndex = 0;
-        });
-
+        // ================= SPECIALIZATION TAG LOGIC =================
         function renderTags() {
             tagsContainer.innerHTML = '';
             selectedTags.forEach(tagValue => {
@@ -385,64 +466,59 @@
             hiddenInput.value = selectedTags.join(', ');
         }
 
-        // === SELECT / DESELECT ALL SPECIALIZATIONS BUTTON ===
+        specializationSelect.addEventListener('change', () => {
+            const value = specializationSelect.value;
+            if (!value || selectedTags.includes(value)) {
+                specializationSelect.selectedIndex = 0;
+                return;
+            }
+            selectedTags.push(value);
+            renderTags();
+            specializationSelect.selectedIndex = 0;
+        });
+
+        tagsContainer.addEventListener('click', e => {
+            if (e.target.classList.contains('remove-tag')) {
+                selectedTags = selectedTags.filter(v => v !== e.target.dataset.value);
+                renderTags();
+            }
+        });
+
         const selectAllBtn = document.getElementById('selectAllSpecializations');
         if (selectAllBtn) {
             selectAllBtn.addEventListener('click', () => {
                 const allOptions = Array.from(specializationSelect.options)
                     .map(opt => opt.value)
-                    .filter(v => v && v !== '' && v !== 'Others'); // skip placeholder and "Others"
+                    .filter(v => v && v !== '' && v !== 'Others');
 
-                const isSelectingAll = selectAllBtn.textContent.trim().toLowerCase() === 'select all';
-
-                if (isSelectingAll) {
-                    // Select all specializations
+                if (selectAllBtn.textContent.trim().toLowerCase() === 'select all') {
                     selectedTags = [...new Set([...selectedTags, ...allOptions])];
                     selectAllBtn.textContent = 'Deselect All';
                 } else {
-                    // Deselect all
                     selectedTags = [];
                     selectAllBtn.textContent = 'Select All';
                 }
-
                 renderTags();
             });
         }
 
-        tagsContainer.addEventListener('click', e => {
-            if (e.target.classList.contains('remove-tag')) {
-                const value = e.target.dataset.value;
-                selectedTags = selectedTags.filter(v => v !== value);
-                renderTags();
-            }
-        });
-
-        // === FILE GROUPS (for easier toggle) ===
+        // ================= DYNAMIC DOCUMENT FIELDS =================
         const docInputs = {
             associate: ['broker_license', 'prc_license', 'resume', 'valid_id'],
             direct: ['valid_id', 'property_location', 'property_image', 'property_document']
         };
 
-        // Create new Direct Agent document inputs dynamically
-        const newDirectDocs = [
-            { id: 'property_location', label: 'Property Location *' },
-            { id: 'property_image', label: 'At least One Property Image *' },
-            { id: 'property_document', label: 'Property Document *' }
+        const locations = [
+            "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
+            "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
+            "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
+            "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
         ];
 
         function ensureDirectDocFields() {
-            const locations = [
-                "Agoncillo","Alitagtag","Balayan","Balete","Batangas City","Bauan","Calaca","Calatagan","Cuenca",
-                "Ibaan","Laurel","Lemery","Lian","Lipa City","Lobo","Mabini","Malvar","Mataasnakahoy","Nasugbu",
-                "Padre Garcia","Rosario","San Jose","San Juan","San Luis","San Nicolas","San Pascual",
-                "Santa Teresita","Santo Tomas","Taal","Talisay","Tanauan City","Taysan","Tingloy","Tuy"
-            ];
-
-            // Broker/PRC/Resume/Valid ID already exist above
-            const directDocFields = [
+            const directFields = [
                 {
-                    id: "property_location",
-                    label: "Property Location *",
+                    id: 'property_location',
                     html: `
                         <label for="property_location"><strong>Property Location *</strong></label>
                         <select id="property_location" name="documents[property_location]" required>
@@ -452,20 +528,22 @@
                     `
                 },
                 {
-                    id: "property_image",
-                    label: "At least One Property Image *",
-                    html: `<label for="property_image">At least One Property Image *</label>
-                        <input type="file" id="property_image" name="documents[property_image]" accept=".jpg,.jpeg,.png" required>`
+                    id: 'property_image',
+                    html: `
+                        <label for="property_image">At least One Property Image *</label>
+                        <input type="file" id="property_image" name="documents[property_image]" accept=".jpg,.jpeg,.png" required>
+                    `
                 },
                 {
-                    id: "property_document",
-                    label: "Property Document *",
-                    html: `<label for="property_document">Property Document *</label>
-                        <input type="file" id="property_document" name="documents[property_document]" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" required>`
+                    id: 'property_document',
+                    html: `
+                        <label for="property_document">Property Document *</label>
+                        <input type="file" id="property_document" name="documents[property_document]" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" required>
+                    `
                 }
             ];
 
-            directDocFields.forEach(doc => {
+            directFields.forEach(doc => {
                 if (!document.getElementById(doc.id)) {
                     const wrapper = document.createElement('div');
                     wrapper.className = 'form-group';
@@ -476,73 +554,50 @@
         }
         ensureDirectDocFields();
 
-        // === TOGGLE FIELDS BASED ON AGENT TYPE ===
         function toggleFields() {
             const type = userType.value;
 
-            // Always show the section if either type selected
             docsSection.style.display = type ? 'block' : 'none';
-            companyField.style.display = (type === 'associate_agent') ? 'block' : 'none';
-            companySelect.required = (type === 'associate_agent');
+            companyField.style.display = type === 'associate_agent' ? 'block' : 'none';
+            companySelect.required = type === 'associate_agent';
 
-            // Hide all groups and remove required from everything first
             docsSection.querySelectorAll('.form-group').forEach(g => {
                 g.style.display = 'none';
                 const input = g.querySelector('input, select, textarea');
                 if (input) input.removeAttribute('required');
             });
 
-            if (type === 'associate_agent') {
-                // Show Associate documents
-                docInputs.associate.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        el.closest('.form-group').style.display = 'block';
-                        el.setAttribute('required', 'required');
-                    }
-                });
-            } 
-            else if (type === 'direct_agent') {
-                // Show Direct documents
-                docInputs.direct.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        el.closest('.form-group').style.display = 'block';
-                        el.setAttribute('required', 'required');
-                    }
-                });
-            }
-
-            // If nothing selected, hide section entirely
-            if (!type) {
-                docsSection.style.display = 'none';
-            }
+            const currentGroup = type === 'associate_agent' ? docInputs.associate :
+                                type === 'direct_agent' ? docInputs.direct : [];
+            currentGroup.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.closest('.form-group').style.display = 'block';
+                    el.setAttribute('required', 'required');
+                }
+            });
         }
-
         toggleFields();
         userType.addEventListener('change', toggleFields);
 
-        // === PROFILE PICTURE PREVIEW ===
+        // ================= PROFILE PICTURE PREVIEW =================
         profilePreview.addEventListener('click', () => profileInput.click());
-
-        profileInput.addEventListener('change', (e) => {
+        profileInput.addEventListener('change', e => {
             const file = e.target.files[0];
             if (!file) {
                 profilePreview.innerHTML = '<span class="upload-text">Upload Here</span>';
                 return;
             }
-
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = event => {
                 profilePreview.innerHTML = `<img src="${event.target.result}" alt="Profile Picture">`;
             };
             reader.readAsDataURL(file);
         });
 
-        // === NOTIFICATION HELPER ===
-        window.showAjaxNotification = (message, type = 'success') => {
+        // ================= NOTIFICATION HELPER =================
+        function showAjaxNotification(message, type = 'success') {
             if (!ajaxContainer) return;
-
             const notif = document.createElement('div');
             notif.className = `notification ${type}`;
             notif.innerHTML = `
@@ -551,12 +606,11 @@
                 <div class="notification__close" aria-label="Close">&times;</div>
             `;
             ajaxContainer.appendChild(notif);
-
             setTimeout(() => notif.remove(), 5000);
             notif.querySelector('.notification__close').addEventListener('click', () => notif.remove());
-        };
+        }
 
-        // === PROFILE PIC VALIDATION ===
+        // ================= PROFILE PICTURE VALIDATION =================
         function validateProfilePicture() {
             const file = profileInput.files[0];
             if (!file) {
@@ -564,7 +618,6 @@
                 profileInput.focus();
                 return false;
             }
-
             const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
             if (!allowedTypes.includes(file.type)) {
                 showAjaxNotification('Invalid image type. Please use JPG, PNG, or WEBP.', 'error');
@@ -572,22 +625,43 @@
                 profilePreview.innerHTML = '<span class="upload-text">Upload Here</span>';
                 return false;
             }
-
-            const maxSize = 2 * 1024 * 1024; // 2MB
-            if (file.size > maxSize) {
+            if (file.size > 2 * 1024 * 1024) { // 2MB
                 showAjaxNotification('Profile picture must be smaller than 2 MB.', 'error');
                 profileInput.value = '';
                 profilePreview.innerHTML = '<span class="upload-text">Upload Here</span>';
                 return false;
             }
-
             return true;
         }
 
-        // === AJAX FORM SUBMIT ===
-        form.addEventListener('submit', async e => {
-            e.preventDefault();
-            if (!validateProfilePicture()) return;
+        // ================= FORM VALIDATION =================
+        function validateForm() {
+            if (!validateProfilePicture()) return false;
+            const requiredFields = form.querySelectorAll('[required]');
+            for (let field of requiredFields) {
+                if (!field.value) {
+                    field.focus();
+                    showAjaxNotification(`Please fill in ${field.name.replace('_',' ')}`, 'error');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // ================= MODAL FLOW =================
+        openModalBtn.addEventListener('click', () => {
+            if (!validateForm()) return;
+            termsModal.style.display = 'block';
+        });
+        closeModal.addEventListener('click', () => { termsModal.style.display = 'none'; });
+        window.addEventListener('click', e => { if (e.target === termsModal) termsModal.style.display = 'none'; });
+
+        agreeCheckbox.addEventListener('change', () => {
+            proceedBtn.disabled = !agreeCheckbox.checked;
+        });
+
+        proceedBtn.addEventListener('click', async () => {
+            termsModal.style.display = 'none';
 
             const formData = new FormData(form);
             formData.append('ajax', 1);
@@ -604,7 +678,7 @@
 
                 if (data.status === 'success') {
                     form.reset();
-                    selectedTags = [];
+                    selectedTags.length = 0;
                     renderTags();
                     toggleFields();
                     profilePreview.innerHTML = '<span class="upload-text">Upload Here</span>';
