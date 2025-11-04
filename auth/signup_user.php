@@ -100,9 +100,20 @@ if (empty($_FILES['profile_picture']['name']) || $_FILES['profile_picture']['err
 }
 
 $file = $_FILES['profile_picture'];
-$allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+$allowedTypes = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/gif',
+    'image/webp' // optional modern format
+];
 
-if (!in_array($file['type'], $allowedTypes, true)) {
+// Double-check MIME type (some GIFs may report as octet-stream)
+$finfo = finfo_open(FILEINFO_MIME_TYPE);
+$mimeType = finfo_file($finfo, $file['tmp_name']);
+finfo_close($finfo);
+
+if (!in_array($mimeType, $allowedTypes, true)) {
     $_SESSION['notification'] = ['type' => 'error', 'message' => 'Invalid profile picture type.'];
     header('Location: signup.php');
     exit;

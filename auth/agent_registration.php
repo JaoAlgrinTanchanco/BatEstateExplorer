@@ -385,7 +385,7 @@
             hiddenInput.value = selectedTags.join(', ');
         }
 
-        // === SELECT ALL SPECIALIZATIONS BUTTON ===
+        // === SELECT / DESELECT ALL SPECIALIZATIONS BUTTON ===
         const selectAllBtn = document.getElementById('selectAllSpecializations');
         if (selectAllBtn) {
             selectAllBtn.addEventListener('click', () => {
@@ -393,7 +393,18 @@
                     .map(opt => opt.value)
                     .filter(v => v && v !== '' && v !== 'Others'); // skip placeholder and "Others"
 
-                selectedTags = Array.from(new Set([...selectedTags, ...allOptions]));
+                const isSelectingAll = selectAllBtn.textContent.trim().toLowerCase() === 'select all';
+
+                if (isSelectingAll) {
+                    // Select all specializations
+                    selectedTags = [...new Set([...selectedTags, ...allOptions])];
+                    selectAllBtn.textContent = 'Deselect All';
+                } else {
+                    // Deselect all
+                    selectedTags = [];
+                    selectAllBtn.textContent = 'Select All';
+                }
+
                 renderTags();
             });
         }
