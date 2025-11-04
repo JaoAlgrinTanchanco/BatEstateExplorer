@@ -99,6 +99,7 @@
     <title>BatEstate Explorer - Find Your Dream Property</title>
     <link rel="stylesheet" href="assets/css/hero.css">
     <link rel="stylesheet" href="assets/css/property_card.css">
+    <link rel="stylesheet" href="assets/css/notification.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
@@ -251,7 +252,7 @@
                         <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
                         <div>
                             <h4>Address</h4>
-                            <p>123 Real Estate Street<br>Property City, PC 12345</p>
+                            <p>123 Batangas Province<br>Property City, 4234</p>
                         </div>
                     </div>
                     <div class="contact-item scroll-animation">
@@ -265,7 +266,7 @@
                         <div class="contact-icon"><i class="fas fa-envelope"></i></div>
                         <div>
                             <h4>Email</h4>
-                            <p>info@batestate.com</p>
+                            <p>batestate07@gmail.com</p>
                         </div>
                     </div>
                 </div>
@@ -327,7 +328,7 @@
                 </div>
                 <div class="footer-section scroll-animation">
                     <h4>Contact Info</h4>
-                    <p><i class="fas fa-envelope"></i> info@batestate.com</p>
+                    <p><i class="fas fa-envelope"></i> batestate07@gmail.com</p>
                     <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
                 </div>
             </div>
@@ -337,112 +338,140 @@
         </div>
     </footer>
 
-    <script>
-    // Smooth scroll to section and highlight active nav link
-    const navLinks = document.querySelectorAll('.nav-link');
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
 
-    function removeActive() {
-        navLinks.forEach(link => {
-        link.style.color = '';
-        link.style.transform = '';
-        });
-    }
-
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-        e.preventDefault();
-        const targetId = this.getAttribute('href').substring(1);
-        const target = document.getElementById(targetId);
-
-        if (target) {
-            const targetTop = target.getBoundingClientRect().top + window.scrollY;
-            const sectionHeight = target.offsetHeight;
-            const viewportHeight = window.innerHeight;
-            const scrollTo = targetTop - (viewportHeight / 2) + (sectionHeight / 2);
-
-            window.scrollTo({
-            top: scrollTo,
-            behavior: 'smooth'
-            });
-
-            // Highlight active link
-            removeActive();
-            this.style.color = '#000';
-            this.style.transform = 'scale(1.3)';
-        }
-        });
-    });
-
-    // Highlight nav link on scroll based on viewport
-    const sections = document.querySelectorAll('section');
-    window.addEventListener('scroll', () => {
-        let scrollPos = window.scrollY + window.innerHeight / 2; // center of viewport
-        sections.forEach(sec => {
-        const secTop = sec.offsetTop;
-        const secBottom = secTop + sec.offsetHeight;
-        const id = sec.getAttribute('id');
-
-        if (scrollPos >= secTop && scrollPos < secBottom) {
-            removeActive();
-            const activeLink = document.querySelector(`.nav-link[href="#${id}"]`);
-            if (activeLink) {
-            activeLink.style.color = '#000';
-            activeLink.style.transform = 'scale(1.3)';
+        // ====== Notification Helper ======
+        function notify(type, message) {
+            let container = document.querySelector(".notification-container");
+            if (!container) {
+                container = document.createElement("div");
+                container.className = "notification-container";
+                document.body.appendChild(container);
             }
-        }
-        });
-    });
 
-    // Contact form handler
-    document.getElementById('contactForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+            const notif = document.createElement("div");
+            notif.className = `notification ${type}`;
+            notif.innerHTML = `
+                <div class="notification__title">${message}</div>
+                <div class="notification__close">&times;</div>
+            `;
+            container.appendChild(notif);
 
-        const formData = new FormData(this);
-        const name = formData.get('name');
-        const email = formData.get('email');
-        const message = formData.get('message');
-
-        if (!name || !email || !message) {
-        alert('Please fill in all fields.');
-        return;
+            notif.querySelector(".notification__close").addEventListener("click", () => notif.remove());
+            setTimeout(() => notif.remove(), 5000);
         }
 
-        alert("Thank you for your message! We'll get back to you soon.");
-        this.reset();
-    });
-
-    // Navbar scroll behavior
-    window.addEventListener("scroll", () => {
+        // ====== NAVIGATION ======
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('section');
         const navbar = document.querySelector(".navbar");
-        if (window.scrollY > 50) {
-        navbar.classList.add("scrolled");
-        } else {
-        navbar.classList.remove("scrolled");
+
+        function removeActiveNav() {
+            navLinks.forEach(link => {
+                link.style.color = '';
+                link.style.transform = '';
+            });
         }
-    });
 
-    // Intersection Observer with staggered delay
-    const scrollElements = document.querySelectorAll('.scroll-animation');
+        navLinks.forEach(link => {
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').slice(1);
+                const target = document.getElementById(targetId);
+                if (!target) return;
 
-    const observer = new IntersectionObserver((entries, obs) => {
-        entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            const parent = entry.target.parentElement;
-            const children = Array.from(parent.children).filter(child => child.classList.contains('scroll-animation'));
-            
-            children.forEach((child, index) => {
-            setTimeout(() => {
-                child.classList.add('visible');
-            }, index * 150);
+                const scrollTo = target.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2 + target.offsetHeight / 2;
+
+                window.scrollTo({ top: scrollTo, behavior: 'smooth' });
+
+                removeActiveNav();
+                link.style.color = '#000';
+                link.style.transform = 'scale(1.3)';
+            });
+        });
+
+        window.addEventListener('scroll', () => {
+            const scrollCenter = window.scrollY + window.innerHeight / 2;
+
+            sections.forEach(sec => {
+                const secTop = sec.offsetTop;
+                const secBottom = secTop + sec.offsetHeight;
+                const id = sec.getAttribute('id');
+
+                if (scrollCenter >= secTop && scrollCenter < secBottom) {
+                    removeActiveNav();
+                    const activeLink = document.querySelector(`.nav-link[href="#${id}"]`);
+                    if (activeLink) {
+                        activeLink.style.color = '#000';
+                        activeLink.style.transform = 'scale(1.3)';
+                    }
+                }
             });
 
-            obs.unobserve(entry.target);
-        }
+            if (window.scrollY > 50) {
+                navbar.classList.add("scrolled");
+            } else {
+                navbar.classList.remove("scrolled");
+            }
         });
-    }, { threshold: 0.1 });
 
-    scrollElements.forEach(el => observer.observe(el));
-    </script>
+        // ====== SCROLL ANIMATIONS ======
+        const scrollElements = document.querySelectorAll('.scroll-animation');
+        const observer = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const parent = entry.target.parentElement;
+                    const children = Array.from(parent.children).filter(c => c.classList.contains('scroll-animation'));
+
+                    children.forEach((child, index) => {
+                        setTimeout(() => child.classList.add('visible'), index * 150);
+                    });
+
+                    obs.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        scrollElements.forEach(el => observer.observe(el));
+
+        // ====== CONTACT FORM ======
+        const contactForm = document.getElementById('contactForm');
+        if (contactForm) {
+            contactForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const formData = new FormData(contactForm);
+                const name = formData.get('name');
+                const email = formData.get('email');
+                const message = formData.get('message');
+
+                if (!name || !email || !message) {
+                    notify('error', 'Please fill in all fields.');
+                    return;
+                }
+
+                fetch('public/api/contact_email.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        notify('success', data.message || 'Message sent successfully!');
+                        contactForm.reset();
+                    } else {
+                        notify('error', data.message || 'Error sending message. Please try again.');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    notify('error', 'Error sending message. Please try again.');
+                });
+            });
+        }
+
+    });
+</script>
 
 </body>
 
