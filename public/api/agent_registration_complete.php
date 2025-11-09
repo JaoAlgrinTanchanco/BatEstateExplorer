@@ -8,6 +8,14 @@ function is_ajax(): bool {
         || (!empty($_POST['ajax']) && $_POST['ajax']==1);
 }
 
+function getAddressName($pdo, $code) {
+    if (empty($code)) return '';
+    $stmt = $pdo->prepare("SELECT `COL 2` AS name FROM psgc WHERE `COL 1` = ?");
+    $stmt->execute([$code]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $row ? $row['name'] : $code; // fallback to code if name not found
+}
+
 function respond(string $status, string $message, array $old_inputs=[], array $debug=[]): void {
     if (is_ajax()) {
         header('Content-Type: application/json');
@@ -112,8 +120,13 @@ try {
     if ($stmt->fetch(PDO::FETCH_ASSOC)) throw new Exception("You already submitted an application. Please wait for approval.");
 
     // === CONCATENATE ADDRESS ===
-    $full_address = "{$old_inputs['street']}, {$old_inputs['barangay']}, {$old_inputs['city']}, {$old_inputs['province']}, {$old_inputs['region']}, {$old_inputs['postal_code']}";
-    $old_inputs['address'] = $full_address; // keep compatibility with rest of code
+    $regionName   = getAddressName($pdo, $old_inputs['region']);
+    $provinceName = getAddressName($pdo, $old_inputs['province']);
+    $cityName     = getAddressName($pdo, $old_inputs['city']);
+    $barangayName = getAddressName($pdo, $old_inputs['barangay']);
+
+    $full_address = "{$old_inputs['street']}, {$barangayName}, {$cityName}, {$provinceName}, {$regionName}, {$old_inputs['postal_code']}";
+    $old_inputs['address'] = $full_address;
 
     $password_hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
