@@ -11,8 +11,9 @@
     $user_id = $_SESSION['user_id'] ?? null;
     $user = [];
 
+    // Only proceed if there’s a logged-in user and not an admin
     if ($user_id) {
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? AND user_type != 'admin' LIMIT 1");
         $stmt->execute([$user_id]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
     }

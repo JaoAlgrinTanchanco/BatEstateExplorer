@@ -864,7 +864,7 @@
                 <div class="agent-info p-3 mb-4" style="border: 1px solid #ddd; border-radius: 8px;">
                     <p><strong>Name:</strong> <?= htmlspecialchars($agentInfo['name']) ?></p>
                     <p><strong>Contact:</strong> <?= htmlspecialchars($agentInfo['phone']) ?></p>
-                    <p><strong>Email:</strong> agent@personal.example.com</p>
+                    <!-- <p><strong>Email:</strong> agent@personal.example.com</p> -->
                 </div>
 
                 <!-- Transaction History -->

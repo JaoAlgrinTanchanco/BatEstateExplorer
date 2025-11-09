@@ -152,35 +152,53 @@ try {
     $mail->CharSet = 'UTF-8';
     $mail->Encoding = 'base64';
 
-    $subject = ($action === 'approve') ? "Application Approved - BatEstateExplorer" : "Application Rejected - BatEstateExplorer";
-    $bodyColor = ($action === 'approve') ? "#ecfdf5" : "#fef2f2";
-    $accentColor = ($action === 'approve') ? "#10b981" : "#ef4444";
+    // === Email subject ===
+    $mail->Subject = ($action === 'approve')
+        ? 'Your Application Has Been Approved - BatEstateExplorer'
+        : 'Your Application Has Been Rejected - BatEstateExplorer';
 
-    $mail->Body = "
-    <div style='font-family:Arial,sans-serif;background:#f9fafc;padding:30px;'>
-        <table style='max-width:600px;margin:auto;background:#fff;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.08);padding:20px;'>
+    // === Embed logo ===
+    $mail->addEmbeddedImage(
+        'C:/xampp/htdocs/BatEstateExplorer/assets/images/Vector 1.png', // local path
+        'batestate_logo', // CID
+        'logo.png' // name
+    );
+
+    // === Color styling based on status ===
+    $bodyColor = ($action === 'approve') ? '#ecfdf5' : '#fef2f2';
+    $accentColor = ($action === 'approve') ? '#10b981' : '#ef4444';
+    $titleText = ($action === 'approve') ? 'Congratulations!' : 'Application Update';
+
+    // === Styled email body ===
+    $mail->Body = '
+    <div style="font-family: Arial, sans-serif; background:#f9fafc; padding:30px;">
+        <table style="max-width:600px; margin:auto; background:#ffffff; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.08); padding:20px;">
             <tr>
-                <td style='text-align:center;padding-bottom:20px;'>
-                    <h2 style='color:#111;margin:0;'>BatEstateExplorer</h2>
-                    <p style='color:#555;font-size:14px;margin-top:5px;'>Application Update</p>
+                <td style="text-align:center; padding-bottom:20px;">
+                    <img src="cid:batestate_logo" alt="BatEstate Logo" style="max-width:120px; margin-bottom:15px;">
+                    <h2 style="color:#111; margin:0;">BatEstateExplorer</h2>
+                    <p style="color:#555; font-size:14px; margin-top:5px;">Application Status Notification</p>
                 </td>
             </tr>
             <tr>
-                <td style='font-size:15px;color:#333;line-height:1.6;background:$bodyColor;padding:20px;border-radius:8px;text-align:center;'>
-                    <h3 style='color:$accentColor;margin-bottom:15px;'>".htmlspecialchars($subject)."</h3>
-                    <p>".htmlspecialchars($noticeMessage)."</p>
-                    <p>Date: ".date("Y-m-d H:i:s")."</p>
+                <td style="font-size:15px; color:#333; line-height:1.6; background:' . $bodyColor . '; padding:25px; border-radius:8px;">
+                    <h3 style="color:' . $accentColor . '; margin-bottom:15px; text-align:center;">' . htmlspecialchars($titleText) . '</h3>
+                    <p style="text-align:center;">' . htmlspecialchars($noticeMessage) . '</p>
+                    <p style="text-align:center; margin-top:20px;">
+                        Date: <b>' . date("F j, Y, g:i A") . '</b>
+                    </p>';
+    $mail->Body .= '
                 </td>
             </tr>
             <tr>
-                <td style='text-align:center;font-size:12px;color:#999;padding-top:20px;border-top:1px solid #eee;'>
-                    © ".date("Y")." BatEstateExplorer. All rights reserved.
+                <td style="text-align:center; font-size:12px; color:#999; padding-top:20px; border-top:1px solid #eee;">
+                    © ' . date("Y") . ' BatEstateExplorer. All rights reserved.
                 </td>
             </tr>
         </table>
-    </div>
-    ";
-    $mail->AltBody = $noticeMessage;
+    </div>';
+
+    $mail->AltBody = strip_tags($noticeMessage);
     $mail->send();
 
     $pdo->commit();
