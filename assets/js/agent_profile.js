@@ -485,6 +485,22 @@ document.addEventListener('DOMContentLoaded', () => {
               return;
           }
 
+          // -----------------------------
+          // Step 3: Link property_id to transaction
+          // -----------------------------
+          try {
+              const linkRes = await fetch('/BatEstateExplorer/public/api/save_property_id.php', { 
+                  method: 'POST', 
+                  body: new URLSearchParams({ property_id: saveData.property_id })
+              });
+              const linkData = await linkRes.json();
+              if (!linkData.success) {
+                  console.warn('Failed to link property_id to listing fee transaction:', linkData.error);
+              }
+          } catch(err) {
+              console.error('Critical error linking property_id:', err.message);
+          }
+
           // Success: include tier info from API
           notify('success', `Listing submitted! Fee: PHP ${feeData.total_deduction.toLocaleString('en-PH', { minimumFractionDigits:2 })}. Awaiting admin approval.`);
           window.closeListingFeeModal?.();

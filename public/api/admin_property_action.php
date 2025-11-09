@@ -106,17 +106,17 @@ if ($action === 'approve') {
         exit;
     }
 
-    // --- 2) Get the most recent Listing Fee amount for this agent ---
+    // --- 2) Get the most recent Listing Fee for this property specifically ---
     $stmt = $conn->prepare("
         SELECT amount
         FROM transactions
         WHERE user_id = ?
-          AND property LIKE 'Listing Fee%'
+          AND property LIKE CONCAT('%Listing Fee%', (SELECT title FROM properties WHERE id = ?))
           AND status = 'completed'
         ORDER BY created_at DESC
         LIMIT 1
     ");
-    $stmt->bind_param("i", $agent_id);
+    $stmt->bind_param("ii", $agent_id, $property_id);
     $stmt->execute();
     $res = $stmt->get_result();
     $listing_fee = null;
@@ -125,6 +125,26 @@ if ($action === 'approve') {
         $listing_fee = floatval($row['amount']);
     }
     $stmt->close();
+
+    // If not found, fallback to any recent Listing Fee
+    if (!$listing_fee) {
+        $stmt = $conn->prepare("
+            SELECT amount
+            FROM transactions
+            WHERE user_id = ?
+              AND property LIKE '%Listing Fee%'
+              AND status = 'completed'
+            ORDER BY created_at DESC
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $agent_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($row = $res->fetch_assoc()) {
+            $listing_fee = floatval($row['amount']);
+        }
+        $stmt->close();
+    }
 
     if (!$listing_fee) {
         echo json_encode(['success' => false, 'error' => 'No matching listing fee found for this agent']);
@@ -137,25 +157,25 @@ if ($action === 'approve') {
     $stmt->execute();
     $stmt->close();
 
-    // --- 4) Perform refund transaction ---
+    // --- 4) Perform refund transaction with 2% processing fee ---
     $conn->begin_transaction();
 
     try {
-        $refundAmount = $listing_fee; // dynamic refund value
+        $refundAmount = $listing_fee * 0.98; // Deduct 2% processing fee
 
-        // Deduct from admin
+        // Deduct from admin wallet
         $stmt = $conn->prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?");
         $stmt->bind_param("di", $refundAmount, $current_user['id']);
         $stmt->execute();
         $stmt->close();
 
-        // Credit to agent
+        // Credit to agent wallet
         $stmt = $conn->prepare("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?");
         $stmt->bind_param("di", $refundAmount, $agent_id);
         $stmt->execute();
         $stmt->close();
 
-        // Record transaction for admin
+        // Record transaction for admin (negative amount)
         $stmt = $conn->prepare("
             INSERT INTO transactions (user_id, property, amount, status, method)
             VALUES (?, CONCAT('Refund Issued: Property #', ?), ?, 'completed', 'system')
@@ -165,7 +185,7 @@ if ($action === 'approve') {
         $stmt->execute();
         $stmt->close();
 
-        // Record transaction for agent
+        // Record transaction for agent (positive amount)
         $stmt = $conn->prepare("
             INSERT INTO transactions (user_id, property, amount, status, method)
             VALUES (?, CONCAT('Refund Received: Property #', ?), ?, 'completed', 'system')
@@ -178,7 +198,7 @@ if ($action === 'approve') {
 
         $response = [
             'success' => true,
-            'message' => "Property rejected. ₱" . number_format($refundAmount, 2) . " refunded to agent."
+            'message' => "Property rejected. ₱" . number_format($refundAmount, 2) . " refunded to agent (2% processing fee deducted)."
         ];
 
     } catch (Exception $e) {

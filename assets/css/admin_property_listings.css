@@ -572,6 +572,11 @@
   background: #a7f3d0;
 }
 
+.property-badge.ongoing_inquiry {
+  color: #5e35b1;       /* Dark purple text */
+  background: #e0d7f8;  /* Pastel purple background */
+}
+
 /* ---------------------------
    Base: Flex layout for cards
    --------------------------- */

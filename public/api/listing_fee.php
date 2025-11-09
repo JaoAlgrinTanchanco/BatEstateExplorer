@@ -77,11 +77,13 @@ try {
     $status = 'completed';
     $method = 'wallet';
 
+    // Record transaction with property_id
     $stmt = $conn->prepare("
-        INSERT INTO transactions (user_id, property, amount, status, method, created_at)
-        VALUES (?, ?, ?, ?, ?, NOW())
+        INSERT INTO transactions (user_id, property_id, property, amount, status, method, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, NOW())
     ");
-    $stmt->bind_param("isdss", $user_id, $property, $totalDeduction, $status, $method);
+    $propertyDesc = "Listing Fee ({$property_type}, {$tier_plan} Plan)";
+    $stmt->bind_param("iisdss", $user_id, $listing_id, $propertyDesc, $totalDeduction, $status, $method);
     $stmt->execute();
     $stmt->close();
 

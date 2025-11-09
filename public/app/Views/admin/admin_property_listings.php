@@ -106,7 +106,7 @@
                         <div class="property-card">
                             <!-- Badge -->
                             <div class="property-badge <?php echo htmlspecialchars($property['status']); ?>">
-                                <?php echo ucfirst($property['status']); ?>
+                                <?php echo ucfirst(str_replace('_', ' ', $property['status'])); ?>
                             </div>
 
                             <!-- Card background and image -->
