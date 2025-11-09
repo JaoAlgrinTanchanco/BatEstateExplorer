@@ -157,22 +157,22 @@ if ($action === 'approve') {
         $stmt->execute();
         $stmt->close();
 
-        // Record negative transaction for admin
+        // Record negative transaction for admin (refund sent)
         $stmt = $conn->prepare("
-            INSERT INTO transactions (user_id, property, amount, status, method)
-            VALUES (?, CONCAT('Refund Issued: Property #', ?), ?, 'completed', 'system')
+            INSERT INTO transactions (user_id, recipient_id, property, amount, status, method)
+            VALUES (?, ?, CONCAT('Refund Issued: Property #', ?), ?, 'completed', 'system')
         ");
         $negAmount = -$refundAmount;
-        $stmt->bind_param("iid", $current_user['id'], $property_id, $negAmount);
+        $stmt->bind_param("iiid", $current_user['id'], $agent_user_id, $property_id, $negAmount);
         $stmt->execute();
         $stmt->close();
 
-        // Record positive transaction for agent
+        // Record positive transaction for agent (refund received)
         $stmt = $conn->prepare("
-            INSERT INTO transactions (user_id, property, amount, status, method)
-            VALUES (?, CONCAT('Refund Received: Property #', ?), ?, 'completed', 'system')
+            INSERT INTO transactions (user_id, recipient_id, property, amount, status, method)
+            VALUES (?, ?, CONCAT('Refund Received: Property #', ?), ?, 'completed', 'system')
         ");
-        $stmt->bind_param("iid", $agent_user_id, $property_id, $refundAmount);
+        $stmt->bind_param("iiid", $agent_user_id, $current_user['id'], $property_id, $refundAmount);
         $stmt->execute();
         $stmt->close();
 
