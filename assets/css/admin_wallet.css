@@ -349,3 +349,32 @@ h2 {
         padding: 3px 6px;
     }
 }
+
+/* =========================
+   Avatar / Profile Picture
+========================= */
+.transaction-pic {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(106, 103, 214, 0.3);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* .transaction-pic:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+} */
+
+/* Default icon background for users with no profile picture */
+.transaction-icon.neutral-bg {
+    background: rgba(106, 103, 214, 0.08);
+}
+
+.neutral-icon {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 16px;
+}

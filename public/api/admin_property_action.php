@@ -95,73 +95,55 @@ if ($action === 'approve') {
     $stmt->bind_param("i", $property_id);
     $stmt->execute();
     $res = $stmt->get_result();
-    $agent_id = null;
-    if ($row = $res->fetch_assoc()) {
-        $agent_id = intval($row['agent_id']);
-    }
-    $stmt->close();
-
-    if (!$agent_id) {
+    if (!$row = $res->fetch_assoc()) {
         echo json_encode(['success' => false, 'error' => 'Agent not found for this property']);
         exit;
     }
+    $agent_id = intval($row['agent_id']);
+    $stmt->close();
 
-    // --- 2) Get the most recent Listing Fee for this property specifically ---
+    // --- 2) Get agent user_id ---
+    $stmt = $conn->prepare("SELECT user_id FROM agents WHERE id = ? LIMIT 1");
+    $stmt->bind_param("i", $agent_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if (!$row = $res->fetch_assoc()) {
+        echo json_encode(['success' => false, 'error' => 'Agent user not found']);
+        exit;
+    }
+    $agent_user_id = intval($row['user_id']);
+    $stmt->close();
+
+    // --- 3) Fetch latest completed Listing Fee ---
     $stmt = $conn->prepare("
         SELECT amount
         FROM transactions
-        WHERE user_id = ?
-          AND property LIKE CONCAT('%Listing Fee%', (SELECT title FROM properties WHERE id = ?))
-          AND status = 'completed'
+        WHERE user_id = ? AND property LIKE 'Listing Fee%' AND status = 'completed'
         ORDER BY created_at DESC
         LIMIT 1
     ");
-    $stmt->bind_param("ii", $agent_id, $property_id);
+    $stmt->bind_param("i", $agent_user_id);
     $stmt->execute();
     $res = $stmt->get_result();
-    $listing_fee = null;
-
     if ($row = $res->fetch_assoc()) {
         $listing_fee = floatval($row['amount']);
+    } else {
+        echo json_encode(['success' => false, 'error' => 'No completed listing fee found for this agent']);
+        exit;
     }
     $stmt->close();
 
-    // If not found, fallback to any recent Listing Fee
-    if (!$listing_fee) {
-        $stmt = $conn->prepare("
-            SELECT amount
-            FROM transactions
-            WHERE user_id = ?
-              AND property LIKE '%Listing Fee%'
-              AND status = 'completed'
-            ORDER BY created_at DESC
-            LIMIT 1
-        ");
-        $stmt->bind_param("i", $agent_id);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        if ($row = $res->fetch_assoc()) {
-            $listing_fee = floatval($row['amount']);
-        }
-        $stmt->close();
-    }
-
-    if (!$listing_fee) {
-        echo json_encode(['success' => false, 'error' => 'No matching listing fee found for this agent']);
-        exit;
-    }
-
-    // --- 3) Update property status ---
+    // --- 4) Update property status ---
     $stmt = $conn->prepare("UPDATE properties SET status = 'rejected' WHERE id = ?");
     $stmt->bind_param("i", $property_id);
     $stmt->execute();
     $stmt->close();
 
-    // --- 4) Perform refund transaction with 2% processing fee ---
+    // --- 5) Perform refund with 2% deduction ---
     $conn->begin_transaction();
 
     try {
-        $refundAmount = $listing_fee * 0.98; // Deduct 2% processing fee
+        $refundAmount = $listing_fee * 0.98; // Deduct 2% fee
 
         // Deduct from admin wallet
         $stmt = $conn->prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?");
@@ -171,11 +153,11 @@ if ($action === 'approve') {
 
         // Credit to agent wallet
         $stmt = $conn->prepare("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?");
-        $stmt->bind_param("di", $refundAmount, $agent_id);
+        $stmt->bind_param("di", $refundAmount, $agent_user_id);
         $stmt->execute();
         $stmt->close();
 
-        // Record transaction for admin (negative amount)
+        // Record negative transaction for admin
         $stmt = $conn->prepare("
             INSERT INTO transactions (user_id, property, amount, status, method)
             VALUES (?, CONCAT('Refund Issued: Property #', ?), ?, 'completed', 'system')
@@ -185,12 +167,12 @@ if ($action === 'approve') {
         $stmt->execute();
         $stmt->close();
 
-        // Record transaction for agent (positive amount)
+        // Record positive transaction for agent
         $stmt = $conn->prepare("
             INSERT INTO transactions (user_id, property, amount, status, method)
             VALUES (?, CONCAT('Refund Received: Property #', ?), ?, 'completed', 'system')
         ");
-        $stmt->bind_param("iid", $agent_id, $property_id, $refundAmount);
+        $stmt->bind_param("iid", $agent_user_id, $property_id, $refundAmount);
         $stmt->execute();
         $stmt->close();
 

@@ -142,12 +142,20 @@
                 const item = document.createElement('div');
                 item.className = 'transaction-item';
 
-                const profilePic = tx.agent_profile
-                    ? `<img src="${tx.agent_profile}" alt="${tx.agent_name}" class="transaction-pic">`
-                    : `<div class="transaction-icon neutral-bg"><i class="fas fa-user neutral-icon"></i></div>`;
+                // Build profile picture path
+                let profilePicHtml = `<div class="transaction-icon neutral-bg"><i class="fas fa-user neutral-icon"></i></div>`;
+
+                if (tx.agent_profile) {
+                    // Use the full URL/path provided by the backend
+                    const webPath = tx.agent_profile.startsWith('/')
+                        ? tx.agent_profile
+                        : '/' + tx.agent_profile;
+
+                    profilePicHtml = `<img src="${webPath}" alt="${tx.agent_name}" class="transaction-pic">`;
+                }
 
                 item.innerHTML = `
-                    ${profilePic}
+                    ${profilePicHtml}
                     <div class="transaction-info">
                         <p class="transaction-name">${tx.agent_name}</p>
                         <p class="transaction-date-time">${tx.datetime}</p>
