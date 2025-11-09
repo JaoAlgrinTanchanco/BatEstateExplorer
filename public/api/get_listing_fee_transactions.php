@@ -13,15 +13,17 @@ if (!isset($_SESSION['user_id'])) {
 $admin_id = $_SESSION['user_id'];
 
 try {
-    // Fetch last 50 transactions with user info
+    // Fetch last 50 admin-only transactions
     $stmt = $conn->prepare("
         SELECT t.id, t.property, t.amount, t.created_at,
                u.first_name, u.last_name, u.profile_image_path
         FROM transactions t
         JOIN users u ON t.user_id = u.id
+        WHERE t.user_id = ? 
         ORDER BY t.created_at DESC
         LIMIT 50
     ");
+    $stmt->bind_param("i", $admin_id);
     $stmt->execute();
     $res = $stmt->get_result();
 
@@ -30,19 +32,14 @@ try {
         // Build correct web-accessible profile image path
         $profile_path = null;
         if (!empty($row['profile_image_path'])) {
-            // Normalize slashes
             $clean_path = str_replace('\\', '/', $row['profile_image_path']);
             $clean_path = ltrim($clean_path, '/');
-
-            // Remove any duplicate 'BatEstateExplorer/' if it already exists
             $clean_path = preg_replace('#^(BatEstateExplorer/)+#', 'BatEstateExplorer/', $clean_path);
 
-            // Ensure it starts with the project base once
             if (strpos($clean_path, 'BatEstateExplorer/') !== 0) {
                 $clean_path = 'BatEstateExplorer/' . $clean_path;
             }
 
-            // Final accessible URL
             $profile_path = '/' . $clean_path;
         }
 
@@ -55,6 +52,7 @@ try {
             'datetime'       => date('d/m • h:i A', strtotime($row['created_at']))
         ];
     }
+
     $stmt->close();
 
     echo json_encode([
