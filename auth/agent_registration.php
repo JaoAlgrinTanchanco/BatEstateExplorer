@@ -163,74 +163,76 @@
         </div>
 
         <!-- Professional Info -->
-        <h3>Professional Information</h3>
-        <div class="form-row">
-            <div class="form-group">
-                <label for="broker_id">Broker ID *</label>
-                <input type="text" id="broker_id" name="broker_id"
-                    value="<?= htmlspecialchars($old['broker_id'] ?? $user['broker_id'] ?? '') ?>">
-            </div>
-            <div class="form-group">
-                <label for="prc_number">PRC Number *</label>
-                <input type="text" id="prc_number" name="prc_number"
-                    value="<?= htmlspecialchars($old['prc_number'] ?? $user['prc_number'] ?? '') ?>">
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="experience_years">Years of Experience *</label>
-                <select id="experience_years" name="experience_years">
-                    <option value="">Select Experience</option>
-                    <?php
-                    $exp_options = ['0-1','2-5','6-10','10+'];
-                    foreach($exp_options as $exp) {
-                        $selected = ($old['experience_years'] ?? $user['experience_years'] ?? '') === $exp ? 'selected' : '';
-                        echo "<option value=\"$exp\" $selected>$exp years</option>";
-                    }
-                    ?>
-                </select>
-            </div>
-
-            <div class="form-group specialization-group">
-                <label for="specializationSelect">Specializations *</label>
-                <div class="specialization-select-row">
-                    <select id="specializationSelect" class="form-control">
-                        <option value="" disabled selected>Select a specialization</option>
-                        <option value="Condominium">Condominium</option>
-                        <option value="Apartment">Apartment</option>
-                        <option value="Townhouse">Townhouse</option>
-                        <option value="House and Lot">House and Lot</option>
-                        <option value="Commercial Building">Commercial Building</option>
-                        <option value="Lot Only">Lot Only</option>
-                        <option value="Farm Lot">Farm Lot</option>
-                        <option value="Industrial Lot">Industrial Lot</option>
-                        <option value="Beachfront Property">Beachfront Property</option>
-                        <option value="Resort">Resort</option>
-                        <option value="Hotels and Motels">Hotels and Motels</option>
-                        <option value="Dormitory">Dormitory</option>
-                        <option value="Office Space">Office Space</option>
-                        <option value="Warehouse">Warehouse</option>
-                        <option value="Retail Space">Retail Space</option>
-                        <option value="Mixed-Use Development">Mixed-Use Development</option>
-                        <option value="Luxury Estate">Luxury Estate</option>
-                        <option value="Foreclosed Property">Foreclosed Property</option>
-                        <option value="Subdivision Development">Subdivision Development</option>
-                        <option value="Others">Others</option>
-                    </select>
-
-                    <button type="button" id="selectAllSpecializations" class="select-all-btn">
-                        Select All
-                    </button>
+        <div id="professionalInfoSection">
+            <h3>Professional Information</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="broker_id">Broker ID *</label>
+                    <input type="text" id="broker_id" name="broker_id"
+                        value="<?= htmlspecialchars($old['broker_id'] ?? $user['broker_id'] ?? '') ?>">
+                </div>
+                <div class="form-group">
+                    <label for="prc_number">PRC Number *</label>
+                    <input type="text" id="prc_number" name="prc_number"
+                        value="<?= htmlspecialchars($old['prc_number'] ?? $user['prc_number'] ?? '') ?>">
                 </div>
             </div>
 
-            <div class="form-group specialization-tags-group">
-                <div class="specialization-tags" id="specializationTags"></div>
-            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="experience_years">Years of Experience *</label>
+                    <select id="experience_years" name="experience_years">
+                        <option value="">Select Experience</option>
+                        <?php
+                        $exp_options = ['0-1','2-5','6-10','10+'];
+                        foreach($exp_options as $exp) {
+                            $selected = ($old['experience_years'] ?? $user['experience_years'] ?? '') === $exp ? 'selected' : '';
+                            echo "<option value=\"$exp\" $selected>$exp years</option>";
+                        }
+                        ?>
+                    </select>
+                </div>
 
-            <input type="hidden" name="specializations" id="specializationInput"
-                value="<?= htmlspecialchars($old_inputs['specializations'] ?? '') ?>">
+                <div class="form-group specialization-group">
+                    <label for="specializationSelect">Specializations *</label>
+                    <div class="specialization-select-row">
+                        <select id="specializationSelect" class="form-control">
+                            <option value="" disabled selected>Select a specialization</option>
+                            <option value="Condominium">Condominium</option>
+                            <option value="Apartment">Apartment</option>
+                            <option value="Townhouse">Townhouse</option>
+                            <option value="House and Lot">House and Lot</option>
+                            <option value="Commercial Building">Commercial Building</option>
+                            <option value="Lot Only">Lot Only</option>
+                            <option value="Farm Lot">Farm Lot</option>
+                            <option value="Industrial Lot">Industrial Lot</option>
+                            <option value="Beachfront Property">Beachfront Property</option>
+                            <option value="Resort">Resort</option>
+                            <option value="Hotels and Motels">Hotels and Motels</option>
+                            <option value="Dormitory">Dormitory</option>
+                            <option value="Office Space">Office Space</option>
+                            <option value="Warehouse">Warehouse</option>
+                            <option value="Retail Space">Retail Space</option>
+                            <option value="Mixed-Use Development">Mixed-Use Development</option>
+                            <option value="Luxury Estate">Luxury Estate</option>
+                            <option value="Foreclosed Property">Foreclosed Property</option>
+                            <option value="Subdivision Development">Subdivision Development</option>
+                            <option value="Others">Others</option>
+                        </select>
+
+                        <button type="button" id="selectAllSpecializations" class="select-all-btn">
+                            Select All
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group specialization-tags-group">
+                    <div class="specialization-tags" id="specializationTags"></div>
+                </div>
+
+                <input type="hidden" name="specializations" id="specializationInput"
+                    value="<?= htmlspecialchars($old_inputs['specializations'] ?? '') ?>">
+            </div>
         </div>
 
         <div class="form-group">
@@ -742,6 +744,30 @@
         function clearSelects(selects) {
             selects.forEach(sel => sel.innerHTML = `<option value="">Select</option>`);
         }
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        const agentType = document.getElementById('user_type'); // ✅ corrected ID
+        const professionalSection = document.getElementById('professionalInfoSection');
+
+        if (!agentType || !professionalSection) return; // safety check
+
+        const professionalInputs = professionalSection.querySelectorAll('input, select, textarea');
+
+        function toggleProfessionalSection() {
+            const value = agentType.value.toLowerCase().trim();
+
+            if (value === 'direct_agent' || value === 'direct agent') {
+                professionalSection.style.display = 'none';
+                professionalInputs.forEach(input => input.required = false);
+            } else {
+                professionalSection.style.display = 'block';
+                professionalInputs.forEach(input => input.required = true);
+            }
+        }
+
+        // Run once on load and again when selection changes
+        toggleProfessionalSection();
+        agentType.addEventListener('change', toggleProfessionalSection);
     });
 </script>
 

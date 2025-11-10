@@ -93,9 +93,14 @@
         'Santa Teresita','Santo Tomas','Taal','Talisay','Tanauan City','Taysan','Tingloy','Tuy'
     ];
 
-    // Fetch property counts by location
+    // Fetch property counts by location (exclude pending)
     $properties_by_location = [];
-    $query = "SELECT location, COUNT(*) as total FROM properties GROUP BY location";
+    $query = "
+        SELECT location, COUNT(*) as total 
+        FROM properties 
+        WHERE status IN ('available','sold','ongoing_inquiry')
+        GROUP BY location
+    ";
     $result = mysqli_query($conn, $query);
     if ($result) {
         while ($row = mysqli_fetch_assoc($result)) {

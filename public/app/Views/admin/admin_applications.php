@@ -53,7 +53,7 @@
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_applications.css" />
 
 <header class="content-header">
-    <h1>Admin Applications</h1>
+    <h1>Agent Registrations</h1>
 </header>
 
 <div class="content-body">

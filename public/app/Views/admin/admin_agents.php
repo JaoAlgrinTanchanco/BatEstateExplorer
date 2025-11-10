@@ -85,7 +85,7 @@
 <link rel="stylesheet" href="/BatEstateExplorer/assets/css/admin_agents.css" />
 
 <header class="content-header">
-    <h1>Agents</h1>
+    <h1>Verified Agents</h1>
 </header>
 
 <div class="content-body">
