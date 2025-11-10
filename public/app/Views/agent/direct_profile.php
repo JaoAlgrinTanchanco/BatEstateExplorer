@@ -877,7 +877,15 @@
                                 <p><strong>Date:</strong> <?= htmlspecialchars($tx['date']); ?></p>
                                 <p><strong>Status:</strong> <?= ucfirst($tx['status']); ?></p>
                                 <p><strong>Payment Method:</strong> <?= htmlspecialchars($tx['method']); ?></p>
-                                <p class="transaction-amount <?= htmlspecialchars($tx['property']) === 'Deposit' ? 'positive' : 'negative'; ?>">
+                                <?php
+                                    $propertyLower = strtolower($tx['property']);
+                                    $isPositive = (
+                                        str_contains($propertyLower, 'deposit') ||
+                                        str_contains($propertyLower, 'subscription') ||
+                                        str_contains($propertyLower, 'refund received')
+                                    );
+                                ?>
+                                <p class="transaction-amount <?= $isPositive ? 'positive' : 'negative'; ?>">
                                     ₱<?= number_format($tx['amount'], 2); ?>
                                 </p>
                             </div>
