@@ -749,4 +749,24 @@
                 console.error('Failed to trigger feature check:', err);
             });
     });
+    // Trigger duration check on page reload
+    window.addEventListener('load', () => {
+        fetch('/BatEstateExplorer/public/api/duration_check.php')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log(data.message);
+                    if (data.deleted_properties && data.deleted_properties.length > 0) {
+                        console.log('Deleted (expired) properties:', data.deleted_properties);
+                    } else {
+                        console.log('No expired properties found.');
+                    }
+                } else if (data.error) {
+                    console.error('Duration check error:', data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Failed to trigger duration check:', err);
+            });
+    });
 </script>
