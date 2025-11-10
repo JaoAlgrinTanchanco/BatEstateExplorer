@@ -417,20 +417,23 @@ h4{
   position: relative;           /* For accent underline */
 }
 
-/* ---------------- Welcome Card ---------------- */
-.welcome-card {
+/* ---------------- Carousel ---------------- */
+.welcome-carousel {
   width: 100%;
-  max-width: 1145px;
-  padding: 0 1rem 0 1rem;
-  margin: 0 auto 0 auto;
-  border-radius: 16px;
+  max-width: 1200px;
+  margin: auto;
   overflow: hidden;
+  position: relative;
 }
 
-.welcome-card .welcome-image {
+.carousel-track {
+  display: flex;
+  transition: transform 1s ease-in-out;
+}
+
+.carousel-banner {
+  flex: 0 0 100%; /* each banner takes full carousel width */
   width: 100%;
-  height: auto;
-  display: block;
   object-fit: cover;
 }
 

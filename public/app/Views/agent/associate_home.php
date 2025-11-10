@@ -267,9 +267,13 @@
 
 <h3 class="greeting">Hello, <?= htmlspecialchars($userName) ?>!</h3>
 
-<!-- Welcome Banner -->
-<div class="welcome-card">
-    <img src="/BatEstateExplorer/assets/images/Frame 6.png" alt="Welcome Banner" class="welcome-image">
+<!-- Welcome Carousel -->
+<div class="welcome-carousel">
+  <div class="carousel-track">
+    <img src="/BatEstateExplorer/assets/images/bannerL.png" alt="Banner L" class="carousel-banner">
+    <img src="/BatEstateExplorer/assets/images/bannerA.png" alt="Banner U" class="carousel-banner">
+    <img src="/BatEstateExplorer/assets/images/bannerR.png" alt="Banner R" class="carousel-banner">
+  </div>
 </div>
 
 <div class="search-container">
@@ -442,6 +446,30 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // ---------------- Carousel Auto-Spin ----------------
+        const track = document.querySelector('.carousel-track');
+        const banners = document.querySelectorAll('.carousel-banner');
+        const totalBanners = banners.length;
+        let index = 0;
+        const displayTime = 5000; // milliseconds each banner is displayed
+
+        function showNextBanner() {
+            index++;
+            if (index >= totalBanners) index = 0;
+            track.style.transform = `translateX(-${index * 100}%)`;
+        }
+
+        // Start auto-rotation
+        let carouselInterval = setInterval(showNextBanner, displayTime);
+
+        // Pause on hover
+        document.querySelector('.welcome-carousel').addEventListener('mouseenter', () => {
+            clearInterval(carouselInterval);
+        });
+        document.querySelector('.welcome-carousel').addEventListener('mouseleave', () => {
+            carouselInterval = setInterval(showNextBanner, displayTime);
+        });
+
         const filters = ['location', 'property_type', 'price_range', 'bedrooms', 'bathrooms', 'size'];
         const searchBtn = document.getElementById('searchForm1');
 
