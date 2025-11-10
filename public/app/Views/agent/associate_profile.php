@@ -148,27 +148,6 @@
         $stmt->close();
     }
 
-    // Fetch available properties for company
-    if ($company_id > 0) {
-        $stmt = $conn->prepare("
-            SELECT 
-                p.id, p.title, p.location, p.price, p.bedrooms, p.bathrooms, p.lot_size, p.created_at,
-                a.id AS agent_id, CONCAT(u.first_name, ' ', u.last_name) AS created_by,
-                sa.id AS sold_agent_id, CONCAT(su.first_name, ' ', su.last_name) AS sold_by
-            FROM properties p
-            LEFT JOIN agents a ON p.agent_id = a.id
-            LEFT JOIN users u ON a.user_id = u.id
-            LEFT JOIN agents sa ON p.sold_by_agent_id = sa.id
-            LEFT JOIN users su ON sa.user_id = su.id
-            WHERE a.company_id = ? AND p.status IN ('available', 'sold')
-            ORDER BY p.created_at DESC;
-        ");
-        $stmt->bind_param("i", $company_id);
-        $stmt->execute();
-        $company_listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-        $stmt->close();
-    }
-
     // Fetch wallet balance
     $walletBalance = 0.00;
     if (isset($user['id'])) {
@@ -835,7 +814,28 @@
                 <p class="company">Company: <?= htmlspecialchars($company_name) ?></p>
 
                 <div class="company-listings-container">
-                    <?php foreach ($company_listings as $row): ?>
+                    <?php
+                    if ($company_id > 0) {
+                        $stmt = $conn->prepare("
+                            SELECT 
+                                p.id, p.title, p.location, p.price, p.bedrooms, p.bathrooms, p.lot_size, p.created_at,
+                                a.id AS agent_id, CONCAT(u.first_name, ' ', u.last_name) AS listed_by_agent
+                            FROM properties p
+                            LEFT JOIN agents a ON p.listed_by_agent_id = a.id
+                            LEFT JOIN users u ON a.user_id = u.id
+                            WHERE a.company_id = ?
+                            AND p.company_prop_id IS NOT NULL
+                            AND p.claim_prop = 1
+                            AND p.status IN ('available','sold','ongoing_inquiry')
+                            ORDER BY p.created_at DESC
+                        ");
+                        $stmt->bind_param("i", $company_id);
+                        $stmt->execute();
+                        $company_listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+                        $stmt->close();
+                    }
+
+                    foreach ($company_listings as $row): ?>
                         <div class="company-listing-card">
                             <p class="listing-title"><?= htmlspecialchars($row['title']); ?></p>
                             <p><?= htmlspecialchars($row['location']); ?></p>
@@ -843,8 +843,7 @@
                             <p>Bedrooms: <?= (int)$row['bedrooms']; ?></p>
                             <p>Bathrooms: <?= (int)$row['bathrooms']; ?></p>
                             <p>Lot Size: <?= number_format($row['lot_size'], 2); ?></p>
-                            <p>By: <?= !empty($row['created_by']) ? htmlspecialchars($row['created_by']) : 'N/A'; ?></p>
-                            <p>Sold By: <?= !empty($row['sold_by']) ? htmlspecialchars($row['sold_by']) : 'N/A'; ?></p>
+                            <p>By: <?= !empty($row['listed_by_agent']) ? htmlspecialchars($row['listed_by_agent']) : 'N/A'; ?></p>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -968,6 +967,27 @@
                 </div>
 
                 <script>
+                    // ===== Notification helper =====
+                    function notify(type, message) {
+                        let container = document.querySelector(".notification-container");
+                        if (!container) {
+                            container = document.createElement("div");
+                            container.className = "notification-container";
+                            document.body.appendChild(container);
+                        }
+
+                        const notif = document.createElement("div");
+                        notif.className = `notification ${type}`;
+                        notif.innerHTML = `
+                            <div class="notification__title">${message}</div>
+                            <div class="notification__close">&times;</div>
+                        `;
+                        container.appendChild(notif);
+
+                        notif.querySelector(".notification__close").addEventListener("click", () => notif.remove());
+                        setTimeout(() => notif.remove(), 5000);
+                    }
+
                     document.addEventListener('DOMContentLoaded', () => {
                         const modal = document.getElementById('depositModal');
                         const balanceEl = document.getElementById('walletBalance');
@@ -975,16 +995,16 @@
                         const tableBody = document.querySelector('.transaction-cards-container');
                         const walletLimit = 10000;
 
-                        window.openDepositModal = () => modal.style.display='flex';
-                        window.closeDepositModal = () => modal.style.display='none';
+                        window.openDepositModal = () => modal.style.display = 'flex';
+                        window.closeDepositModal = () => modal.style.display = 'none';
 
-                        // Subscription buttons
+                        // ===== Deposit amount buttons =====
                         document.querySelectorAll('.deposit-amount-btn').forEach(btn => {
                             btn.addEventListener('click', () => {
                                 const amount = parseFloat(btn.dataset.amount);
                                 const current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
                                 if(current + amount > walletLimit){
-                                    alert(`Deposit exceeds wallet limit of PHP ${walletLimit}.`);
+                                    notify('error', `Deposit exceeds wallet limit of PHP ${walletLimit}.`);
                                     selectedInput.value = '';
                                     return;
                                 }
@@ -992,67 +1012,88 @@
                             });
                         });
 
-                        paypal.Buttons({
-                            style: { layout:'vertical', color:'blue', shape:'pill', label:'pay' },
+                        // ===== PayPal button initialization =====
+                        const paypalContainer = document.getElementById('paypal-button-container');
+                        if (!window.paypalInitialized) {
+                            window.paypalInitialized = true;
+                            paypalContainer.innerHTML = '';
 
-                            createOrder: function(data, actions) {
-                                const amount = parseFloat(selectedInput.value);
-                                if(!amount){ alert('Select a subscription amount first'); return; }
-                                const current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
-                                if(current + amount > walletLimit){ alert('Deposit exceeds wallet limit'); return; }
-                                return actions.order.create({ purchase_units:[{ amount:{ value: amount.toFixed(2) } }] });
-                            },
+                            paypal.Buttons({
+                                style: { layout:'vertical', color:'blue', shape:'pill', label:'pay' },
 
-                            onApprove: function(data, actions){
-                                return actions.order.capture().then(details => {
+                                createOrder: function(data, actions) {
                                     const amount = parseFloat(selectedInput.value);
+                                    if(!amount){ notify('error','Select an amount first'); return; }
                                     const current = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
-                                    const newBalance = current + amount;
+                                    if(current + amount > walletLimit){ notify('error','Deposit exceeds wallet limit'); return; }
+                                    return actions.order.create({ purchase_units:[{ amount:{ value: amount.toFixed(2) } }] });
+                                },
 
-                                    balanceEl.innerText = newBalance.toLocaleString('en-PH',{minimumFractionDigits:2});
+                                onApprove: async function(data, actions){
+                                    try {
+                                        const details = await actions.order.capture();
+                                        const amount = parseFloat(selectedInput.value);
 
-                                    // Call existing deposit API
-                                    fetch('/BatEstateExplorer/public/api/deposit.php',{
-                                        method:'POST',
-                                        headers:{'Content-Type':'application/x-www-form-urlencoded'},
-                                        body:`amount=${encodeURIComponent(amount)}`
-                                    }).then(res=>res.json())
-                                    .then(data=>{
-                                        if(data.success){
-                                            alert('Subscription successful! Paid by: '+details.payer.name.given_name);
-                                            selectedInput.value=''; closeDepositModal();
+                                        // Call deposit API
+                                        const depositRes = await fetch('/BatEstateExplorer/public/api/deposit.php', {
+                                            method: 'POST',
+                                            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+                                            body: `amount=${encodeURIComponent(amount)}`
+                                        });
+                                        const depositData = await depositRes.json();
 
-                                            // Add transaction card
-                                            const now = new Date();
-                                            const formatted = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+
-                                                String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':' +
-                                                String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+                                        if(!depositData.success){
+                                            notify('error','Deposit completed via PayPal but failed to update wallet: '+(depositData.error||'Unknown'));
+                                            return;
+                                        }
 
-                                            const div = document.createElement('div');
-                                            div.className = 'transaction-card';
-                                            div.innerHTML = `
-                                                <p class="transaction-property">Subscription</p>
-                                                <p><strong>Date:</strong> ${formatted}</p>
-                                                <p><strong>Status:</strong> Completed</p>
-                                                <p><strong>Payment Method:</strong> PayPal</p>
-                                                <p class="transaction-amount positive">₱${amount.toLocaleString('en-PH',{minimumFractionDigits:2})}</p>
-                                            `;
-                                            const placeholder = tableBody.querySelector('.no-transactions');
-                                            if(placeholder) tableBody.innerHTML='';
-                                            tableBody.prepend(div);
+                                        // ===== Instant balance update =====
+                                        const currentBalance = parseFloat(balanceEl.innerText.replace(/,/g,'')) || 0;
+                                        const newBalance = currentBalance + amount;
+                                        balanceEl.innerText = newBalance.toLocaleString('en-PH',{minimumFractionDigits:2});
 
-                                            // Keep last 10
-                                            while(tableBody.children.length>10) tableBody.removeChild(tableBody.lastChild);
-                                        } else alert('Paid via PayPal but failed to update wallet: '+(data.error||'Unknown'));
-                                    }).catch(err=>{ console.error(err); alert('Deposit saved via PayPal but failed to update wallet.'); });
-                                });
-                            },
+                                        notify('success','Deposit successful!');
+                                        selectedInput.value = ''; 
+                                        closeDepositModal();
 
-                            onError: function(err){ console.error(err); alert('PayPal transaction error.'); }
+                                        // Add transaction card
+                                        const now = new Date();
+                                        const formatted = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+
+                                            String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':' +
+                                            String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
 
-                        }).render('#paypal-button-container');
+                                        const div = document.createElement('div');
+                                        div.className = 'transaction-card';
+                                        div.innerHTML = `
+                                            <p class="transaction-property">Deposit</p>
+                                            <p><strong>Date:</strong> ${formatted}</p>
+                                            <p><strong>Status:</strong> Completed</p>
+                                            <p><strong>Payment Method:</strong> PayPal</p>
+                                            <p class="transaction-amount positive">₱${amount.toLocaleString('en-PH',{minimumFractionDigits:2})}</p>
+                                        `;
+                                        const placeholder = tableBody.querySelector('.no-transactions');
+                                        if(placeholder) tableBody.innerHTML='';
+                                        tableBody.prepend(div);
+
+                                        // Keep last 10
+                                        while(tableBody.children.length>10) tableBody.removeChild(tableBody.lastChild);
+
+                                    } catch(err) {
+                                        console.error(err);
+                                        notify('error','Deposit failed or PayPal transaction error.');
+                                    }
+                                },
+
+                                onError: function(err){
+                                    console.error(err); 
+                                    notify('error','PayPal transaction error.');
+                                }
+
+                            }).render('#paypal-button-container');
+                        }
                     });
                 </script>
+
             <?php break; ?>
 
             <?php default:
