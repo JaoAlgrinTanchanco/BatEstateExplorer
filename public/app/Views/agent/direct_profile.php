@@ -1110,17 +1110,6 @@
                             <?php endforeach; ?>
                         </div>
                         
-                        <!-- Professional Details -->
-                        <div class="overview-card">
-                            <h3>Professional Details</h3>
-                            <div class="info-row"><strong>Agent Type:</strong> <span><?= ($user['user_type'] ?? '') === 'associate_agent' ? 'Associate Agent' : (($user['user_type'] ?? '') === 'direct_agent' ? 'Direct Agent' : '-') ?></span></div>
-                            <div class="info-row"><strong>Broker ID:</strong> <span><?= htmlspecialchars($user['broker_id'] ?? '-') ?></span></div>
-                            <div class="info-row"><strong>License Number:</strong> <span><?= htmlspecialchars($user['license_number'] ?? '-') ?></span></div>
-                            <div class="info-row"><strong>Years of Experience:</strong> <span><?= htmlspecialchars($user['experience_years'] ?? '-') ?></span></div>
-                            <div class="info-row"><strong>Specialization:</strong> <span><?= !empty($user['specialization']) ? htmlspecialchars(is_array($tmp = json_decode($user['specialization'], true)) ? implode(', ', $tmp) : $user['specialization']) : '-' ?></span></div>
-                            <div class="info-row"><strong>Bio:</strong> <span><?= nl2br(htmlspecialchars($user['bio'] ?? '-')) ?></span></div>
-                        </div>
-
                         <!-- Danger Zone in new grid row -->
                         <div class="overview-card danger-zone">
                             <h3>Danger Zone</h3>
