@@ -133,20 +133,34 @@
 
     <!-- Hero Section -->
     <section id="home" class="hero scroll-animation">
-        <div class="hero-content scroll-animation">
-            <h1 class="hero-title scroll-animation">Find Your Perfect Property</h1>
-            <p class="hero-subtitle scroll-animation">Discover amazing properties in your area with our comprehensive real estate platform</p>
-            <div class="hero-buttons scroll-animation">
-                <a href="auth/signup.php" class="btn btn-primary">
-                    <i class="fas fa-user-plus"></i>
-                    Get Started
-                </a>
-                <a href="auth/login.php" class="btn btn-secondary">
-                    <i class="fas fa-sign-in-alt"></i>
-                    Sign In
-                </a>
-            </div>
+    
+    <!-- Slideshow Background -->
+    <div class="hero-slideshow">
+        <div class="slide" style="background-image:url('/BatEstateExplorer/assets/images/hero_image.png')"></div>
+        <div class="slide" style="background-image:url('/BatEstateExplorer/assets/images/hero2.png')"></div>
+        <div class="slide" style="background-image:url('/BatEstateExplorer/assets/images/hero3.png')"></div>
+        <div class="slide" style="background-image:url('/BatEstateExplorer/assets/images/hero4.png')"></div>
+        <div class="slide" style="background-image:url('/BatEstateExplorer/assets/images/hero5.png')"></div>
+    </div>
+
+    <!-- Hero Content -->
+    <div class="hero-content scroll-animation">
+        <h1 class="hero-title scroll-animation">Find Your Perfect Property</h1>
+        <p class="hero-subtitle scroll-animation">
+        Discover amazing properties in your area with our comprehensive real estate platform
+        </p>
+        <div class="hero-buttons scroll-animation">
+        <a href="auth/signup.php" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i>
+            Get Started
+        </a>
+        <a href="auth/login.php" class="btn btn-secondary">
+            <i class="fas fa-sign-in-alt"></i>
+            Sign In
+        </a>
         </div>
+    </div>
+
     </section>
 
     <!-- Properties Section -->

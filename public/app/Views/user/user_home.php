@@ -742,9 +742,9 @@
         ];
 
         const colors = [
-        "linear-gradient(135deg, #8b5cf6, #6d28d9)", // Deep royal purple
-        "linear-gradient(135deg, #a78bfa, #7c3aed)", // Medium amethyst
-        "linear-gradient(135deg, #c4b5fd, #a78bfa)"  // Soft lavender
+        "linear-gradient(135deg, #000, #000)", // Deep royal purple
+        "linear-gradient(135deg, #000, #000)", // Medium amethyst
+        "linear-gradient(135deg, #000, #000)"  // Soft lavender
         ];
 
         cards.slice(0, 3).forEach((card, index) => {
