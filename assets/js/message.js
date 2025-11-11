@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const leftArrow = viewerOverlay?.querySelector('.nav-arrow.left');
     const rightArrow = viewerOverlay?.querySelector('.nav-arrow.right');
 
+    const currentUserAvatar = '/BatEstateExplorer/assets/images/default-avatar.png';
+
     let currentImages = [];
     let currentIndex = 0;
 
@@ -162,17 +164,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function appendMessageToDOM(messageData) {
+        // Format timestamp
         const timestamp = new Date(messageData.created_at).toLocaleString('en-US', {
             month: 'short', day: '2-digit', year: 'numeric',
             hour: '2-digit', minute: '2-digit', hour12: false
         }).replace(',', '');
 
-        const userAvatar = '<?= htmlspecialchars($contactsImages[$current_user_id] ?? "") ?>';
-        const avatarHTML = userAvatar ? `<img src="${userAvatar}" alt="You">` : '<i class="fa-solid fa-user"></i>';
+        // Determine if message is from current user
+        const isYou = messageData.senderId === messageData.currentUserId; // make sure to include currentUserId in messageData
+        const avatarHTML = isYou
+            ? `<img src="${currentUserAvatar}" alt="You">`
+            : (messageData.avatarUrl ? `<img src="${messageData.avatarUrl}" alt="${messageData.senderName}">` : '<i class="fa-solid fa-user"></i>');
 
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('message', 'you');
-
+        // Build images HTML if any
         let imagesHTML = '';
         if (messageData.images?.length) {
             const multiple = messageData.images.length > 1;
@@ -181,15 +185,20 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
         }
 
+        // Create message element
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message', isYou ? 'you' : 'agent');
+
         msgDiv.innerHTML = `
             <div class="sender-avatar">${avatarHTML}</div>
             <div class="text-container">
-                <div class="sender">You <span class="timestamp">${timestamp}</span>:</div>
+                <div class="sender">${isYou ? 'You' : messageData.senderName} <span class="timestamp">${timestamp}</span>:</div>
                 ${messageData.text ? `<div class="text">${messageData.text}</div>` : ''}
                 ${imagesHTML}
             </div>
         `;
 
+        // Append to messages container
         messagesContainer.appendChild(msgDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }

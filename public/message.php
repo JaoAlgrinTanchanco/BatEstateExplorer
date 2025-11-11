@@ -230,6 +230,9 @@
 
 <script src="/BatEstateExplorer/assets/js/message.js"></script>
 <script>
+    // Pass PHP avatar URL to JS
+    const CURRENT_USER_AVATAR = "<?= !empty($contactsImages[$current_user_id]) ? htmlspecialchars($contactsImages[$current_user_id]) : '/BatEstateExplorer/assets/images/default-avatar.png' ?>";
+    const CURRENT_USER_ID = <?= $current_user_id ?>;
     // Switch Conversations
     const conversationRedirect = '<?= $conversation_redirect ?>';
     document.querySelectorAll('.conversation-item').forEach(item => {
