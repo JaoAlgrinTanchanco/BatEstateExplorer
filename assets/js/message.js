@@ -22,8 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const leftArrow = viewerOverlay?.querySelector('.nav-arrow.left');
     const rightArrow = viewerOverlay?.querySelector('.nav-arrow.right');
 
-    const currentUserAvatar = '/BatEstateExplorer/assets/images/default-avatar.png';
-
     let currentImages = [];
     let currentIndex = 0;
 
@@ -173,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Determine if message is from current user
         const isYou = messageData.senderId === messageData.currentUserId; // make sure to include currentUserId in messageData
         const avatarHTML = isYou
-            ? `<img src="${currentUserAvatar}" alt="You">`
+            ? `<img src="${CURRENT_USER_AVATAR}" alt="You">`
             : (messageData.avatarUrl ? `<img src="${messageData.avatarUrl}" alt="${messageData.senderName}">` : '<i class="fa-solid fa-user"></i>');
 
         // Build images HTML if any
@@ -234,4 +232,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Always scroll to bottom on page load
+    if (messagesContainer) {
+        // Scroll immediately
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        // Handle slow rendering (images, etc.)
+        window.addEventListener('load', () => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
+
+        // Also scroll again after short delay (for any late DOM paints)
+        setTimeout(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }, 300);
+    }
 });
