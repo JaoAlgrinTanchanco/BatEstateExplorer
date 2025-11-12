@@ -97,6 +97,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BatEstateExplorer - Find Your Dream Property</title>
+    <link rel="preload" as="image" href="/BatEstateExplorer/assets/images/hero_image.webp">
     <link rel="stylesheet" href="assets/css/hero.css">
     <link rel="stylesheet" href="assets/css/property_card.css">
     <link rel="stylesheet" href="assets/css/notification.css">
@@ -133,30 +134,31 @@
 
     <!-- Hero Section -->
     <section id="home" class="hero scroll-animation">
-    
-    <!-- Slideshow Background -->
+
+    <!-- Hero Slideshow -->
     <div class="hero-slideshow">
-        <div class="slide" style="background-image:url('/BatEstateExplorer/assets/images/hero_image.png')"></div>
-        <div class="slide" style="background-image:url('/BatEstateExplorer/assets/images/hero2.png')"></div>
-        <div class="slide" style="background-image:url('/BatEstateExplorer/assets/images/hero3.png')"></div>
-        <div class="slide" style="background-image:url('/BatEstateExplorer/assets/images/hero4.png')"></div>
-        <div class="slide" style="background-image:url('/BatEstateExplorer/assets/images/hero5.png')"></div>
+        <!-- First slide: preload & visible immediately -->
+        <div class="slide visible" style="background-image:url('/BatEstateExplorer/assets/images/hero_image.webp')"></div>
+
+        <!-- Other slides: lazy-load using data-bg -->
+        <div class="slide" data-bg="/BatEstateExplorer/assets/images/hero2.webp"></div>
+        <div class="slide" data-bg="/BatEstateExplorer/assets/images/hero3.webp"></div>
+        <div class="slide" data-bg="/BatEstateExplorer/assets/images/hero4.webp"></div>
+        <div class="slide" data-bg="/BatEstateExplorer/assets/images/hero5.webp"></div>
     </div>
 
     <!-- Hero Content -->
     <div class="hero-content scroll-animation">
-        <h1 class="hero-title scroll-animation">Find Your Perfect Property</h1>
-        <p class="hero-subtitle scroll-animation">
+        <h1 class="hero-title lcp-ready">Find Your Perfect Property</h1>
+        <p class="hero-subtitle lcp-ready">
         Discover amazing properties in your area with our comprehensive real estate platform
         </p>
         <div class="hero-buttons scroll-animation">
         <a href="auth/signup.php" class="btn btn-primary">
-            <i class="fas fa-user-plus"></i>
-            Get Started
+            <i class="fas fa-user-plus"></i> Get Started
         </a>
         <a href="auth/login.php" class="btn btn-secondary">
-            <i class="fas fa-sign-in-alt"></i>
-            Sign In
+            <i class="fas fa-sign-in-alt"></i> Sign In
         </a>
         </div>
     </div>
@@ -484,10 +486,25 @@
             });
         }
 
+        const slides = document.querySelectorAll('.slide');
+        let current = 0;
+
+        // Lazy-load background images
+        slides.forEach((slide, i) => {
+            if (i !== 0) {
+            slide.style.backgroundImage = `url(${slide.dataset.bg})`;
+            }
+        });
+
+        // Simple fade slideshow
+        setInterval(() => {
+            slides[current].classList.remove('visible');
+            current = (current + 1) % slides.length;
+            slides[current].classList.add('visible');
+        }, 7000); // change slide every 7s
     });
 </script>
 
 </body>
 
 </html>
-

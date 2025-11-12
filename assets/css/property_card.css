@@ -1133,7 +1133,7 @@
   /* Property Card Adjustments */
   .property-card {
     flex: 0 1 260px;
-    border-radius: 16px;
+    /* border-radius: 16px; */
   }
 
   .property-overlay {
@@ -1190,7 +1190,7 @@
   /* Property Card Adjustments */
   .property-card {
     flex: 0 1 160px;
-    border-radius: 12px;
+    /* border-radius: 12px; */
   }
 
   .property-overlay {
