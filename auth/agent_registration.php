@@ -65,26 +65,22 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="first_name">First Name *</label>
-                <input type="text" id="first_name" name="first_name"
-                    value="<?= htmlspecialchars($old['first_name'] ?? $user['first_name'] ?? '') ?>">
+                <input type="text" id="first_name" name="first_name">
             </div>
             <div class="form-group">
                 <label for="last_name">Last Name *</label>
-                <input type="text" id="last_name" name="last_name"
-                    value="<?= htmlspecialchars($old['last_name'] ?? $user['last_name'] ?? '') ?>">
+                <input type="text" id="last_name" name="last_name">
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label for="email">Email Address *</label>
-                <input type="email" id="email" name="email"
-                    value="<?= htmlspecialchars($old['email'] ?? $user['email'] ?? '') ?>">
+                <input type="email" id="email" name="email">
             </div>
             <div class="form-group">
                 <label for="phone">Phone Number *</label>
-                <input type="tel" id="phone" name="phone"
-                    value="<?= htmlspecialchars($old['phone'] ?? $user['phone'] ?? '') ?>">
+                <input type="tel" id="phone" name="phone">
             </div>
         </div>
 
@@ -173,8 +169,7 @@
                 </div>
                 <div class="form-group">
                     <label for="prc_number">PRC Number *</label>
-                    <input type="text" id="prc_number" name="prc_number"
-                        value="<?= htmlspecialchars($old['prc_number'] ?? $user['prc_number'] ?? '') ?>">
+                    <input type="text" id="prc_number" name="prc_number">
                 </div>
             </div>
 
@@ -230,15 +225,14 @@
                     <div class="specialization-tags" id="specializationTags"></div>
                 </div>
 
-                <input type="hidden" name="specializations" id="specializationInput"
-                    value="<?= htmlspecialchars($old_inputs['specializations'] ?? '') ?>">
+                <input type="hidden" name="specializations" id="specializationInput">
             </div>
         </div>
 
         <div class="form-group">
             <label for="experience_details">Experience Details (Optional)</label>
             <textarea id="experience_details" name="experience_details" rows="4"
-                placeholder="Describe your real estate experience and achievements"><?= htmlspecialchars($old['experience_details'] ?? $user['experience_details'] ?? '') ?></textarea>
+                placeholder="Describe your real estate experience and achievements"></textarea>
         </div>
 
         <!-- Education -->
@@ -250,20 +244,18 @@
                 <label for="education">Education Level</label>
                 <select id="education" name="education">
                     <option value="">-- Select Education Level (Optional) --</option>
-                    <?php
-                    $edu_levels = ['High School','Associate','Bachelor','Master','PhD'];
-                    foreach($edu_levels as $edu) {
-                        $selected = ($old['education'] ?? $user['education'] ?? '') === $edu ? 'selected' : '';
-                        echo "<option value=\"$edu\" $selected>$edu</option>";
-                    }
-                    ?>
+                    <option value="High School">High School</option>
+                    <option value="Associate">Associate</option>
+                    <option value="Bachelor">Bachelor</option>
+                    <option value="Master">Master</option>
+                    <option value="PhD">PhD</option>
                 </select>
             </div>
+
             <div class="form-group">
                 <label for="school">School / University</label>
                 <input type="text" id="school" name="school"
-                    placeholder="e.g. Batangas State University"
-                    value="<?= htmlspecialchars($old['school'] ?? $user['school'] ?? '') ?>">
+                    placeholder="e.g. Batangas State University">
             </div>
         </div>
 
@@ -271,14 +263,12 @@
             <div class="form-group">
                 <label for="course">Course / Major</label>
                 <input type="text" id="course" name="course"
-                    placeholder="e.g. BS Real Estate Management"
-                    value="<?= htmlspecialchars($old['course'] ?? $user['course'] ?? '') ?>">
+                    placeholder="e.g. BS Real Estate Management">
             </div>
             <div class="form-group">
                 <label for="graduation_year">Graduation Year</label>
                 <input type="number" id="graduation_year" name="graduation_year" min="1950" max="2030"
-                    placeholder="Optional"
-                    value="<?= htmlspecialchars($old['graduation_year'] ?? $user['graduation_year'] ?? '') ?>">
+                    placeholder="Optional">
             </div>
         </div>
 
@@ -286,11 +276,11 @@
         <h3>Certifications & Training</h3>
         <div class="form-group">
             <label for="certifications">Professional Certifications (Optional)</label>
-            <textarea id="certifications" name="certifications" rows="3"><?= htmlspecialchars($old['certifications'] ?? $user['certifications'] ?? '') ?></textarea>
+            <textarea id="certifications" name="certifications" rows="3"></textarea>
         </div>
         <div class="form-group">
             <label for="training">Additional Training (Optional)</label>
-            <textarea id="training" name="training" rows="3"><?= htmlspecialchars($old['training'] ?? $user['training'] ?? '') ?></textarea>
+            <textarea id="training" name="training" rows="3"></textarea>
         </div>
 
         <!-- Company (Associate Agents) -->
@@ -298,17 +288,7 @@
             <label for="company_id">Select Company (Associate Agent only):</label>
             <select name="company_id" id="company_id" class="form-control">
                 <option value="" disabled selected>-- Select Company --</option>
-                <?php
-                try {
-                    $stmt = $pdo->query("SELECT id, name FROM companies ORDER BY name ASC");
-                    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                        $selected = ($old['company_id'] ?? $user['company_id'] ?? '') == $row['id'] ? 'selected' : '';
-                        echo '<option value="' . htmlspecialchars($row['id']) . '" ' . $selected . '>' . htmlspecialchars($row['name']) . '</option>';
-                    }
-                } catch (PDOException $e) {
-                    echo '<option disabled>Error loading companies</option>';
-                }
-                ?>
+                <!-- Options can be added dynamically with JavaScript -->
             </select>
         </div>
 

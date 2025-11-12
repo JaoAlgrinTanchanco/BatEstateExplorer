@@ -250,7 +250,7 @@ h2 {
 
 .transaction-amount {
     font-weight: 600;
-    min-width: 130px;
+    min-width: 180px;
     text-align: center;
     font-size: 14px;
     padding: 4px 8px;
@@ -302,7 +302,7 @@ h2 {
         letter-spacing: 3px;
     }
     .transaction-amount {
-    min-width: 70px;
+    min-width: 140px;
     }
 }
 

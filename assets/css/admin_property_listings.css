@@ -112,7 +112,6 @@
   justify-content: center;  /* center all cards */
   gap: 1.5rem;              /* spacing between cards */
   margin-top: 1.5rem;
-  padding: 0 1rem;
 }
 
 @media (max-width: 1400px) {
@@ -377,7 +376,7 @@
   padding: 2rem;
   backdrop-filter: blur(4px);
   font-family: 'Satoshi-Regular', sans-serif;
-  overflow: hidden; /* prevent page scroll behind modal */
+  overflow: auto; /* prevent page scroll behind modal */
 }
 
 #propertyModal .modal-content {
@@ -410,6 +409,7 @@
 .modal-left {
   flex: 2 1 300px;
   display: flex;
+  min-width: 350px;
   flex-direction: column;
   gap: 1rem;
 }
@@ -462,7 +462,8 @@
   flex-direction: column;
   gap: 0.75rem;
   color: #000;
-  max-height: 80vh;             /* keep within viewport */
+  max-height: 80vh;   
+  min-width: 300px;          /* keep within viewport */
   overflow-y: auto;             /* vertical scroll only */
   overflow-x: hidden;           /* disable horizontal scroll */
   padding-right: 0.5rem;        /* space for scrollbar */
@@ -708,3 +709,4 @@
     max-height: 160px;
   }
 }
+
