@@ -215,6 +215,16 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.classList.remove('active');
     });
 
+    // Collapsing on outside click (NEW)
+    document.addEventListener('click', (e) => {
+        const isClickInsideSidebar = sidebar.contains(e.target);
+        const isClickToggleBtn = toggleBtn.contains(e.target);
+
+        if (!isClickInsideSidebar && !isClickToggleBtn && sidebar.classList.contains('open') && window.innerWidth <= 992) {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        }
+    });
 
     // 3-dot menu toggle for "You" messages
     document.querySelectorAll('.message.you .options-menu').forEach(icon => {
@@ -249,3 +259,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 300);
     }
 });
+
+
