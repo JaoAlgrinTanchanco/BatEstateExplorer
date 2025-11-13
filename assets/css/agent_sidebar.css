@@ -721,7 +721,7 @@
   position: fixed;
   top: 4.75rem; /* adjust to match sidebar top + spacing */
   left: 1rem;   /* default when sidebar is closed */
-  z-index: 10000;
+  z-index: 9999;
   width: 50px;
   height: 50px;
   border-radius: 50%;
@@ -827,5 +827,85 @@
     width: 100%; 
     margin-right: 0;            /* remove negative margin */
     min-width: 0;               /* allow shrink */
+  }
+}
+
+/* =========================
+   Default (Desktop and larger)
+=========================== */
+.boost-tiers,
+.boost-tiers-standalone {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap; /* normal layout */
+  overflow: visible; /* no scroll on large screens */
+}
+
+/* =========================
+   Scrollable on 992px and below
+=========================== */
+@media (max-width: 992px) {
+  .boost-tiers,
+  .boost-tiers-standalone {
+    justify-content: flex-start;
+    gap: 2rem;
+    flex-wrap: nowrap;            /* prevent wrapping */
+    overflow-x: auto;             /* enable horizontal scroll */
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    padding-bottom: 1rem;
+    scrollbar-width: thin;        /* Firefox scrollbar */
+    -webkit-overflow-scrolling: touch; /* smooth mobile scroll */
+  }
+
+  /* Scrollbar styling */
+  .boost-tiers::-webkit-scrollbar,
+  .boost-tiers-standalone::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .boost-tiers::-webkit-scrollbar-thumb,
+  .boost-tiers-standalone::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+  }
+
+  /* Card sizing: keep max, maintain 1:1, can shrink slightly */
+  .boost-card,
+  .boost-card-standalone {
+    flex: 0 0 auto;
+    max-width: 250px;       /* current maximum size */
+    min-width: 200px;       /* can shrink */
+    aspect-ratio: 1 / 1;    /* maintain square shape */
+  }
+}
+
+/* Tablet (≤992px) */
+@media (max-width: 992px) {
+  #boostNowBtn,
+  #proceedNowBtn {
+    padding: 0.6rem 4rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Mobile landscape (≤768px) */
+@media (max-width: 768px) {
+  #boostNowBtn,
+  #proceedNowBtn {
+    padding: 0.55rem 3rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Mobile portrait (≤480px) */
+@media (max-width: 480px) {
+  #boostNowBtn,
+  #proceedNowBtn {
+    width: 100%;
+    padding: 0.7rem;
+    font-size: 0.9rem;
+    border-radius: 25px;
   }
 }
