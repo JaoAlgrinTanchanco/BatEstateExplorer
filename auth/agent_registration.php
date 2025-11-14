@@ -640,24 +640,34 @@
 
         // ================= FORM VALIDATION =================
         function validateForm() {
+
             // 1️⃣ Validate profile picture
             if (!validateProfilePicture()) return false;
 
-            // 2️⃣ Validate specialization tags manually
-            if (!hiddenInput.value.trim()) {
-                showAjaxNotification('Please fill in specializations', 'error');
-                return false;
+            const agentType = document.getElementById('agent_type')?.value;
+
+            // 2️⃣ Validate specialization tags ONLY if agent type is "associate"
+            if (agentType === "associate") {
+                if (!hiddenInput.value.trim()) {
+                    showAjaxNotification('Please fill in specializations', 'error');
+                    return false;
+                }
             }
 
-            // 3️⃣ Validate other required fields, but skip the hidden input & the select
+            // 3️⃣ Validate other required fields, but skip the hidden input & select
             const requiredFields = form.querySelectorAll('[required]');
             for (let field of requiredFields) {
+
+                // skip specialization hidden input and select
                 if (field === hiddenInput || field === specializationSelect) continue;
+
+                // skip specialization if not associate
+                if (field.classList.contains('specialization') && agentType !== "associate") continue;
 
                 if (!field.value) {
                     field.focus();
                     const label = field.name || field.id || 'this field';
-                    showAjaxNotification(`Please fill in ${label.replace('_',' ')}`, 'error');
+                    showAjaxNotification(`Please fill in ${label.replace('_', ' ')}`, 'error');
                     return false;
                 }
             }
