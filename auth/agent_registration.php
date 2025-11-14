@@ -193,26 +193,28 @@
                     <div class="specialization-select-row">
                         <select id="specializationSelect" class="form-control">
                             <option value="" disabled selected>Select a specialization</option>
+                            <!-- Property options first -->
+                            <option value="Beachfront Property">Beachfront Property</option>
+                            <option value="Foreclosed Property">Foreclosed Property</option>
+                            <option value="House and Lot">House and Lot</option>
+                            <option value="Luxury Estate">Luxury Estate</option>
                             <option value="Condominium">Condominium</option>
                             <option value="Apartment">Apartment</option>
-                            <option value="Townhouse">Townhouse</option>
-                            <option value="House and Lot">House and Lot</option>
                             <option value="Commercial Building">Commercial Building</option>
-                            <option value="Lot Only">Lot Only</option>
+                            <option value="Dormitory">Dormitory</option>
+                            <option value="Hotels and Motels">Hotels and Motels</option>
+                            <option value="Mixed-Use Development">Mixed-Use Development</option>
+                            <option value="Office Space">Office Space</option>
+                            <option value="Resort">Resort</option>
+                            <option value="Retail Space">Retail Space</option>
+                            <option value="Subdivision Development">Subdivision Development</option>
+                            <option value="Warehouse">Warehouse</option>
+                            <option value="Others">Others</option>
+                            <!-- Lot options after property -->
                             <option value="Farm Lot">Farm Lot</option>
                             <option value="Industrial Lot">Industrial Lot</option>
-                            <option value="Beachfront Property">Beachfront Property</option>
-                            <option value="Resort">Resort</option>
-                            <option value="Hotels and Motels">Hotels and Motels</option>
-                            <option value="Dormitory">Dormitory</option>
-                            <option value="Office Space">Office Space</option>
-                            <option value="Warehouse">Warehouse</option>
-                            <option value="Retail Space">Retail Space</option>
-                            <option value="Mixed-Use Development">Mixed-Use Development</option>
-                            <option value="Luxury Estate">Luxury Estate</option>
-                            <option value="Foreclosed Property">Foreclosed Property</option>
-                            <option value="Subdivision Development">Subdivision Development</option>
-                            <option value="Others">Others</option>
+                            <option value="Lot Only">Lot Only</option>
+                            <option value="Townhouse">Townhouse</option>
                         </select>
 
                         <button type="button" id="selectAllSpecializations" class="select-all-btn">
@@ -288,7 +290,22 @@
             <label for="company_id">Select Company (Associate Agent only):</label>
             <select name="company_id" id="company_id" class="form-control">
                 <option value="" disabled selected>-- Select Company --</option>
-                <!-- Options can be added dynamically with JavaScript -->
+                <?php
+                try {
+                    // Fetch all companies alphabetically
+                    $stmt = $pdo->query("SELECT id, name FROM companies ORDER BY name ASC");
+                    $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    foreach ($companies as $company) {
+                        // Pre-select if user came from old inputs
+                        $selected = ($old['company_id'] ?? '') == $company['id'] ? 'selected' : '';
+                        echo '<option value="' . htmlspecialchars($company['id']) . '" ' . $selected . '>'
+                            . htmlspecialchars($company['name']) . '</option>';
+                    }
+                } catch (PDOException $e) {
+                    echo '<option value="">Error loading companies</option>';
+                }
+                ?>
             </select>
         </div>
 
