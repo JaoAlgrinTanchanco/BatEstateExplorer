@@ -193,25 +193,31 @@
                     <div class="specialization-select-row">
                         <select id="specializationSelect" class="form-control">
                             <option value="" disabled selected>Select a specialization</option>
-                            <option value="Condominium">Condominium</option>
+
+                            <!-- 🏠 PROPERTY TYPES (A–Z) -->
                             <option value="Apartment">Apartment</option>
-                            <option value="Townhouse">Townhouse</option>
-                            <option value="House and Lot">House and Lot</option>
+                            <option value="Beachfront Property">Beachfront Property</option>
                             <option value="Commercial Building">Commercial Building</option>
-                            <option value="Lot Only">Lot Only</option>
+                            <option value="Condominium">Condominium</option>
+                            <option value="Dormitory">Dormitory</option>
+                            <option value="Foreclosed Property">Foreclosed Property</option>
+                            <option value="Hotels and Motels">Hotels and Motels</option>
+                            <option value="House and Lot">House and Lot</option>
+                            <option value="Luxury Estate">Luxury Estate</option>
+                            <option value="Mixed-Use Development">Mixed-Use Development</option>
+                            <option value="Office Space">Office Space</option>
+                            <option value="Resort">Resort</option>
+                            <option value="Retail Space">Retail Space</option>
+                            <option value="Subdivision Development">Subdivision Development</option>
+                            <option value="Townhouse">Townhouse</option>
+                            <option value="Warehouse">Warehouse</option>
+
+                            <!-- 🌿 LOT TYPES (A–Z) -->
                             <option value="Farm Lot">Farm Lot</option>
                             <option value="Industrial Lot">Industrial Lot</option>
-                            <option value="Beachfront Property">Beachfront Property</option>
-                            <option value="Resort">Resort</option>
-                            <option value="Hotels and Motels">Hotels and Motels</option>
-                            <option value="Dormitory">Dormitory</option>
-                            <option value="Office Space">Office Space</option>
-                            <option value="Warehouse">Warehouse</option>
-                            <option value="Retail Space">Retail Space</option>
-                            <option value="Mixed-Use Development">Mixed-Use Development</option>
-                            <option value="Luxury Estate">Luxury Estate</option>
-                            <option value="Foreclosed Property">Foreclosed Property</option>
-                            <option value="Subdivision Development">Subdivision Development</option>
+                            <option value="Lot Only">Lot Only</option>
+
+                            <!-- ➕ OTHER -->
                             <option value="Others">Others</option>
                         </select>
 
@@ -288,7 +294,22 @@
             <label for="company_id">Select Company (Associate Agent only):</label>
             <select name="company_id" id="company_id" class="form-control">
                 <option value="" disabled selected>-- Select Company --</option>
-                <!-- Options can be added dynamically with JavaScript -->
+                <?php
+                try {
+                    // Fetch all companies alphabetically
+                    $stmt = $pdo->query("SELECT id, name FROM companies ORDER BY name ASC");
+                    $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    foreach ($companies as $company) {
+                        // Pre-select if user came from old inputs
+                        $selected = ($old['company_id'] ?? '') == $company['id'] ? 'selected' : '';
+                        echo '<option value="' . htmlspecialchars($company['id']) . '" ' . $selected . '>'
+                            . htmlspecialchars($company['name']) . '</option>';
+                    }
+                } catch (PDOException $e) {
+                    echo '<option value="">Error loading companies</option>';
+                }
+                ?>
             </select>
         </div>
 
@@ -619,15 +640,28 @@
 
         // ================= FORM VALIDATION =================
         function validateForm() {
+            // 1️⃣ Validate profile picture
             if (!validateProfilePicture()) return false;
+
+            // 2️⃣ Validate specialization tags manually
+            if (!hiddenInput.value.trim()) {
+                showAjaxNotification('Please fill in specializations', 'error');
+                return false;
+            }
+
+            // 3️⃣ Validate other required fields, but skip the hidden input & the select
             const requiredFields = form.querySelectorAll('[required]');
             for (let field of requiredFields) {
+                if (field === hiddenInput || field === specializationSelect) continue;
+
                 if (!field.value) {
                     field.focus();
-                    showAjaxNotification(`Please fill in ${field.name.replace('_',' ')}`, 'error');
+                    const label = field.name || field.id || 'this field';
+                    showAjaxNotification(`Please fill in ${label.replace('_',' ')}`, 'error');
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -643,11 +677,16 @@
             proceedBtn.disabled = !agreeCheckbox.checked;
         });
 
-        proceedBtn.addEventListener('click', async () => {
+        proceedBtn.addEventListener('click', async (e) => {
+            e.preventDefault(); // ensure it never submits the form
             termsModal.style.display = 'none';
 
+            // Ensure hidden input updated
+            renderTags();
+
+            // Directly submit (NO validation here)
             const formData = new FormData(form);
-            formData.append('ajax', 1);
+            formData.set('ajax', 1);
 
             try {
                 const res = await fetch('../public/api/agent_registration_complete.php', {
@@ -661,16 +700,18 @@
 
                 if (data.status === 'success') {
                     form.reset();
-                    selectedTags.length = 0;
+                    selectedTags = [];
                     renderTags();
                     toggleFields();
                     profilePreview.innerHTML = '<span class="upload-text">Upload Here</span>';
                 }
+
             } catch (err) {
                 console.error(err);
                 showAjaxNotification('An error occurred. Please try again.', 'error');
             }
         });
+
     });
     document.addEventListener("DOMContentLoaded", () => {
         const regionSelect = document.getElementById("region");
