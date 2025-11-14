@@ -463,7 +463,9 @@
                 `;
                 tagsContainer.appendChild(tag);
             });
-            hiddenInput.value = selectedTags.join(', ');
+
+            // This is crucial
+            hiddenInput.value = selectedTags.join(','); // <- ensures the hidden input is updated
         }
 
         specializationSelect.addEventListener('change', () => {
